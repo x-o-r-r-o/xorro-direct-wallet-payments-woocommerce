@@ -73,6 +73,10 @@ php tests/smoke-test.php
 
 See [readme.txt](readme.txt).
 
+### 1.4.0
+
+- Author: xorro; payment expiry, CoinGecko Demo/Pro, Polygon POL price ID, EVM/Solana/Cosmos verify fixes, packaging
+
 ### 1.3.6
 
 - SVG icons for all remaining catalog coins; multi-network token badges

@@ -157,6 +157,28 @@ class Chain_Checkout_Verifier {
 	}
 
 	/**
+	 * Decode a Cosmos LCD attribute if it looks like base64; otherwise return as-is.
+	 *
+	 * @param string $value Raw attribute.
+	 * @return string
+	 */
+	private static function maybe_base64_decode( $value ) {
+		$value = (string) $value;
+		if ( '' === $value || ! preg_match( '/^[A-Za-z0-9+\/=]+$/', $value ) ) {
+			return $value;
+		}
+		$decoded = base64_decode( $value, true );
+		if ( false === $decoded || '' === $decoded ) {
+			return $value;
+		}
+		// Prefer printable decoded strings (e.g. recipient / amount).
+		if ( ! preg_match( '/^[\x20-\x7E]+$/', $decoded ) ) {
+			return $value;
+		}
+		return $decoded;
+	}
+
+	/**
 	 * Compare an integer base-unit amount against a float band using BCMath when available.
 	 *
 	 * @param string $raw      Integer string in base units.
@@ -428,6 +450,10 @@ class Chain_Checkout_Verifier {
 	 */
 	private static function check_etherscan_v2_native( $chain_id, $address, $min, $max, $since ) {
 		$api_key = self::etherscan_api_key();
+		if ( ! $api_key ) {
+			// Without a real key Etherscan V2 rejects requests — skip quietly.
+			return false;
+		}
 		$query   = array(
 			'chainid'    => (int) $chain_id,
 			'module'     => 'account',
@@ -438,7 +464,7 @@ class Chain_Checkout_Verifier {
 			'page'       => 1,
 			'offset'     => 50,
 			'sort'       => 'desc',
-			'apikey'     => $api_key ? $api_key : 'YourApiKeyToken',
+			'apikey'     => $api_key,
 		);
 		$url      = 'https://api.etherscan.io/v2/api?' . http_build_query( $query );
 		$response = self::http_get( $url );
@@ -485,6 +511,9 @@ class Chain_Checkout_Verifier {
 			return false;
 		}
 		$api_key = self::etherscan_api_key();
+		if ( ! $api_key ) {
+			return false;
+		}
 		$query   = array(
 			'chainid'         => (int) $chain_id,
 			'module'          => 'account',
@@ -494,7 +523,7 @@ class Chain_Checkout_Verifier {
 			'page'            => 1,
 			'offset'          => 50,
 			'sort'            => 'desc',
-			'apikey'          => $api_key ? $api_key : 'YourApiKeyToken',
+			'apikey'          => $api_key,
 		);
 		$url      = 'https://api.etherscan.io/v2/api?' . http_build_query( $query );
 		$response = self::http_get( $url );
@@ -585,6 +614,9 @@ class Chain_Checkout_Verifier {
 					continue;
 				}
 				foreach ( $sigs['result'] as $sig ) {
+					if ( ! empty( $sig['err'] ) ) {
+						continue;
+					}
 					$block_time = isset( $sig['blockTime'] ) ? (int) $sig['blockTime'] : 0;
 					if ( ! $block_time || $block_time < $since ) {
 						continue;
@@ -606,7 +638,10 @@ class Chain_Checkout_Verifier {
 					if ( empty( $tx['result']['meta'] ) ) {
 						continue;
 					}
-					$meta  = $tx['result']['meta'];
+					$meta = $tx['result']['meta'];
+					if ( isset( $meta['err'] ) && null !== $meta['err'] ) {
+						continue;
+					}
 					$pre   = isset( $meta['preTokenBalances'] ) ? $meta['preTokenBalances'] : array();
 					$post  = isset( $meta['postTokenBalances'] ) ? $meta['postTokenBalances'] : array();
 					$delta = self::solana_token_delta( $pre, $post, $address, $coin['contract'] );
@@ -630,6 +665,9 @@ class Chain_Checkout_Verifier {
 			return false;
 		}
 		foreach ( $sigs['result'] as $sig ) {
+			if ( ! empty( $sig['err'] ) ) {
+				continue;
+			}
 			$block_time = isset( $sig['blockTime'] ) ? (int) $sig['blockTime'] : 0;
 			if ( ! $block_time || $block_time < $since ) {
 				continue;
@@ -651,7 +689,10 @@ class Chain_Checkout_Verifier {
 			if ( empty( $tx['result'] ) ) {
 				continue;
 			}
-			$meta    = $tx['result']['meta'];
+			$meta = $tx['result']['meta'];
+			if ( isset( $meta['err'] ) && null !== $meta['err'] ) {
+				continue;
+			}
 			$message = $tx['result']['transaction']['message'];
 			$keys    = array();
 			if ( ! empty( $message['accountKeys'] ) ) {
@@ -1094,10 +1135,15 @@ class Chain_Checkout_Verifier {
 				$attrs = array();
 				if ( ! empty( $event['attributes'] ) && is_array( $event['attributes'] ) ) {
 					foreach ( $event['attributes'] as $attr ) {
-						$key = isset( $attr['key'] ) ? $attr['key'] : '';
-						$val = isset( $attr['value'] ) ? $attr['value'] : '';
-						// Some LCDs base64-encode; try raw first.
+						$key = isset( $attr['key'] ) ? (string) $attr['key'] : '';
+						$val = isset( $attr['value'] ) ? (string) $attr['value'] : '';
 						$attrs[ $key ] = $val;
+						// Some Cosmos LCD endpoints base64-encode attribute keys/values.
+						$decoded_key = self::maybe_base64_decode( $key );
+						$decoded_val = self::maybe_base64_decode( $val );
+						if ( $decoded_key !== $key || $decoded_val !== $val ) {
+							$attrs[ $decoded_key ] = $decoded_val;
+						}
 					}
 				}
 				$recipient = isset( $attrs['recipient'] ) ? $attrs['recipient'] : '';

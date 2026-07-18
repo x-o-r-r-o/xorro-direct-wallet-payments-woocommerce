@@ -40,7 +40,7 @@ class Chain_Checkout_Coins {
 			'XMR'  => self::def( 'XMR', 'Monero', 'monero', 'monero', 'native', 12, 'xmr' ),
 			'XRP'  => self::def( 'XRP', 'Ripple (XRP)', 'ripple', 'ripple', 'native', 6, 'xrp' ),
 			'ATA'  => self::def( 'ATA', 'Automata', 'ethereum', 'automata', 'erc20', 18, 'eth', '0xA2120b9e674d3fC3875f415A7DF52e382F141225', 'ethereum' ),
-			'MATIC'=> self::def( 'MATIC', 'Polygon (POL)', 'polygon-pos', 'matic-network', 'native', 18, 'matic' ),
+			'MATIC'=> self::def( 'MATIC', 'Polygon (POL)', 'polygon-pos', 'polygon-ecosystem-token', 'native', 18, 'matic' ),
 			'TUSD' => self::def( 'TUSD', 'TrueUSD', 'ethereum', 'true-usd', 'erc20', 18, 'eth', '0x0000000000085d4780B73119b644AE5ecd22b376', 'ethereum' ),
 			'USDP' => self::def( 'USDP', 'Pax Dollar', 'ethereum', 'paxos-standard', 'erc20', 18, 'eth', '0x8E870D67F660D95d5be530380D0eC0bd388289E1', 'ethereum' ),
 			'GUSD' => self::def( 'GUSD', 'Gemini Dollar', 'ethereum', 'gemini-dollar', 'erc20', 2, 'eth', '0x056Fd409E1d7A124BD7017459dFEa2F387b6d5Cd', 'ethereum' ),

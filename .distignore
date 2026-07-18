@@ -1,0 +1,21 @@
+# Files excluded from the wordpress.org / distribution ZIP.
+.git
+.gitignore
+.gitattributes
+.DS_Store
+**/.DS_Store
+tests
+.phpunit*
+.phpcs*
+composer.json
+composer.lock
+phpunit.xml
+phpunit.xml.dist
+node_modules
+package.json
+package-lock.json
+.editorconfig
+.eslintrc*
+.prettierrc*
+.cursor
+*.zip

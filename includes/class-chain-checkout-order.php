@@ -190,6 +190,13 @@ class Chain_Checkout_Order {
 	 * @param WC_Order $order Order.
 	 */
 	private static function load_template( $order ) {
+		// Expire past-window orders before rendering so QR/amount are not shown.
+		self::maybe_expire( $order );
+		$order = wc_get_order( $order->get_id() );
+		if ( ! $order ) {
+			return;
+		}
+
 		$coin_id = $order->get_meta( '_chain_checkout_coin' );
 		$coin    = Chain_Checkout_Coins::get( $coin_id );
 		$address = $order->get_meta( '_chain_checkout_address' );

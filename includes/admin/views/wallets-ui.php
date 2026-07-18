@@ -484,9 +484,21 @@ $render_row = static function ( $id, $addr = '' ) {
 						btn.textContent = i18n.copied;
 						setTimeout(function () { btn.textContent = prev; }, 1200);
 					};
+					var fallbackCopy = function (value) {
+						var ta = document.createElement('textarea');
+						ta.value = value;
+						document.body.appendChild(ta);
+						ta.select();
+						try { document.execCommand('copy'); } catch (err) { /* ignore */ }
+						document.body.removeChild(ta);
+					};
 					if (navigator.clipboard && navigator.clipboard.writeText) {
-						navigator.clipboard.writeText(text).then(done).catch(done);
+						navigator.clipboard.writeText(text).then(done).catch(function () {
+							fallbackCopy(text);
+							done();
+						});
 					} else {
+						fallbackCopy(text);
 						done();
 					}
 				}

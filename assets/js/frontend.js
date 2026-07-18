@@ -51,6 +51,11 @@
 				statusEl.textContent = data.i18n.expired;
 			}
 			setBarState('failed');
+			if (pollTimer) {
+				clearInterval(pollTimer);
+				pollTimer = null;
+			}
+			data.status = 'expired';
 			return;
 		}
 		timerEl.textContent = formatLeft(left);

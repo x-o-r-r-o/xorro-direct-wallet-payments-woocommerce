@@ -4,7 +4,7 @@ Tags: woocommerce, cryptocurrency, bitcoin, ethereum, payments, usdt, crypto che
 Requires at least: 6.9
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.3.6
+Stable tag: 1.4.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -165,6 +165,11 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 
 == Changelog ==
 
+= 1.4.0 =
+* Author set to xorro; reliability fixes for QR payment page expiry, CoinGecko Demo/Pro keys, Polygon (POL) price ID
+* EVM verify skips without Etherscan key; Solana skips failed txs; Cosmos LCD base64 attributes supported
+* Blocks payment_data parsing + wallet Copy fallback; distribution packaging hygiene
+
 = 1.3.6 =
 * Added SVG icons for all remaining catalog coins (XMR, XRP, LINK, UNI, DOT, and more)
 * Multi-network token tiles show chain badges (e.g. LINK on Arbitrum)
@@ -222,6 +227,9 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.4.0 =
+Payment reliability and API fixes. Add an Etherscan V2 API key for EVM auto-verify. Author is xorro.
 
 = 1.3.3 =
 Payment QR codes now use standard BIP-21 / EIP-681 / Solana Pay URIs so wallet apps scan and prefill correctly.

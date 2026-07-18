@@ -195,12 +195,19 @@ class Chain_Checkout_Gateway extends WC_Payment_Gateway {
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing
 		if ( isset( $_POST['payment_data'] ) && is_array( $_POST['payment_data'] ) ) {
-			foreach ( $_POST['payment_data'] as $row ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			$payment_data = wp_unslash( $_POST['payment_data'] ); // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+
+			// Associative form used by some Blocks paths.
+			if ( isset( $payment_data['chain_checkout_coin'] ) && is_string( $payment_data['chain_checkout_coin'] ) ) {
+				return sanitize_text_field( $payment_data['chain_checkout_coin'] );
+			}
+
+			foreach ( $payment_data as $row ) {
 				if ( ! is_array( $row ) || empty( $row['key'] ) ) {
 					continue;
 				}
 				if ( 'chain_checkout_coin' === $row['key'] && isset( $row['value'] ) ) {
-					return sanitize_text_field( wp_unslash( $row['value'] ) );
+					return sanitize_text_field( $row['value'] );
 				}
 			}
 		}

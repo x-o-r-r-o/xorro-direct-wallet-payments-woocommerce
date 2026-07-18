@@ -292,7 +292,7 @@ $active  = isset( $tabs[ $tab ] ) ? $tabs[ $tab ] : $tabs['general'];
 												echo wp_kses(
 													sprintf(
 														/* translators: %s: URL */
-														__( 'Fiat↔crypto rates. Free without a key. Get a key at %s', 'chain-checkout' ),
+														__( 'Fiat↔crypto rates. Free without a key. Demo keys (CG-…) use the public API; Pro keys use the Pro API. Get a key at %s', 'chain-checkout' ),
 														'<a href="https://www.coingecko.com/en/api" target="_blank" rel="noopener noreferrer">CoinGecko</a>'
 													),
 													array(

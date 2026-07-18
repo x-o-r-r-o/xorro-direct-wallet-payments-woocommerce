@@ -128,7 +128,10 @@ class Chain_Checkout_Prices {
 		}
 
 		$api_key = Chain_Checkout_Settings::get( 'coingecko_api_key', '' );
-		$base    = $api_key
+		// Free/Demo keys use api.coingecko.com + x-cg-demo-api-key.
+		// Paid Pro keys use pro-api.coingecko.com + x-cg-pro-api-key.
+		$is_pro  = $api_key && self::coingecko_key_is_pro( $api_key );
+		$base    = $is_pro
 			? 'https://pro-api.coingecko.com/api/v3/simple/price'
 			: 'https://api.coingecko.com/api/v3/simple/price';
 
@@ -149,7 +152,11 @@ class Chain_Checkout_Prices {
 			);
 
 			if ( $api_key ) {
-				$args['headers']['x-cg-pro-api-key'] = $api_key;
+				if ( $is_pro ) {
+					$args['headers']['x-cg-pro-api-key'] = $api_key;
+				} else {
+					$args['headers']['x-cg-demo-api-key'] = $api_key;
+				}
 			}
 
 			$response = wp_remote_get( $url, $args );
@@ -160,7 +167,34 @@ class Chain_Checkout_Prices {
 			$code = wp_remote_retrieve_response_code( $response );
 			$body = json_decode( wp_remote_retrieve_body( $response ), true );
 			if ( 200 !== (int) $code || ! is_array( $body ) ) {
-				continue;
+				// If Pro endpoint rejected the key, retry once as Demo on the free host.
+				if ( $api_key && $is_pro && in_array( (int) $code, array( 401, 403 ), true ) ) {
+					$retry_url = add_query_arg(
+						array(
+							'ids'           => implode( ',', $chunk ),
+							'vs_currencies' => $currency,
+						),
+						'https://api.coingecko.com/api/v3/simple/price'
+					);
+					$retry_args = array(
+						'timeout' => 15,
+						'headers' => array(
+							'Accept'            => 'application/json',
+							'x-cg-demo-api-key' => $api_key,
+						),
+					);
+					$response = wp_remote_get( $retry_url, $retry_args );
+					if ( is_wp_error( $response ) ) {
+						continue;
+					}
+					$code = wp_remote_retrieve_response_code( $response );
+					$body = json_decode( wp_remote_retrieve_body( $response ), true );
+					if ( 200 !== (int) $code || ! is_array( $body ) ) {
+						continue;
+					}
+				} else {
+					continue;
+				}
 			}
 
 			foreach ( $body as $id => $prices ) {
@@ -171,6 +205,26 @@ class Chain_Checkout_Prices {
 		}
 
 		set_transient( self::TRANSIENT_KEY, $cache, self::CACHE_TTL );
+	}
+
+	/**
+	 * Heuristic: CoinGecko Pro keys are typically longer; Demo keys often start with CG-.
+	 * Prefer Demo/free host unless the key clearly looks like a Pro subscription key.
+	 *
+	 * @param string $api_key API key.
+	 * @return bool
+	 */
+	private static function coingecko_key_is_pro( $api_key ) {
+		$api_key = trim( (string) $api_key );
+		if ( '' === $api_key ) {
+			return false;
+		}
+		// Official Demo keys are prefixed CG- and work on the public API.
+		if ( 0 === strpos( $api_key, 'CG-' ) ) {
+			return false;
+		}
+		// Longer non-CG keys are treated as Pro; shorter/unknown stay on Demo host.
+		return strlen( $api_key ) >= 32;
 	}
 
 	/**
