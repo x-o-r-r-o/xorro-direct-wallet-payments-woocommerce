@@ -28,11 +28,22 @@ class Chain_Checkout_Ajax {
 	 * Register frontend assets (enqueued on demand).
 	 */
 	public static function register_assets() {
+		$css_ver = CHAIN_CHECKOUT_VERSION;
+		$js_ver  = CHAIN_CHECKOUT_VERSION;
+		$css     = CHAIN_CHECKOUT_PATH . 'assets/css/frontend.css';
+		$js      = CHAIN_CHECKOUT_PATH . 'assets/js/frontend.js';
+		if ( is_readable( $css ) ) {
+			$css_ver = CHAIN_CHECKOUT_VERSION . '.' . (string) filemtime( $css );
+		}
+		if ( is_readable( $js ) ) {
+			$js_ver = CHAIN_CHECKOUT_VERSION . '.' . (string) filemtime( $js );
+		}
+
 		wp_register_style(
 			'chain-checkout-frontend',
 			CHAIN_CHECKOUT_URL . 'assets/css/frontend.css',
 			array(),
-			CHAIN_CHECKOUT_VERSION
+			$css_ver
 		);
 
 		wp_register_script(
@@ -47,7 +58,7 @@ class Chain_Checkout_Ajax {
 			'chain-checkout-frontend',
 			CHAIN_CHECKOUT_URL . 'assets/js/frontend.js',
 			array( 'chain-checkout-qrcode' ),
-			CHAIN_CHECKOUT_VERSION,
+			$js_ver,
 			true
 		);
 
@@ -73,11 +84,18 @@ class Chain_Checkout_Ajax {
 			return;
 		}
 
+		$ver = CHAIN_CHECKOUT_VERSION;
+		$css = CHAIN_CHECKOUT_PATH . 'assets/css/admin.css';
+		if ( is_readable( $css ) ) {
+			$ver = CHAIN_CHECKOUT_VERSION . '.' . (string) filemtime( $css );
+		}
+
+		wp_enqueue_style( 'dashicons' );
 		wp_enqueue_style(
 			'chain-checkout-admin',
 			CHAIN_CHECKOUT_URL . 'assets/css/admin.css',
-			array(),
-			CHAIN_CHECKOUT_VERSION
+			array( 'dashicons' ),
+			$ver
 		);
 
 		wp_enqueue_script(

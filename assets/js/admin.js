@@ -65,7 +65,7 @@
 	}
 
 	ready(function () {
-		var admin = document.querySelector('.chain-checkout-admin');
+		var admin = document.querySelector('.chain-checkout-admin, .chain-checkout-options-wrap');
 		if (admin) {
 			admin.classList.add('chain-checkout-admin--ready');
 		}

@@ -211,6 +211,34 @@ class Chain_Checkout_Order {
 
 		$uri = Chain_Checkout_Coins::payment_uri( $coin_id, $address, $amount );
 
+		// Ensure handles exist even if wp_enqueue_scripts already ran.
+		if ( ! wp_style_is( 'chain-checkout-frontend', 'registered' ) ) {
+			wp_register_style(
+				'chain-checkout-frontend',
+				CHAIN_CHECKOUT_URL . 'assets/css/frontend.css',
+				array(),
+				CHAIN_CHECKOUT_VERSION
+			);
+		}
+		if ( ! wp_script_is( 'chain-checkout-qrcode', 'registered' ) ) {
+			wp_register_script(
+				'chain-checkout-qrcode',
+				CHAIN_CHECKOUT_URL . 'assets/js/qrcode.min.js',
+				array(),
+				'1.0.0',
+				true
+			);
+		}
+		if ( ! wp_script_is( 'chain-checkout-frontend', 'registered' ) ) {
+			wp_register_script(
+				'chain-checkout-frontend',
+				CHAIN_CHECKOUT_URL . 'assets/js/frontend.js',
+				array( 'chain-checkout-qrcode' ),
+				CHAIN_CHECKOUT_VERSION,
+				true
+			);
+		}
+
 		wp_enqueue_style( 'chain-checkout-frontend' );
 		wp_enqueue_script( 'chain-checkout-qrcode' );
 		wp_enqueue_script( 'chain-checkout-frontend' );

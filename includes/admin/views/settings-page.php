@@ -46,7 +46,7 @@ $enabled = isset( $settings['enabled_coins'] ) && is_array( $settings['enabled_c
 $wallets = isset( $settings['wallets'] ) && is_array( $settings['wallets'] ) ? $settings['wallets'] : array();
 $active  = isset( $tabs[ $tab ] ) ? $tabs[ $tab ] : $tabs['general'];
 ?>
-<div class="wrap">
+<div class="wrap chain-checkout-admin">
 	<div class="chain-checkout-options-wrap">
 		<div class="cc-header">
 			<div class="cc-header-title">
@@ -254,7 +254,9 @@ $active  = isset( $tabs[ $tab ] ) ? $tabs[ $tab ] : $tabs['general'];
 														<td>
 															<span class="cc-coin-cell">
 																<?php if ( ! empty( $icons['icon'] ) ) : ?>
-																	<span class="cc-coin-cell__icon" style="background-image:url('<?php echo esc_url( $icons['icon'] ); ?>')" aria-hidden="true"></span>
+																	<span class="cc-coin-cell__icon" aria-hidden="true">
+																		<img src="<?php echo esc_url( $icons['icon'] ); ?>" alt="" width="22" height="22" decoding="async" style="width:22px;height:22px;max-width:22px;max-height:22px;object-fit:contain;display:block;" />
+																	</span>
 																<?php endif; ?>
 																<span>
 																	<strong><?php echo esc_html( $coin['symbol'] ); ?></strong>

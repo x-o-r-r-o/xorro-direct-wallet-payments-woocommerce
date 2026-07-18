@@ -213,32 +213,43 @@ class Chain_Checkout_Admin {
 			return;
 		}
 
+		// Assets are enqueued on admin_enqueue_scripts; print late if that missed.
+		if ( ! wp_style_is( 'chain-checkout-admin', 'enqueued' ) ) {
+			$ver = CHAIN_CHECKOUT_VERSION;
+			$css = CHAIN_CHECKOUT_PATH . 'assets/css/admin.css';
+			if ( is_readable( $css ) ) {
+				$ver = CHAIN_CHECKOUT_VERSION . '.' . (string) filemtime( $css );
+			}
+			wp_enqueue_style( 'dashicons' );
+			wp_enqueue_style(
+				'chain-checkout-admin',
+				CHAIN_CHECKOUT_URL . 'assets/css/admin.css',
+				array( 'dashicons' ),
+				$ver
+			);
+		}
+		if ( ! wp_script_is( 'chain-checkout-admin', 'enqueued' ) ) {
+			wp_enqueue_script(
+				'chain-checkout-admin',
+				CHAIN_CHECKOUT_URL . 'assets/js/admin.js',
+				array( 'jquery' ),
+				CHAIN_CHECKOUT_VERSION,
+				true
+			);
+			wp_localize_script(
+				'chain-checkout-admin',
+				'chainCheckoutAdmin',
+				array(
+					'defaultIcon'      => class_exists( 'Chain_Checkout_Branding' ) ? Chain_Checkout_Branding::default_icon_url() : '',
+					'mediaTitle'       => __( 'Select checkout icon', 'chain-checkout' ),
+					'mediaButton'      => __( 'Use this icon', 'chain-checkout' ),
+					'mediaUnavailable' => __( 'Media library is not available.', 'chain-checkout' ),
+				)
+			);
+		}
 		wp_enqueue_media();
-		wp_enqueue_style(
-			'chain-checkout-admin',
-			CHAIN_CHECKOUT_URL . 'assets/css/admin.css',
-			array(),
-			CHAIN_CHECKOUT_VERSION
-		);
-		wp_enqueue_script(
-			'chain-checkout-admin',
-			CHAIN_CHECKOUT_URL . 'assets/js/admin.js',
-			array( 'jquery' ),
-			CHAIN_CHECKOUT_VERSION,
-			true
-		);
-		wp_localize_script(
-			'chain-checkout-admin',
-			'chainCheckoutAdmin',
-			array(
-				'defaultIcon'      => class_exists( 'Chain_Checkout_Branding' ) ? Chain_Checkout_Branding::default_icon_url() : '',
-				'mediaTitle'       => __( 'Select checkout icon', 'chain-checkout' ),
-				'mediaButton'      => __( 'Use this icon', 'chain-checkout' ),
-				'mediaUnavailable' => __( 'Media library is not available.', 'chain-checkout' ),
-			)
-		);
-		// Page callback runs after admin_print_styles — print CSS immediately if needed.
-		if ( did_action( 'admin_print_styles' ) ) {
+
+		if ( did_action( 'admin_print_styles' ) && wp_style_is( 'chain-checkout-admin', 'enqueued' ) ) {
 			wp_print_styles( 'chain-checkout-admin' );
 		}
 

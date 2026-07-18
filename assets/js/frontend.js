@@ -8,36 +8,11 @@
 	var data = chainCheckoutData;
 	var timerEl = document.getElementById('chain-checkout-timer');
 	var statusEl = document.getElementById('chain-checkout-status-text');
-	var statusBar = document.getElementById('chain-checkout-status-bar');
 	var box = document.getElementById('chain-checkout-box');
 	var pollTimer = null;
 
 	function pad(n) {
 		return n < 10 ? '0' + n : String(n);
-	}
-
-	function formatLeft(left) {
-		if (left < 0) {
-			left = 0;
-		}
-		var h = Math.floor(left / 3600);
-		var m = Math.floor((left % 3600) / 60);
-		var s = left % 60;
-		return pad(h) + ':' + pad(m) + ':' + pad(s);
-	}
-
-	function setBarState(state) {
-		if (!statusBar) {
-			return;
-		}
-		statusBar.classList.remove(
-			'chain-checkout-paybox__bottombar--checking',
-			'chain-checkout-paybox__bottombar--success',
-			'chain-checkout-paybox__bottombar--failed'
-		);
-		if (state) {
-			statusBar.classList.add('chain-checkout-paybox__bottombar--' + state);
-		}
 	}
 
 	function updateTimer() {
@@ -46,11 +21,10 @@
 		}
 		var left = data.expires - Math.floor(Date.now() / 1000);
 		if (left <= 0) {
-			timerEl.textContent = '00:00:00';
+			timerEl.textContent = data.i18n.expired;
 			if (statusEl) {
 				statusEl.textContent = data.i18n.expired;
 			}
-			setBarState('failed');
 			if (pollTimer) {
 				clearInterval(pollTimer);
 				pollTimer = null;
@@ -58,89 +32,102 @@
 			data.status = 'expired';
 			return;
 		}
-		timerEl.textContent = formatLeft(left);
+		var m = Math.floor(left / 60);
+		var s = left % 60;
+		timerEl.textContent = pad(m) + ':' + pad(s);
 	}
 
-	function copyText(selector) {
-		var el = document.querySelector(selector);
-		if (!el) {
-			return;
+	function fallbackCopy(text) {
+		var ta = document.createElement('textarea');
+		ta.value = text;
+		ta.setAttribute('readonly', '');
+		ta.style.position = 'fixed';
+		ta.style.top = '0';
+		ta.style.left = '0';
+		ta.style.width = '1px';
+		ta.style.height = '1px';
+		ta.style.padding = '0';
+		ta.style.border = 'none';
+		ta.style.outline = 'none';
+		ta.style.boxShadow = 'none';
+		ta.style.background = 'transparent';
+		ta.style.opacity = '0';
+		document.body.appendChild(ta);
+		ta.focus();
+		ta.select();
+		ta.setSelectionRange(0, text.length);
+		var ok = false;
+		try {
+			ok = document.execCommand('copy');
+		} catch (e) {
+			ok = false;
 		}
-		copyRaw(el.textContent.trim());
+		document.body.removeChild(ta);
+		return ok;
 	}
 
 	function copyRaw(text) {
+		text = String(text || '').trim();
 		if (!text) {
-			return;
+			return Promise.resolve(false);
 		}
-		if (navigator.clipboard && navigator.clipboard.writeText) {
-			navigator.clipboard.writeText(text);
-			return;
+		if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+			return navigator.clipboard.writeText(text).then(
+				function () {
+					return true;
+				},
+				function () {
+					return fallbackCopy(text);
+				}
+			);
 		}
-		var ta = document.createElement('textarea');
-		ta.value = text;
-		document.body.appendChild(ta);
-		ta.select();
-		try {
-			document.execCommand('copy');
-		} catch (e) {
-			/* ignore */
+		return Promise.resolve(fallbackCopy(text));
+	}
+
+	function markCopied(btn) {
+		var original = btn.getAttribute('data-label') || btn.textContent;
+		btn.setAttribute('data-label', original);
+		btn.textContent = (data.i18n && data.i18n.copied) || 'Copied!';
+		btn.classList.add('is-copied');
+		btn.setAttribute('aria-live', 'polite');
+		window.setTimeout(function () {
+			btn.textContent = original;
+			btn.classList.remove('is-copied');
+		}, 1500);
+	}
+
+	function resolveCopyText(btn) {
+		var raw = btn.getAttribute('data-copy-text');
+		if (raw !== null && String(raw).length) {
+			return String(raw);
 		}
-		document.body.removeChild(ta);
+		var selector = btn.getAttribute('data-copy');
+		if (selector) {
+			var el = document.querySelector(selector);
+			if (el) {
+				return String(el.textContent || '').trim();
+			}
+		}
+		if (btn.id === 'chain-checkout-copy-amount') {
+			return data.amount || '';
+		}
+		if (btn.id === 'chain-checkout-copy-address') {
+			return data.address || '';
+		}
+		return data.qrValue || data.address || data.amount || '';
 	}
 
 	document.querySelectorAll('.chain-checkout-copy').forEach(function (btn) {
-		btn.addEventListener('click', function () {
-			var raw = btn.getAttribute('data-copy-text');
-			if (raw) {
-				copyRaw(raw);
-			} else {
-				copyText(btn.getAttribute('data-copy'));
-			}
-			var label = btn.getAttribute('aria-label');
-			if (btn.classList.contains('chain-checkout-paybox__link') || btn.textContent.trim()) {
-				var original = btn.textContent;
-				if (original) {
-					btn.textContent = data.i18n.copied;
-					setTimeout(function () {
-						btn.textContent = original;
-					}, 1500);
+		btn.addEventListener('click', function (e) {
+			e.preventDefault();
+			e.stopPropagation();
+			copyRaw(resolveCopyText(btn)).then(function (ok) {
+				if (ok) {
+					markCopied(btn);
 				}
-			} else if (label) {
-				btn.setAttribute('aria-label', data.i18n.copied);
-				setTimeout(function () {
-					btn.setAttribute('aria-label', label);
-				}, 1500);
-			}
+			});
 		});
 	});
-
-	function bindHelp() {
-		var toggle = document.getElementById('chain-checkout-help-toggle');
-		var panel = document.getElementById('chain-checkout-instructions');
-		var closeBtn = document.getElementById('chain-checkout-help-close');
-		if (!toggle || !panel) {
-			return;
-		}
-		function open() {
-			panel.hidden = false;
-			toggle.setAttribute('aria-expanded', 'true');
-		}
-		function close() {
-			panel.hidden = true;
-			toggle.setAttribute('aria-expanded', 'false');
-		}
-		toggle.addEventListener('click', function () {
-			if (panel.hidden) {
-				open();
-			} else {
-				close();
-			}
-		});
-		if (closeBtn) {
-			closeBtn.addEventListener('click', close);
-		}
-	}
 
 	function renderQr() {
 		var host = document.getElementById('chain-checkout-qrcode');
@@ -164,7 +151,7 @@
 
 		try {
 			var len = payload.length;
-			var size = len > 160 ? 220 : len > 100 ? 180 : 140;
+			var size = len > 160 ? 240 : len > 100 ? 200 : 180;
 			var level = len > 160 ? QRCode.CorrectLevel.L : QRCode.CorrectLevel.M;
 			new QRCode(host, {
 				text: payload,
@@ -179,8 +166,8 @@
 			try {
 				new QRCode(host, {
 					text: data.address || payload,
-					width: 140,
-					height: 140,
+					width: 180,
+					height: 180,
 					correctLevel: QRCode.CorrectLevel.L
 				});
 			} catch (err2) {
@@ -196,7 +183,6 @@
 		if (statusEl) {
 			statusEl.textContent = data.i18n.checking;
 		}
-		setBarState('checking');
 
 		var body = new FormData();
 		body.append('action', 'chain_checkout_status');
@@ -230,7 +216,6 @@
 					if (statusEl) {
 						statusEl.textContent = data.i18n.paid;
 					}
-					setBarState('success');
 					if (pollTimer) {
 						clearInterval(pollTimer);
 					}
@@ -243,7 +228,6 @@
 					if (statusEl) {
 						statusEl.textContent = data.i18n.expired;
 					}
-					setBarState('failed');
 					if (pollTimer) {
 						clearInterval(pollTimer);
 					}
@@ -260,7 +244,6 @@
 			});
 	}
 
-	bindHelp();
 	renderQr();
 	updateTimer();
 	window.setInterval(updateTimer, 1000);
@@ -271,9 +254,5 @@
 		}
 		pollTimer = window.setInterval(pollStatus, 20000);
 		window.setTimeout(pollStatus, 5000);
-	} else if (data.status === 'paid') {
-		setBarState('success');
-	} else if (data.status === 'expired') {
-		setBarState('failed');
 	}
 })();

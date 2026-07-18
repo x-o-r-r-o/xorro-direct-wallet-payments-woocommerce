@@ -154,19 +154,15 @@
 				{ className: 'chain-checkout-coin-grid' },
 				coins.map(function (c) {
 					var classes = 'chain-checkout-coin-option';
-					var style = {};
-					if (c.icon) {
-						style.backgroundImage = 'url(' + c.icon + ')';
-						if (c.badge) {
-							classes += ' chain-checkout-coin-option--stable';
-							style['--cc-badge'] = 'url(' + c.badge + ')';
-						}
-					} else {
-						classes += ' chain-checkout-coin-option--text';
-					}
 					if (coin === c.id) {
 						classes += ' is-selected';
 					}
+					if (!c.icon) {
+						classes += ' chain-checkout-coin-option--text';
+					} else if (c.badge) {
+						classes += ' chain-checkout-coin-option--stable';
+					}
+
 					var children = [
 						createElement('input', {
 							type: 'radio',
@@ -183,7 +179,53 @@
 							c.name
 						)
 					];
-					if (!c.icon) {
+
+					if (c.icon) {
+						children.push(
+							createElement(
+								'span',
+								{ className: 'chain-checkout-coin-option__icon', 'aria-hidden': 'true' },
+								createElement('img', {
+									src: c.icon,
+									alt: '',
+									width: 28,
+									height: 28,
+									decoding: 'async',
+									style: {
+										width: '28px',
+										height: '28px',
+										maxWidth: '28px',
+										maxHeight: '28px',
+										objectFit: 'contain',
+										display: 'block'
+									}
+								})
+							)
+						);
+						if (c.badge) {
+							children.push(
+								createElement(
+									'span',
+									{ className: 'chain-checkout-coin-option__badge', 'aria-hidden': 'true' },
+									createElement('img', {
+										src: c.badge,
+										alt: '',
+										width: 14,
+										height: 14,
+										decoding: 'async',
+										style: {
+											width: '14px',
+											height: '14px',
+											maxWidth: '14px',
+											maxHeight: '14px',
+											objectFit: 'contain',
+											display: 'block'
+										}
+									})
+								)
+							);
+						}
+					} else {
 						children.push(
 							createElement(
 								'span',
@@ -192,12 +234,12 @@
 							)
 						);
 					}
+
 					return createElement(
 						'label',
 						{
 							key: c.id,
 							className: classes,
-							style: style,
 							title: c.name
 						},
 						children

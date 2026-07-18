@@ -4,7 +4,7 @@ Tags: woocommerce, cryptocurrency, bitcoin, ethereum, payments, usdt, crypto che
 Requires at least: 6.9
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.4.0
+Stable tag: 1.4.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -165,6 +165,11 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 
 == Changelog ==
 
+= 1.4.1 =
+* Fixed checkout coin icons tiling at huge size (switched to sized img tags + critical inline CSS)
+* Fixed admin settings shell styles not applying reliably (early enqueue, dashicons, stronger selectors)
+* Reverted payment details page to the classic layout (Cryptoniq paybox removed)
+
 = 1.4.0 =
 * Author set to xorro; reliability fixes for QR payment page expiry, CoinGecko Demo/Pro keys, Polygon (POL) price ID
 * EVM verify skips without Etherscan key; Solana skips failed txs; Cosmos LCD base64 attributes supported
@@ -227,6 +232,9 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.4.1 =
+Fixes oversized/repeating coin icons at checkout, admin settings styling, and restores classic payment details page.
 
 = 1.4.0 =
 Payment reliability and API fixes. Add an Etherscan V2 API key for EVM auto-verify. Author is xorro.

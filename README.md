@@ -73,6 +73,11 @@ php tests/smoke-test.php
 
 See [readme.txt](readme.txt).
 
+### 1.4.1
+
+- Fixed checkout coin icons (no more huge tiling backgrounds); admin settings CSS loads reliably
+- Restored classic payment details page (removed Cryptoniq paybox)
+
 ### 1.4.0
 
 - Author: xorro; payment expiry, CoinGecko Demo/Pro, Polygon POL price ID, EVM/Solana/Cosmos verify fixes, packaging

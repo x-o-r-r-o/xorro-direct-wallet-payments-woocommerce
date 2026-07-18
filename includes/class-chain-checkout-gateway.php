@@ -124,35 +124,19 @@ class Chain_Checkout_Gateway extends WC_Payment_Gateway {
 	 * Checkout assets when gateway is available.
 	 */
 	public function enqueue_checkout_assets() {
-		if ( ! is_checkout() || ! $this->is_available() ) {
+		if ( is_admin() || ! $this->should_load_checkout_assets() ) {
 			return;
 		}
 
-		if ( ! wp_style_is( 'chain-checkout-frontend', 'registered' ) ) {
-			wp_register_style(
-				'chain-checkout-frontend',
-				CHAIN_CHECKOUT_URL . 'assets/css/frontend.css',
-				array(),
-				CHAIN_CHECKOUT_VERSION
-			);
-		}
-		if ( ! wp_script_is( 'chain-checkout-checkout', 'registered' ) ) {
-			wp_register_script(
-				'chain-checkout-checkout',
-				CHAIN_CHECKOUT_URL . 'assets/js/checkout.js',
-				array( 'jquery' ),
-				CHAIN_CHECKOUT_VERSION,
-				true
-			);
-		}
-
+		$this->register_checkout_assets();
 		wp_enqueue_style( 'chain-checkout-frontend' );
 		wp_enqueue_script( 'chain-checkout-checkout' );
 
 		$branding = Chain_Checkout_Branding::frontend_data();
 		$css      = sprintf(
 			'.payment_method_%1$s img.chain-checkout-gateway-icon,.wc-block-components-radio-control-accordion-option[id*="chain_checkout"] img.chain-checkout-gateway-icon{width:%2$dpx!important;height:%3$dpx!important;max-width:%2$dpx!important;max-height:%3$dpx!important;object-fit:contain;}' .
-			'.payment_method_%1$s label img:not(.chain-checkout-gateway-icon){max-width:%2$dpx;max-height:%3$dpx;width:auto;height:auto;object-fit:contain;vertical-align:middle;}',
+			'.payment_method_%1$s .chain-checkout-coin-option__icon img,.payment_method_%1$s .chain-checkout-coin-option__badge img,.chain-checkout-blocks .chain-checkout-coin-option__icon img,.chain-checkout-blocks .chain-checkout-coin-option__badge img{max-width:none!important;width:28px!important;height:28px!important;object-fit:contain!important;}' .
+			'.payment_method_%1$s .chain-checkout-coin-option__badge img,.chain-checkout-blocks .chain-checkout-coin-option__badge img{width:14px!important;height:14px!important;}',
 			esc_attr( $this->id ),
 			(int) $branding['iconWidth'],
 			(int) $branding['iconHeight']
@@ -168,6 +152,81 @@ class Chain_Checkout_Gateway extends WC_Payment_Gateway {
 				'gateway' => $this->id,
 			)
 		);
+	}
+
+	/**
+	 * Whether checkout CSS/JS should load on this request.
+	 *
+	 * @return bool
+	 */
+	private function should_load_checkout_assets() {
+		if ( is_checkout() || is_wc_endpoint_url( 'order-pay' ) ) {
+			return true;
+		}
+
+		if ( function_exists( 'has_block' ) && has_block( 'woocommerce/checkout' ) ) {
+			return true;
+		}
+
+		global $post;
+		if ( $post instanceof WP_Post && function_exists( 'has_shortcode' ) && has_shortcode( (string) $post->post_content, 'woocommerce_checkout' ) ) {
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
+	 * Register checkout style/script handles.
+	 */
+	private function register_checkout_assets() {
+		$ver = CHAIN_CHECKOUT_VERSION;
+		$css = CHAIN_CHECKOUT_PATH . 'assets/css/frontend.css';
+		if ( is_readable( $css ) ) {
+			$ver = CHAIN_CHECKOUT_VERSION . '.' . (string) filemtime( $css );
+		}
+
+		if ( ! wp_style_is( 'chain-checkout-frontend', 'registered' ) ) {
+			wp_register_style(
+				'chain-checkout-frontend',
+				CHAIN_CHECKOUT_URL . 'assets/css/frontend.css',
+				array(),
+				$ver
+			);
+		}
+		if ( ! wp_script_is( 'chain-checkout-checkout', 'registered' ) ) {
+			wp_register_script(
+				'chain-checkout-checkout',
+				CHAIN_CHECKOUT_URL . 'assets/js/checkout.js',
+				array( 'jquery' ),
+				CHAIN_CHECKOUT_VERSION,
+				true
+			);
+		}
+	}
+
+	/**
+	 * Critical coin-picker CSS — works even if the stylesheet fails to load.
+	 */
+	private function print_critical_coin_css() {
+		static $printed = false;
+		if ( $printed ) {
+			return;
+		}
+		$printed = true;
+		echo '<style id="chain-checkout-coin-critical">'
+			. '.chain-checkout-coin-grid{display:flex;flex-wrap:wrap;margin:-5px;}'
+			. '.chain-checkout-coin-option{position:relative;display:flex;align-items:center;justify-content:center;box-sizing:border-box;width:48px;height:54px;margin:5px;padding:0;cursor:pointer;border:1px solid #ddd;border-radius:5px;background:#f7f7f7;overflow:hidden;}'
+			. '.chain-checkout-coin-option input{position:absolute;opacity:0;width:0;height:0;margin:0;padding:0;appearance:none;}'
+			. '.chain-checkout-coin-option:hover,.chain-checkout-coin-option:has(input:checked),.chain-checkout-coin-option.is-selected{border-color:#000;}'
+			. '.chain-checkout-coin-option__icon{display:flex;align-items:center;justify-content:center;width:100%;height:100%;pointer-events:none;}'
+			. '.chain-checkout-coin-option__icon img{width:28px!important;height:28px!important;max-width:28px!important;max-height:28px!important;object-fit:contain!important;display:block;}'
+			. '.chain-checkout-coin-option__badge{position:absolute;top:-1px;right:-1px;width:22px;height:22px;display:flex;align-items:center;justify-content:center;background:#fff;border:1px solid #ddd;border-radius:5px 0 5px 0;pointer-events:none;}'
+			. '.chain-checkout-coin-option__badge img{width:14px!important;height:14px!important;object-fit:contain!important;display:block;}'
+			. '.chain-checkout-coin-option__sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0;}'
+			. '.chain-checkout-coin-option--text{width:auto;min-width:48px;height:auto;min-height:54px;padding:8px 10px;}'
+			. '.chain-checkout-coin-option__text{font-size:11px;font-weight:700;line-height:1.2;color:#111;}'
+			. '</style>';
 	}
 
 	/**
@@ -219,6 +278,13 @@ class Chain_Checkout_Gateway extends WC_Payment_Gateway {
 	 * Coin picker fields on checkout.
 	 */
 	public function payment_fields() {
+		// Ensure styles even on custom checkout pages where is_checkout() is false.
+		$this->register_checkout_assets();
+		if ( ! wp_style_is( 'chain-checkout-frontend', 'enqueued' ) ) {
+			wp_enqueue_style( 'chain-checkout-frontend' );
+		}
+		$this->print_critical_coin_css();
+
 		if ( $this->description ) {
 			echo '<p class="chain-checkout-desc">' . wp_kses_post( wpautop( $this->description ) ) . '</p>';
 		}
@@ -245,14 +311,19 @@ class Chain_Checkout_Gateway extends WC_Payment_Gateway {
 			$first   = false;
 			$icons   = Chain_Checkout_Coins::icon_meta( $id );
 			$classes = array( 'chain-checkout-coin-option' );
-			$style   = '';
 			$inner   = '<span class="chain-checkout-coin-option__sr">' . esc_html( $coin['name'] ) . '</span>';
 
 			if ( ! empty( $icons['icon'] ) ) {
-				$style = 'background-image:url(' . esc_url( $icons['icon'] ) . ')';
+				$inner .= sprintf(
+					'<span class="chain-checkout-coin-option__icon" aria-hidden="true"><img src="%1$s" alt="" width="28" height="28" decoding="async" style="width:28px;height:28px;max-width:28px;max-height:28px;object-fit:contain;display:block;" /></span>',
+					esc_url( $icons['icon'] )
+				);
 				if ( ! empty( $icons['badge'] ) ) {
 					$classes[] = 'chain-checkout-coin-option--stable';
-					$style    .= ';--cc-badge:url(' . esc_url( $icons['badge'] ) . ')';
+					$inner    .= sprintf(
+						'<span class="chain-checkout-coin-option__badge" aria-hidden="true"><img src="%1$s" alt="" width="14" height="14" decoding="async" style="width:14px;height:14px;max-width:14px;max-height:14px;object-fit:contain;display:block;" /></span>',
+						esc_url( $icons['badge'] )
+					);
 				}
 			} else {
 				$classes[] = 'chain-checkout-coin-option--text';
@@ -260,9 +331,8 @@ class Chain_Checkout_Gateway extends WC_Payment_Gateway {
 			}
 
 			printf(
-				'<label class="%1$s" style="%2$s" title="%3$s"><input type="radio" name="chain_checkout_coin" value="%4$s" %5$s />%6$s</label>',
+				'<label class="%1$s" title="%2$s"><input type="radio" name="chain_checkout_coin" value="%3$s" %4$s />%5$s</label>',
 				esc_attr( implode( ' ', $classes ) ),
-				esc_attr( $style ),
 				esc_attr( $coin['name'] ),
 				esc_attr( $id ),
 				checked( $checked, true, false ),

@@ -111,7 +111,7 @@ chain_checkout_assert( false === strpos( $verifier, 'api.bscscan.com' ), 'legacy
 
 // --- Headers ---
 $main = file_get_contents( $root . '/chain-checkout.php' );
-chain_checkout_assert( false !== strpos( $main, 'Version:           1.4.0' ), 'plugin version 1.4.0' );
+chain_checkout_assert( false !== strpos( $main, 'Version:           1.4.1' ), 'plugin version 1.4.1' );
 chain_checkout_assert( false !== strpos( $main, 'Author:            xorro' ), 'author is xorro' );
 chain_checkout_assert( false !== strpos( $main, 'Author URI:        https://github.com/x-o-r-r-o' ), 'author URI is GitHub' );
 chain_checkout_assert( false === strpos( $main, 'Author URI:        https://wordpress.org/plugins/chain-checkout' ), 'author URI not same as plugin URI' );
@@ -132,7 +132,15 @@ chain_checkout_assert( false !== strpos( $gateway, 'filter_gateway_title' ), 'ga
 
 $frontend_css = file_get_contents( $root . '/assets/css/frontend.css' );
 chain_checkout_assert( false !== strpos( $frontend_css, 'chain-checkout-gateway-icon' ), 'frontend icon CSS' );
-chain_checkout_assert( false !== strpos( $frontend_css, 'chain-checkout-paybox' ), 'cryptoniq-style paybox CSS' );
+chain_checkout_assert( false !== strpos( $frontend_css, 'chain-checkout-box' ), 'classic payment box CSS' );
+chain_checkout_assert( false !== strpos( $frontend_css, 'chain-checkout-coin-option__icon' ), 'coin option img icon CSS' );
+chain_checkout_assert( false === strpos( $frontend_css, 'chain-checkout-paybox' ), 'cryptoniq paybox CSS removed' );
+$payment_tpl = file_get_contents( $root . '/templates/payment.php' );
+chain_checkout_assert( false !== strpos( $payment_tpl, 'chain-checkout-box' ), 'payment template uses classic box' );
+chain_checkout_assert( false === strpos( $payment_tpl, 'chain-checkout-paybox' ), 'payment template has no paybox markup' );
+$frontend_js = file_get_contents( $root . '/assets/js/frontend.js' );
+chain_checkout_assert( false !== strpos( $frontend_js, 'chain-checkout-timer' ), 'frontend timer hook' );
+chain_checkout_assert( false === strpos( $frontend_js, 'paybox' ), 'frontend JS has no paybox refs' );
 $admin_css = file_get_contents( $root . '/assets/css/admin.css' );
 chain_checkout_assert( false !== strpos( $admin_css, 'chain-checkout-options-wrap' ), 'cryptoniq-style admin shell CSS' );
 chain_checkout_assert( false !== strpos( $admin_css, 'cc-header' ), 'admin header class' );
@@ -153,11 +161,11 @@ chain_checkout_assert( false !== strpos( $readme_md, 'Checkout branding' ), 'REA
 
 $readme = file_get_contents( $root . '/readme.txt' );
 chain_checkout_assert( false !== strpos( $readme, 'Tested up to: 7.0' ), 'readme Tested up to WP 7.0' );
-chain_checkout_assert( false !== strpos( $readme, 'Stable tag: 1.4.0' ), 'readme stable 1.4.0' );
+chain_checkout_assert( false !== strpos( $readme, 'Stable tag: 1.4.1' ), 'readme stable 1.4.1' );
 
 $readme = file_get_contents( $root . '/readme.txt' );
 chain_checkout_assert( false !== strpos( $readme, '== External services ==' ), 'readme external services section' );
-chain_checkout_assert( false !== strpos( $readme, 'Cryptoniq-style' ), 'readme 1.4.0 cryptoniq theme note' );
+chain_checkout_assert( false !== strpos( $readme, '1.4.1' ), 'readme 1.4.1 changelog' );
 $privacy = file_get_contents( $root . '/includes/class-chain-checkout-privacy.php' );
 chain_checkout_assert( false !== strpos( $privacy, 'wp_add_privacy_policy_content' ), 'privacy policy content registered' );
 chain_checkout_assert( is_file( $root . '/assets/js/qrcode.LICENSE.txt' ), 'qrcode license attribution' );
