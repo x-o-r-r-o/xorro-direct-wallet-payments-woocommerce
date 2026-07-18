@@ -4,7 +4,7 @@ Tags: woocommerce, cryptocurrency, bitcoin, ethereum, payments, usdt, crypto che
 Requires at least: 6.9
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.4.1
+Stable tag: 1.4.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -165,6 +165,10 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 
 == Changelog ==
 
+= 1.4.2 =
+* Fixed payment details Copy buttons (inline bootstrap + selection copy + capture-phase handlers)
+* Forced admin settings CSS to load via admin_head link + inline stylesheet so the shell always styles
+
 = 1.4.1 =
 * Fixed checkout coin icons tiling at huge size (switched to sized img tags + critical inline CSS)
 * Fixed admin settings shell styles not applying reliably (early enqueue, dashicons, stronger selectors)
@@ -232,6 +236,9 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.4.2 =
+Fixes payment Copy buttons and admin settings styling. Reinstall/replace the plugin ZIP if styles or copy still look cached.
 
 = 1.4.1 =
 Fixes oversized/repeating coin icons at checkout, admin settings styling, and restores classic payment details page.

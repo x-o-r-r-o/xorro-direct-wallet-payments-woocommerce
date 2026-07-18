@@ -73,6 +73,11 @@ php tests/smoke-test.php
 
 See [readme.txt](readme.txt).
 
+### 1.4.2
+
+- Payment Copy buttons fixed (works even if main JS is delayed)
+- Admin settings CSS forced via admin_head + inline styles
+
 ### 1.4.1
 
 - Fixed checkout coin icons (no more huge tiling backgrounds); admin settings CSS loads reliably

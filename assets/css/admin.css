@@ -24,26 +24,85 @@
 }
 
 /* Beat WP admin resets that flatten plugin shell layout. */
+body.chain-checkout-admin-page #wpbody-content .chain-checkout-options-wrap,
+#wpbody-content .chain-checkout-options-wrap {
+	max-width: 1100px !important;
+}
+
+body.chain-checkout-admin-page #wpbody-content .chain-checkout-options-wrap .cc-layout,
 #wpbody-content .chain-checkout-options-wrap .cc-layout {
 	display: flex !important;
+	flex-direction: row !important;
+	align-items: stretch !important;
+	background: #fff !important;
+	border: 1px solid #dcdcde !important;
+	border-top: 0 !important;
+	min-height: 640px !important;
 }
 
+body.chain-checkout-admin-page #wpbody-content .chain-checkout-options-wrap .cc-header,
 #wpbody-content .chain-checkout-options-wrap .cc-header {
 	display: flex !important;
-	background: var(--cc-header) !important;
+	align-items: center !important;
+	justify-content: space-between !important;
+	background: #1d2733 !important;
 	color: #fff !important;
+	padding: 18px 24px !important;
+	border-radius: 5px 5px 0 0 !important;
 }
 
+body.chain-checkout-admin-page #wpbody-content .chain-checkout-options-wrap .cc-tabs,
 #wpbody-content .chain-checkout-options-wrap .cc-tabs {
-	background: var(--cc-sidebar) !important;
+	display: block !important;
+	width: 200px !important;
+	flex: 0 0 200px !important;
+	background: #2c3a4a !important;
+	padding: 15px 0 !important;
+	border-right: 1px solid #1d2733 !important;
 }
 
+body.chain-checkout-admin-page #wpbody-content .chain-checkout-options-wrap .cc-tab,
+#wpbody-content .chain-checkout-options-wrap .cc-tab {
+	display: flex !important;
+	align-items: center !important;
+	gap: 10px !important;
+	padding: 10px 12px !important;
+	color: #c5d1de !important;
+	text-decoration: none !important;
+	font-size: 12px !important;
+	font-weight: 700 !important;
+	border-left: 3px solid transparent !important;
+	box-shadow: none !important;
+}
+
+body.chain-checkout-admin-page #wpbody-content .chain-checkout-options-wrap .cc-tab.is-active,
+#wpbody-content .chain-checkout-options-wrap .cc-tab.is-active {
+	background: #1d2733 !important;
+	color: #fff !important;
+	border-left-color: #2271b1 !important;
+}
+
+body.chain-checkout-admin-page #wpbody-content .chain-checkout-options-wrap .cc-panels,
+#wpbody-content .chain-checkout-options-wrap .cc-panels {
+	flex: 1 1 auto !important;
+	min-width: 0 !important;
+	background: #fff !important;
+}
+
+body.chain-checkout-admin-page #wpbody-content .chain-checkout-options-wrap .cc-header h1,
 #wpbody-content .chain-checkout-options-wrap .cc-header h1 {
 	color: #fff !important;
 	margin: 0 !important;
 	padding: 0 !important;
 	font-size: 16px !important;
 	line-height: 28px !important;
+	font-weight: 700 !important;
+	text-transform: uppercase !important;
+}
+
+body.chain-checkout-admin-page #wpbody-content > .wrap > h1,
+body.chain-checkout-admin-page #wpbody-content > .wrap > h1.wp-heading-inline {
+	display: none !important;
 }
 
 .chain-checkout-options-wrap *,

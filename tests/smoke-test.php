@@ -111,7 +111,7 @@ chain_checkout_assert( false === strpos( $verifier, 'api.bscscan.com' ), 'legacy
 
 // --- Headers ---
 $main = file_get_contents( $root . '/chain-checkout.php' );
-chain_checkout_assert( false !== strpos( $main, 'Version:           1.4.1' ), 'plugin version 1.4.1' );
+chain_checkout_assert( false !== strpos( $main, 'Version:           1.4.2' ), 'plugin version 1.4.2' );
 chain_checkout_assert( false !== strpos( $main, 'Author:            xorro' ), 'author is xorro' );
 chain_checkout_assert( false !== strpos( $main, 'Author URI:        https://github.com/x-o-r-r-o' ), 'author URI is GitHub' );
 chain_checkout_assert( false === strpos( $main, 'Author URI:        https://wordpress.org/plugins/chain-checkout' ), 'author URI not same as plugin URI' );
@@ -161,11 +161,11 @@ chain_checkout_assert( false !== strpos( $readme_md, 'Checkout branding' ), 'REA
 
 $readme = file_get_contents( $root . '/readme.txt' );
 chain_checkout_assert( false !== strpos( $readme, 'Tested up to: 7.0' ), 'readme Tested up to WP 7.0' );
-chain_checkout_assert( false !== strpos( $readme, 'Stable tag: 1.4.1' ), 'readme stable 1.4.1' );
+chain_checkout_assert( false !== strpos( $readme, 'Stable tag: 1.4.2' ), 'readme stable 1.4.2' );
 
 $readme = file_get_contents( $root . '/readme.txt' );
 chain_checkout_assert( false !== strpos( $readme, '== External services ==' ), 'readme external services section' );
-chain_checkout_assert( false !== strpos( $readme, '1.4.1' ), 'readme 1.4.1 changelog' );
+chain_checkout_assert( false !== strpos( $readme, '1.4.2' ), 'readme 1.4.2 changelog' );
 $privacy = file_get_contents( $root . '/includes/class-chain-checkout-privacy.php' );
 chain_checkout_assert( false !== strpos( $privacy, 'wp_add_privacy_policy_content' ), 'privacy policy content registered' );
 chain_checkout_assert( is_file( $root . '/assets/js/qrcode.LICENSE.txt' ), 'qrcode license attribution' );

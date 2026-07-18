@@ -1,6 +1,151 @@
 (function () {
 	'use strict';
 
+	function getCopyLabel(btn) {
+		return (window.chainCheckoutData && chainCheckoutData.i18n && chainCheckoutData.i18n.copied) || 'Copied!';
+	}
+
+	function fallbackCopy(text) {
+		var ta = document.createElement('textarea');
+		ta.value = text;
+		ta.setAttribute('readonly', '');
+		ta.style.cssText =
+			'position:fixed;top:0;left:0;width:2em;height:2em;padding:0;margin:0;border:0;outline:none;box-shadow:none;background:#fff;color:#000;';
+		document.body.appendChild(ta);
+		ta.focus();
+		ta.select();
+		if (typeof ta.setSelectionRange === 'function') {
+			ta.setSelectionRange(0, text.length);
+		}
+		var ok = false;
+		try {
+			ok = document.execCommand('copy');
+		} catch (err) {
+			ok = false;
+		}
+		document.body.removeChild(ta);
+		return ok;
+	}
+
+	function copyFromNode(node) {
+		if (!node) {
+			return false;
+		}
+		try {
+			var range = document.createRange();
+			range.selectNodeContents(node);
+			var sel = window.getSelection();
+			sel.removeAllRanges();
+			sel.addRange(range);
+			var ok = document.execCommand('copy');
+			sel.removeAllRanges();
+			return !!ok;
+		} catch (err) {
+			return false;
+		}
+	}
+
+	function resolveText(btn) {
+		var raw = btn.getAttribute('data-copy-text');
+		if (raw !== null && String(raw).length) {
+			return String(raw);
+		}
+		var target = btn.getAttribute('data-copy-target');
+		if (target) {
+			var node = document.getElementById(target);
+			if (node) {
+				return String(node.textContent || '').trim();
+			}
+		}
+		var selector = btn.getAttribute('data-copy');
+		if (selector) {
+			var el = document.querySelector(selector);
+			if (el) {
+				return String(el.textContent || '').trim();
+			}
+		}
+		var data = window.chainCheckoutData || {};
+		if (btn.id === 'chain-checkout-copy-amount') {
+			return data.amount || '';
+		}
+		if (btn.id === 'chain-checkout-copy-address') {
+			return data.address || '';
+		}
+		return data.qrValue || data.address || data.amount || '';
+	}
+
+	function markCopied(btn) {
+		var original = btn.getAttribute('data-label') || btn.textContent;
+		btn.setAttribute('data-label', original);
+		btn.textContent = getCopyLabel(btn);
+		btn.classList.add('is-copied');
+		window.setTimeout(function () {
+			btn.textContent = original;
+			btn.classList.remove('is-copied');
+		}, 1600);
+	}
+
+	function copyForButton(btn) {
+		var text = resolveText(btn);
+		if (!text) {
+			return;
+		}
+
+		var targetId = btn.getAttribute('data-copy-target');
+		var targetNode = targetId ? document.getElementById(targetId) : null;
+
+		function finish(ok) {
+			if (ok) {
+				markCopied(btn);
+			}
+		}
+
+		// Prefer copying a visible node (most reliable inside user gesture).
+		if (targetNode && copyFromNode(targetNode)) {
+			finish(true);
+			return;
+		}
+
+		if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+			navigator.clipboard.writeText(text).then(
+				function () {
+					finish(true);
+				},
+				function () {
+					finish(fallbackCopy(text));
+				}
+			);
+			return;
+		}
+
+		finish(fallbackCopy(text));
+	}
+
+	// Capture-phase delegation so theme/Woo handlers cannot swallow the click.
+	document.addEventListener(
+		'click',
+		function (e) {
+			var btn = e.target && e.target.closest ? e.target.closest('.chain-checkout-copy') : null;
+			if (!btn) {
+				return;
+			}
+			e.preventDefault();
+			e.stopPropagation();
+			copyForButton(btn);
+		},
+		true
+	);
+
+	// Expose for inline onclick fallback in the template.
+	window.chainCheckoutCopy = function (btn) {
+		if (!btn) {
+			return false;
+		}
+		copyForButton(btn);
+		return false;
+	};
+
+	// ---- Payment status / QR (requires localized data) ----
 	if (typeof chainCheckoutData === 'undefined') {
 		return;
 	}
@@ -36,98 +181,6 @@
 		var s = left % 60;
 		timerEl.textContent = pad(m) + ':' + pad(s);
 	}
-
-	function fallbackCopy(text) {
-		var ta = document.createElement('textarea');
-		ta.value = text;
-		ta.setAttribute('readonly', '');
-		ta.style.position = 'fixed';
-		ta.style.top = '0';
-		ta.style.left = '0';
-		ta.style.width = '1px';
-		ta.style.height = '1px';
-		ta.style.padding = '0';
-		ta.style.border = 'none';
-		ta.style.outline = 'none';
-		ta.style.boxShadow = 'none';
-		ta.style.background = 'transparent';
-		ta.style.opacity = '0';
-		document.body.appendChild(ta);
-		ta.focus();
-		ta.select();
-		ta.setSelectionRange(0, text.length);
-		var ok = false;
-		try {
-			ok = document.execCommand('copy');
-		} catch (e) {
-			ok = false;
-		}
-		document.body.removeChild(ta);
-		return ok;
-	}
-
-	function copyRaw(text) {
-		text = String(text || '').trim();
-		if (!text) {
-			return Promise.resolve(false);
-		}
-		if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
-			return navigator.clipboard.writeText(text).then(
-				function () {
-					return true;
-				},
-				function () {
-					return fallbackCopy(text);
-				}
-			);
-		}
-		return Promise.resolve(fallbackCopy(text));
-	}
-
-	function markCopied(btn) {
-		var original = btn.getAttribute('data-label') || btn.textContent;
-		btn.setAttribute('data-label', original);
-		btn.textContent = (data.i18n && data.i18n.copied) || 'Copied!';
-		btn.classList.add('is-copied');
-		btn.setAttribute('aria-live', 'polite');
-		window.setTimeout(function () {
-			btn.textContent = original;
-			btn.classList.remove('is-copied');
-		}, 1500);
-	}
-
-	function resolveCopyText(btn) {
-		var raw = btn.getAttribute('data-copy-text');
-		if (raw !== null && String(raw).length) {
-			return String(raw);
-		}
-		var selector = btn.getAttribute('data-copy');
-		if (selector) {
-			var el = document.querySelector(selector);
-			if (el) {
-				return String(el.textContent || '').trim();
-			}
-		}
-		if (btn.id === 'chain-checkout-copy-amount') {
-			return data.amount || '';
-		}
-		if (btn.id === 'chain-checkout-copy-address') {
-			return data.address || '';
-		}
-		return data.qrValue || data.address || data.amount || '';
-	}
-
-	document.querySelectorAll('.chain-checkout-copy').forEach(function (btn) {
-		btn.addEventListener('click', function (e) {
-			e.preventDefault();
-			e.stopPropagation();
-			copyRaw(resolveCopyText(btn)).then(function (ok) {
-				if (ok) {
-					markCopied(btn);
-				}
-			});
-		});
-	});
 
 	function renderQr() {
 		var host = document.getElementById('chain-checkout-qrcode');

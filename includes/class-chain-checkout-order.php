@@ -243,6 +243,18 @@ class Chain_Checkout_Order {
 		wp_enqueue_script( 'chain-checkout-qrcode' );
 		wp_enqueue_script( 'chain-checkout-frontend' );
 
+		// Ensure footer prints these even when thank-you runs after the normal enqueue pass.
+		add_action(
+			'wp_footer',
+			static function () {
+				if ( ! wp_script_is( 'chain-checkout-frontend', 'done' ) ) {
+					wp_print_scripts( 'chain-checkout-qrcode' );
+					wp_print_scripts( 'chain-checkout-frontend' );
+				}
+			},
+			5
+		);
+
 		wp_localize_script(
 			'chain-checkout-frontend',
 			'chainCheckoutData',

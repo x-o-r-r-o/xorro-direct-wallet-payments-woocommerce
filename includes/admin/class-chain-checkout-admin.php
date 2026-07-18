@@ -19,7 +19,62 @@ class Chain_Checkout_Admin {
 		add_action( 'admin_menu', array( __CLASS__, 'register_menu' ) );
 		add_action( 'admin_init', array( __CLASS__, 'handle_save' ) );
 		add_action( 'admin_notices', array( __CLASS__, 'setup_notice' ) );
+		add_action( 'admin_head', array( __CLASS__, 'print_admin_assets' ) );
+		add_filter( 'admin_body_class', array( __CLASS__, 'admin_body_class' ) );
 		add_filter( 'plugin_action_links_' . CHAIN_CHECKOUT_BASENAME, array( __CLASS__, 'action_links' ) );
+	}
+
+	/**
+	 * Mark plugin screens for CSS scoping.
+	 *
+	 * @param string $classes Body classes.
+	 * @return string
+	 */
+	public static function admin_body_class( $classes ) {
+		if ( self::is_plugin_screen() ) {
+			$classes .= ' chain-checkout-admin-page';
+		}
+		return $classes;
+	}
+
+	/**
+	 * Whether the current admin request is a Chain Checkout settings screen.
+	 *
+	 * @return bool
+	 */
+	private static function is_plugin_screen() {
+		$page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		return ( '' !== $page && 0 === strpos( $page, 'chain-checkout' ) );
+	}
+
+	/**
+	 * Force admin CSS/JS onto plugin screens (survives late/missed enqueue).
+	 */
+	public static function print_admin_assets() {
+		if ( ! self::is_plugin_screen() || ! current_user_can( 'manage_woocommerce' ) ) {
+			return;
+		}
+
+		$css_path = CHAIN_CHECKOUT_PATH . 'assets/css/admin.css';
+		$css_url  = CHAIN_CHECKOUT_URL . 'assets/css/admin.css';
+		$ver      = CHAIN_CHECKOUT_VERSION;
+		if ( is_readable( $css_path ) ) {
+			$ver = CHAIN_CHECKOUT_VERSION . '.' . (string) filemtime( $css_path );
+		}
+
+		printf(
+			'<link rel="stylesheet" id="chain-checkout-admin-css" href="%s" media="all" />' . "\n",
+			esc_url( add_query_arg( 'ver', $ver, $css_url ) )
+		);
+
+		// Inline the stylesheet so admin UI cannot render unstyled if the file request fails.
+		if ( is_readable( $css_path ) ) {
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- local plugin CSS.
+			$css = file_get_contents( $css_path );
+			if ( is_string( $css ) && '' !== $css ) {
+				echo '<style id="chain-checkout-admin-inline">' . $css . '</style>' . "\n"; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- trusted local CSS file.
+			}
+		}
 	}
 
 	/**
