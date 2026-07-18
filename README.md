@@ -89,6 +89,6 @@ GPL-2.0-or-later. See [LICENSE](LICENSE).
 
 Before uploading to [Add Plugin](https://wordpress.org/plugins/developers/add/):
 
-1. Set `Contributors:` in `readme.txt` to **your** WordPress.org username.
+1. `Contributors:` in `readme.txt` is set to **xorro** (your WordPress.org username).
 2. Upload a ZIP of the `chain-checkout` folder **without** `.git/` or `tests/`.
 3. Confirm Plugin URI ≠ Author URI (already set).

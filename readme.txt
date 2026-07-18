@@ -1,5 +1,5 @@
 === Chain Checkout ===
-Contributors: chaincheckout
+Contributors: xorro
 Tags: woocommerce, cryptocurrency, bitcoin, ethereum, payments, usdt, crypto checkout
 Requires at least: 6.9
 Tested up to: 7.0
