@@ -64,12 +64,38 @@ class Chain_Checkout_Prices {
 			return $amount;
 		}
 
-		$counter = (int) get_option( 'chain_checkout_amount_seq', 0 );
-		update_option( 'chain_checkout_amount_seq', ( $counter + 1 ) % 9000, false );
+		$counter = self::next_amount_seq();
 		$dust_units = 1000 + ( $counter % 9000 );
 		$dust       = $dust_units / pow( 10, $decimals );
 
 		return $amount + $dust;
+	}
+
+	/**
+	 * Atomic-ish sequence for unique dust (avoids duplicate dust under concurrent checkout).
+	 *
+	 * @return int
+	 */
+	private static function next_amount_seq() {
+		global $wpdb;
+
+		$option = 'chain_checkout_amount_seq';
+		// Ensure row exists.
+		add_option( $option, 0, '', 'no' );
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$wpdb->query(
+			$wpdb->prepare(
+				"UPDATE {$wpdb->options} SET option_value = ( CAST(option_value AS UNSIGNED) + 1 ) % 9000 WHERE option_name = %s",
+				$option
+			)
+		);
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$value = (int) $wpdb->get_var( $wpdb->prepare( "SELECT option_value FROM {$wpdb->options} WHERE option_name = %s", $option ) );
+		wp_cache_delete( $option, 'options' );
+
+		return $value;
 	}
 
 	/**
@@ -87,13 +113,21 @@ class Chain_Checkout_Prices {
 		}
 
 		$key = $coingecko_id . '_' . $currency;
-		if ( isset( $cache[ $key ] ) && is_numeric( $cache[ $key ] ) ) {
+		$updated = (int) get_transient( self::TRANSIENT_KEY . '_updated' );
+		$fresh   = $updated && ( time() - $updated ) < self::CACHE_TTL;
+
+		if ( $fresh && isset( $cache[ $key ] ) && is_numeric( $cache[ $key ] ) ) {
 			return (float) $cache[ $key ];
 		}
 
 		self::refresh_rates( array( $coingecko_id ), $currency );
 		$cache = get_transient( self::TRANSIENT_KEY );
 		if ( is_array( $cache ) && isset( $cache[ $key ] ) ) {
+			return (float) $cache[ $key ];
+		}
+
+		// Do not serve stale rates older than 10 minutes after a failed refresh.
+		if ( isset( $cache[ $key ] ) && is_numeric( $cache[ $key ] ) && $updated && ( time() - $updated ) < ( 10 * MINUTE_IN_SECONDS ) ) {
 			return (float) $cache[ $key ];
 		}
 
@@ -126,6 +160,7 @@ class Chain_Checkout_Prices {
 		if ( ! is_array( $cache ) ) {
 			$cache = array();
 		}
+		$got_any = false;
 
 		$api_key = Chain_Checkout_Settings::get( 'coingecko_api_key', '' );
 		// Free/Demo keys use api.coingecko.com + x-cg-demo-api-key.
@@ -200,11 +235,15 @@ class Chain_Checkout_Prices {
 			foreach ( $body as $id => $prices ) {
 				if ( isset( $prices[ $currency ] ) ) {
 					$cache[ $id . '_' . $currency ] = (float) $prices[ $currency ];
+					$got_any = true;
 				}
 			}
 		}
 
-		set_transient( self::TRANSIENT_KEY, $cache, self::CACHE_TTL );
+		if ( $got_any ) {
+			set_transient( self::TRANSIENT_KEY, $cache, self::CACHE_TTL );
+			set_transient( self::TRANSIENT_KEY . '_updated', time(), DAY_IN_SECONDS );
+		}
 	}
 
 	/**

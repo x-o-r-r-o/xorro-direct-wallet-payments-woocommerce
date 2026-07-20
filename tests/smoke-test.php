@@ -35,7 +35,14 @@ foreach ( $iterator as $file ) {
 	}
 	$output = array();
 	$code   = 0;
-	exec( 'php -l ' . escapeshellarg( $path ) . ' 2>&1', $output, $code );
+	$php    = PHP_BINARY;
+	if ( ! $php || false !== strpos( $php, 'php-cgi' ) ) {
+		$php = trim( (string) shell_exec( 'command -v php 2>/dev/null' ) );
+	}
+	if ( ! $php ) {
+		$php = 'php';
+	}
+	exec( escapeshellarg( $php ) . ' -l ' . escapeshellarg( $path ) . ' 2>&1', $output, $code );
 	chain_checkout_assert( 0 === $code, 'php -l ' . str_replace( $root . '/', '', $path ) );
 }
 
@@ -107,11 +114,22 @@ chain_checkout_assert( false !== strpos( $verifier, 'api.etherscan.io/v2/api' ),
 chain_checkout_assert( false !== strpos( $verifier, 'mempool.space' ), 'mempool.space present' );
 chain_checkout_assert( false !== strpos( $verifier, 'helius-rpc.com' ), 'Helius RPC present' );
 chain_checkout_assert( false !== strpos( $verifier, 'TRON-PRO-API-KEY' ), 'TronGrid key header present' );
-chain_checkout_assert( false === strpos( $verifier, 'api.bscscan.com' ), 'legacy BscScan host removed from verifier' );
+chain_checkout_assert( false !== strpos( $verifier, 'function match_band' ), 'verifier match_band helper' );
+chain_checkout_assert( false !== strpos( $verifier, 'etherscan_confirmed' ), 'verifier confirmation check' );
+chain_checkout_assert( false !== strpos( $verifier, 'finalized' ), 'solana finalized commitment' );
+
+$order_php = file_get_contents( $root . '/includes/class-chain-checkout-order.php' );
+chain_checkout_assert( false !== strpos( $order_php, 'expiry_grace_minutes' ), 'order expiry grace' );
+chain_checkout_assert( false !== strpos( $order_php, "'failed'" ), 'expired orders fail not cancel' );
+chain_checkout_assert( false !== strpos( $order_php, 'chain_checkout_status_' ), 'order-bound status nonce' );
+chain_checkout_assert( false !== strpos( $order_php, 'REQUEST_METHOD' ), 'mark-paid POST only' );
+
+$ajax = file_get_contents( $root . '/includes/class-chain-checkout-ajax.php' );
+chain_checkout_assert( false !== strpos( $ajax, 'chain_checkout_status_' ), 'ajax order-bound nonce' );
 
 // --- Headers ---
 $main = file_get_contents( $root . '/chain-checkout.php' );
-chain_checkout_assert( false !== strpos( $main, 'Version:           1.4.2' ), 'plugin version 1.4.2' );
+chain_checkout_assert( false !== strpos( $main, 'Version:           1.4.3' ), 'plugin version 1.4.3' );
 chain_checkout_assert( false !== strpos( $main, 'Author:            xorro' ), 'author is xorro' );
 chain_checkout_assert( false !== strpos( $main, 'Author URI:        https://github.com/x-o-r-r-o' ), 'author URI is GitHub' );
 chain_checkout_assert( false === strpos( $main, 'Author URI:        https://wordpress.org/plugins/chain-checkout' ), 'author URI not same as plugin URI' );
@@ -161,11 +179,11 @@ chain_checkout_assert( false !== strpos( $readme_md, 'Checkout branding' ), 'REA
 
 $readme = file_get_contents( $root . '/readme.txt' );
 chain_checkout_assert( false !== strpos( $readme, 'Tested up to: 7.0' ), 'readme Tested up to WP 7.0' );
-chain_checkout_assert( false !== strpos( $readme, 'Stable tag: 1.4.2' ), 'readme stable 1.4.2' );
+chain_checkout_assert( false !== strpos( $readme, 'Stable tag: 1.4.3' ), 'readme stable 1.4.3' );
 
 $readme = file_get_contents( $root . '/readme.txt' );
 chain_checkout_assert( false !== strpos( $readme, '== External services ==' ), 'readme external services section' );
-chain_checkout_assert( false !== strpos( $readme, '1.4.2' ), 'readme 1.4.2 changelog' );
+chain_checkout_assert( false !== strpos( $readme, '1.4.3' ), 'readme 1.4.3 changelog' );
 $privacy = file_get_contents( $root . '/includes/class-chain-checkout-privacy.php' );
 chain_checkout_assert( false !== strpos( $privacy, 'wp_add_privacy_policy_content' ), 'privacy policy content registered' );
 chain_checkout_assert( is_file( $root . '/assets/js/qrcode.LICENSE.txt' ), 'qrcode license attribution' );

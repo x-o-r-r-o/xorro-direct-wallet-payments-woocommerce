@@ -241,6 +241,9 @@
 		body.append('action', 'chain_checkout_status');
 		body.append('nonce', data.nonce);
 		body.append('order_id', String(data.orderId));
+		if (data.orderKey) {
+			body.append('order_key', String(data.orderKey));
+		}
 		var keyEl = document.getElementById('chain-checkout-order-key');
 		if (keyEl) {
 			body.append('order_key', keyEl.value);

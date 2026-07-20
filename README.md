@@ -73,6 +73,11 @@ php tests/smoke-test.php
 
 See [readme.txt](readme.txt).
 
+### 1.4.3
+
+- Hardened on-chain payment attribution (absolute match band, required recipients, confirmations)
+- Expiry grace + fail instead of cancel; atomic counters; safer AJAX and mark-paid flow
+
 ### 1.4.2
 
 - Payment Copy buttons fixed (works even if main JS is delayed)

@@ -113,6 +113,21 @@ $active  = isset( $tabs[ $tab ] ) ? $tabs[ $tab ] : $tabs['general'];
 										<th scope="row"><?php esc_html_e( 'Underpayment tolerance (%)', 'chain-checkout' ); ?></th>
 										<td>
 											<input type="number" step="0.1" min="0" max="10" name="chain_checkout[underpayment_percent]" value="<?php echo esc_attr( (string) ( $settings['underpayment_percent'] ?? 1 ) ); ?>" class="small-text cc-input" />
+											<p class="description"><?php esc_html_e( 'Capped automatically when unique amounts are enabled so concurrent orders on a shared wallet stay distinguishable.', 'chain-checkout' ); ?></p>
+										</td>
+									</tr>
+									<tr>
+										<th scope="row"><?php esc_html_e( 'Minimum confirmations', 'chain-checkout' ); ?></th>
+										<td>
+											<input type="number" min="0" max="64" name="chain_checkout[min_confirmations]" value="<?php echo esc_attr( (string) ( $settings['min_confirmations'] ?? 1 ) ); ?>" class="small-text cc-input" />
+											<p class="description"><?php esc_html_e( 'Required on-chain confirmations before marking an order paid (EVM explorers that report confirmations).', 'chain-checkout' ); ?></p>
+										</td>
+									</tr>
+									<tr>
+										<th scope="row"><?php esc_html_e( 'Expiry grace (minutes)', 'chain-checkout' ); ?></th>
+										<td>
+											<input type="number" min="0" max="1440" name="chain_checkout[expiry_grace_minutes]" value="<?php echo esc_attr( (string) ( $settings['expiry_grace_minutes'] ?? 30 ) ); ?>" class="small-text cc-input" />
+											<p class="description"><?php esc_html_e( 'Keep looking for payment after the window ends. Orders fail (not cancel) after grace so late funds can still be recovered.', 'chain-checkout' ); ?></p>
 										</td>
 									</tr>
 									<tr>

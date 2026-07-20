@@ -4,7 +4,7 @@ Tags: woocommerce, cryptocurrency, bitcoin, ethereum, payments, usdt, crypto che
 Requires at least: 6.9
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.4.2
+Stable tag: 1.4.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -165,6 +165,12 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 
 == Changelog ==
 
+= 1.4.3 =
+* Hardened payment matching so % tolerance cannot overwhelm unique dust on shared wallets
+* Require destination address on NEAR/FIL/XRP/ZIL verify; EVM min confirmations; Solana finalized commitment
+* Expiry grace period then fail (not cancel); atomic dust/rotation counters; POST-only mark-paid
+* Order-bound status AJAX nonce + rate limit; cron FIFO up to 100 awaiting orders
+
 = 1.4.2 =
 * Fixed payment details Copy buttons (inline bootstrap + selection copy + capture-phase handlers)
 * Forced admin settings CSS to load via admin_head link + inline stylesheet so the shell always styles
@@ -236,6 +242,9 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.4.3 =
+Important payment-safety update: tighter matching, confirmations, expiry grace, and AJAX hardening. Update before accepting live payments.
 
 = 1.4.2 =
 Fixes payment Copy buttons and admin settings styling. Reinstall/replace the plugin ZIP if styles or copy still look cached.

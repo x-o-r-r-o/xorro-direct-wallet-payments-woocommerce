@@ -136,13 +136,30 @@ class Chain_Checkout_Ajax {
 	 * Poll payment status for an order.
 	 */
 	public static function payment_status() {
-		check_ajax_referer( 'chain_checkout_status', 'nonce' );
+		$order_id = isset( $_POST['order_id'] ) ? absint( $_POST['order_id'] ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$deny     = static function () {
+			wp_send_json_error( array( 'message' => __( 'Forbidden.', 'chain-checkout' ) ), 403 );
+		};
 
-		$order_id = isset( $_POST['order_id'] ) ? absint( $_POST['order_id'] ) : 0;
-		$order    = wc_get_order( $order_id );
+		if ( ! $order_id ) {
+			$deny();
+		}
 
+		check_ajax_referer( 'chain_checkout_status_' . $order_id, 'nonce' );
+
+		$ip = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : 'unknown';
+		$rate_key = 'chain_checkout_status_' . md5( $ip . '|' . $order_id );
+		$count    = (int) get_transient( $rate_key );
+		if ( $count > 120 ) {
+			wp_send_json_error( array( 'message' => __( 'Too many requests. Please wait a moment.', 'chain-checkout' ) ), 429 );
+		}
+		set_transient( $rate_key, $count + 1, MINUTE_IN_SECONDS );
+
+		$order = wc_get_order( $order_id );
+
+		// Uniform denial — avoid leaking whether an order ID is a Chain Checkout order.
 		if ( ! $order || $order->get_payment_method() !== CHAIN_CHECKOUT_GATEWAY_ID ) {
-			wp_send_json_error( array( 'message' => __( 'Invalid order.', 'chain-checkout' ) ), 400 );
+			$deny();
 		}
 
 		// Allow order owner or guests with matching order key.
@@ -157,7 +174,7 @@ class Chain_Checkout_Ajax {
 		}
 
 		if ( ! $allowed ) {
-			wp_send_json_error( array( 'message' => __( 'Forbidden.', 'chain-checkout' ) ), 403 );
+			$deny();
 		}
 
 		Chain_Checkout_Order::maybe_expire( $order );

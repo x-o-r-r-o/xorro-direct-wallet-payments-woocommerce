@@ -70,6 +70,14 @@ class Chain_Checkout_Settings {
 			$clean['underpayment_percent'] = max( 0, min( 10, (float) $input['underpayment_percent'] ) );
 		}
 
+		if ( isset( $input['min_confirmations'] ) ) {
+			$clean['min_confirmations'] = max( 0, min( 64, absint( $input['min_confirmations'] ) ) );
+		}
+
+		if ( isset( $input['expiry_grace_minutes'] ) ) {
+			$clean['expiry_grace_minutes'] = max( 0, min( 1440, absint( $input['expiry_grace_minutes'] ) ) );
+		}
+
 		foreach ( array( 'unique_amounts', 'wallet_rotation', 'auto_verify', 'price_coin_show' ) as $flag ) {
 			if ( isset( $input[ $flag ] ) ) {
 				$clean[ $flag ] = ( 'yes' === $input[ $flag ] || 1 === (int) $input[ $flag ] || true === $input[ $flag ] ) ? 'yes' : 'no';
@@ -101,7 +109,8 @@ class Chain_Checkout_Settings {
 		$clean = Chain_Checkout_Branding::sanitize_from_input( $input, $clean );
 
 		if ( isset( $input['price_coin_ticker'] ) ) {
-			$clean['price_coin_ticker'] = sanitize_text_field( $input['price_coin_ticker'] );
+			$ticker = sanitize_text_field( $input['price_coin_ticker'] );
+			$clean['price_coin_ticker'] = Chain_Checkout_Coins::get( $ticker ) ? $ticker : 'BTC';
 		}
 
 		if ( isset( $input['enabled_coins'] ) && is_array( $input['enabled_coins'] ) ) {

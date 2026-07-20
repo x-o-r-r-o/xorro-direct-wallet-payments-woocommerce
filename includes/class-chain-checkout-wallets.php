@@ -104,15 +104,24 @@ class Chain_Checkout_Wallets {
 			case 'xmr':
 				return $len >= 95 && $len <= 110;
 			case 'dot':
+				return (bool) preg_match( '/^[1-9A-HJ-NP-Za-km-z]{46,50}$/', $address );
 			case 'atom':
+				return (bool) preg_match( '/^cosmos1[a-z0-9]{38,58}$/', $address );
 			case 'algo':
+				return (bool) preg_match( '/^[A-Z2-7]{58}$/', $address );
 			case 'near':
+				return (bool) preg_match( '/^(([a-z0-9_-]{2,64}\.)*([a-z0-9_-]{2,64})\.near|[a-f0-9]{64})$/', $address )
+					|| (bool) preg_match( '/^[a-z0-9._-]{2,64}$/', $address );
 			case 'fil':
+				return (bool) preg_match( '/^f[0-9a-zA-Z]{8,128}$/', $address );
 			case 'hbar':
+				return (bool) preg_match( '/^0\.0\.\d{1,10}$/', $address );
 			case 'egld':
+				return (bool) preg_match( '/^erd1[a-z0-9]{58}$/', $address );
 			case 'zil':
+				return (bool) preg_match( '/^zil1[a-z0-9]{38}$/', $address );
 			case 'eos':
-				return $len >= 8 && $len <= 128;
+				return (bool) preg_match( '/^[a-z1-5.]{1,12}$/', $address );
 			default:
 				return $len >= 10 && $len <= 128;
 		}
@@ -149,10 +158,38 @@ class Chain_Checkout_Wallets {
 		}
 
 		$index_key = 'chain_checkout_wallet_idx_' . sanitize_key( $coin_id );
-		$index     = (int) get_option( $index_key, 0 );
-		$address   = $addresses[ $index % count( $addresses ) ];
-		update_option( $index_key, ( $index + 1 ) % count( $addresses ), false );
+		$count     = count( $addresses );
+		$index     = self::next_wallet_index( $index_key, $count );
+		return $addresses[ $index % $count ];
+	}
 
-		return $address;
+	/**
+	 * Atomic wallet rotation index.
+	 *
+	 * @param string $option Option name.
+	 * @param int    $mod    Address count.
+	 * @return int Index used for this pick.
+	 */
+	private static function next_wallet_index( $option, $mod ) {
+		global $wpdb;
+
+		$mod = max( 1, (int) $mod );
+		add_option( $option, 0, '', 'no' );
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$wpdb->query(
+			$wpdb->prepare(
+				"UPDATE {$wpdb->options} SET option_value = ( CAST(option_value AS UNSIGNED) + 1 ) % %d WHERE option_name = %s",
+				$mod,
+				$option
+			)
+		);
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$value = (int) $wpdb->get_var( $wpdb->prepare( "SELECT option_value FROM {$wpdb->options} WHERE option_name = %s", $option ) );
+		wp_cache_delete( $option, 'options' );
+
+		// Value is post-increment; return previous slot.
+		return ( $value - 1 + $mod ) % $mod;
 	}
 }

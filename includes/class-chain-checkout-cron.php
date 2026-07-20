@@ -30,9 +30,12 @@ class Chain_Checkout_Cron {
 
 		$orders = wc_get_orders(
 			array(
-				'limit'          => 40,
+				'limit'          => 100,
 				'status'         => array( 'on-hold', 'pending' ),
 				'payment_method' => CHAIN_CHECKOUT_GATEWAY_ID,
+				'orderby'        => 'meta_value_num',
+				'meta_key'       => '_chain_checkout_started', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+				'order'          => 'ASC',
 				'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
 					array(
 						'key'   => '_chain_checkout_status',

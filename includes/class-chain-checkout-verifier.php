@@ -42,14 +42,12 @@ class Chain_Checkout_Verifier {
 			return false;
 		}
 
-		$tolerance = max( 0.0, (float) Chain_Checkout_Settings::get( 'underpayment_percent', 1 ) );
-		$target    = (float) $amount;
-		$min       = $target * ( 1 - ( $tolerance / 100 ) );
-		// Tight overpayment band so a larger unrelated deposit cannot claim a small order.
-		$max       = $target * ( 1 + ( max( $tolerance, 0.5 ) / 100 ) );
+		$band = self::match_band( $amount, $coin );
+		$min  = $band['min'];
+		$max  = $band['max'];
 
-		// Shared-wallet safety: if unique dust cannot apply (low decimals), require sole awaiting order on address.
-		if ( ! self::can_safely_match_shared_address( $coin, $address, $order->get_id() ) ) {
+		// Shared-wallet safety: require unique target amount among awaiting orders on this address.
+		if ( ! self::can_safely_match_shared_address( $coin, $address, $order->get_id(), $amount ) ) {
 			return false;
 		}
 
@@ -70,26 +68,57 @@ class Chain_Checkout_Verifier {
 	}
 
 	/**
+	 * Build an absolute match band that cannot overwhelm unique dust.
+	 *
+	 * Percentage underpayment is capped so concurrent shared-wallet orders remain distinguishable.
+	 *
+	 * @param string $amount Order crypto amount string.
+	 * @param array  $coin   Coin def.
+	 * @return array{min:float,max:float}
+	 */
+	private static function match_band( $amount, array $coin ) {
+		$decimals = isset( $coin['decimals'] ) ? min( (int) $coin['decimals'], 18 ) : 8;
+		$target   = (float) $amount;
+		$unit     = pow( 10, -$decimals );
+
+		// Absolute epsilon: a few base units (unique dust uses ~1000–9999 units).
+		$abs_eps = max( $unit * 50, $unit );
+
+		$tolerance_pct = max( 0.0, (float) Chain_Checkout_Settings::get( 'underpayment_percent', 1 ) );
+		$pct_under     = $target * ( $tolerance_pct / 100 );
+		$pct_over      = $target * ( max( $tolerance_pct, 0.5 ) / 100 );
+
+		// Never let % tolerance exceed half a unique-dust step when unique amounts are on.
+		$max_band = $abs_eps;
+		if ( 'yes' === Chain_Checkout_Settings::get( 'unique_amounts', 'yes' ) && $decimals > 4 ) {
+			// Dust range is 1000..9999 units; keep band well below that gap.
+			$max_band = max( $abs_eps, $unit * 400 );
+		} else {
+			$max_band = max( $abs_eps, min( $pct_under, $target * 0.02 ) );
+		}
+
+		$under = min( $pct_under > 0 ? $pct_under : $abs_eps, $max_band );
+		$over  = min( $pct_over > 0 ? $pct_over : $abs_eps, $max_band );
+
+		return array(
+			'min' => max( 0.0, $target - $under ),
+			'max' => $target + $over,
+		);
+	}
+
+	/**
 	 * Whether shared-address matching is safe for this order.
 	 *
 	 * @param array  $coin       Coin def.
 	 * @param string $address    Address.
 	 * @param int    $order_id   Current order.
+	 * @param string $amount     Exact crypto amount for this order.
 	 * @return bool
 	 */
-	private static function can_safely_match_shared_address( array $coin, $address, $order_id ) {
-		$decimals = isset( $coin['decimals'] ) ? (int) $coin['decimals'] : 8;
-		$unique   = ( 'yes' === Chain_Checkout_Settings::get( 'unique_amounts', 'yes' ) );
-
-		// Unique dust works well above 4 decimals.
-		if ( $unique && $decimals > 4 ) {
-			return true;
-		}
-
-		// Otherwise only match when this is the only awaiting order on that address.
+	private static function can_safely_match_shared_address( array $coin, $address, $order_id, $amount = '' ) {
 		$others = wc_get_orders(
 			array(
-				'limit'          => 2,
+				'limit'          => 25,
 				'status'         => array( 'on-hold', 'pending' ),
 				'payment_method' => CHAIN_CHECKOUT_GATEWAY_ID,
 				'exclude'        => array( absint( $order_id ) ),
@@ -103,15 +132,46 @@ class Chain_Checkout_Verifier {
 						'value' => $address,
 					),
 				),
-				'return'         => 'ids',
+				'return'         => 'objects',
 			)
 		);
 
-		return empty( $others );
+		if ( empty( $others ) ) {
+			return true;
+		}
+
+		$decimals = isset( $coin['decimals'] ) ? (int) $coin['decimals'] : 8;
+		$unique   = ( 'yes' === Chain_Checkout_Settings::get( 'unique_amounts', 'yes' ) );
+
+		// Low-decimal / no unique dust: only one awaiting order may share an address.
+		if ( ! $unique || $decimals <= 4 ) {
+			return false;
+		}
+
+		// High decimals with unique dust: still refuse if another order has the same exact amount.
+		$amount = (string) $amount;
+		foreach ( $others as $other ) {
+			if ( ! $other instanceof WC_Order ) {
+				continue;
+			}
+			$other_amount = (string) $other->get_meta( '_chain_checkout_amount' );
+			if ( $amount && hash_equals( $amount, $other_amount ) ) {
+				return false;
+			}
+			// Overlapping bands are unsafe even with different strings after formatting.
+			$band_a = self::match_band( $amount, $coin );
+			$band_b = self::match_band( $other_amount, $coin );
+			if ( $band_a['min'] <= $band_b['max'] && $band_b['min'] <= $band_a['max'] ) {
+				return false;
+			}
+		}
+
+		return true;
 	}
 
 	/**
 	 * Atomically claim a txid for an order. Returns false if already claimed by another order.
+	 * Claims expire after payment window + 7 days so the options table does not grow forever.
 	 *
 	 * @param string $txid     Txid.
 	 * @param int    $order_id Order ID.
@@ -123,9 +183,24 @@ class Chain_Checkout_Verifier {
 		}
 
 		$claim_key = 'chain_checkout_txid_claim_' . md5( $txid );
-		if ( ! add_option( $claim_key, (string) absint( $order_id ), '', 'no' ) ) {
-			$owner = (int) get_option( $claim_key, 0 );
-			return $owner === absint( $order_id );
+		$payload   = absint( $order_id ) . '|' . time();
+
+		if ( ! add_option( $claim_key, $payload, '', 'no' ) ) {
+			$existing = (string) get_option( $claim_key, '' );
+			$parts    = explode( '|', $existing, 2 );
+			$owner    = isset( $parts[0] ) ? (int) $parts[0] : 0;
+			$claimed  = isset( $parts[1] ) ? (int) $parts[1] : 0;
+			$ttl      = WEEK_IN_SECONDS + ( (int) Chain_Checkout_Settings::get( 'payment_window', 60 ) * MINUTE_IN_SECONDS );
+
+			if ( $owner === absint( $order_id ) ) {
+				return true;
+			}
+			// Stale orphaned claim — allow reclaim.
+			if ( $claimed && ( time() - $claimed ) > $ttl ) {
+				update_option( $claim_key, $payload, false );
+				return ! self::txid_already_used( $txid, $order_id );
+			}
+			return false;
 		}
 
 		// Double-check WC meta after claim.
@@ -135,6 +210,33 @@ class Chain_Checkout_Verifier {
 		}
 
 		return true;
+	}
+
+	/**
+	 * Minimum confirmations required before accepting a payment.
+	 *
+	 * @return int
+	 */
+	private static function min_confirmations() {
+		return max( 0, min( 64, (int) Chain_Checkout_Settings::get( 'min_confirmations', 1 ) ) );
+	}
+
+	/**
+	 * Whether an Etherscan tx row has enough confirmations (when the field is present).
+	 *
+	 * @param array $tx Tx row.
+	 * @return bool
+	 */
+	private static function etherscan_confirmed( array $tx ) {
+		$need = self::min_confirmations();
+		if ( $need <= 0 ) {
+			return true;
+		}
+		if ( ! isset( $tx['confirmations'] ) ) {
+			// Missing field: accept only when min is 1 or less (mempool depth unknown).
+			return $need <= 1;
+		}
+		return (int) $tx['confirmations'] >= $need;
 	}
 
 	/**
@@ -479,6 +581,9 @@ class Chain_Checkout_Verifier {
 			if ( ! empty( $tx['isError'] ) && '0' !== (string) $tx['isError'] ) {
 				continue;
 			}
+			if ( ! self::etherscan_confirmed( $tx ) ) {
+				continue;
+			}
 			$time = isset( $tx['timeStamp'] ) ? (int) $tx['timeStamp'] : 0;
 			if ( ! $time || $time < $since ) {
 				continue;
@@ -533,6 +638,9 @@ class Chain_Checkout_Verifier {
 
 		foreach ( $response['result'] as $tx ) {
 			if ( empty( $tx['to'] ) || 0 !== strcasecmp( $tx['to'], $address ) ) {
+				continue;
+			}
+			if ( ! self::etherscan_confirmed( $tx ) ) {
 				continue;
 			}
 			$time = isset( $tx['timeStamp'] ) ? (int) $tx['timeStamp'] : 0;
@@ -631,7 +739,11 @@ class Chain_Checkout_Verifier {
 						'method'  => 'getTransaction',
 						'params'  => array(
 							$txid,
-							array( 'encoding' => 'jsonParsed', 'maxSupportedTransactionVersion' => 0 ),
+							array(
+								'encoding'                       => 'jsonParsed',
+								'maxSupportedTransactionVersion' => 0,
+								'commitment'                     => 'finalized',
+							),
 						),
 					);
 					$tx = self::http_post_json( $rpc, $tx_body );
@@ -682,18 +794,22 @@ class Chain_Checkout_Verifier {
 				'method'  => 'getTransaction',
 				'params'  => array(
 					$txid,
-					array( 'encoding' => 'jsonParsed', 'maxSupportedTransactionVersion' => 0 ),
+					array(
+						'encoding'                       => 'jsonParsed',
+						'maxSupportedTransactionVersion' => 0,
+						'commitment'                     => 'finalized',
+					),
 				),
 			);
 			$tx = self::http_post_json( $rpc, $tx_body );
-			if ( empty( $tx['result'] ) ) {
+			if ( empty( $tx['result']['meta'] ) || ! is_array( $tx['result']['meta'] ) ) {
 				continue;
 			}
 			$meta = $tx['result']['meta'];
 			if ( isset( $meta['err'] ) && null !== $meta['err'] ) {
 				continue;
 			}
-			$message = $tx['result']['transaction']['message'];
+			$message = isset( $tx['result']['transaction']['message'] ) ? $tx['result']['transaction']['message'] : array();
 			$keys    = array();
 			if ( ! empty( $message['accountKeys'] ) ) {
 				foreach ( $message['accountKeys'] as $k ) {
@@ -834,6 +950,9 @@ class Chain_Checkout_Verifier {
 				$dest = $tx['tx']['Destination'];
 			}
 			if ( $dest && 0 !== strcasecmp( $dest, $address ) ) {
+				continue;
+			}
+			if ( ! $dest ) {
 				continue;
 			}
 			$amount = 0;
@@ -1073,7 +1192,7 @@ class Chain_Checkout_Verifier {
 			} elseif ( ! empty( $tx['receiver'] ) ) {
 				$receiver = $tx['receiver'];
 			}
-			if ( $receiver && 0 !== strcasecmp( $receiver, $address ) ) {
+			if ( ! $receiver || 0 !== strcasecmp( $receiver, $address ) ) {
 				continue;
 			}
 			$raw = '0';
@@ -1109,6 +1228,10 @@ class Chain_Checkout_Verifier {
 	 * @return string|false
 	 */
 	private static function check_atom( $address, $min, $max, $since ) {
+		// Strict bech32-ish chars only — reject query injection via crafted wallet saves.
+		if ( ! preg_match( '/^[a-z0-9]{10,128}$/', $address ) ) {
+			return false;
+		}
 		$url = add_query_arg(
 			array(
 				'query'            => "transfer.recipient='" . $address . "'",
@@ -1226,7 +1349,7 @@ class Chain_Checkout_Verifier {
 				continue;
 			}
 			$to = isset( $tx['to'] ) ? $tx['to'] : '';
-			if ( $to && 0 !== strcasecmp( $to, $address ) ) {
+			if ( ! $to || 0 !== strcasecmp( $to, $address ) ) {
 				continue;
 			}
 			// Filfox value is often in attoFIL (1 FIL = 1e18).
@@ -1381,7 +1504,7 @@ class Chain_Checkout_Verifier {
 			if ( ! empty( $tx['to'] ) ) {
 				$to = is_array( $tx['to'] ) ? ( isset( $tx['to'][0] ) ? $tx['to'][0] : '' ) : $tx['to'];
 			}
-			if ( $to && 0 !== strcasecmp( $to, $address ) ) {
+			if ( ! $to || 0 !== strcasecmp( $to, $address ) ) {
 				continue;
 			}
 			$value = 0.0;

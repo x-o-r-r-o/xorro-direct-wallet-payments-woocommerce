@@ -103,25 +103,34 @@ class Chain_Checkout_Order {
 			}
 
 			$status = $order->get_meta( '_chain_checkout_status' );
-			if ( 'paid' === $status || 'awaiting' !== $status ) {
+			if ( 'paid' === $status ) {
+				return;
+			}
+			if ( ! in_array( $status, array( 'awaiting', 'expired' ), true ) ) {
 				return;
 			}
 
-			// Re-check after reload to reduce double completion.
+			if ( $order->is_paid() ) {
+				$order->update_meta_data( '_chain_checkout_status', 'paid' );
+				$order->update_meta_data( '_chain_checkout_confirmed_at', time() );
+				$order->save();
+				return;
+			}
+
+			$txid = $order->get_meta( '_chain_checkout_txid' );
+			$order->payment_complete( $txid ? $txid : '' );
+
+			// Only mark plugin status after WooCommerce no longer needs payment.
+			$order = wc_get_order( $order_id );
+			if ( ! $order || $order->needs_payment() ) {
+				return;
+			}
+
 			$order->update_meta_data( '_chain_checkout_status', 'paid' );
 			$order->update_meta_data( '_chain_checkout_confirmed_at', time() );
 			$order->save();
 
-			$order = wc_get_order( $order_id );
-			if ( ! $order || 'paid' !== $order->get_meta( '_chain_checkout_status' ) ) {
-				return;
-			}
-			if ( $order->is_paid() ) {
-				return;
-			}
-
 			$target = Chain_Checkout_Settings::get( 'order_status', 'processing' );
-			$order->payment_complete( $order->get_meta( '_chain_checkout_txid' ) );
 
 			if ( 'completed' === $target && 'completed' !== $order->get_status() ) {
 				$order->update_status( 'completed', __( 'Crypto payment confirmed on-chain.', 'chain-checkout' ) );
@@ -138,6 +147,9 @@ class Chain_Checkout_Order {
 	/**
 	 * Expire unpaid order past payment window.
 	 *
+	 * Uses a grace period after the quoted window so late on-chain payments can still confirm.
+	 * Does not auto-cancel WooCommerce orders (avoids customers losing funds that arrive late).
+	 *
 	 * @param WC_Order $order Order.
 	 */
 	public static function maybe_expire( $order ) {
@@ -147,12 +159,26 @@ class Chain_Checkout_Order {
 		if ( ! in_array( $order->get_status(), array( 'on-hold', 'pending' ), true ) ) {
 			return;
 		}
-		$expires = (int) $order->get_meta( '_chain_checkout_expires' );
-		if ( $expires && time() > $expires ) {
-			$order->update_meta_data( '_chain_checkout_status', 'expired' );
-			$order->save();
-			$order->update_status( 'cancelled', __( 'Crypto payment window expired.', 'chain-checkout' ) );
+		if ( 'awaiting' !== $order->get_meta( '_chain_checkout_status' ) ) {
+			return;
 		}
+		$expires = (int) $order->get_meta( '_chain_checkout_expires' );
+		if ( ! $expires || time() <= $expires ) {
+			return;
+		}
+
+		$grace = max( 0, (int) Chain_Checkout_Settings::get( 'expiry_grace_minutes', 30 ) ) * MINUTE_IN_SECONDS;
+		if ( time() <= ( $expires + $grace ) ) {
+			// Still within grace — keep awaiting so verifier/cron can recover late txs.
+			return;
+		}
+
+		$order->update_meta_data( '_chain_checkout_status', 'expired' );
+		$order->save();
+		$order->update_status(
+			'failed',
+			__( 'Crypto payment window expired. Contact the store if you already sent funds.', 'chain-checkout' )
+		);
 	}
 
 	/**
@@ -260,8 +286,9 @@ class Chain_Checkout_Order {
 			'chainCheckoutData',
 			array(
 				'ajaxUrl'   => admin_url( 'admin-ajax.php' ),
-				'nonce'     => wp_create_nonce( 'chain_checkout_status' ),
+				'nonce'     => wp_create_nonce( 'chain_checkout_status_' . $order->get_id() ),
 				'orderId'   => $order->get_id(),
+				'orderKey'  => $order->get_order_key(),
 				'expires'   => $expires,
 				'qrValue'   => $uri,
 				'address'   => $address,
@@ -328,24 +355,31 @@ class Chain_Checkout_Order {
 		echo '<p><strong>' . esc_html__( 'Status:', 'chain-checkout' ) . '</strong> ' . esc_html( $order->get_meta( '_chain_checkout_status' ) ) . '</p>';
 
 		if ( 'awaiting' === $order->get_meta( '_chain_checkout_status' ) && current_user_can( 'manage_woocommerce' ) ) {
-			$url = wp_nonce_url(
-				admin_url( 'admin-post.php?action=chain_checkout_mark_paid&order_id=' . $order->get_id() ),
-				'chain_checkout_mark_paid_' . $order->get_id()
-			);
-			echo '<p><a class="button button-primary" href="' . esc_url( $url ) . '">' . esc_html__( 'Mark payment received', 'chain-checkout' ) . '</a></p>';
-			echo '<p class="description">' . esc_html__( 'Use for chains without auto-verify, or if detection is delayed.', 'chain-checkout' ) . '</p>';
+			?>
+			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+				<input type="hidden" name="action" value="chain_checkout_mark_paid" />
+				<input type="hidden" name="order_id" value="<?php echo esc_attr( (string) $order->get_id() ); ?>" />
+				<?php wp_nonce_field( 'chain_checkout_mark_paid_' . $order->get_id() ); ?>
+				<p><button type="submit" class="button button-primary"><?php esc_html_e( 'Mark payment received', 'chain-checkout' ); ?></button></p>
+			</form>
+			<p class="description"><?php esc_html_e( 'Use for chains without auto-verify, or if detection is delayed.', 'chain-checkout' ); ?></p>
+			<?php
 		}
 	}
 
 	/**
-	 * Manual mark-paid handler.
+	 * Manual mark-paid handler (POST only).
 	 */
 	public static function handle_mark_paid() {
 		if ( ! current_user_can( 'manage_woocommerce' ) ) {
 			wp_die( esc_html__( 'Forbidden.', 'chain-checkout' ) );
 		}
 
-		$order_id = isset( $_GET['order_id'] ) ? absint( $_GET['order_id'] ) : 0;
+		if ( ! isset( $_SERVER['REQUEST_METHOD'] ) || 'POST' !== strtoupper( (string) $_SERVER['REQUEST_METHOD'] ) ) {
+			wp_die( esc_html__( 'Invalid request method.', 'chain-checkout' ), 405 );
+		}
+
+		$order_id = isset( $_POST['order_id'] ) ? absint( $_POST['order_id'] ) : 0;
 		check_admin_referer( 'chain_checkout_mark_paid_' . $order_id );
 
 		$order = wc_get_order( $order_id );
