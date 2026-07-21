@@ -371,12 +371,17 @@ class Xdwp_Admin {
 			return;
 		}
 		$min = (int) Xdwp_Settings::get( 'min_confirmations', 1 );
-		if ( $min > 0 ) {
+		if ( 0 === $min ) {
+			echo '<div class="notice notice-warning"><p>';
+			echo esc_html__( 'Minimum confirmations is set to 0. Failed or unvalidated explorer rows are still rejected, but unconfirmed successful txs may mark orders paid. Raise this under General unless you intentionally accept zero-conf risk.', 'xorro-direct-wallet-payments-woocommerce' );
+			echo '</p></div>';
 			return;
 		}
-		echo '<div class="notice notice-warning"><p>';
-		echo esc_html__( 'Minimum confirmations is set to 0. Automatic verification may mark orders paid on unconfirmed transactions. Raise this under General unless you intentionally accept zero-conf risk.', 'xorro-direct-wallet-payments-woocommerce' );
-		echo '</p></div>';
+		if ( $min > 1 ) {
+			echo '<div class="notice notice-info"><p>';
+			echo esc_html__( 'Minimum confirmations is above 1. Chains without tip-depth APIs (e.g. XRP, Stellar, NEAR, ATOM) fail closed and will not auto-verify until you lower this to 0 or 1, or mark paid manually.', 'xorro-direct-wallet-payments-woocommerce' );
+			echo '</p></div>';
+		}
 	}
 
 	/**

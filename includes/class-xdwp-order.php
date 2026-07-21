@@ -22,6 +22,44 @@ class Xdwp_Order {
 		add_action( 'woocommerce_admin_order_data_after_billing_address', array( __CLASS__, 'admin_order_info' ), 10, 1 );
 		add_action( 'admin_post_xdwp_mark_paid', array( __CLASS__, 'handle_mark_paid' ) );
 		add_filter( 'woocommerce_get_price_html', array( __CLASS__, 'maybe_append_crypto_price' ), 20, 2 );
+		add_action( 'woocommerce_order_status_changed', array( __CLASS__, 'on_status_changed' ), 10, 4 );
+	}
+
+	/**
+	 * Stop auto-verify when a crypto order reaches a terminal WC status.
+	 *
+	 * @param int      $order_id Order ID.
+	 * @param string   $from     Previous status.
+	 * @param string   $to       New status.
+	 * @param WC_Order $order    Order.
+	 */
+	public static function on_status_changed( $order_id, $from, $to, $order ) {
+		if ( ! in_array( $to, array( 'cancelled', 'refunded', 'trash' ), true ) ) {
+			return;
+		}
+		self::on_order_terminal( $order_id, $order );
+	}
+
+	/**
+	 * Mark plugin payment as cancelled so AJAX/cron cannot resurrect the order.
+	 *
+	 * @param int            $order_id Order ID.
+	 * @param WC_Order|null  $order    Order object.
+	 */
+	public static function on_order_terminal( $order_id, $order = null ) {
+		if ( ! $order instanceof WC_Order ) {
+			$order = wc_get_order( $order_id );
+		}
+		if ( ! $order || ! self::is_ours( $order ) ) {
+			return;
+		}
+		$status = (string) self::meta( $order, 'status' );
+		if ( ! in_array( $status, array( 'awaiting', 'expired' ), true ) ) {
+			return;
+		}
+		$order->update_meta_data( '_xdwp_status', 'cancelled' );
+		$order->save();
+		$order->add_order_note( __( 'Xorro crypto payment cancelled — auto-verify stopped.', 'xorro-direct-wallet-payments-woocommerce' ) );
 	}
 
 	/**
@@ -74,6 +112,17 @@ class Xdwp_Order {
 			return false;
 		}
 
+		$order_id = $order->get_id();
+
+		// Never silently change the reserved checkout quote (customer already saw it). Fail closed on collision.
+		// Atomic (address, amount) reservation closes the concurrent-checkout TOCTOU window.
+		if ( ! Xdwp_Verifier::amount_safe_for_address( $coin_id, $address, $amount, $order_id ) ) {
+			return false;
+		}
+		if ( ! Xdwp_Verifier::reserve_amount_slot( $address, $amount, $order_id ) ) {
+			return false;
+		}
+
 		$window  = (int) Xdwp_Settings::get( 'payment_window', 60 );
 		$started = time();
 		$expires = $started + ( $window * MINUTE_IN_SECONDS );
@@ -112,15 +161,28 @@ class Xdwp_Order {
 
 		$order_id = $order->get_id();
 		$lock_key = 'xdwp_paying_' . $order_id;
+		$now      = (string) time();
 
-		// Atomic-ish lock: add_option fails if key already exists.
-		if ( ! add_option( $lock_key, (string) time(), '', 'no' ) ) {
-			$existing = get_option( $lock_key );
-			// Stale lock older than 2 minutes — take over.
+		// Atomic lock: add_option fails if key already exists; stale takeover uses compare-and-swap.
+		if ( ! add_option( $lock_key, $now, '', 'no' ) ) {
+			$existing = (string) get_option( $lock_key, '' );
+			// Fresh lock younger than 2 minutes — another worker owns it.
 			if ( $existing && ( time() - (int) $existing ) < 120 ) {
 				return;
 			}
-			update_option( $lock_key, (string) time(), false );
+			global $wpdb;
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$updated = (int) $wpdb->query(
+				$wpdb->prepare(
+					"UPDATE {$wpdb->options} SET option_value = %s WHERE option_name = %s AND option_value = %s",
+					$now,
+					$lock_key,
+					$existing
+				)
+			);
+			if ( 1 !== $updated ) {
+				return;
+			}
 		}
 
 		try {
@@ -137,10 +199,26 @@ class Xdwp_Order {
 				return;
 			}
 
+			// Awaiting: only while WC still expects payment. Expired: allow recovery on failed/on-hold/pending.
+			$wc_status = $order->get_status();
+			if ( 'awaiting' === $status && ! in_array( $wc_status, array( 'pending', 'on-hold' ), true ) ) {
+				return;
+			}
+			if ( 'expired' === $status && ! in_array( $wc_status, array( 'failed', 'pending', 'on-hold' ), true ) ) {
+				return;
+			}
+
 			if ( $order->is_paid() ) {
 				$order->update_meta_data( '_xdwp_status', 'paid' );
 				$order->update_meta_data( '_xdwp_confirmed_at', time() );
 				$order->save();
+				if ( class_exists( 'Xdwp_Verifier' ) ) {
+					Xdwp_Verifier::release_amount_slot(
+						(string) self::meta( $order, 'address' ),
+						(string) self::meta( $order, 'amount' ),
+						$order_id
+					);
+				}
 				return;
 			}
 
@@ -156,6 +234,15 @@ class Xdwp_Order {
 			$order->update_meta_data( '_xdwp_status', 'paid' );
 			$order->update_meta_data( '_xdwp_confirmed_at', time() );
 			$order->save();
+
+			// Free the dust slot so shared wallets can reuse amounts after wrap (txid claim still blocks double-spend).
+			if ( class_exists( 'Xdwp_Verifier' ) ) {
+				Xdwp_Verifier::release_amount_slot(
+					(string) self::meta( $order, 'address' ),
+					(string) self::meta( $order, 'amount' ),
+					$order_id
+				);
+			}
 
 			$target = Xdwp_Settings::get( 'order_status', 'processing' );
 
@@ -197,6 +284,12 @@ class Xdwp_Order {
 		$grace = max( 0, (int) Xdwp_Settings::get( 'expiry_grace_minutes', 30 ) ) * MINUTE_IN_SECONDS;
 		if ( time() <= ( $expires + $grace ) ) {
 			// Still within grace — keep awaiting so verifier/cron can recover late txs.
+			return;
+		}
+
+		// Last-chance verify before expiring so on-chain funds are claimed (not reusable by a later order).
+		if ( 'yes' === Xdwp_Settings::get( 'auto_verify', 'yes' ) && class_exists( 'Xdwp_Verifier' ) && Xdwp_Verifier::verify_order( $order ) ) {
+			self::mark_paid( $order );
 			return;
 		}
 
@@ -384,15 +477,30 @@ class Xdwp_Order {
 		echo '<p><strong>' . esc_html__( 'Address:', 'xorro-direct-wallet-payments-woocommerce' ) . '</strong><br><code style="word-break:break-all;">' . esc_html( Xdwp_Order::meta( $order, 'address' ) ) . '</code></p>';
 		echo '<p><strong>' . esc_html__( 'Status:', 'xorro-direct-wallet-payments-woocommerce' ) . '</strong> ' . esc_html( Xdwp_Order::meta( $order, 'status' ) ) . '</p>';
 
-		if ( 'awaiting' === Xdwp_Order::meta( $order, 'status' ) && current_user_can( 'manage_woocommerce' ) ) {
+		$xdwp_status = Xdwp_Order::meta( $order, 'status' );
+		$can_mark    = in_array( $xdwp_status, array( 'awaiting', 'expired' ), true )
+			&& current_user_can( 'manage_woocommerce' )
+			&& in_array( $order->get_status(), array( 'pending', 'on-hold', 'failed' ), true );
+
+		if ( $can_mark ) {
 			?>
 			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 				<input type="hidden" name="action" value="xdwp_mark_paid" />
 				<input type="hidden" name="order_id" value="<?php echo esc_attr( (string) $order->get_id() ); ?>" />
 				<?php wp_nonce_field( 'xdwp_mark_paid_' . $order->get_id() ); ?>
+				<p>
+					<label for="xdwp_manual_txid"><strong><?php esc_html_e( 'On-chain transaction ID', 'xorro-direct-wallet-payments-woocommerce' ); ?></strong></label><br />
+					<input type="text" class="widefat" id="xdwp_manual_txid" name="xdwp_txid" required minlength="8" autocomplete="off" />
+				</p>
+				<p>
+					<label>
+						<input type="checkbox" name="xdwp_confirm_manual" value="1" required />
+						<?php esc_html_e( 'I confirm this transaction paid this order on-chain.', 'xorro-direct-wallet-payments-woocommerce' ); ?>
+					</label>
+				</p>
 				<p><button type="submit" class="button button-primary"><?php esc_html_e( 'Mark payment received', 'xorro-direct-wallet-payments-woocommerce' ); ?></button></p>
 			</form>
-			<p class="description"><?php esc_html_e( 'Use for chains without auto-verify, or if detection is delayed.', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
+			<p class="description"><?php esc_html_e( 'Requires a txid. Use for chains without auto-verify, delayed detection, or late payments after expiry.', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
 			<?php
 		}
 	}
@@ -412,11 +520,57 @@ class Xdwp_Order {
 		$order_id = isset( $_POST['order_id'] ) ? absint( $_POST['order_id'] ) : 0;
 		check_admin_referer( 'xdwp_mark_paid_' . $order_id );
 
-		$order = wc_get_order( $order_id );
-		if ( $order && Xdwp_Order::is_ours( $order ) ) {
-			self::mark_paid( $order );
-			$order->add_order_note( __( 'Payment marked as received manually by admin.', 'xorro-direct-wallet-payments-woocommerce' ) );
+		$txid = isset( $_POST['xdwp_txid'] ) ? sanitize_text_field( wp_unslash( $_POST['xdwp_txid'] ) ) : '';
+		$txid = strtolower( preg_replace( '/\s+/', '', (string) $txid ) );
+		if ( strlen( $txid ) < 8 || strlen( $txid ) > 128 || ! preg_match( '/^[a-z0-9x]+$/', $txid ) ) {
+			wp_die( esc_html__( 'A valid on-chain transaction ID is required.', 'xorro-direct-wallet-payments-woocommerce' ) );
 		}
+		if ( empty( $_POST['xdwp_confirm_manual'] ) ) {
+			wp_die( esc_html__( 'Manual confirmation checkbox is required.', 'xorro-direct-wallet-payments-woocommerce' ) );
+		}
+
+		$order = wc_get_order( $order_id );
+		if ( ! $order || ! self::is_ours( $order ) ) {
+			wp_die( esc_html__( 'Order not found.', 'xorro-direct-wallet-payments-woocommerce' ) );
+		}
+
+		// Same eligibility as the admin UI — never squat a txid on cancelled/ineligible orders.
+		$xdwp_status = (string) self::meta( $order, 'status' );
+		$wc_status   = $order->get_status();
+		$eligible    = in_array( $xdwp_status, array( 'awaiting', 'expired' ), true );
+		if ( $eligible && 'awaiting' === $xdwp_status ) {
+			$eligible = in_array( $wc_status, array( 'pending', 'on-hold' ), true );
+		}
+		if ( $eligible && 'expired' === $xdwp_status ) {
+			$eligible = in_array( $wc_status, array( 'failed', 'pending', 'on-hold' ), true );
+		}
+		if ( ! $eligible ) {
+			wp_die( esc_html__( 'This order cannot be marked paid (wrong status).', 'xorro-direct-wallet-payments-woocommerce' ) );
+		}
+
+		if ( ! Xdwp_Verifier::reserve_txid( $txid, $order_id ) ) {
+			wp_die( esc_html__( 'That transaction ID is already linked to another order.', 'xorro-direct-wallet-payments-woocommerce' ) );
+		}
+
+		$order->update_meta_data( '_xdwp_txid', $txid );
+		$order->save();
+		self::mark_paid( $order );
+
+		$order = wc_get_order( $order_id );
+		if ( ! $order || 'paid' !== self::meta( $order, 'status' ) ) {
+			Xdwp_Verifier::release_txid( $txid, $order_id );
+			$order && $order->delete_meta_data( '_xdwp_txid' );
+			$order && $order->save();
+			wp_die( esc_html__( 'Could not complete payment for this order. The transaction ID was not kept.', 'xorro-direct-wallet-payments-woocommerce' ) );
+		}
+
+		$order->add_order_note(
+			sprintf(
+				/* translators: %s: transaction id */
+				__( 'Payment marked as received manually by admin (txid: %s).', 'xorro-direct-wallet-payments-woocommerce' ),
+				$txid
+			)
+		);
 
 		wp_safe_redirect( wp_get_referer() ? wp_get_referer() : admin_url( 'edit.php?post_type=shop_order' ) );
 		exit;

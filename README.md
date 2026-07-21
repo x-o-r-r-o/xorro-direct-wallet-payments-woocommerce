@@ -94,6 +94,48 @@ php tests/smoke-test.php
 
 See [readme.txt](readme.txt).
 
+### 1.5.15
+
+- Security: manual mark-paid enforces same eligibility as admin UI (no txid squatting on cancelled/ineligible orders)
+- Security: release txid claim if mark-paid fails after reserve; normalize txids to lowercase
+
+### 1.5.14
+
+- Security: soft_finality / 0-conf still requires successful/validated txs (never accept failed rows)
+- Security: TRON rejects confirmed===false even at 0-conf
+- Security: ZIL amounts always interpreted as Qa (no human-unit heuristic)
+- Fix: release amount slots when orders are paid; shorten unpaid slot TTL to window+grace+1 day
+
+### 1.5.13
+
+- Security: cancelled/refunded/trashed orders stop auto-verify (xdwp_status=cancelled); verify/mark_paid require live WC payment statuses
+- Security: XRP rejects validated===false even when tesSUCCESS is present
+- Security: ZIL requires all present success flags (no OR bypass)
+- Fix: admin mark-paid available for expired/failed late payments
+- Hardening: shared-address peers include cancelled; cron self-heal on upgrade; notice when min_confirmations>1 blocks soft-finality chains
+
+### 1.5.12
+
+- Security: NEAR requires explicit success (boolean true / SuccessValue); 0% underpayment tolerance is exact for low-decimal assets; native TRX requires TransferContract (fail closed)
+- Hardening: NEAR deposit prefers non-zero actions[].deposit over zero actions_agg.deposit
+
+### 1.5.11
+
+- Security: Subscan/DOT requires explicit success+hash even with confirmations (failed transfers cannot mark paid); wider Etherscan/TronGrid/Solana lookbacks
+
+### 1.5.10
+
+- Security: soft-finality chains require explicit success/finality flags (missing explorer fields ≠ validated); Helius uses documented `?api-key=` + `X-Api-Key`
+
+### 1.5.9
+
+- Security: expire last-chance verify, amount-slot locks, updater checksum fail-closed, TRON/Helius hardening, fresh FX for orders, soft-finality fail-closed
+
+### 1.5.8
+
+- Security: shared-wallet matching, dust collisions, txid/lock CAS, TRON fail-closed, EVM contract checks, manual mark-paid txid, API key masking/constants
+- Cleanup: orphan usdt.svg, duplicate admin enqueue, retired per-explorer API key fallbacks
+
 ### 1.5.7
 
 - Author URI set to GitHub profile (distinct from Plugin URI) for wordpress.org header validation

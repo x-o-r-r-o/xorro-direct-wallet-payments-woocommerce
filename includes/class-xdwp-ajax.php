@@ -21,7 +21,6 @@ class Xdwp_Ajax {
 		add_action( 'wp_ajax_xdwp_quote', array( __CLASS__, 'quote' ) );
 		add_action( 'wp_ajax_nopriv_xdwp_quote', array( __CLASS__, 'quote' ) );
 		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'register_assets' ) );
-		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'register_admin_assets' ) );
 	}
 
 	/**
@@ -78,56 +77,6 @@ class Xdwp_Ajax {
 	}
 
 	/**
-	 * Admin assets.
-	 *
-	 * @param string $hook Hook suffix.
-	 */
-	public static function register_admin_assets( $hook ) {
-		$page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$is_plugin_page = ( 0 === strpos( $page, 'xorro-direct-wallet-payments-woocommerce' ) ) || ( false !== strpos( (string) $hook, 'xorro-direct-wallet-payments-woocommerce' ) );
-
-		if ( ! $is_plugin_page && 'woocommerce_page_wc-settings' !== $hook ) {
-			return;
-		}
-
-		// Plugin settings screens: Admin owns the full shell (enqueue + inline CSS backup).
-		if ( $is_plugin_page && class_exists( 'Xdwp_Admin' ) ) {
-			Xdwp_Admin::enqueue_shell_assets();
-			return;
-		}
-
-		$ver = XDWP_VERSION;
-		$css = XDWP_PATH . 'assets/css/admin.css';
-		if ( is_readable( $css ) ) {
-			$ver = XDWP_VERSION . '.' . (string) filemtime( $css );
-		}
-
-		wp_enqueue_style( 'dashicons' );
-		wp_enqueue_style(
-			'xdwp-admin',
-			XDWP_URL . 'assets/css/admin.css',
-			array( 'dashicons' ),
-			$ver
-		);
-
-		wp_enqueue_script(
-			'xdwp-admin',
-			XDWP_URL . 'assets/js/admin.js',
-			array( 'jquery' ),
-			XDWP_VERSION,
-			true
-		);
-
-		$admin_i18n = array(
-			'defaultIcon'      => Xdwp_Branding::default_icon_url(),
-			'mediaTitle'       => __( 'Select checkout icon', 'xorro-direct-wallet-payments-woocommerce' ),
-			'mediaButton'      => __( 'Use this icon', 'xorro-direct-wallet-payments-woocommerce' ),
-			'mediaUnavailable' => __( 'Media library is not available.', 'xorro-direct-wallet-payments-woocommerce' ),
-		);
-		wp_localize_script( 'xdwp-admin', 'xdwpAdmin', $admin_i18n );
-	}
-
-	/**
 	 * Poll payment status for an order.
 	 */
 	public static function payment_status() {
@@ -178,7 +127,12 @@ class Xdwp_Ajax {
 		$status = Xdwp_Order::meta( $order, 'status' );
 
 		// Throttle live chain checks from the browser poll (cron remains primary).
-		if ( 'awaiting' === $status && 'yes' === Xdwp_Settings::get( 'auto_verify', 'yes' ) ) {
+		// Only while WooCommerce still expects payment (blocks cancelled/refunded resurrection).
+		if (
+			'awaiting' === $status
+			&& in_array( $order->get_status(), array( 'pending', 'on-hold' ), true )
+			&& 'yes' === Xdwp_Settings::get( 'auto_verify', 'yes' )
+		) {
 			$throttle_key = 'xdwp_ajax_verify_' . $order_id;
 			if ( ! get_transient( $throttle_key ) ) {
 				set_transient( $throttle_key, 1, 45 );

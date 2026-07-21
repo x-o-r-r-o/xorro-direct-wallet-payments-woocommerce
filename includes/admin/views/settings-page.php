@@ -120,7 +120,7 @@ $active  = isset( $tabs[ $tab ] ) ? $tabs[ $tab ] : $tabs['general'];
 										<th scope="row"><?php esc_html_e( 'Minimum confirmations', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
 										<td>
 											<input type="number" min="0" max="64" name="xdwp[min_confirmations]" value="<?php echo esc_attr( (string) ( $settings['min_confirmations'] ?? 1 ) ); ?>" class="small-text cc-input" />
-											<p class="description"><?php esc_html_e( 'Required on-chain confirmations before marking an order paid. Applied across supported explorers/RPCs (fail closed when depth cannot be verified).', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
+											<p class="description"><?php esc_html_e( 'Required on-chain confirmations before marking an order paid. Chains without tip-depth APIs only accept payments when this is 0 or 1 (fail closed above that).', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
 										</td>
 									</tr>
 									<tr>
@@ -304,7 +304,7 @@ $active  = isset( $tabs[ $tab ] ) ? $tabs[ $tab ] : $tabs['general'];
 									<tr>
 										<th scope="row"><?php esc_html_e( 'CoinGecko API key (optional)', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
 										<td>
-											<input type="password" class="regular-text cc-input" name="xdwp[coingecko_api_key]" value="<?php echo esc_attr( $settings['coingecko_api_key'] ?? '' ); ?>" autocomplete="new-password" />
+											<input type="password" class="regular-text cc-input" name="xdwp[coingecko_api_key]" value="" placeholder="<?php echo esc_attr( Xdwp_Settings::api_key_input_placeholder( 'coingecko_api_key' ) ); ?>" autocomplete="new-password" />
 											<p class="description">
 												<?php
 												echo wp_kses(
@@ -328,7 +328,7 @@ $active  = isset( $tabs[ $tab ] ) ? $tabs[ $tab ] : $tabs['general'];
 									<tr>
 										<th scope="row"><?php esc_html_e( 'Etherscan API V2 key', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
 										<td>
-											<input type="password" class="regular-text cc-input" name="xdwp[etherscan_api_key]" value="<?php echo esc_attr( $settings['etherscan_api_key'] ?? '' ); ?>" autocomplete="new-password" />
+											<input type="password" class="regular-text cc-input" name="xdwp[etherscan_api_key]" value="" placeholder="<?php echo esc_attr( Xdwp_Settings::api_key_input_placeholder( 'etherscan_api_key' ) ); ?>" autocomplete="new-password" />
 											<p class="description">
 												<?php
 												echo wp_kses(
@@ -352,7 +352,7 @@ $active  = isset( $tabs[ $tab ] ) ? $tabs[ $tab ] : $tabs['general'];
 									<tr>
 										<th scope="row"><?php esc_html_e( 'TronGrid API key (optional)', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
 										<td>
-											<input type="password" class="regular-text cc-input" name="xdwp[trongrid_api_key]" value="<?php echo esc_attr( $settings['trongrid_api_key'] ?? '' ); ?>" autocomplete="new-password" />
+											<input type="password" class="regular-text cc-input" name="xdwp[trongrid_api_key]" value="" placeholder="<?php echo esc_attr( Xdwp_Settings::api_key_input_placeholder( 'trongrid_api_key' ) ); ?>" autocomplete="new-password" />
 											<p class="description">
 												<?php
 												echo wp_kses(
@@ -376,7 +376,7 @@ $active  = isset( $tabs[ $tab ] ) ? $tabs[ $tab ] : $tabs['general'];
 									<tr>
 										<th scope="row"><?php esc_html_e( 'Helius API key (optional)', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
 										<td>
-											<input type="password" class="regular-text cc-input" name="xdwp[helius_api_key]" value="<?php echo esc_attr( $settings['helius_api_key'] ?? '' ); ?>" autocomplete="new-password" />
+											<input type="password" class="regular-text cc-input" name="xdwp[helius_api_key]" value="" placeholder="<?php echo esc_attr( Xdwp_Settings::api_key_input_placeholder( 'helius_api_key' ) ); ?>" autocomplete="new-password" />
 											<p class="description">
 												<?php
 												echo wp_kses(
@@ -400,7 +400,7 @@ $active  = isset( $tabs[ $tab ] ) ? $tabs[ $tab ] : $tabs['general'];
 									<tr>
 										<th scope="row"><?php esc_html_e( 'Subscan API key (optional)', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
 										<td>
-											<input type="password" class="regular-text cc-input" name="xdwp[subscan_api_key]" value="<?php echo esc_attr( $settings['subscan_api_key'] ?? '' ); ?>" autocomplete="new-password" />
+											<input type="password" class="regular-text cc-input" name="xdwp[subscan_api_key]" value="" placeholder="<?php echo esc_attr( Xdwp_Settings::api_key_input_placeholder( 'subscan_api_key' ) ); ?>" autocomplete="new-password" />
 											<p class="description">
 												<?php
 												echo wp_kses(
@@ -424,7 +424,7 @@ $active  = isset( $tabs[ $tab ] ) ? $tabs[ $tab ] : $tabs['general'];
 									<tr>
 										<th scope="row"><?php esc_html_e( 'ViewBlock API key (optional)', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
 										<td>
-											<input type="password" class="regular-text cc-input" name="xdwp[viewblock_api_key]" value="<?php echo esc_attr( $settings['viewblock_api_key'] ?? '' ); ?>" autocomplete="new-password" />
+											<input type="password" class="regular-text cc-input" name="xdwp[viewblock_api_key]" value="" placeholder="<?php echo esc_attr( Xdwp_Settings::api_key_input_placeholder( 'viewblock_api_key' ) ); ?>" autocomplete="new-password" />
 											<p class="description">
 												<?php
 												echo wp_kses(

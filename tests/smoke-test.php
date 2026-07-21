@@ -131,6 +131,9 @@ xdwp_assert( false !== strpos( $verifier, 'mempool.space' ), 'mempool.space pres
 xdwp_assert( false !== strpos( $verifier, 'helius-rpc.com' ), 'Helius RPC present' );
 xdwp_assert( false !== strpos( $verifier, 'TRON-PRO-API-KEY' ), 'TronGrid key header present' );
 xdwp_assert( false !== strpos( $verifier, 'function match_band' ), 'verifier match_band helper' );
+xdwp_assert( false !== strpos( $verifier, 'SuccessValue' ) || false !== strpos( $verifier, 'SuccessReceiptId' ), 'NEAR success status SuccessValue/SuccessReceiptId' );
+xdwp_assert( false !== strpos( $verifier, 'tolerance_pct <= 0' ), 'match_band exact at 0% underpayment tolerance' );
+xdwp_assert( false !== strpos( $verifier, "'TransferContract' !== \$contract_type" ) && false === strpos( $verifier, '$contract_type &&' ), 'native TRX TransferContract fail-closed (no truthy guard)' );
 xdwp_assert( false !== strpos( $verifier, 'etherscan_confirmed' ), 'verifier confirmation check' );
 xdwp_assert( false !== strpos( $verifier, 'confirmations_ok' ), 'verifier confirmations_ok helper' );
 xdwp_assert( false !== strpos( $verifier, 'block_depth_ok' ), 'verifier block_depth_ok helper' );
@@ -138,20 +141,83 @@ xdwp_assert( false !== strpos( $verifier, 'http_get_int' ), 'verifier tip height
 xdwp_assert( false !== strpos( $verifier, 'finalized' ), 'solana finalized commitment' );
 xdwp_assert( false !== strpos( $verifier, 'only_confirmed=true' ), 'tron only_confirmed list' );
 xdwp_assert( false !== strpos( $verifier, 'tron_tx_block_number' ), 'tron block lookup helper' );
-xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-prices.php' ), '$slots      = 99' ), 'unique dust has 99 slots' );
+xdwp_assert( false === strpos( $verifier, '$need <= 20' ), 'tron does not soft-accept without block height' );
+xdwp_assert( false !== strpos( $verifier, 'amount_safe_for_address' ), 'shared-address amount safety helper' );
+xdwp_assert( false !== strpos( $verifier, 'max_peers' ), 'shared-address peer pagination fail-closed' );
+xdwp_assert( false !== strpos( $verifier, 'option_value = %s WHERE option_name = %s AND option_value = %s' ), 'txid claim compare-and-swap' );
+xdwp_assert( false !== strpos( $verifier, 'function release_txid' ), 'release_txid helper' );
+xdwp_assert( false !== strpos( $verifier, 'function claim_txid' ) && false !== strpos( $verifier, 'strtolower( trim( (string) $txid ) )' ), 'strtolower in claim_txid path' );
+xdwp_assert( false !== strpos( $verifier, 'contractAddress' ), 'EVM token matcher checks contractAddress' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-prices.php' ), '$slots      = 499' ), 'unique dust has 499 slots' );
 
 $order_php = file_get_contents( $root . '/includes/class-xdwp-order.php' );
 xdwp_assert( false !== strpos( $order_php, 'expiry_grace_minutes' ), 'order expiry grace' );
 xdwp_assert( false !== strpos( $order_php, "'failed'" ), 'expired orders fail not cancel' );
 xdwp_assert( false !== strpos( $order_php, 'xdwp_status_' ), 'order-bound status nonce' );
 xdwp_assert( false !== strpos( $order_php, 'REQUEST_METHOD' ), 'mark-paid POST only' );
+xdwp_assert( false !== strpos( $order_php, 'xdwp_confirm_manual' ), 'manual mark-paid requires confirmation' );
+xdwp_assert( false !== strpos( $order_php, 'reserve_txid' ), 'manual mark-paid reserves txid' );
+xdwp_assert( false !== strpos( $order_php, 'release_txid' ), 'manual mark-paid releases txid on failure' );
+xdwp_assert( false !== strpos( $order_php, 'Wrong status or cannot be marked' ) || false !== strpos( $order_php, 'wrong status' ), 'mark-paid eligibility check Wrong status or cannot be marked' );
+xdwp_assert( false !== strpos( $order_php, 'amount_safe_for_address' ), 'assign_payment checks amount collisions' );
+xdwp_assert( false !== strpos( $order_php, 'reserve_amount_slot' ), 'assign_payment reserves amount slot' );
+xdwp_assert( false !== strpos( $order_php, 'verify_order' ), 'expire path last-chance verify' );
+xdwp_assert( false !== strpos( $order_php, 'on_status_changed' ), 'order on_status_changed hook' );
+xdwp_assert( false !== strpos( $order_php, 'on_order_terminal' ), 'order on_order_terminal helper' );
+xdwp_assert( false !== strpos( $order_php, "'expired'" ) && false !== strpos( $order_php, 'can_mark' ), 'mark-paid available for expired' );
+xdwp_assert( false !== strpos( $verifier, "'cancelled'" ) && false !== strpos( $verifier, 'max_peers' ), 'cancelled in peer status list' );
+xdwp_assert( false !== strpos( $order_php, "_xdwp_status', 'cancelled'" ), 'xdwp_status cancelled on terminal' );
+xdwp_assert( false !== strpos( $verifier, "has_validated && ! \$tx['validated']" ), 'XRP rejects validated===false' );
+xdwp_assert( false !== strpos( $verifier, "! \$has_receipt || \$tx['receiptSuccess']" ), 'ZIL requires all present success flags' );
+
+$settings_php = file_get_contents( $root . '/includes/class-xdwp-settings.php' );
+xdwp_assert( false !== strpos( $settings_php, 'XDWP_ETHERSCAN_API_KEY' ), 'API keys support wp-config constants' );
+xdwp_assert( false !== strpos( $settings_php, 'is_masked_secret' ), 'API key sanitize keeps blank submissions' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/admin/views/settings-page.php' ), 'api_key_input_placeholder' ), 'settings do not echo API keys' );
 
 $ajax = file_get_contents( $root . '/includes/class-xdwp-ajax.php' );
 xdwp_assert( false !== strpos( $ajax, 'xdwp_status_' ), 'ajax order-bound nonce' );
+xdwp_assert( false === strpos( $ajax, 'register_admin_assets' ), 'ajax has no duplicate admin asset enqueue' );
+xdwp_assert( false === strpos( $settings_php, 'XDWP_BSCSCAN_API_KEY' ), 'settings dropped legacy explorer constants' );
+xdwp_assert( false === strpos( file_get_contents( $root . '/includes/class-xdwp-verifier.php' ), 'bscscan_api_key' ), 'verifier has no legacy explorer fallback' );
+xdwp_assert( ! is_file( $root . '/assets/svg/coins/usdt.svg' ), 'orphan usdt.svg removed' );
+xdwp_assert( is_file( $root . '/assets/svg/coins/usdt-round.svg' ), 'usdt-round.svg kept' );
+xdwp_assert( false !== strpos( $verifier, 'reserve_amount_slot' ), 'amount slot reservation helper' );
+xdwp_assert( false !== strpos( $verifier, 'release_amount_slot' ), 'amount slot release helper' );
+xdwp_assert( false !== strpos( $verifier, 'soft_finality_ok' ), 'soft finality helper' );
+// soft_finality_ok must not short-circuit to true on need<=0; success path is return (bool) $validated.
+if ( preg_match( '/function soft_finality_ok\s*\([^)]*\)\s*\{(.*?)\n\t\}/s', $verifier, $sfm ) ) {
+	$sf_body = $sfm[1];
+	xdwp_assert( false === strpos( $sf_body, 'if ( $need <= 0 ) { return true; }' ), 'soft_finality_ok no early need<=0 true' );
+	xdwp_assert( false !== strpos( $sf_body, 'return (bool) $validated' ), 'soft_finality_ok returns validated bool' );
+} else {
+	xdwp_assert( false, 'soft_finality_ok body extractable' );
+}
+// ZIL amounts always as Qa (12 decimals) near check_zil.
+$zil_pos = strpos( $verifier, 'function check_zil' );
+xdwp_assert( false !== $zil_pos, 'check_zil present' );
+$zil_slice = false !== $zil_pos ? substr( $verifier, $zil_pos, 2500 ) : '';
+xdwp_assert( false !== strpos( $zil_slice, 'raw_amount_in_band( $raw, 12,' ), 'ZIL raw_amount_in_band uses 12 near check_zil' );
+// Helius RPC requires ?api-key= (documented); also send X-Api-Key.
+xdwp_assert( false !== strpos( $verifier, 'api-key=' ), 'Helius uses documented api-key query' );
+xdwp_assert( false !== strpos( $verifier, 'X-Api-Key' ), 'Helius also sends X-Api-Key header' );
+xdwp_assert( false !== strpos( $verifier, 'tron_destination_matches' ), 'tron destination matcher present' );
+xdwp_assert( false !== strpos( $verifier, 'tron_hex_to_base58' ), 'tron hex to base58 helper' );
+xdwp_assert( false !== strpos( $verifier, 'base58_encode' ), 'base58_encode helper' );
+xdwp_assert( false !== strpos( $verifier, "isset( \$tx['transaction_successful'] ) && \$tx['transaction_successful']" ), 'stellar requires explicit success' );
+xdwp_assert( false !== strpos( $verifier, "isset( \$row['irreversible'] ) && \$row['irreversible']" ), 'eos requires irreversible' );
+xdwp_assert( false !== strpos( $verifier, "isset( \$tx['receipt']['exitCode'] ) && 0 === (int) \$tx['receipt']['exitCode']" ), 'fil requires explicit exitCode 0' );
+xdwp_assert( false !== strpos( $verifier, "empty( \$tx['success'] )" ), 'check_dot rejects empty success' );
+xdwp_assert( false === strpos( $verifier, 'tokenDecimal' ), 'tokenDecimal not preferred over configured decimals' );
+xdwp_assert( false !== strpos( $verifier, '$dec = (int) $decimals' ), 'raw_amount uses configured decimals near contractAddress' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-updater.php' ), 'xdwp_pkg_sha_' ), 'updater caches package sha256' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-prices.php' ), '$allow_stale' ), 'prices support fail-closed fresh rates' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/uninstall.php' ), 'xdwp_amt_' ), 'uninstall clears amount slots' );
 
 // --- Headers ---
 $main = file_get_contents( $root . '/xorro-direct-wallet-payments-woocommerce.php' );
-xdwp_assert( false !== strpos( $main, 'Version:           1.5.7' ), 'plugin version 1.5.7' );
+xdwp_assert( false !== strpos( $main, 'Version:           1.5.15' ), 'plugin version 1.5.15' );
+xdwp_assert( false !== strpos( $main, "XDWP_VERSION', '1.5.15'" ), 'XDWP_VERSION 1.5.15' );
 xdwp_assert( false !== strpos( $main, 'Author:            xorro' ), 'author is xorro' );
 xdwp_assert( false !== strpos( $main, 'Author URI:        https://github.com/x-o-r-r-o' ), 'author URI is GitHub profile' );
 xdwp_assert( false === strpos( $main, 'Author URI:        https://github.com/x-o-r-r-o/xorro-direct-wallet-payments-woocommerce' ), 'author URI not the plugin repo' );
@@ -211,11 +277,11 @@ xdwp_assert( false !== strpos( $readme_md, 'Checkout branding' ), 'README.md bra
 
 $readme = file_get_contents( $root . '/readme.txt' );
 xdwp_assert( false !== strpos( $readme, 'Tested up to: 7.0' ), 'readme Tested up to WP 7.0' );
-xdwp_assert( false !== strpos( $readme, 'Stable tag: 1.5.7' ), 'readme stable 1.5.7' );
+xdwp_assert( false !== strpos( $readme, 'Stable tag: 1.5.15' ), 'readme stable 1.5.15' );
 
 $readme = file_get_contents( $root . '/readme.txt' );
 xdwp_assert( false !== strpos( $readme, '== External services ==' ), 'readme external services section' );
-xdwp_assert( false !== strpos( $readme, '1.5.7' ), 'readme 1.5.7 changelog' );
+xdwp_assert( false !== strpos( $readme, '1.5.15' ), 'readme 1.5.15 changelog' );
 $privacy = file_get_contents( $root . '/includes/class-xdwp-privacy.php' );
 xdwp_assert( false !== strpos( $privacy, 'wp_add_privacy_policy_content' ), 'privacy policy content registered' );
 xdwp_assert( is_file( $root . '/assets/js/qrcode.LICENSE.txt' ), 'qrcode license attribution' );
@@ -234,6 +300,8 @@ xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-
 xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-updater.php' ), 'releases/latest' ), 'updater fetches GitHub latest release' );
 xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-updater.php' ), 'hash_file' ), 'updater verifies ZIP sha256' );
 xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-updater.php' ), 'is_allowed_package_url' ), 'updater allowlists package hosts' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-updater.php' ), 'is_our_package_url' ), 'updater is_our_package_url present' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-updater.php' ), 'releases/download' ), 'updater package URL requires releases/download' );
 xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-wallets.php' ), 'LAST_INSERT_ID' ), 'wallet rotation uses LAST_INSERT_ID' );
 xdwp_assert( false === strpos( file_get_contents( $root . '/includes/class-xdwp.php' ), 'load_plugin_textdomain' ), 'no load_plugin_textdomain' );
 xdwp_assert( false === strpos( file_get_contents( $root . '/includes/admin/class-xdwp-admin.php' ), "echo '<style" ), 'admin has no raw style echo' );

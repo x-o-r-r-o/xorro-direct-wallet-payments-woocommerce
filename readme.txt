@@ -4,7 +4,7 @@ Tags: woocommerce, cryptocurrency, bitcoin, ethereum, payments, usdt, crypto che
 Requires at least: 6.9
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.5.7
+Stable tag: 1.5.15
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -255,6 +255,54 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 
 == Changelog ==
 
+= 1.5.15 =
+* Security: manual mark-paid enforces same eligibility as admin UI (no txid squatting on cancelled/ineligible orders)
+* Security: release txid claim if mark-paid fails after reserve; normalize txids to lowercase
+
+= 1.5.14 =
+* Security: soft_finality / 0-conf still requires successful/validated txs (never accept failed rows)
+* Security: TRON rejects confirmed===false even at 0-conf
+* Security: ZIL amounts always interpreted as Qa (no human-unit heuristic)
+* Fix: release amount slots when orders are paid; shorten unpaid slot TTL to window+grace+1 day
+
+= 1.5.13 =
+* Security: cancelled/refunded/trashed orders stop auto-verify (xdwp_status=cancelled); verify/mark_paid require live WC payment statuses
+* Security: XRP rejects validated===false even when tesSUCCESS is present
+* Security: ZIL requires all present success flags (no OR bypass)
+* Fix: admin mark-paid available for expired/failed late payments
+* Hardening: shared-address peers include cancelled; cron self-heal on upgrade; notice when min_confirmations>1 blocks soft-finality chains
+
+= 1.5.12 =
+* Security: NEAR verification requires explicit success status (boolean true / SuccessValue); rejects missing/false
+* Security: 0% underpayment tolerance is exact for low-decimal assets (no 50-unit absolute floor bypass on GUSD/etc.)
+* Security: native TRX requires TransferContract type (fail closed when type missing)
+* Hardening: NEAR deposit prefers non-zero actions[].deposit over zero actions_agg.deposit
+
+= 1.5.11 =
+* Security: Subscan/DOT requires explicit success+hash even when confirmations are present (failed transfers cannot mark paid)
+* Hardening: wider explorer lookbacks (Etherscan/TronGrid/Solana) against deposit-address flooding delays
+
+= 1.5.10 =
+* Security: soft-finality chains (XRP, Stellar, EOS, EGLD, FIL, DOT, ZIL) require explicit success/finality flags — missing explorer fields no longer count as validated
+* Fix: Helius RPC uses documented `?api-key=` plus `X-Api-Key` header (smoke tests aligned)
+
+= 1.5.9 =
+* Security: last-chance verify on expire + retain recent expired amounts to block payment reuse
+* Security: atomic (address, amount) reservation; refuse checkout quote changes on collision
+* Security: updater always requires SHA-256 (fail closed) with package-keyed checksum cache
+* Security: TRON destination/contract checks; Helius key via Authorization header
+* Security: order quotes fail closed on stale FX rates; soft-finality fail-closed when tip depth unavailable
+
+= 1.5.8 =
+* Security: shared-wallet peer matching paginates all awaiting orders (fail-closed) instead of a 25-order window
+* Security: unique-dust cycle expanded; checkout refuses overlapping amount bands on the same address
+* Security: txid claim and mark-paid locks use compare-and-swap (no TOCTOU reclaim races)
+* Security: TRON verification fails closed without a resolvable block height
+* Security: EVM token matcher requires matching contractAddress per row
+* Security: manual mark-paid requires txid + confirmation and reserves the txid
+* Security: API keys are never echoed in admin HTML; optional wp-config constants (XDWP_*_API_KEY)
+* Cleanup: removed orphan usdt.svg, duplicate admin asset enqueue, and retired per-explorer API key fallbacks (migrated into Etherscan V2 key)
+
 = 1.5.7 =
 * Fixed Plugin URI vs Author URI: Author URI is the GitHub profile; Plugin URI remains the plugin repository (wordpress.org requirement)
 
@@ -389,6 +437,30 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.5.15 =
+Security: manual mark-paid eligibility matches admin UI; release txid claim on failed mark-paid; normalize txids to lowercase. Update recommended.
+
+= 1.5.14 =
+Security: soft_finality/0-conf never accepts failed txs; TRON confirmed===false rejected; ZIL amounts as Qa; amount slots released on paid. Update recommended.
+
+= 1.5.13 =
+Security: terminal orders stop auto-verify; XRP/ZIL success hardening; mark-paid for late expired payments. Update recommended.
+
+= 1.5.12 =
+Security: NEAR success status, exact 0% underpayment bands, native TRX TransferContract fail-closed. Update recommended.
+
+= 1.5.11 =
+Security: DOT/Subscan rejects failed transfers without success+hash; wider explorer lookbacks. Update recommended.
+
+= 1.5.10 =
+Security: soft-finality explorers require explicit success markers. Update recommended.
+
+= 1.5.9 =
+Security: blocks expired-order payment reuse, hardens updater checksums, and fails closed on stale rates / soft-finality chains. Update recommended.
+
+= 1.5.8 =
+Security hardening for shared-wallet matching, txid claims, TRON confirmations, token contract checks, and API key handling. Update recommended for all stores.
 
 = 1.5.7 =
 Plugin headers: Author URI now points to the GitHub profile so it differs from Plugin URI (wordpress.org requirement).

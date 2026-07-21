@@ -24,6 +24,7 @@ $patterns = array(
 	'xdwp_wallet_idx_',
 	'xdwp_paying_',
 	'xdwp_txid_claim_',
+	'xdwp_amt_',
 );
 
 foreach ( $patterns as $prefix ) {

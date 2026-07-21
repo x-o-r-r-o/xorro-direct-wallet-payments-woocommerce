@@ -27,13 +27,95 @@ class Xdwp_Settings {
 	/**
 	 * Get a single setting.
 	 *
+	 * API keys prefer wp-config constants when defined (never stored in DB for that request path).
+	 *
 	 * @param string $key     Setting key.
 	 * @param mixed  $default Default value.
 	 * @return mixed
 	 */
 	public static function get( $key, $default = null ) {
+		$from_const = self::api_key_from_constant( $key );
+		if ( null !== $from_const ) {
+			return $from_const;
+		}
 		$settings = self::all();
 		return array_key_exists( $key, $settings ) ? $settings[ $key ] : $default;
+	}
+
+	/**
+	 * Map of settings keys to optional wp-config constant names.
+	 *
+	 * @return array<string, string>
+	 */
+	private static function api_key_constants() {
+		return array(
+			'coingecko_api_key' => 'XDWP_COINGECKO_API_KEY',
+			'etherscan_api_key' => 'XDWP_ETHERSCAN_API_KEY',
+			'trongrid_api_key'  => 'XDWP_TRONGRID_API_KEY',
+			'helius_api_key'    => 'XDWP_HELIUS_API_KEY',
+			'subscan_api_key'   => 'XDWP_SUBSCAN_API_KEY',
+			'viewblock_api_key' => 'XDWP_VIEWBLOCK_API_KEY',
+		);
+	}
+
+	/**
+	 * Read API key from a defined constant, or null if unset.
+	 *
+	 * @param string $key Setting key.
+	 * @return string|null
+	 */
+	private static function api_key_from_constant( $key ) {
+		$map = self::api_key_constants();
+		if ( ! isset( $map[ $key ] ) ) {
+			return null;
+		}
+		$name = $map[ $key ];
+		if ( ! defined( $name ) ) {
+			return null;
+		}
+		$val = constant( $name );
+		if ( ! is_string( $val ) || '' === $val ) {
+			return null;
+		}
+		return $val;
+	}
+
+	/**
+	 * Whether a submitted secret looks like a UI mask / empty (keep stored value).
+	 *
+	 * @param string $value Submitted value.
+	 * @return bool
+	 */
+	public static function is_masked_secret( $value ) {
+		$value = (string) $value;
+		if ( '' === $value ) {
+			return true;
+		}
+		// Masked display uses bullet prefix, e.g. ••••••••abcd.
+		return 0 === strpos( $value, '••••' );
+	}
+
+	/**
+	 * Placeholder hint for API key inputs (value attribute stays empty — secrets never echoed).
+	 *
+	 * @param string $key Setting key.
+	 * @return string
+	 */
+	public static function api_key_input_placeholder( $key ) {
+		$map = self::api_key_constants();
+		if ( isset( $map[ $key ] ) && defined( $map[ $key ] ) && is_string( constant( $map[ $key ] ) ) && '' !== constant( $map[ $key ] ) ) {
+			return sprintf(
+				/* translators: %s: PHP constant name */
+				__( 'Set via %s in wp-config.php', 'xorro-direct-wallet-payments-woocommerce' ),
+				$map[ $key ]
+			);
+		}
+		$all = self::all();
+		$raw = isset( $all[ $key ] ) ? (string) $all[ $key ] : '';
+		if ( '' !== $raw ) {
+			return __( 'Key saved — leave blank to keep, paste a new key, or enter - to clear', 'xorro-direct-wallet-payments-woocommerce' );
+		}
+		return '';
 	}
 
 	/**
@@ -91,15 +173,20 @@ class Xdwp_Settings {
 			'helius_api_key',
 			'subscan_api_key',
 			'viewblock_api_key',
-			'bscscan_api_key',
-			'polygonscan_api_key',
-			'arbiscan_api_key',
-			'optimistic_api_key',
-			'snowtrace_api_key',
 		) as $text_key ) {
-			if ( isset( $input[ $text_key ] ) ) {
-				$clean[ $text_key ] = sanitize_text_field( wp_unslash( $input[ $text_key ] ) );
+			if ( ! isset( $input[ $text_key ] ) ) {
+				continue;
 			}
+			$submitted = sanitize_text_field( wp_unslash( $input[ $text_key ] ) );
+			// Single hyphen clears a stored key; empty / mask = keep existing.
+			if ( '-' === $submitted ) {
+				$clean[ $text_key ] = '';
+				continue;
+			}
+			if ( self::is_masked_secret( $submitted ) ) {
+				continue;
+			}
+			$clean[ $text_key ] = $submitted;
 		}
 
 		if ( isset( $input['description'] ) ) {

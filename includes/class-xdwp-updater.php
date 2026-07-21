@@ -204,23 +204,28 @@ class Xdwp_Updater {
 		}
 
 		$expected = ( $release && ! empty( $release['sha256'] ) ) ? strtolower( (string) $release['sha256'] ) : '';
-		if ( '' === $expected && $ours ) {
+		if ( '' === $expected ) {
+			$cached_sha = get_transient( 'xdwp_pkg_sha_' . md5( (string) $package ) );
+			if ( is_string( $cached_sha ) && '' !== $cached_sha ) {
+				$expected = strtolower( $cached_sha );
+			}
+		}
+		// Fail closed: never install our package without a verified digest.
+		if ( '' === $expected ) {
 			@unlink( $tmp ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
 			return new WP_Error(
 				'xdwp_missing_checksum',
-				__( 'Refused plugin update: release SHA-256 checksum asset is missing.', 'xorro-direct-wallet-payments-woocommerce' )
+				__( 'Refused plugin update: release SHA-256 checksum is unavailable.', 'xorro-direct-wallet-payments-woocommerce' )
 			);
 		}
 
-		if ( '' !== $expected ) {
-			$actual = strtolower( (string) hash_file( 'sha256', $tmp ) );
-			if ( ! $actual || ! hash_equals( $expected, $actual ) ) {
-				@unlink( $tmp ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
-				return new WP_Error(
-					'xdwp_hash_mismatch',
-					__( 'Refused plugin update: ZIP SHA-256 does not match the GitHub release checksum.', 'xorro-direct-wallet-payments-woocommerce' )
-				);
-			}
+		$actual = strtolower( (string) hash_file( 'sha256', $tmp ) );
+		if ( ! $actual || ! hash_equals( $expected, $actual ) ) {
+			@unlink( $tmp ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+			return new WP_Error(
+				'xdwp_hash_mismatch',
+				__( 'Refused plugin update: ZIP SHA-256 does not match the GitHub release checksum.', 'xorro-direct-wallet-payments-woocommerce' )
+			);
 		}
 
 		return $tmp;
@@ -312,6 +317,8 @@ class Xdwp_Updater {
 		);
 
 		set_transient( self::CACHE_KEY, $data, self::CACHE_TTL );
+		// Longer-lived checksum keyed by package URL so downloads stay verifiable if the release cache expires.
+		set_transient( 'xdwp_pkg_sha_' . md5( $data['package'] ), $data['sha256'], WEEK_IN_SECONDS );
 
 		return $data;
 	}
@@ -413,7 +420,11 @@ class Xdwp_Updater {
 			return false;
 		}
 		$path = (string) wp_parse_url( $url, PHP_URL_PATH );
-		return false !== strpos( $path, '/' . self::REPO . '/' ) && false !== strpos( $path, self::ASSET_PREFIX );
+		// Only GitHub Releases download ZIPs for this plugin — not arbitrary paths containing the repo slug.
+		return (bool) preg_match(
+			'#^/' . preg_quote( self::REPO, '#' ) . '/releases/download/[^/]+/' . preg_quote( self::ASSET_PREFIX, '#' ) . '(-[0-9.]+)?\\.zip$#',
+			$path
+		);
 	}
 
 	/**

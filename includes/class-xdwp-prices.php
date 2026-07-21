@@ -39,7 +39,7 @@ class Xdwp_Prices {
 			$currency = get_woocommerce_currency();
 		}
 
-		$rate = self::get_rate( $coin['coingecko_id'], $currency );
+		$rate = self::get_rate( $coin['coingecko_id'], $currency, ! $unique_amount );
 		if ( $rate <= 0 ) {
 			return '';
 		}
@@ -182,7 +182,7 @@ class Xdwp_Prices {
 		$counter = self::next_amount_seq();
 		// Space dust by 1000 units so match bands (~±400 units) never overlap across concurrent orders.
 		$step       = 1000;
-		$slots      = 99; // 1000..99000 — enough concurrent shared-wallet orders before reuse.
+		$slots      = 499; // 1000..499000 — wider cycle; assign_payment also rejects band collisions.
 		$dust_units = $step + ( ( $counter % $slots ) * $step );
 		$dust       = $dust_units / pow( 10, $decimals );
 
@@ -222,9 +222,10 @@ class Xdwp_Prices {
 	 *
 	 * @param string $coingecko_id CoinGecko ID.
 	 * @param string $currency     Fiat currency.
+	 * @param bool   $allow_stale  Whether to serve STALE_TTL rates when live refresh fails.
 	 * @return float
 	 */
-	public static function get_rate( $coingecko_id, $currency ) {
+	public static function get_rate( $coingecko_id, $currency, $allow_stale = true ) {
 		$currency = strtolower( $currency );
 		$cache    = get_transient( self::TRANSIENT_KEY );
 		if ( ! is_array( $cache ) ) {
@@ -250,8 +251,8 @@ class Xdwp_Prices {
 			$cache = array();
 		}
 
-		// Serve stale rates for up to STALE_TTL when a live refresh fails.
-		if ( isset( $cache[ $key ] ) && is_numeric( $cache[ $key ] ) && $updated && ( time() - $updated ) < self::STALE_TTL ) {
+		// Stale rates are OK for display; order creation / checkout quotes must fail closed.
+		if ( $allow_stale && isset( $cache[ $key ] ) && is_numeric( $cache[ $key ] ) && $updated && ( time() - $updated ) < self::STALE_TTL ) {
 			return (float) $cache[ $key ];
 		}
 

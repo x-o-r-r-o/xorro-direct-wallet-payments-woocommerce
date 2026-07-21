@@ -28,6 +28,11 @@ class Xdwp_Verifier {
 			return false;
 		}
 
+		// Never auto-verify cancelled/refunded/trash orders (even if meta was left awaiting).
+		if ( ! in_array( $order->get_status(), array( 'pending', 'on-hold' ), true ) ) {
+			return false;
+		}
+
 		$coin_id = Xdwp_Order::meta( $order, 'coin' );
 		$address = Xdwp_Order::meta( $order, 'address' );
 		$amount  = Xdwp_Order::meta( $order, 'amount' );
@@ -46,17 +51,19 @@ class Xdwp_Verifier {
 		$min  = $band['min'];
 		$max  = $band['max'];
 
-		// Shared-wallet safety: require unique target amount among awaiting orders on this address.
+		// Shared-wallet safety: require unique target amount among awaiting/recent-expired orders on this address.
 		if ( ! self::can_safely_match_shared_address( $coin, $address, $order->get_id(), $amount ) ) {
 			return false;
 		}
 
-		$txid = self::find_payment( $coin, $address, $min, $max, $started - 120 );
+		// Allow at most 30s clock skew — wide negative windows enabled payment reuse across expired orders.
+		$since = max( 0, $started - 30 );
+		$txid  = self::find_payment( $coin, $address, $min, $max, $since );
 		if ( ! $txid ) {
 			return false;
 		}
 
-		$txid = sanitize_text_field( $txid );
+		$txid = strtolower( sanitize_text_field( $txid ) );
 		if ( ! self::claim_txid( $txid, $order->get_id() ) ) {
 			return false;
 		}
@@ -81,8 +88,8 @@ class Xdwp_Verifier {
 		$target   = (float) $amount;
 		$unit     = pow( 10, -$decimals );
 
-		// Absolute epsilon: a few base units (unique dust uses 1000-unit steps).
-		$abs_eps = max( $unit * 50, $unit );
+		// Absolute epsilon: 1 base unit for low-decimal assets (GUSD/EOS); dust-oriented floor only when unique dust applies.
+		$abs_eps = ( $decimals <= 4 ) ? $unit : max( $unit * 50, $unit );
 
 		$tolerance_pct = max( 0.0, (float) Xdwp_Settings::get( 'underpayment_percent', 1 ) );
 		$pct_under     = $target * ( $tolerance_pct / 100 );
@@ -94,11 +101,17 @@ class Xdwp_Verifier {
 			// Dust steps are 1000 units apart; keep band well below that gap.
 			$max_band = max( $abs_eps, $unit * 400 );
 		} else {
-			$max_band = max( $abs_eps, min( $pct_under, $target * 0.02 ) );
+			$max_band = max( $abs_eps, min( $pct_under > 0 ? $pct_under : $abs_eps, $target * 0.02 ) );
 		}
 
-		$under = min( $pct_under > 0 ? $pct_under : $abs_eps, $max_band );
-		$over  = min( $pct_over > 0 ? $pct_over : $abs_eps, $max_band );
+		// 0% underpayment tolerance must mean exact (no absolute floor bypass for GUSD/etc.).
+		if ( $tolerance_pct <= 0 ) {
+			$under = 0.0;
+			$over  = min( $abs_eps, $max_band );
+		} else {
+			$under = min( $pct_under > 0 ? $pct_under : $abs_eps, $max_band );
+			$over  = min( $pct_over > 0 ? $pct_over : $abs_eps, $max_band );
+		}
 
 		return array(
 			'min' => max( 0.0, $target - $under ),
@@ -107,7 +120,27 @@ class Xdwp_Verifier {
 	}
 
 	/**
+	 * Public wrapper: whether an amount can safely share an address with other awaiting orders.
+	 *
+	 * @param string $coin_id           Coin ID.
+	 * @param string $address           Deposit address.
+	 * @param string $amount            Exact crypto amount.
+	 * @param int    $exclude_order_id  Order to exclude (usually the one being assigned).
+	 * @return bool
+	 */
+	public static function amount_safe_for_address( $coin_id, $address, $amount, $exclude_order_id = 0 ) {
+		$coin = Xdwp_Coins::get( $coin_id );
+		if ( ! $coin || ! $address ) {
+			return false;
+		}
+		return self::can_safely_match_shared_address( $coin, $address, $exclude_order_id, $amount );
+	}
+
+	/**
 	 * Whether shared-address matching is safe for this order.
+	 *
+	 * Paginates all awaiting peers on the address (fail-closed if the set is huge).
+	 * A fixed small limit previously hid peers past the first page → wrong-order attribution.
 	 *
 	 * @param array  $coin       Coin def.
 	 * @param string $address    Address.
@@ -116,25 +149,48 @@ class Xdwp_Verifier {
 	 * @return bool
 	 */
 	private static function can_safely_match_shared_address( array $coin, $address, $order_id, $amount = '' ) {
-		$others = wc_get_orders(
-			array(
-				'limit'          => 25,
-				'status'         => array( 'on-hold', 'pending' ),
-				'payment_method' => XDWP_GATEWAY_ID,
-				'exclude'        => array( absint( $order_id ) ),
-				'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
-					array(
-						'key'   => '_xdwp_status',
-						'value' => 'awaiting',
-					),
-					array(
-						'key'   => '_xdwp_address',
-						'value' => $address,
-					),
+		$others     = array();
+		$page       = 1;
+		$per_page   = 100;
+		$max_peers  = 500; // Beyond this, refuse matching (fail closed).
+		$base_args  = array(
+			'limit'          => $per_page,
+			'status'         => array( 'on-hold', 'pending', 'failed', 'cancelled', 'refunded' ),
+			'payment_method' => XDWP_GATEWAY_ID,
+			'exclude'        => array( absint( $order_id ) ),
+			'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+				'relation' => 'AND',
+				array(
+					'key'     => '_xdwp_status',
+					'value'   => array( 'awaiting', 'expired', 'cancelled' ),
+					'compare' => 'IN',
 				),
-				'return'         => 'objects',
-			)
+				array(
+					'key'   => '_xdwp_address',
+					'value' => $address,
+				),
+			),
+			'return'         => 'objects',
 		);
+
+		do {
+			$batch = wc_get_orders(
+				array_merge(
+					$base_args,
+					array( 'page' => $page )
+				)
+			);
+			if ( empty( $batch ) ) {
+				break;
+			}
+			foreach ( $batch as $peer ) {
+				$others[] = $peer;
+			}
+			if ( count( $others ) > $max_peers ) {
+				return false;
+			}
+			++$page;
+		} while ( count( $batch ) === $per_page );
 
 		if ( empty( $others ) ) {
 			return true;
@@ -149,10 +205,18 @@ class Xdwp_Verifier {
 		}
 
 		// High decimals with unique dust: still refuse if another order has the same exact amount.
-		$amount = (string) $amount;
+		$amount     = (string) $amount;
+		$retain_ttl = WEEK_IN_SECONDS + ( (int) Xdwp_Settings::get( 'payment_window', 60 ) * MINUTE_IN_SECONDS );
 		foreach ( $others as $other ) {
 			if ( ! $other instanceof WC_Order ) {
 				continue;
+			}
+			$other_status = (string) Xdwp_Order::meta( $other, 'status' );
+			if ( in_array( $other_status, array( 'expired', 'cancelled' ), true ) ) {
+				$other_started = (int) Xdwp_Order::meta( $other, 'started' );
+				if ( ! $other_started || ( time() - $other_started ) > $retain_ttl ) {
+					continue;
+				}
 			}
 			$other_amount = (string) Xdwp_Order::meta( $other, 'amount' );
 			if ( $amount && hash_equals( $amount, $other_amount ) ) {
@@ -170,6 +234,121 @@ class Xdwp_Verifier {
 	}
 
 	/**
+	 * Atomically reserve an (address, amount) slot so concurrent checkouts cannot publish colliding quotes.
+	 *
+	 * @param string $address  Deposit address.
+	 * @param string $amount   Exact crypto amount string.
+	 * @param int    $order_id Order ID.
+	 * @return bool
+	 */
+	public static function reserve_amount_slot( $address, $amount, $order_id ) {
+		$address = strtolower( trim( (string) $address ) );
+		$amount  = (string) $amount;
+		if ( '' === $address || '' === $amount ) {
+			return false;
+		}
+
+		$key     = 'xdwp_amt_' . md5( $address . '|' . $amount );
+		$payload = absint( $order_id ) . '|' . time();
+		// Keep slots only through payment window + grace + one day (not a full week).
+		$window  = (int) Xdwp_Settings::get( 'payment_window', 60 );
+		$grace   = (int) Xdwp_Settings::get( 'expiry_grace_minutes', 30 );
+		$ttl     = max( HOUR_IN_SECONDS, ( ( $window + $grace ) * MINUTE_IN_SECONDS ) + DAY_IN_SECONDS );
+
+		if ( ! add_option( $key, $payload, '', 'no' ) ) {
+			$existing = (string) get_option( $key, '' );
+			$parts    = explode( '|', $existing, 2 );
+			$owner    = isset( $parts[0] ) ? (int) $parts[0] : 0;
+			$claimed  = isset( $parts[1] ) ? (int) $parts[1] : 0;
+
+			if ( $owner === absint( $order_id ) ) {
+				return true;
+			}
+			if ( $claimed && ( time() - $claimed ) > $ttl ) {
+				global $wpdb;
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+				$updated = (int) $wpdb->query(
+					$wpdb->prepare(
+						"UPDATE {$wpdb->options} SET option_value = %s WHERE option_name = %s AND option_value = %s",
+						$payload,
+						$key,
+						$existing
+					)
+				);
+				return 1 === $updated;
+			}
+			return false;
+		}
+
+		return true;
+	}
+
+	/**
+	 * Release an (address, amount) reservation when the order is paid (txid claim still blocks reuse).
+	 *
+	 * @param string $address  Deposit address.
+	 * @param string $amount   Exact crypto amount string.
+	 * @param int    $order_id Owning order ID (must match payload owner).
+	 * @return void
+	 */
+	public static function release_amount_slot( $address, $amount, $order_id ) {
+		$address = strtolower( trim( (string) $address ) );
+		$amount  = (string) $amount;
+		$order_id = absint( $order_id );
+		if ( '' === $address || '' === $amount || ! $order_id ) {
+			return;
+		}
+		$key      = 'xdwp_amt_' . md5( $address . '|' . $amount );
+		$existing = (string) get_option( $key, '' );
+		if ( '' === $existing ) {
+			return;
+		}
+		$parts = explode( '|', $existing, 2 );
+		$owner = isset( $parts[0] ) ? (int) $parts[0] : 0;
+		if ( $owner !== $order_id ) {
+			return;
+		}
+		delete_option( $key );
+	}
+
+	/**
+	 * Reserve a txid for an order (public entry for manual mark-paid).
+	 *
+	 * @param string $txid     Txid.
+	 * @param int    $order_id Order ID.
+	 * @return bool
+	 */
+	public static function reserve_txid( $txid, $order_id ) {
+		return self::claim_txid( $txid, $order_id );
+	}
+
+	/**
+	 * Release a txid claim when mark-paid fails after reservation.
+	 *
+	 * @param string $txid     Txid.
+	 * @param int    $order_id Owning order ID.
+	 * @return void
+	 */
+	public static function release_txid( $txid, $order_id ) {
+		$txid     = strtolower( trim( (string) $txid ) );
+		$order_id = absint( $order_id );
+		if ( '' === $txid || ! $order_id ) {
+			return;
+		}
+		$key      = 'xdwp_txid_claim_' . md5( $txid );
+		$existing = (string) get_option( $key, '' );
+		if ( '' === $existing ) {
+			return;
+		}
+		$parts = explode( '|', $existing, 2 );
+		$owner = isset( $parts[0] ) ? (int) $parts[0] : 0;
+		if ( $owner !== $order_id ) {
+			return;
+		}
+		delete_option( $key );
+	}
+
+	/**
 	 * Atomically claim a txid for an order. Returns false if already claimed by another order.
 	 * Claims expire after payment window + 7 days so the options table does not grow forever.
 	 *
@@ -178,6 +357,11 @@ class Xdwp_Verifier {
 	 * @return bool
 	 */
 	private static function claim_txid( $txid, $order_id ) {
+		$txid = strtolower( trim( (string) $txid ) );
+		if ( '' === $txid ) {
+			return false;
+		}
+
 		if ( self::txid_already_used( $txid, $order_id ) ) {
 			return false;
 		}
@@ -195,9 +379,21 @@ class Xdwp_Verifier {
 			if ( $owner === absint( $order_id ) ) {
 				return true;
 			}
-			// Stale orphaned claim — allow reclaim.
+			// Stale orphaned claim — reclaim only via compare-and-swap (no TOCTOU race).
 			if ( $claimed && ( time() - $claimed ) > $ttl ) {
-				update_option( $claim_key, $payload, false );
+				global $wpdb;
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+				$updated = (int) $wpdb->query(
+					$wpdb->prepare(
+						"UPDATE {$wpdb->options} SET option_value = %s WHERE option_name = %s AND option_value = %s",
+						$payload,
+						$claim_key,
+						$existing
+					)
+				);
+				if ( 1 !== $updated ) {
+					return false;
+				}
 				return ! self::txid_already_used( $txid, $order_id );
 			}
 			return false;
@@ -226,6 +422,22 @@ class Xdwp_Verifier {
 	 */
 	private static function min_confirmations() {
 		return max( 0, min( 64, (int) Xdwp_Settings::get( 'min_confirmations', 1 ) ) );
+	}
+
+	/**
+	 * Fail-closed soft finality for explorers that only expose success/validated flags (no tip depth).
+	 * Zero confirmations still requires a successful/validated tx — never accept explicit failures.
+	 * When the merchant asks for more than one confirmation, refuse rather than pretend depth was checked.
+	 *
+	 * @param bool $validated Explorer reports success / validated / irreversible.
+	 * @return bool
+	 */
+	private static function soft_finality_ok( $validated ) {
+		$need = self::min_confirmations();
+		if ( $need > 1 ) {
+			return false;
+		}
+		return (bool) $validated;
 	}
 
 	/**
@@ -631,22 +843,13 @@ class Xdwp_Verifier {
 	}
 
 	/**
-	 * Resolve Etherscan API V2 key (with legacy per-explorer fallbacks).
+	 * Resolve Etherscan API V2 key.
 	 *
 	 * @return string
 	 */
 	private static function etherscan_api_key() {
 		$key = Xdwp_Settings::get( 'etherscan_api_key', '' );
-		if ( $key ) {
-			return $key;
-		}
-		foreach ( array( 'bscscan_api_key', 'polygonscan_api_key', 'arbiscan_api_key', 'optimistic_api_key', 'snowtrace_api_key' ) as $legacy ) {
-			$legacy_key = Xdwp_Settings::get( $legacy, '' );
-			if ( $legacy_key ) {
-				return $legacy_key;
-			}
-		}
-		return '';
+		return is_string( $key ) ? $key : '';
 	}
 
 	/**
@@ -692,7 +895,7 @@ class Xdwp_Verifier {
 			'startblock' => 0,
 			'endblock'   => 99999999,
 			'page'       => 1,
-			'offset'     => 50,
+			'offset'     => 100,
 			'sort'       => 'desc',
 			'apikey'     => $api_key,
 		);
@@ -754,7 +957,7 @@ class Xdwp_Verifier {
 			'contractaddress' => $contract,
 			'address'         => $address,
 			'page'            => 1,
-			'offset'          => 50,
+			'offset'          => 100,
 			'sort'            => 'desc',
 			'apikey'          => $api_key,
 		);
@@ -768,6 +971,10 @@ class Xdwp_Verifier {
 			if ( empty( $tx['to'] ) || 0 !== strcasecmp( $tx['to'], $address ) ) {
 				continue;
 			}
+			// Defensive: never match a different token even if the API ignores contractaddress.
+			if ( empty( $tx['contractAddress'] ) || 0 !== strcasecmp( (string) $tx['contractAddress'], (string) $contract ) ) {
+				continue;
+			}
 			if ( ! self::etherscan_confirmed( $tx ) ) {
 				continue;
 			}
@@ -775,7 +982,7 @@ class Xdwp_Verifier {
 			if ( ! $time || $time < $since ) {
 				continue;
 			}
-			$dec = isset( $tx['tokenDecimal'] ) ? (int) $tx['tokenDecimal'] : $decimals;
+			$dec = (int) $decimals;
 			if ( ! isset( $tx['value'] ) ) {
 				continue;
 			}
@@ -810,18 +1017,22 @@ class Xdwp_Verifier {
 	 * @return bool
 	 */
 	private static function check_solana( $address, $min, $max, $since, array $coin ) {
-		$helius = Xdwp_Settings::get( 'helius_api_key', '' );
-		$rpc    = $helius
-			? 'https://mainnet.helius-rpc.com/?api-key=' . rawurlencode( $helius )
-			: 'https://api.mainnet-beta.solana.com';
+		$helius      = Xdwp_Settings::get( 'helius_api_key', '' );
+		$rpc_headers = array();
+		// Helius RPC authenticates via ?api-key= (documented); also send X-Api-Key for gateways that accept it.
+		$rpc = 'https://api.mainnet-beta.solana.com';
+		if ( $helius ) {
+			$rpc                          = 'https://mainnet.helius-rpc.com/?api-key=' . rawurlencode( $helius );
+			$rpc_headers['X-Api-Key']     = $helius;
+		}
 
-		$need        = self::min_confirmations();
-		$commitment  = ( $need <= 0 ) ? 'confirmed' : 'finalized';
-		$tip_slot    = 0;
+		$need       = self::min_confirmations();
+		$commitment = ( $need <= 0 ) ? 'confirmed' : 'finalized';
+		$tip_slot   = 0;
 		if ( $need > 1 ) {
 			$tip_slot = self::cached_tip(
 				'sol:' . md5( $rpc ),
-				static function () use ( $rpc, $commitment ) {
+				static function () use ( $rpc, $commitment, $rpc_headers ) {
 					$res = self::http_post_json(
 						$rpc,
 						array(
@@ -829,7 +1040,8 @@ class Xdwp_Verifier {
 							'id'      => 1,
 							'method'  => 'getSlot',
 							'params'  => array( array( 'commitment' => $commitment ) ),
-						)
+						),
+						$rpc_headers
 					);
 					return isset( $res['result'] ) ? (int) $res['result'] : 0;
 				}
@@ -851,7 +1063,7 @@ class Xdwp_Verifier {
 					array( 'encoding' => 'jsonParsed' ),
 				),
 			);
-			$ata_res = self::http_post_json( $rpc, $ata_body );
+			$ata_res = self::http_post_json( $rpc, $ata_body, $rpc_headers );
 			if ( ! empty( $ata_res['result']['value'] ) && is_array( $ata_res['result']['value'] ) ) {
 				foreach ( $ata_res['result']['value'] as $acct ) {
 					if ( ! empty( $acct['pubkey'] ) ) {
@@ -866,9 +1078,9 @@ class Xdwp_Verifier {
 					'jsonrpc' => '2.0',
 					'id'      => 1,
 					'method'  => 'getSignaturesForAddress',
-					'params'  => array( $watch_addr, array( 'limit' => 20 ) ),
+					'params'  => array( $watch_addr, array( 'limit' => 40 ) ),
 				);
-				$sigs = self::http_post_json( $rpc, $body );
+				$sigs = self::http_post_json( $rpc, $body, $rpc_headers );
 				if ( empty( $sigs['result'] ) || ! is_array( $sigs['result'] ) ) {
 					continue;
 				}
@@ -897,7 +1109,7 @@ class Xdwp_Verifier {
 							),
 						),
 					);
-					$tx = self::http_post_json( $rpc, $tx_body );
+					$tx = self::http_post_json( $rpc, $tx_body, $rpc_headers );
 					if ( empty( $tx['result']['meta'] ) ) {
 						continue;
 					}
@@ -927,9 +1139,9 @@ class Xdwp_Verifier {
 			'jsonrpc' => '2.0',
 			'id'      => 1,
 			'method'  => 'getSignaturesForAddress',
-			'params'  => array( $address, array( 'limit' => 15 ) ),
+			'params'  => array( $address, array( 'limit' => 40 ) ),
 		);
-		$sigs = self::http_post_json( $rpc, $body );
+		$sigs = self::http_post_json( $rpc, $body, $rpc_headers );
 		if ( empty( $sigs['result'] ) || ! is_array( $sigs['result'] ) ) {
 			return false;
 		}
@@ -958,7 +1170,7 @@ class Xdwp_Verifier {
 					),
 				),
 			);
-			$tx = self::http_post_json( $rpc, $tx_body );
+			$tx = self::http_post_json( $rpc, $tx_body, $rpc_headers );
 			if ( empty( $tx['result']['meta'] ) || ! is_array( $tx['result']['meta'] ) ) {
 				continue;
 			}
@@ -1035,7 +1247,7 @@ class Xdwp_Verifier {
 
 		if ( 'trc20' === $coin['type'] && ! empty( $coin['contract'] ) ) {
 			$url = sprintf(
-				'https://api.trongrid.io/v1/accounts/%s/transactions/trc20?only_to=true&only_confirmed=true&limit=50&contract_address=%s',
+				'https://api.trongrid.io/v1/accounts/%s/transactions/trc20?only_to=true&only_confirmed=true&limit=100&contract_address=%s',
 				rawurlencode( $address ),
 				rawurlencode( $coin['contract'] )
 			);
@@ -1044,6 +1256,24 @@ class Xdwp_Verifier {
 				return false;
 			}
 			foreach ( $response['data'] as $tx ) {
+				$to = '';
+				if ( ! empty( $tx['to'] ) ) {
+					$to = (string) $tx['to'];
+				} elseif ( ! empty( $tx['to_address'] ) ) {
+					$to = (string) $tx['to_address'];
+				}
+				if ( '' === $to || 0 !== strcasecmp( $to, $address ) ) {
+					continue;
+				}
+				$contract = '';
+				if ( ! empty( $tx['token_info']['address'] ) ) {
+					$contract = (string) $tx['token_info']['address'];
+				} elseif ( ! empty( $tx['contract_address'] ) ) {
+					$contract = (string) $tx['contract_address'];
+				}
+				if ( '' === $contract || 0 !== strcasecmp( $contract, (string) $coin['contract'] ) ) {
+					continue;
+				}
 				$time = isset( $tx['block_timestamp'] ) ? (int) floor( $tx['block_timestamp'] / 1000 ) : 0;
 				if ( $time < $since ) {
 					continue;
@@ -1059,12 +1289,31 @@ class Xdwp_Verifier {
 			return false;
 		}
 
-		$url      = sprintf( 'https://api.trongrid.io/v1/accounts/%s/transactions?only_to=true&only_confirmed=true&limit=50', rawurlencode( $address ) );
+		$url      = sprintf( 'https://api.trongrid.io/v1/accounts/%s/transactions?only_to=true&only_confirmed=true&limit=100', rawurlencode( $address ) );
 		$response = self::http_get( $url, $tron_headers );
 		if ( empty( $response['data'] ) || ! is_array( $response['data'] ) ) {
 			return false;
 		}
 		foreach ( $response['data'] as $tx ) {
+			// Native TRX must be a TransferContract (fail closed when type is missing).
+			$contract_type = '';
+			if ( ! empty( $tx['raw_data']['contract'][0]['type'] ) ) {
+				$contract_type = (string) $tx['raw_data']['contract'][0]['type'];
+			}
+			if ( 'TransferContract' !== $contract_type ) {
+				continue;
+			}
+			$to = '';
+			if ( ! empty( $tx['to'] ) ) {
+				$to = (string) $tx['to'];
+			} elseif ( ! empty( $tx['to_address'] ) ) {
+				$to = (string) $tx['to_address'];
+			} elseif ( ! empty( $tx['raw_data']['contract'][0]['parameter']['value']['to_address'] ) ) {
+				$to = (string) $tx['raw_data']['contract'][0]['parameter']['value']['to_address'];
+			}
+			if ( ! self::tron_destination_matches( $to, $address ) ) {
+				continue;
+			}
 			$time = isset( $tx['block_timestamp'] ) ? (int) floor( $tx['block_timestamp'] / 1000 ) : 0;
 			if ( $time < $since ) {
 				continue;
@@ -1084,6 +1333,93 @@ class Xdwp_Verifier {
 	}
 
 	/**
+	 * Whether a TronGrid destination equals our base58 address (accepts T… or 41… hex).
+	 *
+	 * @param string $candidate To field from API.
+	 * @param string $address   Expected base58 address.
+	 * @return bool
+	 */
+	private static function tron_destination_matches( $candidate, $address ) {
+		$candidate = trim( (string) $candidate );
+		$address   = trim( (string) $address );
+		if ( '' === $candidate || '' === $address ) {
+			return false;
+		}
+		if ( 0 === strcasecmp( $candidate, $address ) ) {
+			return true;
+		}
+		// Hex form (41 + 20 bytes) — convert to base58check before comparing.
+		$hex = preg_replace( '/^0x/i', '', $candidate );
+		if ( is_string( $hex ) && preg_match( '/^41[0-9a-fA-F]{40}$/', $hex ) ) {
+			$base58 = self::tron_hex_to_base58( $hex );
+			return ( '' !== $base58 && 0 === strcasecmp( $base58, $address ) );
+		}
+		return false;
+	}
+
+	/**
+	 * Convert a TRON hex address (41…) to base58check (T…).
+	 *
+	 * @param string $hex Hex address without 0x.
+	 * @return string Base58 address or empty on failure.
+	 */
+	private static function tron_hex_to_base58( $hex ) {
+		$hex = strtolower( (string) $hex );
+		if ( ! preg_match( '/^41[0-9a-f]{40}$/', $hex ) ) {
+			return '';
+		}
+		$bin = hex2bin( $hex );
+		if ( false === $bin || 21 !== strlen( $bin ) ) {
+			return '';
+		}
+		$hash0    = hash( 'sha256', $bin, true );
+		$hash1    = hash( 'sha256', $hash0, true );
+		$checksum = substr( $hash1, 0, 4 );
+		return self::base58_encode( $bin . $checksum );
+	}
+
+	/**
+	 * Bitcoin/TRON base58 encode (no leading-zero special-case beyond TRON 21-byte payloads).
+	 *
+	 * @param string $data Binary.
+	 * @return string
+	 */
+	private static function base58_encode( $data ) {
+		$alphabet = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+		$bytes    = array_values( unpack( 'C*', $data ) );
+		if ( empty( $bytes ) ) {
+			return '';
+		}
+
+		$digits = array( 0 );
+		foreach ( $bytes as $byte ) {
+			$carry = $byte;
+			foreach ( $digits as $i => $digit ) {
+				$carry       = $carry + ( $digit << 8 );
+				$digits[ $i ] = $carry % 58;
+				$carry       = intdiv( $carry, 58 );
+			}
+			while ( $carry > 0 ) {
+				$digits[] = $carry % 58;
+				$carry    = intdiv( $carry, 58 );
+			}
+		}
+
+		// Preserve leading zero bytes as '1'.
+		$encoded = '';
+		foreach ( $bytes as $byte ) {
+			if ( 0 !== $byte ) {
+				break;
+			}
+			$encoded .= '1';
+		}
+		for ( $i = count( $digits ) - 1; $i >= 0; $i-- ) {
+			$encoded .= $alphabet[ $digits[ $i ] ];
+		}
+		return $encoded;
+	}
+
+	/**
 	 * Whether a TronGrid tx row is confirmed enough for our min_confirmations setting.
 	 *
 	 * TRC20 list rows often omit block height; resolve via gettransactioninfobyid.
@@ -1094,11 +1430,12 @@ class Xdwp_Verifier {
 	 */
 	private static function tron_tx_confirmed( array $tx ) {
 		$need = self::min_confirmations();
-		if ( $need <= 0 ) {
-			return true;
-		}
+		// Never accept rows explicitly marked unconfirmed (even at 0-conf).
 		if ( isset( $tx['confirmed'] ) && ! $tx['confirmed'] ) {
 			return false;
+		}
+		if ( $need <= 0 ) {
+			return true;
 		}
 		// Prefer explicit confirmation count when TronGrid provides it.
 		if ( isset( $tx['confirmations'] ) ) {
@@ -1124,9 +1461,8 @@ class Xdwp_Verifier {
 			}
 		}
 		if ( $tx_block <= 0 ) {
-			// only_confirmed feeds omit height on many TRC20 rows; Tron solidifies ~19 blocks.
-			// Accept when merchant asks for at most that depth and the row is not marked unconfirmed.
-			return $need <= 20;
+			// Fail closed: without a block height we cannot prove confirmation depth.
+			return false;
 		}
 		$tip = self::cached_tip(
 			'tron',
@@ -1194,17 +1530,22 @@ class Xdwp_Verifier {
 			if ( ! $time || $time < $since ) {
 				continue;
 			}
-			// Ledger-final APIs: require validated success markers when confirmations are required.
-			if ( self::min_confirmations() > 0 ) {
-				if ( isset( $tx['validated'] ) && ! $tx['validated'] ) {
-					continue;
-				}
-				if ( isset( $tx['meta']['TransactionResult'] ) && 'tesSUCCESS' !== $tx['meta']['TransactionResult'] ) {
-					continue;
-				}
-				if ( empty( $tx['hash'] ) && empty( $tx['tx']['hash'] ) ) {
-					continue;
-				}
+			// Require tesSUCCESS when present; never accept validated===false even if result says success.
+			$hash_ok       = ! empty( $tx['hash'] ) || ! empty( $tx['tx']['hash'] );
+			$has_result    = isset( $tx['meta']['TransactionResult'] );
+			$has_validated = isset( $tx['validated'] );
+			$validated     = $hash_ok;
+			if ( $has_validated && ! $tx['validated'] ) {
+				$validated = false;
+			} elseif ( $has_result ) {
+				$validated = $validated && ( 'tesSUCCESS' === $tx['meta']['TransactionResult'] );
+			} elseif ( $has_validated ) {
+				$validated = $validated && (bool) $tx['validated'];
+			} else {
+				$validated = false;
+			}
+			if ( ! self::soft_finality_ok( $validated ) ) {
+				continue;
 			}
 			$dest = '';
 			if ( ! empty( $tx['Destination'] ) ) {
@@ -1258,13 +1599,10 @@ class Xdwp_Verifier {
 			if ( ! $time || $time < $since ) {
 				continue;
 			}
-			if ( self::min_confirmations() > 0 ) {
-				if ( isset( $tx['transaction_successful'] ) && ! $tx['transaction_successful'] ) {
-					continue;
-				}
-				if ( empty( $tx['transaction_hash'] ) && empty( $tx['id'] ) ) {
-					continue;
-				}
+			$validated = isset( $tx['transaction_successful'] ) && $tx['transaction_successful']
+				&& ( ! empty( $tx['transaction_hash'] ) || ! empty( $tx['id'] ) );
+			if ( ! self::soft_finality_ok( $validated ) ) {
+				continue;
 			}
 			if ( ! empty( $tx['asset_type'] ) && 'native' !== $tx['asset_type'] ) {
 				continue;
@@ -1348,20 +1686,25 @@ class Xdwp_Verifier {
 	/**
 	 * HTTP POST JSON helper.
 	 *
-	 * @param string $url  URL.
-	 * @param array  $body Body.
+	 * @param string               $url            URL.
+	 * @param array                $body           Body.
+	 * @param array<string,string> $extra_headers Extra headers.
 	 * @return array|null
 	 */
-	private static function http_post_json( $url, array $body ) {
+	private static function http_post_json( $url, array $body, array $extra_headers = array() ) {
+		$headers = array_merge(
+			array(
+				'Content-Type' => 'application/json',
+				'Accept'       => 'application/json',
+				'User-Agent'   => 'Xdwp/' . XDWP_VERSION . '; WordPress/' . get_bloginfo( 'version' ),
+			),
+			is_array( $extra_headers ) ? $extra_headers : array()
+		);
 		$response = wp_remote_post(
 			$url,
 			array(
 				'timeout' => 20,
-				'headers' => array(
-					'Content-Type' => 'application/json',
-					'Accept'       => 'application/json',
-					'User-Agent'   => 'Xdwp/' . XDWP_VERSION . '; WordPress/' . get_bloginfo( 'version' ),
-				),
+				'headers' => $headers,
 				'body'    => wp_json_encode( $body ),
 			)
 		);
@@ -1465,13 +1808,11 @@ class Xdwp_Verifier {
 			if ( ! $time || $time < $since ) {
 				continue;
 			}
-			if ( self::min_confirmations() > 0 ) {
-				if ( empty( $tx['consensus_timestamp'] ) ) {
-					continue;
-				}
-				if ( isset( $tx['result'] ) && 'SUCCESS' !== strtoupper( (string) $tx['result'] ) ) {
-					continue;
-				}
+			$validated = ! empty( $tx['consensus_timestamp'] )
+				&& isset( $tx['result'] )
+				&& 'SUCCESS' === strtoupper( (string) $tx['result'] );
+			if ( ! self::soft_finality_ok( $validated ) ) {
+				continue;
 			}
 			if ( empty( $tx['transfers'] ) || ! is_array( $tx['transfers'] ) ) {
 				continue;
@@ -1538,25 +1879,44 @@ class Xdwp_Verifier {
 			if ( ! $receiver || 0 !== strcasecmp( $receiver, $address ) ) {
 				continue;
 			}
-			if ( self::min_confirmations() > 0 ) {
-				$status = isset( $tx['status'] ) ? $tx['status'] : ( isset( $tx['outcomes']['status'] ) ? $tx['outcomes']['status'] : null );
-				if ( is_array( $status ) && isset( $status['Failure'] ) ) {
-					continue;
-				}
-				if ( is_string( $status ) && false !== stripos( $status, 'fail' ) ) {
-					continue;
-				}
-				if ( empty( $tx['transaction_hash'] ) && empty( $tx['hash'] ) ) {
-					continue;
+			$status = isset( $tx['outcomes']['status'] ) ? $tx['outcomes']['status'] : ( isset( $tx['status'] ) ? $tx['status'] : null );
+			// Require explicit success (boolean true or SuccessValue/SuccessReceiptId). Missing/false/Failure fail closed.
+			$status_ok = false;
+			if ( true === $status || 1 === $status ) {
+				$status_ok = true;
+			} elseif ( is_array( $status ) ) {
+				$status_ok = ( isset( $status['SuccessValue'] ) || isset( $status['SuccessReceiptId'] ) )
+					&& ! isset( $status['Failure'] );
+			}
+			$validated = $status_ok && ( ! empty( $tx['transaction_hash'] ) || ! empty( $tx['hash'] ) );
+			if ( ! self::soft_finality_ok( $validated ) ) {
+				continue;
+			}
+			// Prefer non-zero deposit fields (actions_agg.deposit can be 0 while actions[].deposit is real).
+			$raw                = '0';
+			$deposit_candidates = array();
+			if ( ! empty( $tx['actions'] ) && is_array( $tx['actions'] ) ) {
+				foreach ( $tx['actions'] as $action ) {
+					if ( isset( $action['deposit'] ) ) {
+						$deposit_candidates[] = (string) $action['deposit'];
+					} elseif ( isset( $action['Transfer']['deposit'] ) ) {
+						$deposit_candidates[] = (string) $action['Transfer']['deposit'];
+					}
 				}
 			}
-			$raw = '0';
+			if ( isset( $tx['deposit'] ) ) {
+				$deposit_candidates[] = (string) $tx['deposit'];
+			}
 			if ( isset( $tx['actions_agg']['deposit'] ) ) {
-				$raw = (string) $tx['actions_agg']['deposit'];
-			} elseif ( isset( $tx['deposit'] ) ) {
-				$raw = (string) $tx['deposit'];
-			} elseif ( ! empty( $tx['actions'][0]['deposit'] ) ) {
-				$raw = (string) $tx['actions'][0]['deposit'];
+				$deposit_candidates[] = (string) $tx['actions_agg']['deposit'];
+			}
+			foreach ( $deposit_candidates as $candidate ) {
+				$candidate = preg_replace( '/\D/', '', (string) $candidate );
+				if ( ! is_string( $candidate ) || '' === $candidate || preg_match( '/^0+$/', $candidate ) ) {
+					continue;
+				}
+				$raw = $candidate;
+				break;
 			}
 			if ( '0' === $raw || '' === $raw ) {
 				continue;
@@ -1604,15 +1964,11 @@ class Xdwp_Verifier {
 			if ( ! $time || $time < $since ) {
 				continue;
 			}
-			if ( self::min_confirmations() > 0 ) {
-				$code = isset( $tx['code'] ) ? (int) $tx['code'] : -1;
-				if ( 0 !== $code ) {
-					continue;
-				}
-				$height = isset( $tx['height'] ) ? (int) $tx['height'] : 0;
-				if ( $height <= 0 && empty( $tx['txhash'] ) ) {
-					continue;
-				}
+			$code      = isset( $tx['code'] ) ? (int) $tx['code'] : -1;
+			$height    = isset( $tx['height'] ) ? (int) $tx['height'] : 0;
+			$validated = ( 0 === $code ) && ( $height > 0 || ! empty( $tx['txhash'] ) );
+			if ( ! self::soft_finality_ok( $validated ) ) {
+				continue;
 			}
 			$events = isset( $tx['events'] ) ? $tx['events'] : array();
 			$amount_uatom = 0;
@@ -1681,13 +2037,10 @@ class Xdwp_Verifier {
 			if ( empty( $tx['receiver'] ) || 0 !== strcasecmp( $tx['receiver'], $address ) ) {
 				continue;
 			}
-			if ( self::min_confirmations() > 0 ) {
-				if ( isset( $tx['status'] ) && 'success' !== strtolower( (string) $tx['status'] ) ) {
-					continue;
-				}
-				if ( empty( $tx['txHash'] ) ) {
-					continue;
-				}
+			$validated = isset( $tx['status'] ) && 'success' === strtolower( (string) $tx['status'] )
+				&& ! empty( $tx['txHash'] );
+			if ( ! self::soft_finality_ok( $validated ) ) {
+				continue;
 			}
 			$raw = isset( $tx['value'] ) ? (string) $tx['value'] : '0';
 			if ( self::raw_amount_in_band( $raw, 18, $min, $max ) ) {
@@ -1725,13 +2078,10 @@ class Xdwp_Verifier {
 			if ( ! $to || 0 !== strcasecmp( $to, $address ) ) {
 				continue;
 			}
-			if ( self::min_confirmations() > 0 ) {
-				if ( isset( $tx['receipt']['exitCode'] ) && 0 !== (int) $tx['receipt']['exitCode'] ) {
-					continue;
-				}
-				if ( empty( $tx['cid'] ) ) {
-					continue;
-				}
+			$validated = isset( $tx['receipt']['exitCode'] ) && 0 === (int) $tx['receipt']['exitCode']
+				&& ! empty( $tx['cid'] );
+			if ( ! self::soft_finality_ok( $validated ) ) {
+				continue;
 			}
 			// Filfox value is often in attoFIL (1 FIL = 1e18).
 			$raw = isset( $tx['value'] ) ? (string) $tx['value'] : '0';
@@ -1779,13 +2129,10 @@ class Xdwp_Verifier {
 			if ( empty( $data['to'] ) || 0 !== strcasecmp( $data['to'], $address ) ) {
 				continue;
 			}
-			if ( self::min_confirmations() > 0 ) {
-				if ( isset( $row['irreversible'] ) && ! $row['irreversible'] ) {
-					continue;
-				}
-				if ( empty( $row['trx_id'] ) && empty( $row['trxid'] ) ) {
-					continue;
-				}
+			$validated = isset( $row['irreversible'] ) && $row['irreversible']
+				&& ( ! empty( $row['trx_id'] ) || ! empty( $row['trxid'] ) );
+			if ( ! self::soft_finality_ok( $validated ) ) {
+				continue;
 			}
 			$qty = isset( $data['quantity'] ) ? $data['quantity'] : '';
 			if ( ! preg_match( '/^([0-9.]+)\s+EOS$/', trim( $qty ), $m ) ) {
@@ -1839,17 +2186,16 @@ class Xdwp_Verifier {
 			if ( empty( $tx['to'] ) || 0 !== strcasecmp( $tx['to'], $address ) ) {
 				continue;
 			}
-			if ( self::min_confirmations() > 0 ) {
-				if ( isset( $tx['success'] ) && ! $tx['success'] ) {
+			// Require explicit success + hash; confirmations alone must not accept failed transfers.
+			if ( empty( $tx['hash'] ) || empty( $tx['success'] ) ) {
+				continue;
+			}
+			if ( isset( $tx['confirmations'] ) ) {
+				if ( ! self::confirmations_ok( $tx['confirmations'] ) ) {
 					continue;
 				}
-				if ( isset( $tx['confirmations'] ) ) {
-					if ( ! self::confirmations_ok( $tx['confirmations'] ) ) {
-						continue;
-					}
-				} elseif ( empty( $tx['hash'] ) ) {
-					continue;
-				}
+			} elseif ( ! self::soft_finality_ok( true ) ) {
+				continue;
 			}
 			// Subscan amount is often human-readable string; or planck via amount_v2.
 			if ( isset( $tx['amount'] ) && is_numeric( $tx['amount'] ) ) {
@@ -1908,30 +2254,26 @@ class Xdwp_Verifier {
 			if ( ! $to || 0 !== strcasecmp( $to, $address ) ) {
 				continue;
 			}
-			if ( self::min_confirmations() > 0 ) {
-				if ( isset( $tx['receiptSuccess'] ) && ! $tx['receiptSuccess'] ) {
-					continue;
-				}
-				if ( isset( $tx['success'] ) && ! $tx['success'] ) {
-					continue;
-				}
-				if ( empty( $tx['hash'] ) && empty( $tx['ID'] ) ) {
-					continue;
-				}
+			$hash_ok   = ! empty( $tx['hash'] ) || ! empty( $tx['ID'] );
+			$has_receipt = isset( $tx['receiptSuccess'] );
+			$has_success = isset( $tx['success'] );
+			// Require at least one success flag; if both exist, both must be true (no OR bypass).
+			$validated = $hash_ok && ( $has_receipt || $has_success )
+				&& ( ! $has_receipt || $tx['receiptSuccess'] )
+				&& ( ! $has_success || $tx['success'] );
+			if ( ! self::soft_finality_ok( $validated ) ) {
+				continue;
 			}
-			$value = 0.0;
-			if ( isset( $tx['value'] ) && is_numeric( $tx['value'] ) ) {
-				$value = (float) $tx['value'];
-				// ViewBlock may return Qa (10^12) or ZIL.
-				if ( $value > 1000 && $value == floor( $value ) && $value > ( $max * 1e10 ) ) {
-					if ( self::raw_amount_in_band( (string) (int) $value, 12, $min, $max ) ) {
-						return ! empty( $tx['hash'] ) ? (string) $tx['hash'] : false;
-					}
-					continue;
-				}
+			if ( ! isset( $tx['value'] ) || ! is_numeric( $tx['value'] ) ) {
+				continue;
 			}
-			if ( self::amount_in_band( $value, $min, $max ) ) {
-				return ! empty( $tx['hash'] ) ? (string) $tx['hash'] : false;
+			// ViewBlock values are Qa (10^12). Always interpret as chain units — never guess human ZIL.
+			$raw = preg_replace( '/\D/', '', (string) $tx['value'] );
+			if ( ! is_string( $raw ) || '' === $raw || preg_match( '/^0+$/', $raw ) ) {
+				continue;
+			}
+			if ( self::raw_amount_in_band( $raw, 12, $min, $max ) ) {
+				return ! empty( $tx['hash'] ) ? (string) $tx['hash'] : ( ! empty( $tx['ID'] ) ? (string) $tx['ID'] : false );
 			}
 		}
 		return false;
