@@ -83,6 +83,11 @@ php tests/smoke-test.php
 
 See [readme.txt](readme.txt).
 
+### 1.5.1
+
+- Blockchair fail-closed matching; stronger confirmations; grace-period polling; clearer quote errors
+- Fixed Checkout Blocks gateway not appearing when bootstrap runs after `woocommerce_blocks_loaded`
+
 ### 1.5.0
 
 - Full internal rename to xdwp (files, classes, gateway ID, options)

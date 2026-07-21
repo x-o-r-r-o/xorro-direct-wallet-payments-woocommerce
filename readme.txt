@@ -4,7 +4,7 @@ Tags: woocommerce, cryptocurrency, bitcoin, ethereum, payments, usdt, crypto che
 Requires at least: 6.9
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.5.0
+Stable tag: 1.5.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -255,6 +255,13 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 
 == Changelog ==
 
+= 1.5.1 =
+* Security: Blockchair verifier no longer falls back to an unrelated address payload
+* Hardened EVM/TRON confirmation checks; payment page keeps polling through expiry grace
+* Checkout quote failures show an error instead of going blank; approx rate labeled clearly
+* Fixed Checkout Blocks payment method missing when the plugin boots after woocommerce_blocks_loaded
+* Install upgrade writes settings only when the plugin version changes
+
 = 1.5.0 =
 * Renamed all internal identifiers, files, CSS, JS, options, and gateway ID to xdwp
 * Fixed intermittent missing crypto quote when switching coins; Blocks checkout shows live amount
@@ -357,11 +364,11 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 
 == Upgrade Notice ==
 
+= 1.5.1 =
+Payment matching, checkout quote hardening, and Checkout Blocks registration fix. Update recommended for all stores.
+
 = 1.5.0 =
 Internal rename to xdwp (gateway ID, options, order meta, assets). Fresh installs and updates use xdwp keys only.
-
-= 1.4.6 =
-Fixes admin navigation and unique-amount matching after the 1.4.5 rename.
 
 = 1.4.5 =
 wordpress.org compliance: new distinctive name/slug, proper asset enqueue, fuller external-service disclosure. Request slug xorro-direct-wallet-payments-woocommerce when uploading.

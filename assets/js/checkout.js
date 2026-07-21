@@ -56,7 +56,11 @@
 					res.data.amount &&
 					(!res.data.coin || res.data.coin === coin)
 				) {
-					setQuoteText('≈ ' + res.data.amount + ' ' + res.data.symbol);
+					var label = '≈ ' + res.data.amount + ' ' + res.data.symbol;
+					if (res.data.message) {
+						label += ' — ' + res.data.message;
+					}
+					setQuoteText(label);
 					return;
 				}
 				// Soft-fail once: rate APIs flake under concurrent coin switches.
@@ -68,7 +72,7 @@
 					}, 400);
 					return;
 				}
-				setQuoteText('');
+				setQuoteText('Unable to load rate. Try another coin or refresh.');
 			})
 			.fail(function (_xhr, status) {
 				if (status === 'abort' || seq !== quoteSeq || coin !== selectedCoin()) {
@@ -82,7 +86,7 @@
 					}, 400);
 					return;
 				}
-				setQuoteText('');
+				setQuoteText('Unable to load rate. Try another coin or refresh.');
 			})
 			.always(function () {
 				if (seq === quoteSeq) {

@@ -261,12 +261,13 @@ class Xdwp_Ajax {
 
 		wp_send_json_success(
 			array(
-				'coin'   => $coin_id,
-				'name'   => $coin['name'],
-				'amount' => $amount,
-				'symbol' => $coin['symbol'],
-				'fiat'   => wc_price( $total ),
-				'approx' => true,
+				'coin'    => $coin_id,
+				'name'    => $coin['name'],
+				'amount'  => $amount,
+				'symbol'  => $coin['symbol'],
+				'fiat'    => wc_price( $total ),
+				'approx'  => true,
+				'message' => __( 'Approximate — exact amount is shown after you place the order.', 'xorro-direct-wallet-payments-woocommerce' ),
 			)
 		);
 	}

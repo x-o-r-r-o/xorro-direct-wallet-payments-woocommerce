@@ -4,12 +4,17 @@
 (function () {
 	'use strict';
 
-	var settings =
-		typeof wc === 'object' &&
-		wc.wcSettings &&
-		typeof wc.wcSettings.getSetting === 'function'
-			? wc.wcSettings.getSetting('xdwp_data', {})
-			: {};
+	var settings = {};
+	if (typeof wc === 'object' && wc.wcSettings) {
+		// WC 10+ exposes gateway data via getPaymentMethodData(name).
+		// Older builds used getSetting(name + '_data').
+		if (typeof wc.wcSettings.getPaymentMethodData === 'function') {
+			settings = wc.wcSettings.getPaymentMethodData('xdwp', {}) || {};
+		}
+		if ((!settings || !settings.title) && typeof wc.wcSettings.getSetting === 'function') {
+			settings = wc.wcSettings.getSetting('xdwp_data', {}) || {};
+		}
+	}
 
 	if (!settings || !settings.title) {
 		return;
@@ -189,7 +194,11 @@
 								if (res.data.coin && res.data.coin !== coin) {
 									return;
 								}
-								setQuote('≈ ' + res.data.amount + ' ' + res.data.symbol);
+								var label = '≈ ' + res.data.amount + ' ' + res.data.symbol;
+								if (res.data.message) {
+									label += ' — ' + res.data.message;
+								}
+								setQuote(label);
 								return;
 							}
 							if (attempt < 1) {
@@ -197,7 +206,7 @@
 								window.setTimeout(run, 400);
 								return;
 							}
-							setQuote('');
+							setQuote('Unable to load rate. Try another coin or refresh.');
 						})
 						.catch(function (err) {
 							if (aborted || seq !== seqRef.current) {
@@ -211,7 +220,7 @@
 								window.setTimeout(run, 400);
 								return;
 							}
-							setQuote('');
+							setQuote('Unable to load rate. Try another coin or refresh.');
 						});
 				};
 

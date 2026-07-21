@@ -66,7 +66,14 @@ final class Xdwp {
 	private function hooks() {
 		add_filter( 'cron_schedules', array( $this, 'add_cron_schedules' ) );
 		add_filter( 'woocommerce_payment_gateways', array( $this, 'register_gateway' ) );
-		add_action( 'woocommerce_blocks_loaded', array( $this, 'register_blocks_support' ) );
+
+		// WooCommerce may fire woocommerce_blocks_loaded before plugins_loaded:20
+		// (our bootstrap). Register immediately if the action already ran.
+		if ( did_action( 'woocommerce_blocks_loaded' ) ) {
+			$this->register_blocks_support();
+		} else {
+			add_action( 'woocommerce_blocks_loaded', array( $this, 'register_blocks_support' ) );
+		}
 
 		Xdwp_Cron::init();
 		Xdwp_Ajax::init();

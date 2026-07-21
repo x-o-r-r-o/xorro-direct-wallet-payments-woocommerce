@@ -308,6 +308,8 @@ class Xdwp_Order {
 			5
 		);
 
+		$grace = max( 0, (int) Xdwp_Settings::get( 'expiry_grace_minutes', 30 ) ) * MINUTE_IN_SECONDS;
+
 		wp_localize_script(
 			'xdwp-frontend',
 			'xdwpData',
@@ -317,6 +319,7 @@ class Xdwp_Order {
 				'orderId'   => $order->get_id(),
 				'orderKey'  => $order->get_order_key(),
 				'expires'   => $expires,
+				'pollUntil' => $expires + $grace,
 				'qrValue'   => $uri,
 				'address'   => $address,
 				'amount'    => $amount,

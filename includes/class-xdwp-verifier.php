@@ -232,9 +232,9 @@ class Xdwp_Verifier {
 		if ( $need <= 0 ) {
 			return true;
 		}
+		// Fail closed when the explorer omits confirmation depth.
 		if ( ! isset( $tx['confirmations'] ) ) {
-			// Missing field: accept only when min is 1 or less (mempool depth unknown).
-			return $need <= 1;
+			return false;
 		}
 		return (int) $tx['confirmations'] >= $need;
 	}
@@ -481,19 +481,12 @@ class Xdwp_Verifier {
 		}
 
 		$row = null;
-		if ( isset( $response['data'][ $lookup ] ) ) {
+		if ( isset( $response['data'][ $lookup ] ) && is_array( $response['data'][ $lookup ] ) ) {
 			$row = $response['data'][ $lookup ];
-		} elseif ( isset( $response['data'][ $address ] ) ) {
+		} elseif ( isset( $response['data'][ $address ] ) && is_array( $response['data'][ $address ] ) ) {
 			$row = $response['data'][ $address ];
-		} else {
-			// Some responses key by a normalized form — take the first address payload.
-			foreach ( $response['data'] as $payload ) {
-				if ( is_array( $payload ) && isset( $payload['transactions'] ) ) {
-					$row = $payload;
-					break;
-				}
-			}
 		}
+		// Fail closed: never fall back to an unrelated address payload from Blockchair.
 		if ( ! $row || empty( $row['transactions'] ) || ! is_array( $row['transactions'] ) ) {
 			return false;
 		}
@@ -934,6 +927,9 @@ class Xdwp_Verifier {
 				if ( $time < $since ) {
 					continue;
 				}
+				if ( ! self::tron_tx_confirmed( $tx ) ) {
+					continue;
+				}
 				$value_raw = isset( $tx['value'] ) ? $tx['value'] : '';
 				if ( self::raw_amount_in_band( $value_raw, (int) $coin['decimals'], $min, $max ) ) {
 					return ! empty( $tx['transaction_id'] ) ? (string) $tx['transaction_id'] : ( ! empty( $tx['txID'] ) ? (string) $tx['txID'] : false );
@@ -952,6 +948,9 @@ class Xdwp_Verifier {
 			if ( $time < $since ) {
 				continue;
 			}
+			if ( ! self::tron_tx_confirmed( $tx ) ) {
+				continue;
+			}
 			$raw = 0;
 			if ( ! empty( $tx['raw_data']['contract'][0]['parameter']['value']['amount'] ) ) {
 				$raw = $tx['raw_data']['contract'][0]['parameter']['value']['amount'];
@@ -961,6 +960,28 @@ class Xdwp_Verifier {
 			}
 		}
 		return false;
+	}
+
+	/**
+	 * Whether a TronGrid tx row is confirmed enough for our min_confirmations setting.
+	 *
+	 * @param array $tx Tx row.
+	 * @return bool
+	 */
+	private static function tron_tx_confirmed( array $tx ) {
+		$need = self::min_confirmations();
+		if ( $need <= 0 ) {
+			return true;
+		}
+		if ( isset( $tx['confirmed'] ) && ! $tx['confirmed'] ) {
+			return false;
+		}
+		// Prefer explicit confirmation count when TronGrid provides it.
+		if ( isset( $tx['confirmations'] ) ) {
+			return (int) $tx['confirmations'] >= $need;
+		}
+		// Confirmed txs from TronGrid include a block timestamp; unconfirmed often lack it.
+		return ! empty( $tx['block_timestamp'] );
 	}
 
 	/**

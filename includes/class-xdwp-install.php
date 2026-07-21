@@ -48,9 +48,13 @@ class Xdwp_Install {
 	}
 
 	/**
-	 * Ensure defaults exist.
+	 * Ensure defaults exist. Only writes when version changes or settings are missing.
 	 */
 	public static function maybe_upgrade() {
+		$stored = (string) get_option( 'xdwp_version', '' );
+		$existing = get_option( 'xdwp_settings', null );
+		$needs_write = ( XDWP_VERSION !== $stored ) || ! is_array( $existing );
+
 		$defaults = array(
 			'payment_window'       => 60,
 			'order_status'         => 'processing',
@@ -84,7 +88,6 @@ class Xdwp_Install {
 			'checkout_icon_height' => 32,
 		);
 
-		$existing = get_option( 'xdwp_settings', array() );
 		if ( ! is_array( $existing ) ) {
 			$existing = array();
 		}
@@ -96,12 +99,15 @@ class Xdwp_Install {
 			foreach ( array( 'bscscan_api_key', 'polygonscan_api_key', 'arbiscan_api_key', 'optimistic_api_key', 'snowtrace_api_key' ) as $legacy ) {
 				if ( ! empty( $merged[ $legacy ] ) ) {
 					$merged['etherscan_api_key'] = $merged[ $legacy ];
+					$needs_write                 = true;
 					break;
 				}
 			}
 		}
 
-		update_option( 'xdwp_settings', $merged );
-		update_option( 'xdwp_version', XDWP_VERSION );
+		if ( $needs_write || $merged !== $existing ) {
+			update_option( 'xdwp_settings', $merged );
+			update_option( 'xdwp_version', XDWP_VERSION );
+		}
 	}
 }

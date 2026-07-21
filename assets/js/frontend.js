@@ -164,17 +164,19 @@
 		if (!timerEl || !data.expires) {
 			return;
 		}
-		var left = data.expires - Math.floor(Date.now() / 1000);
+		var now = Math.floor(Date.now() / 1000);
+		var left = data.expires - now;
+		var pollUntil = data.pollUntil || data.expires;
 		if (left <= 0) {
 			timerEl.textContent = data.i18n.expired;
-			if (statusEl) {
+			if (statusEl && data.status !== 'paid') {
 				statusEl.textContent = data.i18n.expired;
 			}
-			if (pollTimer) {
+			// Keep polling through grace so late on-chain payments can still confirm.
+			if (now >= pollUntil && pollTimer) {
 				clearInterval(pollTimer);
 				pollTimer = null;
 			}
-			data.status = 'expired';
 			return;
 		}
 		var m = Math.floor(left / 60);
