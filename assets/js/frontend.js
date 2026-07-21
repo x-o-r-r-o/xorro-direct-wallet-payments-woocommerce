@@ -2,7 +2,7 @@
 	'use strict';
 
 	function getCopyLabel(btn) {
-		return (window.chainCheckoutData && chainCheckoutData.i18n && chainCheckoutData.i18n.copied) || 'Copied!';
+		return (window.xdwpData && xdwpData.i18n && xdwpData.i18n.copied) || 'Copied!';
 	}
 
 	function fallbackCopy(text) {
@@ -64,11 +64,11 @@
 				return String(el.textContent || '').trim();
 			}
 		}
-		var data = window.chainCheckoutData || {};
-		if (btn.id === 'chain-checkout-copy-amount') {
+		var data = window.xdwpData || {};
+		if (btn.id === 'xdwp-copy-amount') {
 			return data.amount || '';
 		}
-		if (btn.id === 'chain-checkout-copy-address') {
+		if (btn.id === 'xdwp-copy-address') {
 			return data.address || '';
 		}
 		return data.qrValue || data.address || data.amount || '';
@@ -125,7 +125,7 @@
 	document.addEventListener(
 		'click',
 		function (e) {
-			var btn = e.target && e.target.closest ? e.target.closest('.chain-checkout-copy') : null;
+			var btn = e.target && e.target.closest ? e.target.closest('.xdwp-copy') : null;
 			if (!btn) {
 				return;
 			}
@@ -137,7 +137,7 @@
 	);
 
 	// Expose for inline onclick fallback in the template.
-	window.chainCheckoutCopy = function (btn) {
+	window.xdwpCopy = function (btn) {
 		if (!btn) {
 			return false;
 		}
@@ -146,14 +146,14 @@
 	};
 
 	// ---- Payment status / QR (requires localized data) ----
-	if (typeof chainCheckoutData === 'undefined') {
+	if (typeof xdwpData === 'undefined') {
 		return;
 	}
 
-	var data = chainCheckoutData;
-	var timerEl = document.getElementById('chain-checkout-timer');
-	var statusEl = document.getElementById('chain-checkout-status-text');
-	var box = document.getElementById('chain-checkout-box');
+	var data = xdwpData;
+	var timerEl = document.getElementById('xdwp-timer');
+	var statusEl = document.getElementById('xdwp-status-text');
+	var box = document.getElementById('xdwp-box');
 	var pollTimer = null;
 
 	function pad(n) {
@@ -183,7 +183,7 @@
 	}
 
 	function renderQr() {
-		var host = document.getElementById('chain-checkout-qrcode');
+		var host = document.getElementById('xdwp-qrcode');
 		if (!host) {
 			return;
 		}
@@ -238,13 +238,13 @@
 		}
 
 		var body = new FormData();
-		body.append('action', 'chain_checkout_status');
+		body.append('action', 'xdwp_status');
 		body.append('nonce', data.nonce);
 		body.append('order_id', String(data.orderId));
 		if (data.orderKey) {
 			body.append('order_key', String(data.orderKey));
 		}
-		var keyEl = document.getElementById('chain-checkout-order-key');
+		var keyEl = document.getElementById('xdwp-order-key');
 		if (keyEl) {
 			body.append('order_key', keyEl.value);
 		}

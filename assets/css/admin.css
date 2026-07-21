@@ -1,10 +1,10 @@
 /**
- * Chain Checkout admin — Cryptoniq-inspired options shell + wallets UI.
+ * Xorro Wallet Payments admin — Cryptoniq-inspired options shell + wallets UI.
  */
 
 /* ——— Shell ——— */
 
-.chain-checkout-options-wrap {
+.xdwp-options-wrap {
 	--cc-ink: #1d2327;
 	--cc-muted: #646970;
 	--cc-line: #dcdcde;
@@ -24,13 +24,13 @@
 }
 
 /* Beat WP admin resets that flatten plugin shell layout. */
-body.chain-checkout-admin-page #wpbody-content .chain-checkout-options-wrap,
-#wpbody-content .chain-checkout-options-wrap {
+body.xdwp-admin-page #wpbody-content .xdwp-options-wrap,
+#wpbody-content .xdwp-options-wrap {
 	max-width: 1100px !important;
 }
 
-body.chain-checkout-admin-page #wpbody-content .chain-checkout-options-wrap .cc-layout,
-#wpbody-content .chain-checkout-options-wrap .cc-layout {
+body.xdwp-admin-page #wpbody-content .xdwp-options-wrap .cc-layout,
+#wpbody-content .xdwp-options-wrap .cc-layout {
 	display: flex !important;
 	flex-direction: row !important;
 	align-items: stretch !important;
@@ -40,8 +40,8 @@ body.chain-checkout-admin-page #wpbody-content .chain-checkout-options-wrap .cc-
 	min-height: 640px !important;
 }
 
-body.chain-checkout-admin-page #wpbody-content .chain-checkout-options-wrap .cc-header,
-#wpbody-content .chain-checkout-options-wrap .cc-header {
+body.xdwp-admin-page #wpbody-content .xdwp-options-wrap .cc-header,
+#wpbody-content .xdwp-options-wrap .cc-header {
 	display: flex !important;
 	align-items: center !important;
 	justify-content: space-between !important;
@@ -51,8 +51,8 @@ body.chain-checkout-admin-page #wpbody-content .chain-checkout-options-wrap .cc-
 	border-radius: 5px 5px 0 0 !important;
 }
 
-body.chain-checkout-admin-page #wpbody-content .chain-checkout-options-wrap .cc-tabs,
-#wpbody-content .chain-checkout-options-wrap .cc-tabs {
+body.xdwp-admin-page #wpbody-content .xdwp-options-wrap .cc-tabs,
+#wpbody-content .xdwp-options-wrap .cc-tabs {
 	display: block !important;
 	width: 200px !important;
 	flex: 0 0 200px !important;
@@ -61,8 +61,8 @@ body.chain-checkout-admin-page #wpbody-content .chain-checkout-options-wrap .cc-
 	border-right: 1px solid #1d2733 !important;
 }
 
-body.chain-checkout-admin-page #wpbody-content .chain-checkout-options-wrap .cc-tab,
-#wpbody-content .chain-checkout-options-wrap .cc-tab {
+body.xdwp-admin-page #wpbody-content .xdwp-options-wrap .cc-tab,
+#wpbody-content .xdwp-options-wrap .cc-tab {
 	display: flex !important;
 	align-items: center !important;
 	gap: 10px !important;
@@ -75,22 +75,22 @@ body.chain-checkout-admin-page #wpbody-content .chain-checkout-options-wrap .cc-
 	box-shadow: none !important;
 }
 
-body.chain-checkout-admin-page #wpbody-content .chain-checkout-options-wrap .cc-tab.is-active,
-#wpbody-content .chain-checkout-options-wrap .cc-tab.is-active {
+body.xdwp-admin-page #wpbody-content .xdwp-options-wrap .cc-tab.is-active,
+#wpbody-content .xdwp-options-wrap .cc-tab.is-active {
 	background: #1d2733 !important;
 	color: #fff !important;
 	border-left-color: #2271b1 !important;
 }
 
-body.chain-checkout-admin-page #wpbody-content .chain-checkout-options-wrap .cc-panels,
-#wpbody-content .chain-checkout-options-wrap .cc-panels {
+body.xdwp-admin-page #wpbody-content .xdwp-options-wrap .cc-panels,
+#wpbody-content .xdwp-options-wrap .cc-panels {
 	flex: 1 1 auto !important;
 	min-width: 0 !important;
 	background: #fff !important;
 }
 
-body.chain-checkout-admin-page #wpbody-content .chain-checkout-options-wrap .cc-header h1,
-#wpbody-content .chain-checkout-options-wrap .cc-header h1 {
+body.xdwp-admin-page #wpbody-content .xdwp-options-wrap .cc-header h1,
+#wpbody-content .xdwp-options-wrap .cc-header h1 {
 	color: #fff !important;
 	margin: 0 !important;
 	padding: 0 !important;
@@ -100,22 +100,22 @@ body.chain-checkout-admin-page #wpbody-content .chain-checkout-options-wrap .cc-
 	text-transform: uppercase !important;
 }
 
-body.chain-checkout-admin-page #wpbody-content > .wrap > h1,
-body.chain-checkout-admin-page #wpbody-content > .wrap > h1.wp-heading-inline {
+body.xdwp-admin-page #wpbody-content > .wrap > h1,
+body.xdwp-admin-page #wpbody-content > .wrap > h1.wp-heading-inline {
 	display: none !important;
 }
 
-.chain-checkout-options-wrap *,
-.chain-checkout-options-wrap *::before,
-.chain-checkout-options-wrap *::after {
+.xdwp-options-wrap *,
+.xdwp-options-wrap *::before,
+.xdwp-options-wrap *::after {
 	box-sizing: border-box;
 }
 
-.chain-checkout-options-wrap a {
+.xdwp-options-wrap a {
 	color: var(--cc-sidebar);
 }
 
-.chain-checkout-options-wrap .cc-header {
+.xdwp-options-wrap .cc-header {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
@@ -127,14 +127,14 @@ body.chain-checkout-admin-page #wpbody-content > .wrap > h1.wp-heading-inline {
 	font-weight: 700;
 }
 
-.chain-checkout-options-wrap .cc-header-title {
+.xdwp-options-wrap .cc-header-title {
 	display: flex;
 	align-items: center;
 	gap: 12px;
 	flex-wrap: wrap;
 }
 
-.chain-checkout-options-wrap .cc-header h1 {
+.xdwp-options-wrap .cc-header h1 {
 	color: #fff;
 	margin: 0;
 	font-size: 16px;
@@ -145,7 +145,7 @@ body.chain-checkout-admin-page #wpbody-content > .wrap > h1.wp-heading-inline {
 	padding: 0;
 }
 
-.chain-checkout-options-wrap .cc-version {
+.xdwp-options-wrap .cc-version {
 	display: inline-flex;
 	align-items: center;
 	height: 28px;
@@ -162,13 +162,13 @@ body.chain-checkout-admin-page #wpbody-content > .wrap > h1.wp-heading-inline {
 	line-height: 26px;
 }
 
-.chain-checkout-options-wrap .cc-header-extra {
+.xdwp-options-wrap .cc-header-extra {
 	display: flex;
 	align-items: center;
 	gap: 10px;
 }
 
-.chain-checkout-options-wrap .cc-mode-badge {
+.xdwp-options-wrap .cc-mode-badge {
 	display: inline-flex;
 	align-items: center;
 	height: 28px;
@@ -186,7 +186,7 @@ body.chain-checkout-admin-page #wpbody-content > .wrap > h1.wp-heading-inline {
 		linear-gradient(135deg, #3d577a, #2271b1) border-box;
 }
 
-.chain-checkout-options-wrap .cc-layout {
+.xdwp-options-wrap .cc-layout {
 	display: flex;
 	background: var(--cc-panel);
 	border: 1px solid var(--cc-line);
@@ -196,7 +196,7 @@ body.chain-checkout-admin-page #wpbody-content > .wrap > h1.wp-heading-inline {
 	overflow: hidden;
 }
 
-.chain-checkout-options-wrap .cc-tabs {
+.xdwp-options-wrap .cc-tabs {
 	width: 200px;
 	flex: 0 0 200px;
 	background: var(--cc-sidebar);
@@ -204,7 +204,7 @@ body.chain-checkout-admin-page #wpbody-content > .wrap > h1.wp-heading-inline {
 	border-right: 1px solid var(--cc-header);
 }
 
-.chain-checkout-options-wrap .cc-tab {
+.xdwp-options-wrap .cc-tab {
 	display: flex;
 	align-items: center;
 	gap: 10px;
@@ -218,21 +218,21 @@ body.chain-checkout-admin-page #wpbody-content > .wrap > h1.wp-heading-inline {
 	box-shadow: none;
 }
 
-.chain-checkout-options-wrap .cc-tab:hover,
-.chain-checkout-options-wrap .cc-tab:focus {
+.xdwp-options-wrap .cc-tab:hover,
+.xdwp-options-wrap .cc-tab:focus {
 	background: var(--cc-sidebar-hover);
 	color: #fff;
 	box-shadow: none;
 	outline: none;
 }
 
-.chain-checkout-options-wrap .cc-tab.is-active {
+.xdwp-options-wrap .cc-tab.is-active {
 	background: var(--cc-header);
 	color: #fff;
 	border-left-color: var(--cc-accent);
 }
 
-.chain-checkout-options-wrap .cc-tab-icon {
+.xdwp-options-wrap .cc-tab-icon {
 	font-size: 16px;
 	width: 18px;
 	height: 18px;
@@ -240,26 +240,26 @@ body.chain-checkout-admin-page #wpbody-content > .wrap > h1.wp-heading-inline {
 	text-align: center;
 }
 
-.chain-checkout-options-wrap .cc-panels {
+.xdwp-options-wrap .cc-panels {
 	flex: 1;
 	min-width: 0;
 	display: flex;
 	flex-direction: column;
 }
 
-.chain-checkout-options-wrap .cc-panel {
+.xdwp-options-wrap .cc-panel {
 	display: flex;
 	flex-direction: column;
 	flex: 1;
 	min-height: 0;
 }
 
-.chain-checkout-options-wrap .cc-panel-head {
+.xdwp-options-wrap .cc-panel-head {
 	border-bottom: 1px solid #e0e3e7;
 	padding: 24px 28px 14px;
 }
 
-.chain-checkout-options-wrap .cc-panel-head h2 {
+.xdwp-options-wrap .cc-panel-head h2 {
 	margin: 0 0 4px;
 	font-size: 18px;
 	font-weight: 700;
@@ -267,66 +267,66 @@ body.chain-checkout-admin-page #wpbody-content > .wrap > h1.wp-heading-inline {
 	padding: 0;
 }
 
-.chain-checkout-options-wrap .cc-panel-desc {
+.xdwp-options-wrap .cc-panel-desc {
 	margin: 0;
 	color: #50575e;
 	font-size: 13px;
 }
 
-.chain-checkout-options-wrap .cc-panel-content {
+.xdwp-options-wrap .cc-panel-content {
 	flex: 1;
 	padding: 8px 28px 24px;
 }
 
-.chain-checkout-options-wrap .cc-footer {
+.xdwp-options-wrap .cc-footer {
 	border-top: 1px solid #e0e3e7;
 	padding: 16px 28px;
 	background: #fafafa;
 }
 
-.chain-checkout-options-wrap .cc-lead {
+.xdwp-options-wrap .cc-lead {
 	margin: 8px 0 18px;
 	color: var(--cc-muted);
 	font-size: 13px;
 	line-height: 1.5;
 }
 
-.chain-checkout-options-wrap .cc-footnote {
+.xdwp-options-wrap .cc-footnote {
 	margin-top: 18px;
 }
 
 /* ——— Form fields (WP form-table inside shell) ——— */
 
-.chain-checkout-options-wrap .cc-form-table {
+.xdwp-options-wrap .cc-form-table {
 	margin: 0;
 }
 
-.chain-checkout-options-wrap .cc-form-table th,
-.chain-checkout-options-wrap .cc-form-table td {
+.xdwp-options-wrap .cc-form-table th,
+.xdwp-options-wrap .cc-form-table td {
 	padding: 18px 0;
 	border-bottom: 1px solid #f0f1f3;
 	vertical-align: top;
 }
 
-.chain-checkout-options-wrap .cc-form-table th {
+.xdwp-options-wrap .cc-form-table th {
 	width: 260px;
 	padding-right: 24px;
 	font-weight: 700;
 	color: var(--cc-ink);
 }
 
-.chain-checkout-options-wrap .cc-form-table .description {
+.xdwp-options-wrap .cc-form-table .description {
 	margin: 8px 0 0;
 	color: var(--cc-muted);
 	font-size: 12.5px;
 	line-height: 1.5;
 }
 
-.chain-checkout-options-wrap .cc-input,
-.chain-checkout-options-wrap input.regular-text.cc-input,
-.chain-checkout-options-wrap input.small-text.cc-input,
-.chain-checkout-options-wrap select.cc-input,
-.chain-checkout-options-wrap textarea.cc-input {
+.xdwp-options-wrap .cc-input,
+.xdwp-options-wrap input.regular-text.cc-input,
+.xdwp-options-wrap input.small-text.cc-input,
+.xdwp-options-wrap select.cc-input,
+.xdwp-options-wrap textarea.cc-input {
 	max-width: 460px;
 	padding: 0 15px;
 	border: 1px solid #c3c4c7;
@@ -341,7 +341,7 @@ body.chain-checkout-admin-page #wpbody-content > .wrap > h1.wp-heading-inline {
 	box-shadow: none;
 }
 
-.chain-checkout-options-wrap textarea.cc-input-textarea {
+.xdwp-options-wrap textarea.cc-input-textarea {
 	max-width: 700px;
 	min-height: 90px;
 	height: auto;
@@ -350,18 +350,18 @@ body.chain-checkout-admin-page #wpbody-content > .wrap > h1.wp-heading-inline {
 	resize: vertical;
 }
 
-.chain-checkout-options-wrap select.cc-input-select {
+.xdwp-options-wrap select.cc-input-select {
 	max-width: 320px;
 }
 
-.chain-checkout-options-wrap .cc-input:focus {
+.xdwp-options-wrap .cc-input:focus {
 	border-color: var(--cc-accent);
 	outline: none;
 	box-shadow: none;
 }
 
-.chain-checkout-options-wrap .cc-check,
-.chain-checkout-options-wrap .cc-radio {
+.xdwp-options-wrap .cc-check,
+.xdwp-options-wrap .cc-radio {
 	display: flex;
 	align-items: flex-start;
 	gap: 8px;
@@ -371,13 +371,13 @@ body.chain-checkout-admin-page #wpbody-content > .wrap > h1.wp-heading-inline {
 	color: #50575e;
 }
 
-.chain-checkout-options-wrap .cc-radio-group {
+.xdwp-options-wrap .cc-radio-group {
 	display: flex;
 	flex-wrap: wrap;
 	gap: 8px 16px;
 }
 
-.chain-checkout-options-wrap .cc-inline {
+.xdwp-options-wrap .cc-inline {
 	display: inline-flex;
 	align-items: center;
 	gap: 6px;
@@ -385,14 +385,14 @@ body.chain-checkout-admin-page #wpbody-content > .wrap > h1.wp-heading-inline {
 	font-size: 13px;
 }
 
-.chain-checkout-options-wrap .cc-btn-row {
+.xdwp-options-wrap .cc-btn-row {
 	display: flex;
 	flex-wrap: wrap;
 	gap: 8px;
 	margin: 10px 0;
 }
 
-.chain-checkout-options-wrap .cc-btn {
+.xdwp-options-wrap .cc-btn {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
@@ -411,34 +411,34 @@ body.chain-checkout-admin-page #wpbody-content > .wrap > h1.wp-heading-inline {
 	box-shadow: none;
 }
 
-.chain-checkout-options-wrap .cc-btn:hover {
+.xdwp-options-wrap .cc-btn:hover {
 	background: #fff;
 	border-color: #8c8f94;
 	color: var(--cc-ink);
 }
 
-.chain-checkout-options-wrap .cc-btn:focus {
+.xdwp-options-wrap .cc-btn:focus {
 	outline: none;
 	box-shadow: 0 0 0 1px var(--cc-accent);
 }
 
-.chain-checkout-options-wrap .cc-btn-primary {
+.xdwp-options-wrap .cc-btn-primary {
 	background: var(--cc-sidebar);
 	border-color: var(--cc-sidebar);
 	color: #fff;
 }
 
-.chain-checkout-options-wrap .cc-btn-primary:hover {
+.xdwp-options-wrap .cc-btn-primary:hover {
 	background: var(--cc-header);
 	border-color: var(--cc-header);
 	color: #fff;
 }
 
-.chain-checkout-options-wrap .cc-btn-secondary {
+.xdwp-options-wrap .cc-btn-secondary {
 	background: #fff;
 }
 
-.chain-checkout-icon-picker__preview img {
+.xdwp-icon-picker__preview img {
 	width: 48px;
 	height: 48px;
 	object-fit: contain;
@@ -450,11 +450,11 @@ body.chain-checkout-admin-page #wpbody-content > .wrap > h1.wp-heading-inline {
 
 /* ——— Coins table ——— */
 
-.chain-checkout-options-wrap .cc-coin-section {
+.xdwp-options-wrap .cc-coin-section {
 	margin: 0 0 1.5rem;
 }
 
-.chain-checkout-options-wrap .cc-coin-section__title {
+.xdwp-options-wrap .cc-coin-section__title {
 	margin: 0 0 10px;
 	font-size: 14px;
 	font-weight: 700;
@@ -463,7 +463,7 @@ body.chain-checkout-admin-page #wpbody-content > .wrap > h1.wp-heading-inline {
 	color: var(--cc-sidebar);
 }
 
-.chain-checkout-options-wrap .chain-checkout-coins-table {
+.xdwp-options-wrap .xdwp-coins-table {
 	max-width: 100%;
 	margin: 0;
 	border: 1px solid var(--cc-line);
@@ -473,7 +473,7 @@ body.chain-checkout-admin-page #wpbody-content > .wrap > h1.wp-heading-inline {
 	border-spacing: 0;
 }
 
-.chain-checkout-options-wrap .chain-checkout-coins-table thead th {
+.xdwp-options-wrap .xdwp-coins-table thead th {
 	background: var(--cc-soft);
 	font-size: 12px;
 	text-transform: uppercase;
@@ -482,23 +482,23 @@ body.chain-checkout-admin-page #wpbody-content > .wrap > h1.wp-heading-inline {
 	border-bottom: 1px solid var(--cc-line);
 }
 
-.chain-checkout-options-wrap .chain-checkout-coins-table td,
-.chain-checkout-options-wrap .chain-checkout-coins-table th {
+.xdwp-options-wrap .xdwp-coins-table td,
+.xdwp-options-wrap .xdwp-coins-table th {
 	padding: 10px 12px;
 	vertical-align: middle;
 }
 
-.chain-checkout-options-wrap .cc-col-on {
+.xdwp-options-wrap .cc-col-on {
 	width: 48px;
 }
 
-.chain-checkout-options-wrap .cc-coin-cell {
+.xdwp-options-wrap .cc-coin-cell {
 	display: inline-flex;
 	align-items: center;
 	gap: 10px;
 }
 
-.chain-checkout-options-wrap .cc-coin-cell__icon {
+.xdwp-options-wrap .cc-coin-cell__icon {
 	width: 22px;
 	height: 22px;
 	flex-shrink: 0;
@@ -509,7 +509,7 @@ body.chain-checkout-admin-page #wpbody-content > .wrap > h1.wp-heading-inline {
 	background: none;
 }
 
-.chain-checkout-options-wrap .cc-coin-cell__icon img {
+.xdwp-options-wrap .cc-coin-cell__icon img {
 	width: 22px !important;
 	height: 22px !important;
 	max-width: 22px !important;
@@ -518,12 +518,12 @@ body.chain-checkout-admin-page #wpbody-content > .wrap > h1.wp-heading-inline {
 	display: block;
 }
 
-.chain-checkout-options-wrap .cc-coin-cell__name {
+.xdwp-options-wrap .cc-coin-cell__name {
 	color: var(--cc-muted);
 	font-weight: 400;
 }
 
-.chain-checkout-options-wrap .cc-pill {
+.xdwp-options-wrap .cc-pill {
 	display: inline-flex;
 	align-items: center;
 	height: 22px;
@@ -535,35 +535,35 @@ body.chain-checkout-admin-page #wpbody-content > .wrap > h1.wp-heading-inline {
 	line-height: 22px;
 }
 
-.chain-checkout-options-wrap .cc-pill--yes {
+.xdwp-options-wrap .cc-pill--yes {
 	background: var(--cc-header);
 	color: #fff;
 }
 
-.chain-checkout-options-wrap .cc-pill--manual {
+.xdwp-options-wrap .cc-pill--manual {
 	background: #f0f0f1;
 	color: var(--cc-muted);
 }
 
 /* ——— Wallets (Cryptoniq palette) ——— */
 
-.chain-checkout-wallets {
-	--chain-checkout-ink: #1d2327;
-	--chain-checkout-muted: #646970;
-	--chain-checkout-line: #dcdcde;
-	--chain-checkout-soft: #f6f7f7;
-	--chain-checkout-card: #ffffff;
-	--chain-checkout-accent: #2c3a4a;
-	--chain-checkout-accent-soft: #e8eef4;
-	--chain-checkout-warn: #9a6700;
-	--chain-checkout-warn-soft: #fcf5e4;
-	--chain-checkout-danger: #d63638;
-	--chain-checkout-radius: 5px;
+.xdwp-wallets {
+	--xdwp-ink: #1d2327;
+	--xdwp-muted: #646970;
+	--xdwp-line: #dcdcde;
+	--xdwp-soft: #f6f7f7;
+	--xdwp-card: #ffffff;
+	--xdwp-accent: #2c3a4a;
+	--xdwp-accent-soft: #e8eef4;
+	--xdwp-warn: #9a6700;
+	--xdwp-warn-soft: #fcf5e4;
+	--xdwp-danger: #d63638;
+	--xdwp-radius: 5px;
 	max-width: 100%;
-	color: var(--chain-checkout-ink);
+	color: var(--xdwp-ink);
 }
 
-.chain-checkout-wallets__hero {
+.xdwp-wallets__hero {
 	display: flex;
 	flex-wrap: wrap;
 	gap: 1.25rem;
@@ -572,16 +572,16 @@ body.chain-checkout-admin-page #wpbody-content > .wrap > h1.wp-heading-inline {
 	margin: 0 0 1.25rem;
 	padding: 1.15rem 1.25rem;
 	background: linear-gradient(145deg, #edf1f5 0%, #f7f8f9 48%, #ffffff 100%);
-	border: 1px solid var(--chain-checkout-line);
-	border-radius: var(--chain-checkout-radius);
+	border: 1px solid var(--xdwp-line);
+	border-radius: var(--xdwp-radius);
 }
 
-.chain-checkout-wallets__hero-text {
+.xdwp-wallets__hero-text {
 	flex: 1 1 240px;
 	min-width: 0;
 }
 
-.chain-checkout-wallets__heading {
+.xdwp-wallets__heading {
 	margin: 0 0 0.4rem;
 	font-size: 1.15rem;
 	font-weight: 700;
@@ -589,54 +589,54 @@ body.chain-checkout-admin-page #wpbody-content > .wrap > h1.wp-heading-inline {
 	line-height: 1.3;
 }
 
-.chain-checkout-wallets__hero-text p {
+.xdwp-wallets__hero-text p {
 	margin: 0 0 0.45rem;
-	color: var(--chain-checkout-muted);
+	color: var(--xdwp-muted);
 	font-size: 13px;
 	line-height: 1.5;
 }
 
-.chain-checkout-wallets__hero-link {
+.xdwp-wallets__hero-link {
 	margin-bottom: 0 !important;
 }
 
-.chain-checkout-wallets__hero-link a {
+.xdwp-wallets__hero-link a {
 	font-weight: 600;
 	text-decoration: none;
 }
 
-.chain-checkout-wallets__stats {
+.xdwp-wallets__stats {
 	display: flex;
 	gap: 0.65rem;
 	align-items: stretch;
 }
 
-.chain-checkout-wallets__stat {
+.xdwp-wallets__stat {
 	display: flex;
 	flex-direction: column;
 	justify-content: center;
 	min-width: 5.5rem;
 	padding: 0.7rem 0.9rem;
-	background: var(--chain-checkout-card);
-	border: 1px solid var(--chain-checkout-line);
-	border-radius: var(--chain-checkout-radius);
+	background: var(--xdwp-card);
+	border: 1px solid var(--xdwp-line);
+	border-radius: var(--xdwp-radius);
 	text-align: center;
 }
 
-.chain-checkout-wallets__stat-value {
+.xdwp-wallets__stat-value {
 	font-size: 1.35rem;
 	font-weight: 700;
 	line-height: 1.2;
-	color: var(--chain-checkout-accent);
+	color: var(--xdwp-accent);
 }
 
-.chain-checkout-wallets__stat-label {
+.xdwp-wallets__stat-label {
 	font-size: 11px;
-	color: var(--chain-checkout-muted);
+	color: var(--xdwp-muted);
 	margin-top: 0.15rem;
 }
 
-.chain-checkout-wallets__toolbar {
+.xdwp-wallets__toolbar {
 	display: flex;
 	flex-wrap: wrap;
 	gap: 0.75rem 1rem;
@@ -644,69 +644,69 @@ body.chain-checkout-admin-page #wpbody-content > .wrap > h1.wp-heading-inline {
 	margin-bottom: 1rem;
 }
 
-.chain-checkout-wallets__search {
+.xdwp-wallets__search {
 	flex: 1 1 220px;
 }
 
-.chain-checkout-wallets__search input[type="search"] {
+.xdwp-wallets__search input[type="search"] {
 	width: 100%;
 	max-width: 100%;
 	height: 36px;
 	padding: 0 12px;
 	border: 1px solid #c3c4c7;
-	border-radius: var(--chain-checkout-radius);
+	border-radius: var(--xdwp-radius);
 	box-shadow: none;
 	font-size: 14px;
 }
 
-.chain-checkout-wallets__search input[type="search"]:focus {
+.xdwp-wallets__search input[type="search"]:focus {
 	border-color: #2271b1;
 	box-shadow: none;
 	outline: none;
 }
 
-.chain-checkout-wallets__missing {
+.xdwp-wallets__missing {
 	margin: 0;
 	padding: 0.4rem 0.75rem;
-	background: var(--chain-checkout-warn-soft);
+	background: var(--xdwp-warn-soft);
 	border: 1px solid #e8d5a3;
-	border-radius: var(--chain-checkout-radius);
-	color: var(--chain-checkout-warn);
+	border-radius: var(--xdwp-radius);
+	color: var(--xdwp-warn);
 	font-size: 12px;
 	font-weight: 600;
 }
 
-.chain-checkout-wallets__empty-state {
+.xdwp-wallets__empty-state {
 	padding: 2rem 1.5rem;
 	text-align: center;
-	background: var(--chain-checkout-soft);
-	border: 1px dashed var(--chain-checkout-line);
-	border-radius: var(--chain-checkout-radius);
+	background: var(--xdwp-soft);
+	border: 1px dashed var(--xdwp-line);
+	border-radius: var(--xdwp-radius);
 }
 
-.chain-checkout-wallets__empty-icon {
+.xdwp-wallets__empty-icon {
 	font-size: 1.75rem;
-	color: var(--chain-checkout-accent);
+	color: var(--xdwp-accent);
 	margin-bottom: 0.5rem;
 	opacity: 0.7;
 }
 
-.chain-checkout-wallets__empty-state p {
+.xdwp-wallets__empty-state p {
 	margin: 0 0 1rem;
-	color: var(--chain-checkout-muted);
+	color: var(--xdwp-muted);
 	font-size: 14px;
 	line-height: 1.5;
 }
 
-.chain-checkout-wallets__section {
+.xdwp-wallets__section {
 	margin: 0 0 1rem;
-	background: var(--chain-checkout-card);
-	border: 1px solid var(--chain-checkout-line);
-	border-radius: var(--chain-checkout-radius);
+	background: var(--xdwp-card);
+	border: 1px solid var(--xdwp-line);
+	border-radius: var(--xdwp-radius);
 	overflow: hidden;
 }
 
-.chain-checkout-wallets__section-title {
+.xdwp-wallets__section-title {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
@@ -716,90 +716,90 @@ body.chain-checkout-admin-page #wpbody-content > .wrap > h1.wp-heading-inline {
 	font-weight: 700;
 	font-size: 13px;
 	list-style: none;
-	background: var(--chain-checkout-soft);
+	background: var(--xdwp-soft);
 	user-select: none;
 }
 
-.chain-checkout-wallets__section details[open] > .chain-checkout-wallets__section-title {
-	border-bottom: 1px solid var(--chain-checkout-line);
+.xdwp-wallets__section details[open] > .xdwp-wallets__section-title {
+	border-bottom: 1px solid var(--xdwp-line);
 }
 
-.chain-checkout-wallets__section-title::-webkit-details-marker {
+.xdwp-wallets__section-title::-webkit-details-marker {
 	display: none;
 }
 
-.chain-checkout-wallets__section-label::before {
+.xdwp-wallets__section-label::before {
 	content: "";
 	display: inline-block;
 	width: 0.45rem;
 	height: 0.45rem;
 	margin-right: 0.55rem;
-	border-right: 2px solid var(--chain-checkout-muted);
-	border-bottom: 2px solid var(--chain-checkout-muted);
+	border-right: 2px solid var(--xdwp-muted);
+	border-bottom: 2px solid var(--xdwp-muted);
 	transform: rotate(-45deg) translateY(-1px);
 	transition: transform 0.15s ease;
 	vertical-align: middle;
 }
 
-.chain-checkout-wallets__section details[open] > .chain-checkout-wallets__section-title .chain-checkout-wallets__section-label::before {
+.xdwp-wallets__section details[open] > .xdwp-wallets__section-title .xdwp-wallets__section-label::before {
 	transform: rotate(45deg) translateY(-2px);
 }
 
-.chain-checkout-wallets__section-meta {
+.xdwp-wallets__section-meta {
 	display: inline-flex;
 	align-items: center;
 	gap: 0.5rem;
 	font-weight: 500;
 }
 
-.chain-checkout-wallets__section-coins {
+.xdwp-wallets__section-coins {
 	font-size: 12px;
-	color: var(--chain-checkout-muted);
+	color: var(--xdwp-muted);
 }
 
-.chain-checkout-wallets__section-count:not(:empty) {
+.xdwp-wallets__section-count:not(:empty) {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
 	min-width: 1.5em;
 	height: 1.5em;
 	padding: 0 0.4em;
-	border-radius: var(--chain-checkout-radius);
-	background: var(--chain-checkout-accent);
+	border-radius: var(--xdwp-radius);
+	background: var(--xdwp-accent);
 	color: #fff;
 	font-size: 11px;
 	font-weight: 700;
 }
 
-.chain-checkout-wallets__list {
+.xdwp-wallets__list {
 	display: flex;
 	flex-direction: column;
 	gap: 0.85rem;
 	padding: 1rem;
 }
 
-.chain-checkout-wallet-card {
+.xdwp-wallet-card {
 	display: flex;
 	flex-direction: column;
 	gap: 0.75rem;
 	padding: 1rem 1.05rem;
-	border: 1px solid var(--chain-checkout-line);
-	border-radius: var(--chain-checkout-radius);
+	border: 1px solid var(--xdwp-line);
+	border-radius: var(--xdwp-radius);
 	background: #fafbfc;
 	transition: border-color 0.15s ease, background 0.15s ease;
 }
 
-.chain-checkout-wallet-card.has-addresses {
-	background: var(--chain-checkout-card);
+.xdwp-wallet-card.has-addresses {
+	background: var(--xdwp-card);
 	border-color: #b8c4d1;
-	box-shadow: inset 3px 0 0 var(--chain-checkout-accent);
+	box-shadow: inset 3px 0 0 var(--xdwp-accent);
 }
 
-.chain-checkout-wallet-card.needs-address {
+.xdwp-wallet-card.needs-address {
 	border-style: dashed;
 }
 
-.chain-checkout-wallet-card__head {
+.xdwp-wallet-card__head {
 	display: flex;
 	flex-wrap: wrap;
 	justify-content: space-between;
@@ -807,7 +807,7 @@ body.chain-checkout-admin-page #wpbody-content > .wrap > h1.wp-heading-inline {
 	align-items: center;
 }
 
-.chain-checkout-wallet-card__title {
+.xdwp-wallet-card__title {
 	display: flex;
 	flex-wrap: wrap;
 	align-items: baseline;
@@ -815,136 +815,136 @@ body.chain-checkout-admin-page #wpbody-content > .wrap > h1.wp-heading-inline {
 	min-width: 0;
 }
 
-.chain-checkout-wallet-card__symbol {
+.xdwp-wallet-card__symbol {
 	font-size: 15px;
 	font-weight: 700;
 	letter-spacing: 0.03em;
 }
 
-.chain-checkout-wallet-card__name {
+.xdwp-wallet-card__name {
 	font-size: 13px;
-	color: var(--chain-checkout-muted);
+	color: var(--xdwp-muted);
 }
 
-.chain-checkout-wallet-card__badges {
+.xdwp-wallet-card__badges {
 	display: flex;
 	flex-wrap: wrap;
 	gap: 0.35rem;
 	align-items: center;
 }
 
-.chain-checkout-pill {
+.xdwp-pill {
 	display: inline-block;
 	padding: 0.18rem 0.5rem;
-	border-radius: var(--chain-checkout-radius);
-	background: var(--chain-checkout-accent-soft);
-	color: var(--chain-checkout-accent);
+	border-radius: var(--xdwp-radius);
+	background: var(--xdwp-accent-soft);
+	color: var(--xdwp-accent);
 	font-size: 11px;
 	font-weight: 650;
 	line-height: 1.3;
 }
 
-.chain-checkout-pill--muted {
+.xdwp-pill--muted {
 	background: #eef0f2;
-	color: var(--chain-checkout-muted);
+	color: var(--xdwp-muted);
 	font-weight: 600;
 	text-transform: uppercase;
 	letter-spacing: 0.03em;
 	font-size: 10px;
 }
 
-.chain-checkout-wallet-card__count {
+.xdwp-wallet-card__count {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
 	min-width: 1.65em;
 	height: 1.65em;
 	padding: 0 0.4em;
-	border-radius: var(--chain-checkout-radius);
-	background: var(--chain-checkout-accent);
+	border-radius: var(--xdwp-radius);
+	background: var(--xdwp-accent);
 	color: #fff;
 	font-size: 11px;
 	font-weight: 700;
 }
 
-.chain-checkout-wallet-card.needs-address .chain-checkout-wallet-card__count {
+.xdwp-wallet-card.needs-address .xdwp-wallet-card__count {
 	background: #a7aaad;
 }
 
-.chain-checkout-wallet-rows {
+.xdwp-wallet-rows {
 	display: flex;
 	flex-direction: column;
 	gap: 0.55rem;
 }
 
-.chain-checkout-wallet-row {
+.xdwp-wallet-row {
 	display: flex;
 	flex-direction: column;
 	gap: 0.35rem;
 }
 
-.chain-checkout-wallet-row .chain-checkout-wallet-input {
+.xdwp-wallet-row .xdwp-wallet-input {
 	width: 100%;
 	max-width: 100%;
 	height: 36px;
 	padding: 0 12px;
 	border: 1px solid #c3c4c7;
-	border-radius: var(--chain-checkout-radius);
+	border-radius: var(--xdwp-radius);
 	font-family: ui-monospace, Menlo, Consolas, monospace;
 	font-size: 12.5px;
 	box-sizing: border-box;
 }
 
-.chain-checkout-wallet-row .chain-checkout-wallet-input:focus {
+.xdwp-wallet-row .xdwp-wallet-input:focus {
 	border-color: #2271b1;
 	box-shadow: none;
 	outline: none;
 }
 
-.chain-checkout-wallet-row__btns {
+.xdwp-wallet-row__btns {
 	display: flex;
 	gap: 0.4rem;
 }
 
-.chain-checkout-wallet-row__btns .button {
+.xdwp-wallet-row__btns .button {
 	min-height: 36px;
 	line-height: 34px;
 	padding: 0 12px;
-	border-radius: var(--chain-checkout-radius);
+	border-radius: var(--xdwp-radius);
 }
 
-.chain-checkout-wallet-row__btns .chain-checkout-wallet-remove {
+.xdwp-wallet-row__btns .xdwp-wallet-remove {
 	min-width: 40px;
-	color: var(--chain-checkout-danger);
+	color: var(--xdwp-danger);
 	border-color: #f0c0c0;
 	background: #fff;
 	font-size: 18px;
 	line-height: 1;
 }
 
-.chain-checkout-wallet-row__btns .chain-checkout-wallet-remove:hover {
+.xdwp-wallet-row__btns .xdwp-wallet-remove:hover {
 	background: #fcf0f1;
-	border-color: var(--chain-checkout-danger);
-	color: var(--chain-checkout-danger);
+	border-color: var(--xdwp-danger);
+	color: var(--xdwp-danger);
 }
 
-.chain-checkout-wallet-row__status {
+.xdwp-wallet-row__status {
 	font-size: 11px;
 	font-weight: 650;
-	color: var(--chain-checkout-danger);
+	color: var(--xdwp-danger);
 }
 
-.chain-checkout-wallet-row__status:empty {
+.xdwp-wallet-row__status:empty {
 	display: none;
 }
 
-.chain-checkout-wallet-row.is-duplicate .chain-checkout-wallet-input,
-.chain-checkout-wallet-row.is-invalid .chain-checkout-wallet-input {
-	border-color: var(--chain-checkout-danger);
-	box-shadow: 0 0 0 1px var(--chain-checkout-danger);
+.xdwp-wallet-row.is-duplicate .xdwp-wallet-input,
+.xdwp-wallet-row.is-invalid .xdwp-wallet-input {
+	border-color: var(--xdwp-danger);
+	box-shadow: 0 0 0 1px var(--xdwp-danger);
 }
 
-.chain-checkout-wallet-card__actions {
+.xdwp-wallet-card__actions {
 	display: flex;
 	flex-wrap: wrap;
 	align-items: center;
@@ -953,42 +953,42 @@ body.chain-checkout-admin-page #wpbody-content > .wrap > h1.wp-heading-inline {
 	border-top: 1px solid #e8ebef;
 }
 
-.chain-checkout-wallet-card__actions .chain-checkout-wallet-add {
+.xdwp-wallet-card__actions .xdwp-wallet-add {
 	min-height: 36px;
-	border-radius: var(--chain-checkout-radius);
+	border-radius: var(--xdwp-radius);
 	font-weight: 600;
-	background: var(--chain-checkout-accent);
-	border-color: var(--chain-checkout-accent);
+	background: var(--xdwp-accent);
+	border-color: var(--xdwp-accent);
 	color: #fff;
 }
 
-.chain-checkout-wallet-card__actions .chain-checkout-wallet-add:hover {
+.xdwp-wallet-card__actions .xdwp-wallet-add:hover {
 	background: #1d2733;
 	border-color: #1d2733;
 	color: #fff;
 }
 
-.chain-checkout-wallet-hint:empty {
+.xdwp-wallet-hint:empty {
 	display: none;
 }
 
-.chain-checkout-wallet-hint {
+.xdwp-wallet-hint {
 	font-size: 12px;
-	color: var(--chain-checkout-danger);
+	color: var(--xdwp-danger);
 }
 
-.chain-checkout-wallets__empty {
+.xdwp-wallets__empty {
 	margin: 1rem 0 0;
 	padding: 1.1rem;
-	background: var(--chain-checkout-soft);
-	border: 1px dashed var(--chain-checkout-line);
-	border-radius: var(--chain-checkout-radius);
+	background: var(--xdwp-soft);
+	border: 1px dashed var(--xdwp-line);
+	border-radius: var(--xdwp-radius);
 	text-align: center;
-	color: var(--chain-checkout-muted);
+	color: var(--xdwp-muted);
 }
 
 @media (min-width: 641px) {
-	.chain-checkout-wallet-row {
+	.xdwp-wallet-row {
 		display: grid;
 		grid-template-columns: 1fr auto;
 		grid-template-rows: auto auto;
@@ -996,28 +996,28 @@ body.chain-checkout-admin-page #wpbody-content > .wrap > h1.wp-heading-inline {
 		gap: 0.35rem 0.5rem;
 	}
 
-	.chain-checkout-wallet-row .chain-checkout-wallet-input {
+	.xdwp-wallet-row .xdwp-wallet-input {
 		grid-column: 1;
 		grid-row: 1;
 	}
 
-	.chain-checkout-wallet-row__btns {
+	.xdwp-wallet-row__btns {
 		grid-column: 2;
 		grid-row: 1;
 	}
 
-	.chain-checkout-wallet-row__status {
+	.xdwp-wallet-row__status {
 		grid-column: 1 / -1;
 		grid-row: 2;
 	}
 }
 
 @media (max-width: 900px) {
-	.chain-checkout-options-wrap .cc-layout {
+	.xdwp-options-wrap .cc-layout {
 		flex-direction: column;
 	}
 
-	.chain-checkout-options-wrap .cc-tabs {
+	.xdwp-options-wrap .cc-tabs {
 		width: 100%;
 		flex: none;
 		display: flex;
@@ -1027,78 +1027,78 @@ body.chain-checkout-admin-page #wpbody-content > .wrap > h1.wp-heading-inline {
 		border-bottom: 1px solid var(--cc-header);
 	}
 
-	.chain-checkout-options-wrap .cc-tab {
+	.xdwp-options-wrap .cc-tab {
 		border-left: 0;
 		border-bottom: 3px solid transparent;
 		padding: 8px 10px;
 	}
 
-	.chain-checkout-options-wrap .cc-tab.is-active {
+	.xdwp-options-wrap .cc-tab.is-active {
 		border-left-color: transparent;
 		border-bottom-color: var(--cc-accent);
 	}
 
-	.chain-checkout-options-wrap .cc-form-table th,
-	.chain-checkout-options-wrap .cc-form-table td {
+	.xdwp-options-wrap .cc-form-table th,
+	.xdwp-options-wrap .cc-form-table td {
 		display: block;
 		width: 100%;
 		padding-right: 0;
 	}
 
-	.chain-checkout-options-wrap .cc-form-table th {
+	.xdwp-options-wrap .cc-form-table th {
 		padding-bottom: 6px;
 		border-bottom: 0;
 	}
 
-	.chain-checkout-options-wrap .cc-panel-head,
-	.chain-checkout-options-wrap .cc-panel-content,
-	.chain-checkout-options-wrap .cc-footer {
+	.xdwp-options-wrap .cc-panel-head,
+	.xdwp-options-wrap .cc-panel-content,
+	.xdwp-options-wrap .cc-footer {
 		padding-left: 16px;
 		padding-right: 16px;
 	}
 }
 
 @media (max-width: 640px) {
-	.chain-checkout-options-wrap {
+	.xdwp-options-wrap {
 		margin-right: 0;
 	}
 
-	.chain-checkout-wallets__hero {
+	.xdwp-wallets__hero {
 		padding: 1rem;
 	}
 
-	.chain-checkout-wallets__stats {
+	.xdwp-wallets__stats {
 		width: 100%;
 	}
 
-	.chain-checkout-wallets__stat {
+	.xdwp-wallets__stat {
 		flex: 1 1 0;
 	}
 
-	.chain-checkout-wallet-card {
+	.xdwp-wallet-card {
 		padding: 0.9rem;
 	}
 
-	.chain-checkout-wallet-card__title {
+	.xdwp-wallet-card__title {
 		flex-direction: column;
 		align-items: flex-start;
 		gap: 0.15rem;
 	}
 
-	.chain-checkout-wallet-row__btns {
+	.xdwp-wallet-row__btns {
 		width: 100%;
 	}
 
-	.chain-checkout-wallet-row__btns .button {
+	.xdwp-wallet-row__btns .button {
 		flex: 1 1 auto;
 	}
 
-	.chain-checkout-wallet-card__actions .chain-checkout-wallet-add {
+	.xdwp-wallet-card__actions .xdwp-wallet-add {
 		width: 100%;
 		justify-content: center;
 	}
 
-	.chain-checkout-wallets__missing {
+	.xdwp-wallets__missing {
 		width: 100%;
 		text-align: center;
 	}

@@ -4,7 +4,7 @@ Tags: woocommerce, cryptocurrency, bitcoin, ethereum, payments, usdt, crypto che
 Requires at least: 6.9
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.4.6
+Stable tag: 1.5.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -255,6 +255,14 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 
 == Changelog ==
 
+= 1.5.0 =
+* Renamed all internal identifiers, files, CSS, JS, options, and gateway ID to xdwp
+* Fixed intermittent missing crypto quote when switching coins; Blocks checkout shows live amount
+
+= 1.4.7 =
+* Fixed intermittent missing crypto quote when switching coins at checkout (AJAX race + price cache clobber)
+* Show live crypto amount on Checkout Blocks; keep stale rates for fallback when CoinGecko flakes
+
 = 1.4.6 =
 * Fixed admin settings URLs after rename; enqueue wallets.js (no raw script tag)
 * Unique dust spaced to avoid match-band overlap; atomic amount sequence via LAST_INSERT_ID
@@ -319,7 +327,7 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 
 = 1.2.4 =
 * Fixed Add address with inline wallets script (works even if admin.js cache fails)
-* Document-level click handling via data-chain-checkout-action attributes
+* Document-level click handling via data-xdwp-action attributes
 
 = 1.2.3 =
 * Fixed Wallets “+ Add address” button
@@ -348,6 +356,9 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.5.0 =
+Internal rename to xdwp (gateway ID, options, order meta, assets). Fresh installs and updates use xdwp keys only.
 
 = 1.4.6 =
 Fixes admin navigation and unique-amount matching after the 1.4.5 rename.

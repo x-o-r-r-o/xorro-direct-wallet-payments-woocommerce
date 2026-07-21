@@ -83,6 +83,15 @@ php tests/smoke-test.php
 
 See [readme.txt](readme.txt).
 
+### 1.5.0
+
+- Full internal rename to xdwp (files, classes, gateway ID, options)
+- Checkout quote race/cache fixes; Blocks live crypto amount
+
+### 1.4.7
+
+- Fixed intermittent missing crypto quote on coin select; Blocks checkout now shows the live amount
+
 ### 1.4.6
 
 - Fixed admin URLs, wallets enqueue, unique-dust spacing, Blocks text domain

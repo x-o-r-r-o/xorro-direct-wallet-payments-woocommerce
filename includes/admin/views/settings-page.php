@@ -2,7 +2,7 @@
 /**
  * Admin settings UI — Cryptoniq-inspired options shell.
  *
- * @package ChainCheckout
+ * @package Xdwp
  *
  * @var string $tab
  * @var array  $settings
@@ -46,12 +46,12 @@ $enabled = isset( $settings['enabled_coins'] ) && is_array( $settings['enabled_c
 $wallets = isset( $settings['wallets'] ) && is_array( $settings['wallets'] ) ? $settings['wallets'] : array();
 $active  = isset( $tabs[ $tab ] ) ? $tabs[ $tab ] : $tabs['general'];
 ?>
-<div class="wrap chain-checkout-admin">
-	<div class="chain-checkout-options-wrap">
+<div class="wrap xdwp-admin">
+	<div class="xdwp-options-wrap">
 		<div class="cc-header">
 			<div class="cc-header-title">
 				<h1><?php esc_html_e( 'Xorro Wallet Payments', 'xorro-direct-wallet-payments-woocommerce' ); ?></h1>
-				<span class="cc-version"><?php echo esc_html( 'v' . CHAIN_CHECKOUT_VERSION ); ?></span>
+				<span class="cc-version"><?php echo esc_html( 'v' . XDWP_VERSION ); ?></span>
 			</div>
 			<div class="cc-header-extra">
 				<span class="cc-mode-badge"><?php esc_html_e( 'Direct to wallet', 'xorro-direct-wallet-payments-woocommerce' ); ?></span>
@@ -59,7 +59,7 @@ $active  = isset( $tabs[ $tab ] ) ? $tabs[ $tab ] : $tabs['general'];
 		</div>
 
 		<form method="post" action="" class="cc-form">
-			<?php wp_nonce_field( 'chain_checkout_save_settings', 'chain_checkout_nonce' ); ?>
+			<?php wp_nonce_field( 'xdwp_save_settings', 'xdwp_nonce' ); ?>
 
 			<div class="cc-layout">
 				<nav class="cc-tabs" aria-label="<?php esc_attr_e( 'Xorro Wallet Payments settings', 'xorro-direct-wallet-payments-woocommerce' ); ?>">
@@ -87,14 +87,14 @@ $active  = isset( $tabs[ $tab ] ) ? $tabs[ $tab ] : $tabs['general'];
 									<tr>
 										<th scope="row"><?php esc_html_e( 'Payment window (minutes)', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
 										<td>
-											<input type="number" min="5" max="1440" name="chain_checkout[payment_window]" value="<?php echo esc_attr( (string) ( $settings['payment_window'] ?? 60 ) ); ?>" class="small-text cc-input" />
+											<input type="number" min="5" max="1440" name="xdwp[payment_window]" value="<?php echo esc_attr( (string) ( $settings['payment_window'] ?? 60 ) ); ?>" class="small-text cc-input" />
 											<p class="description"><?php esc_html_e( 'Quoted crypto amount is valid for this duration. Default: 60.', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
 										</td>
 									</tr>
 									<tr>
 										<th scope="row"><?php esc_html_e( 'Order status after payment', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
 										<td>
-											<select name="chain_checkout[order_status]" class="cc-input cc-input-select">
+											<select name="xdwp[order_status]" class="cc-input cc-input-select">
 												<?php
 												$statuses = array(
 													'processing' => __( 'Processing', 'xorro-direct-wallet-payments-woocommerce' ),
@@ -112,21 +112,21 @@ $active  = isset( $tabs[ $tab ] ) ? $tabs[ $tab ] : $tabs['general'];
 									<tr>
 										<th scope="row"><?php esc_html_e( 'Underpayment tolerance (%)', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
 										<td>
-											<input type="number" step="0.1" min="0" max="10" name="chain_checkout[underpayment_percent]" value="<?php echo esc_attr( (string) ( $settings['underpayment_percent'] ?? 1 ) ); ?>" class="small-text cc-input" />
+											<input type="number" step="0.1" min="0" max="10" name="xdwp[underpayment_percent]" value="<?php echo esc_attr( (string) ( $settings['underpayment_percent'] ?? 1 ) ); ?>" class="small-text cc-input" />
 											<p class="description"><?php esc_html_e( 'Capped automatically when unique amounts are enabled so concurrent orders on a shared wallet stay distinguishable.', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
 										</td>
 									</tr>
 									<tr>
 										<th scope="row"><?php esc_html_e( 'Minimum confirmations', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
 										<td>
-											<input type="number" min="0" max="64" name="chain_checkout[min_confirmations]" value="<?php echo esc_attr( (string) ( $settings['min_confirmations'] ?? 1 ) ); ?>" class="small-text cc-input" />
+											<input type="number" min="0" max="64" name="xdwp[min_confirmations]" value="<?php echo esc_attr( (string) ( $settings['min_confirmations'] ?? 1 ) ); ?>" class="small-text cc-input" />
 											<p class="description"><?php esc_html_e( 'Required on-chain confirmations before marking an order paid (EVM explorers that report confirmations).', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
 										</td>
 									</tr>
 									<tr>
 										<th scope="row"><?php esc_html_e( 'Expiry grace (minutes)', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
 										<td>
-											<input type="number" min="0" max="1440" name="chain_checkout[expiry_grace_minutes]" value="<?php echo esc_attr( (string) ( $settings['expiry_grace_minutes'] ?? 30 ) ); ?>" class="small-text cc-input" />
+											<input type="number" min="0" max="1440" name="xdwp[expiry_grace_minutes]" value="<?php echo esc_attr( (string) ( $settings['expiry_grace_minutes'] ?? 30 ) ); ?>" class="small-text cc-input" />
 											<p class="description"><?php esc_html_e( 'Keep looking for payment after the window ends. Orders fail (not cancel) after grace so late funds can still be recovered.', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
 										</td>
 									</tr>
@@ -134,7 +134,7 @@ $active  = isset( $tabs[ $tab ] ) ? $tabs[ $tab ] : $tabs['general'];
 										<th scope="row"><?php esc_html_e( 'Unique payment amounts', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
 										<td>
 											<label class="cc-check">
-												<input type="checkbox" name="chain_checkout[unique_amounts]" value="yes" <?php checked( ( $settings['unique_amounts'] ?? 'yes' ), 'yes' ); ?> />
+												<input type="checkbox" name="xdwp[unique_amounts]" value="yes" <?php checked( ( $settings['unique_amounts'] ?? 'yes' ), 'yes' ); ?> />
 												<span><?php esc_html_e( 'Add a tiny unique dust amount so payments to reused addresses can be matched reliably.', 'xorro-direct-wallet-payments-woocommerce' ); ?></span>
 											</label>
 										</td>
@@ -143,7 +143,7 @@ $active  = isset( $tabs[ $tab ] ) ? $tabs[ $tab ] : $tabs['general'];
 										<th scope="row"><?php esc_html_e( 'Wallet rotation', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
 										<td>
 											<label class="cc-check">
-												<input type="checkbox" name="chain_checkout[wallet_rotation]" value="yes" <?php checked( ( $settings['wallet_rotation'] ?? 'yes' ), 'yes' ); ?> />
+												<input type="checkbox" name="xdwp[wallet_rotation]" value="yes" <?php checked( ( $settings['wallet_rotation'] ?? 'yes' ), 'yes' ); ?> />
 												<span><?php esc_html_e( 'Rotate through multiple addresses per coin when available.', 'xorro-direct-wallet-payments-woocommerce' ); ?></span>
 											</label>
 										</td>
@@ -152,22 +152,22 @@ $active  = isset( $tabs[ $tab ] ) ? $tabs[ $tab ] : $tabs['general'];
 										<th scope="row"><?php esc_html_e( 'Automatic verification', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
 										<td>
 											<label class="cc-check">
-												<input type="checkbox" name="chain_checkout[auto_verify]" value="yes" <?php checked( ( $settings['auto_verify'] ?? 'yes' ), 'yes' ); ?> />
+												<input type="checkbox" name="xdwp[auto_verify]" value="yes" <?php checked( ( $settings['auto_verify'] ?? 'yes' ), 'yes' ); ?> />
 												<span><?php esc_html_e( 'Poll public block explorers / RPCs and mark orders paid when payment is detected.', 'xorro-direct-wallet-payments-woocommerce' ); ?></span>
 											</label>
 										</td>
 									</tr>
 									<tr>
-										<th scope="row"><label for="chain-checkout-title"><?php esc_html_e( 'Checkout title', 'xorro-direct-wallet-payments-woocommerce' ); ?></label></th>
+										<th scope="row"><label for="xdwp-title"><?php esc_html_e( 'Checkout title', 'xorro-direct-wallet-payments-woocommerce' ); ?></label></th>
 										<td>
-											<input type="text" class="regular-text cc-input" id="chain-checkout-title" name="chain_checkout[title]" value="<?php echo esc_attr( (string) ( $settings['title'] ?? __( 'Pay with Cryptocurrency', 'xorro-direct-wallet-payments-woocommerce' ) ) ); ?>" />
+											<input type="text" class="regular-text cc-input" id="xdwp-title" name="xdwp[title]" value="<?php echo esc_attr( (string) ( $settings['title'] ?? __( 'Pay with Cryptocurrency', 'xorro-direct-wallet-payments-woocommerce' ) ) ); ?>" />
 											<p class="description"><?php esc_html_e( 'Payment method name shown at checkout (e.g. “Pay with Cryptocurrency”).', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
 										</td>
 									</tr>
 									<tr>
-										<th scope="row"><label for="chain-checkout-description"><?php esc_html_e( 'Checkout description', 'xorro-direct-wallet-payments-woocommerce' ); ?></label></th>
+										<th scope="row"><label for="xdwp-description"><?php esc_html_e( 'Checkout description', 'xorro-direct-wallet-payments-woocommerce' ); ?></label></th>
 										<td>
-											<textarea class="large-text cc-input cc-input-textarea" rows="3" id="chain-checkout-description" name="chain_checkout[description]"><?php echo esc_textarea( (string) ( $settings['description'] ?? '' ) ); ?></textarea>
+											<textarea class="large-text cc-input cc-input-textarea" rows="3" id="xdwp-description" name="xdwp[description]"><?php echo esc_textarea( (string) ( $settings['description'] ?? '' ) ); ?></textarea>
 										</td>
 									</tr>
 									<tr>
@@ -176,10 +176,10 @@ $active  = isset( $tabs[ $tab ] ) ? $tabs[ $tab ] : $tabs['general'];
 											<div class="cc-radio-group">
 												<?php
 												$display = $settings['checkout_display'] ?? 'both';
-												foreach ( Chain_Checkout_Branding::display_modes() as $mode => $label ) :
+												foreach ( Xdwp_Branding::display_modes() as $mode => $label ) :
 													?>
 													<label class="cc-radio">
-														<input type="radio" name="chain_checkout[checkout_display]" value="<?php echo esc_attr( $mode ); ?>" <?php checked( $display, $mode ); ?> />
+														<input type="radio" name="xdwp[checkout_display]" value="<?php echo esc_attr( $mode ); ?>" <?php checked( $display, $mode ); ?> />
 														<span><?php echo esc_html( $label ); ?></span>
 													</label>
 												<?php endforeach; ?>
@@ -192,18 +192,18 @@ $active  = isset( $tabs[ $tab ] ) ? $tabs[ $tab ] : $tabs['general'];
 										<td>
 											<?php
 											$icon_id  = absint( $settings['checkout_icon_id'] ?? 0 );
-											$icon_url = $icon_id ? wp_get_attachment_image_url( $icon_id, 'thumbnail' ) : Chain_Checkout_Branding::default_icon_url();
+											$icon_url = $icon_id ? wp_get_attachment_image_url( $icon_id, 'thumbnail' ) : Xdwp_Branding::default_icon_url();
 											$iw       = absint( $settings['checkout_icon_width'] ?? 32 );
 											$ih       = absint( $settings['checkout_icon_height'] ?? 32 );
 											?>
-											<div class="chain-checkout-icon-picker" id="chain-checkout-icon-picker">
-												<input type="hidden" name="chain_checkout[checkout_icon_id]" id="chain-checkout-icon-id" value="<?php echo esc_attr( (string) $icon_id ); ?>" />
-												<div class="chain-checkout-icon-picker__preview">
-													<img src="<?php echo esc_url( $icon_url ? $icon_url : Chain_Checkout_Branding::default_icon_url() ); ?>" alt="" id="chain-checkout-icon-preview" width="48" height="48" />
+											<div class="xdwp-icon-picker" id="xdwp-icon-picker">
+												<input type="hidden" name="xdwp[checkout_icon_id]" id="xdwp-icon-id" value="<?php echo esc_attr( (string) $icon_id ); ?>" />
+												<div class="xdwp-icon-picker__preview">
+													<img src="<?php echo esc_url( $icon_url ? $icon_url : Xdwp_Branding::default_icon_url() ); ?>" alt="" id="xdwp-icon-preview" width="48" height="48" />
 												</div>
 												<p class="cc-btn-row">
-													<button type="button" class="cc-btn cc-btn-secondary" id="chain-checkout-icon-upload"><?php esc_html_e( 'Upload / replace icon', 'xorro-direct-wallet-payments-woocommerce' ); ?></button>
-													<button type="button" class="cc-btn cc-btn-secondary" id="chain-checkout-icon-reset"><?php esc_html_e( 'Use default icon', 'xorro-direct-wallet-payments-woocommerce' ); ?></button>
+													<button type="button" class="cc-btn cc-btn-secondary" id="xdwp-icon-upload"><?php esc_html_e( 'Upload / replace icon', 'xorro-direct-wallet-payments-woocommerce' ); ?></button>
+													<button type="button" class="cc-btn cc-btn-secondary" id="xdwp-icon-reset"><?php esc_html_e( 'Use default icon', 'xorro-direct-wallet-payments-woocommerce' ); ?></button>
 												</p>
 												<p class="description"><?php esc_html_e( 'PNG, JPG, GIF, WebP, or SVG. Default plugin icon is used when none is selected.', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
 											</div>
@@ -214,11 +214,11 @@ $active  = isset( $tabs[ $tab ] ) ? $tabs[ $tab ] : $tabs['general'];
 										<td>
 											<label class="cc-inline">
 												<?php esc_html_e( 'Width', 'xorro-direct-wallet-payments-woocommerce' ); ?>
-												<input type="number" class="small-text cc-input" min="16" max="128" name="chain_checkout[checkout_icon_width]" value="<?php echo esc_attr( (string) $iw ); ?>" />
+												<input type="number" class="small-text cc-input" min="16" max="128" name="xdwp[checkout_icon_width]" value="<?php echo esc_attr( (string) $iw ); ?>" />
 											</label>
 											<label class="cc-inline">
 												<?php esc_html_e( 'Height', 'xorro-direct-wallet-payments-woocommerce' ); ?>
-												<input type="number" class="small-text cc-input" min="16" max="128" name="chain_checkout[checkout_icon_height]" value="<?php echo esc_attr( (string) $ih ); ?>" />
+												<input type="number" class="small-text cc-input" min="16" max="128" name="xdwp[checkout_icon_height]" value="<?php echo esc_attr( (string) $ih ); ?>" />
 											</label>
 											<p class="description"><?php esc_html_e( 'Recommended: 24–40px. Allowed range: 16–128.', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
 										</td>
@@ -226,7 +226,7 @@ $active  = isset( $tabs[ $tab ] ) ? $tabs[ $tab ] : $tabs['general'];
 									<tr>
 										<th scope="row"><?php esc_html_e( 'WooCommerce gateway', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
 										<td>
-											<a class="cc-btn cc-btn-secondary" href="<?php echo esc_url( admin_url( 'admin.php?page=wc-settings&tab=checkout&section=chain_checkout' ) ); ?>">
+											<a class="cc-btn cc-btn-secondary" href="<?php echo esc_url( admin_url( 'admin.php?page=wc-settings&tab=checkout&section=xdwp' ) ); ?>">
 												<?php esc_html_e( 'Enable gateway in Payments settings', 'xorro-direct-wallet-payments-woocommerce' ); ?>
 											</a>
 										</td>
@@ -250,7 +250,7 @@ $active  = isset( $tabs[ $tab ] ) ? $tabs[ $tab ] : $tabs['general'];
 									?>
 									<div class="cc-coin-section">
 										<h3 class="cc-coin-section__title"><?php echo esc_html( $section_label ); ?></h3>
-										<table class="widefat striped chain-checkout-coins-table">
+										<table class="widefat striped xdwp-coins-table">
 											<thead>
 												<tr>
 													<th class="cc-col-on"><?php esc_html_e( 'On', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
@@ -262,10 +262,10 @@ $active  = isset( $tabs[ $tab ] ) ? $tabs[ $tab ] : $tabs['general'];
 											</thead>
 											<tbody>
 												<?php foreach ( $groups[ $section_key ] as $id => $coin ) : ?>
-													<?php $icons = Chain_Checkout_Coins::icon_meta( $id ); ?>
+													<?php $icons = Xdwp_Coins::icon_meta( $id ); ?>
 													<tr>
 														<td>
-															<input type="checkbox" name="chain_checkout[enabled_coins][]" value="<?php echo esc_attr( $id ); ?>" <?php checked( in_array( $id, $enabled, true ) ); ?> />
+															<input type="checkbox" name="xdwp[enabled_coins][]" value="<?php echo esc_attr( $id ); ?>" <?php checked( in_array( $id, $enabled, true ) ); ?> />
 														</td>
 														<td>
 															<span class="cc-coin-cell">
@@ -284,7 +284,7 @@ $active  = isset( $tabs[ $tab ] ) ? $tabs[ $tab ] : $tabs['general'];
 														<td><?php echo esc_html( $coin['type'] ); ?></td>
 														<td>
 															<?php
-															echo Chain_Checkout_Coins::supports_auto_verify( $id )
+															echo Xdwp_Coins::supports_auto_verify( $id )
 																? '<span class="cc-pill cc-pill--yes">' . esc_html__( 'Yes', 'xorro-direct-wallet-payments-woocommerce' ) . '</span>'
 																: '<span class="cc-pill cc-pill--manual">' . esc_html__( 'Manual', 'xorro-direct-wallet-payments-woocommerce' ) . '</span>';
 															?>
@@ -297,14 +297,14 @@ $active  = isset( $tabs[ $tab ] ) ? $tabs[ $tab ] : $tabs['general'];
 								<?php endforeach; ?>
 
 							<?php elseif ( 'wallets' === $tab ) : ?>
-								<?php include CHAIN_CHECKOUT_PATH . 'includes/admin/views/wallets-ui.php'; ?>
+								<?php include XDWP_PATH . 'includes/admin/views/wallets-ui.php'; ?>
 
 							<?php elseif ( 'prices' === $tab ) : ?>
 								<table class="form-table cc-form-table" role="presentation">
 									<tr>
 										<th scope="row"><?php esc_html_e( 'CoinGecko API key (optional)', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
 										<td>
-											<input type="password" class="regular-text cc-input" name="chain_checkout[coingecko_api_key]" value="<?php echo esc_attr( $settings['coingecko_api_key'] ?? '' ); ?>" autocomplete="new-password" />
+											<input type="password" class="regular-text cc-input" name="xdwp[coingecko_api_key]" value="<?php echo esc_attr( $settings['coingecko_api_key'] ?? '' ); ?>" autocomplete="new-password" />
 											<p class="description">
 												<?php
 												echo wp_kses(
@@ -328,7 +328,7 @@ $active  = isset( $tabs[ $tab ] ) ? $tabs[ $tab ] : $tabs['general'];
 									<tr>
 										<th scope="row"><?php esc_html_e( 'Etherscan API V2 key', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
 										<td>
-											<input type="password" class="regular-text cc-input" name="chain_checkout[etherscan_api_key]" value="<?php echo esc_attr( $settings['etherscan_api_key'] ?? '' ); ?>" autocomplete="new-password" />
+											<input type="password" class="regular-text cc-input" name="xdwp[etherscan_api_key]" value="<?php echo esc_attr( $settings['etherscan_api_key'] ?? '' ); ?>" autocomplete="new-password" />
 											<p class="description">
 												<?php
 												echo wp_kses(
@@ -352,7 +352,7 @@ $active  = isset( $tabs[ $tab ] ) ? $tabs[ $tab ] : $tabs['general'];
 									<tr>
 										<th scope="row"><?php esc_html_e( 'TronGrid API key (optional)', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
 										<td>
-											<input type="password" class="regular-text cc-input" name="chain_checkout[trongrid_api_key]" value="<?php echo esc_attr( $settings['trongrid_api_key'] ?? '' ); ?>" autocomplete="new-password" />
+											<input type="password" class="regular-text cc-input" name="xdwp[trongrid_api_key]" value="<?php echo esc_attr( $settings['trongrid_api_key'] ?? '' ); ?>" autocomplete="new-password" />
 											<p class="description">
 												<?php
 												echo wp_kses(
@@ -376,7 +376,7 @@ $active  = isset( $tabs[ $tab ] ) ? $tabs[ $tab ] : $tabs['general'];
 									<tr>
 										<th scope="row"><?php esc_html_e( 'Helius API key (optional)', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
 										<td>
-											<input type="password" class="regular-text cc-input" name="chain_checkout[helius_api_key]" value="<?php echo esc_attr( $settings['helius_api_key'] ?? '' ); ?>" autocomplete="new-password" />
+											<input type="password" class="regular-text cc-input" name="xdwp[helius_api_key]" value="<?php echo esc_attr( $settings['helius_api_key'] ?? '' ); ?>" autocomplete="new-password" />
 											<p class="description">
 												<?php
 												echo wp_kses(
@@ -400,7 +400,7 @@ $active  = isset( $tabs[ $tab ] ) ? $tabs[ $tab ] : $tabs['general'];
 									<tr>
 										<th scope="row"><?php esc_html_e( 'Subscan API key (optional)', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
 										<td>
-											<input type="password" class="regular-text cc-input" name="chain_checkout[subscan_api_key]" value="<?php echo esc_attr( $settings['subscan_api_key'] ?? '' ); ?>" autocomplete="new-password" />
+											<input type="password" class="regular-text cc-input" name="xdwp[subscan_api_key]" value="<?php echo esc_attr( $settings['subscan_api_key'] ?? '' ); ?>" autocomplete="new-password" />
 											<p class="description">
 												<?php
 												echo wp_kses(
@@ -424,7 +424,7 @@ $active  = isset( $tabs[ $tab ] ) ? $tabs[ $tab ] : $tabs['general'];
 									<tr>
 										<th scope="row"><?php esc_html_e( 'ViewBlock API key (optional)', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
 										<td>
-											<input type="password" class="regular-text cc-input" name="chain_checkout[viewblock_api_key]" value="<?php echo esc_attr( $settings['viewblock_api_key'] ?? '' ); ?>" autocomplete="new-password" />
+											<input type="password" class="regular-text cc-input" name="xdwp[viewblock_api_key]" value="<?php echo esc_attr( $settings['viewblock_api_key'] ?? '' ); ?>" autocomplete="new-password" />
 											<p class="description">
 												<?php
 												echo wp_kses(
@@ -449,7 +449,7 @@ $active  = isset( $tabs[ $tab ] ) ? $tabs[ $tab ] : $tabs['general'];
 										<th scope="row"><?php esc_html_e( 'Show crypto price on products', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
 										<td>
 											<label class="cc-check">
-												<input type="checkbox" name="chain_checkout[price_coin_show]" value="yes" <?php checked( ( $settings['price_coin_show'] ?? 'no' ), 'yes' ); ?> />
+												<input type="checkbox" name="xdwp[price_coin_show]" value="yes" <?php checked( ( $settings['price_coin_show'] ?? 'no' ), 'yes' ); ?> />
 												<span><?php esc_html_e( 'Display an approximate crypto equivalent near product prices.', 'xorro-direct-wallet-payments-woocommerce' ); ?></span>
 											</label>
 										</td>
@@ -457,11 +457,11 @@ $active  = isset( $tabs[ $tab ] ) ? $tabs[ $tab ] : $tabs['general'];
 									<tr>
 										<th scope="row"><?php esc_html_e( 'Product price coin', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
 										<td>
-											<select name="chain_checkout[price_coin_ticker]" class="cc-input cc-input-select">
+											<select name="xdwp[price_coin_ticker]" class="cc-input cc-input-select">
 												<?php
 												$ticker = $settings['price_coin_ticker'] ?? 'BTC';
 												foreach ( array( 'BTC', 'ETH', 'USDT_ETH', 'USDC_ETH' ) as $opt ) {
-													$c = Chain_Checkout_Coins::get( $opt );
+													$c = Xdwp_Coins::get( $opt );
 													if ( ! $c ) {
 														continue;
 													}
@@ -479,7 +479,7 @@ $active  = isset( $tabs[ $tab ] ) ? $tabs[ $tab ] : $tabs['general'];
 						</div>
 
 						<div class="cc-footer">
-							<button type="submit" name="chain_checkout_save" class="cc-btn cc-btn-primary" value="1">
+							<button type="submit" name="xdwp_save" class="cc-btn cc-btn-primary" value="1">
 								<?php esc_html_e( 'Save changes', 'xorro-direct-wallet-payments-woocommerce' ); ?>
 							</button>
 						</div>

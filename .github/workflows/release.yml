@@ -36,7 +36,7 @@ jobs:
           VERSION="${TAG#v}"
           echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-          PLUGIN_VERSION="$(grep -E "define\( 'CHAIN_CHECKOUT_VERSION'" chain-checkout.php | sed -E "s/.*'([0-9.]+)'.*/\1/")"
+          PLUGIN_VERSION="$(grep -E "define\( 'XDWP_VERSION'" xorro-direct-wallet-payments-woocommerce.php | sed -E "s/.*'([0-9.]+)'.*/\1/")"
           echo "plugin_version=${PLUGIN_VERSION}" >> "$GITHUB_OUTPUT"
           if [ "${VERSION}" != "${PLUGIN_VERSION}" ]; then
             echo "Tag version ${VERSION} does not match plugin ${PLUGIN_VERSION}" >&2

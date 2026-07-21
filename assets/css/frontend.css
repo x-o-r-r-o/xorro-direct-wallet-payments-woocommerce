@@ -1,8 +1,8 @@
 /**
- * Chain Checkout frontend styles.
+ * Xorro Wallet Payments frontend styles.
  */
 
-.chain-checkout-gateway-icon {
+.xdwp-gateway-icon {
 	width: 32px;
 	height: 32px;
 	max-width: 32px;
@@ -12,7 +12,7 @@
 	display: inline-block;
 }
 
-.payment_method_chain_checkout img.chain-checkout-gateway-icon {
+.payment_method_xdwp img.xdwp-gateway-icon {
 	max-width: 48px;
 	max-height: 48px;
 	width: auto;
@@ -21,42 +21,42 @@
 	vertical-align: middle;
 }
 
-.payment_method_chain_checkout .chain-checkout-coin-option img {
+.payment_method_xdwp .xdwp-coin-option img {
 	max-width: none;
 }
 
-.chain-checkout-blocks-label {
+.xdwp-blocks-label {
 	display: inline-flex;
 	align-items: center;
 	gap: 0.35rem;
 }
 
-.chain-checkout-desc {
+.xdwp-desc {
 	margin: 0 0 12px;
 	line-height: 1.4;
 }
 
 /* —— Checkout coin picker (Cryptoniq icon tiles) —— */
 
-.chain-checkout-coins {
+.xdwp-coins {
 	border: 0;
 	margin: 0;
 	padding: 0;
 }
 
-.chain-checkout-coins legend {
+.xdwp-coins legend {
 	padding: 0;
 	margin: 0 0 8px;
 	font-weight: 600;
 }
 
-.chain-checkout-coin-grid {
+.xdwp-coin-grid {
 	display: flex;
 	flex-wrap: wrap;
 	margin: -5px;
 }
 
-.chain-checkout-coin-option {
+.xdwp-coin-option {
 	position: relative;
 	display: flex;
 	align-items: center;
@@ -75,7 +75,7 @@
 	transition: border-color 0.35s ease, background-color 0.35s ease;
 }
 
-.chain-checkout-coin-option input {
+.xdwp-coin-option input {
 	position: absolute;
 	opacity: 0;
 	width: 0;
@@ -85,13 +85,13 @@
 	appearance: none;
 }
 
-.chain-checkout-coin-option:hover,
-.chain-checkout-coin-option:has(input:checked),
-.chain-checkout-coin-option.is-selected {
+.xdwp-coin-option:hover,
+.xdwp-coin-option:has(input:checked),
+.xdwp-coin-option.is-selected {
 	border-color: #000;
 }
 
-.chain-checkout-coin-option__sr {
+.xdwp-coin-option__sr {
 	position: absolute;
 	width: 1px;
 	height: 1px;
@@ -102,7 +102,7 @@
 	border: 0;
 }
 
-.chain-checkout-coin-option__icon {
+.xdwp-coin-option__icon {
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -111,7 +111,7 @@
 	pointer-events: none;
 }
 
-.chain-checkout-coin-option__icon img {
+.xdwp-coin-option__icon img {
 	width: 28px !important;
 	height: 28px !important;
 	max-width: 28px !important;
@@ -120,7 +120,7 @@
 	display: block;
 }
 
-.chain-checkout-coin-option__badge {
+.xdwp-coin-option__badge {
 	position: absolute;
 	top: -1px;
 	right: -1px;
@@ -136,7 +136,7 @@
 	z-index: 1;
 }
 
-.chain-checkout-coin-option__badge img {
+.xdwp-coin-option__badge img {
 	width: 14px !important;
 	height: 14px !important;
 	max-width: 14px !important;
@@ -145,7 +145,7 @@
 	display: block;
 }
 
-.chain-checkout-coin-option--text {
+.xdwp-coin-option--text {
 	width: auto;
 	min-width: 48px;
 	height: auto;
@@ -161,19 +161,19 @@
 	color: #111;
 }
 
-.chain-checkout-coin-option__text {
+.xdwp-coin-option__text {
 	display: block;
 	pointer-events: none;
 }
 
-.chain-checkout-quote {
+.xdwp-quote {
 	margin-top: 15px;
 	font-weight: 700;
 }
 
 /* —— Payment details box (classic layout) —— */
 
-.chain-checkout-box {
+.xdwp-box {
 	margin: 1.5rem 0;
 	padding: 1.25rem 1.5rem;
 	border: 1px solid #d0d5dd;
@@ -183,7 +183,7 @@
 	box-sizing: border-box;
 }
 
-.chain-checkout-box__header {
+.xdwp-box__header {
 	display: flex;
 	flex-wrap: wrap;
 	justify-content: space-between;
@@ -192,41 +192,41 @@
 	margin-bottom: 1rem;
 }
 
-.chain-checkout-box__header h2 {
+.xdwp-box__header h2 {
 	margin: 0;
 	font-size: 1.25rem;
 }
 
-.chain-checkout-box__timer {
+.xdwp-box__timer {
 	margin: 0;
 	font-variant-numeric: tabular-nums;
 	font-weight: 600;
 	color: #b54708;
 }
 
-.chain-checkout-box__steps {
+.xdwp-box__steps {
 	margin: 0 0 1rem 1.1rem;
 	padding: 0;
 }
 
-.chain-checkout-box__row {
+.xdwp-box__row {
 	display: grid;
 	gap: 1rem;
 }
 
-.chain-checkout-box__field {
+.xdwp-box__field {
 	display: grid;
 	gap: 0.35rem;
 }
 
-.chain-checkout-box__label {
+.xdwp-box__label {
 	font-size: 0.85rem;
 	text-transform: uppercase;
 	letter-spacing: 0.03em;
 	opacity: 0.7;
 }
 
-.chain-checkout-box__value {
+.xdwp-box__value {
 	display: inline-block;
 	padding: 0.45rem 0.6rem;
 	background: #fff;
@@ -236,64 +236,64 @@
 	font-size: 0.95rem;
 }
 
-.chain-checkout-box__address {
+.xdwp-box__address {
 	font-size: 0.85rem;
 }
 
-.chain-checkout-box__fiat {
+.xdwp-box__fiat {
 	font-size: 0.9rem;
 	opacity: 0.8;
 }
 
-.chain-checkout-box__qr {
+.xdwp-box__qr {
 	margin-top: 1.25rem;
 	text-align: center;
 }
 
-#chain-checkout-qrcode {
+#xdwp-qrcode {
 	display: inline-block;
 	padding: 0.75rem;
 	background: #fff;
 	border-radius: 8px;
 }
 
-#chain-checkout-qrcode img,
-#chain-checkout-qrcode canvas {
+#xdwp-qrcode img,
+#xdwp-qrcode canvas {
 	display: block;
 	max-width: 100%;
 	height: auto;
 }
 
-.chain-checkout-box__uri {
+.xdwp-box__uri {
 	margin: 0.5rem 0 0;
 }
 
-.chain-checkout-box__hint {
+.xdwp-box__hint {
 	margin: 0.5rem 0 0;
 	font-size: 0.85rem;
 	opacity: 0.7;
 }
 
-.chain-checkout-box__status {
+.xdwp-box__status {
 	margin-top: 1rem;
 	font-weight: 600;
 }
 
-.chain-checkout-box__success {
+.xdwp-box__success {
 	color: #027a48;
 	font-weight: 600;
 }
 
-.chain-checkout-box__error {
+.xdwp-box__error {
 	color: #b42318;
 	font-weight: 600;
 }
 
-.chain-checkout-copy {
+.xdwp-copy {
 	justify-self: start;
 	cursor: pointer;
 }
 
-.chain-checkout-copy.is-copied {
+.xdwp-copy.is-copied {
 	opacity: 0.85;
 }

@@ -2,15 +2,15 @@
 /**
  * Admin settings pages.
  *
- * @package ChainCheckout
+ * @package Xdwp
  */
 
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Class Chain_Checkout_Admin
+ * Class Xdwp_Admin
  */
-class Chain_Checkout_Admin {
+class Xdwp_Admin {
 
 	/**
 	 * Init hooks.
@@ -20,7 +20,7 @@ class Chain_Checkout_Admin {
 		add_action( 'admin_init', array( __CLASS__, 'handle_save' ) );
 		add_action( 'admin_notices', array( __CLASS__, 'setup_notice' ) );
 		add_filter( 'admin_body_class', array( __CLASS__, 'admin_body_class' ) );
-		add_filter( 'plugin_action_links_' . CHAIN_CHECKOUT_BASENAME, array( __CLASS__, 'action_links' ) );
+		add_filter( 'plugin_action_links_' . XDWP_BASENAME, array( __CLASS__, 'action_links' ) );
 	}
 
 	/**
@@ -31,7 +31,7 @@ class Chain_Checkout_Admin {
 	 */
 	public static function admin_body_class( $classes ) {
 		if ( self::is_plugin_screen() ) {
-			$classes .= ' chain-checkout-admin-page';
+			$classes .= ' xdwp-admin-page';
 		}
 		return $classes;
 	}
@@ -124,10 +124,6 @@ class Chain_Checkout_Admin {
 			'xorro-direct-wallet-payments-woocommerce-coins'   => 'coins',
 			'xorro-direct-wallet-payments-woocommerce-wallets' => 'wallets',
 			'xorro-direct-wallet-payments-woocommerce-prices'  => 'prices',
-			// Legacy slugs (pre-1.4.6) still resolve to the correct tab if bookmarked.
-			'chain-checkout-coins'   => 'coins',
-			'chain-checkout-wallets' => 'wallets',
-			'chain-checkout-prices'  => 'prices',
 		);
 		return isset( $map[ $page ] ) ? $map[ $page ] : 'general';
 	}
@@ -136,7 +132,7 @@ class Chain_Checkout_Admin {
 	 * Save settings.
 	 */
 	public static function handle_save() {
-		if ( ! isset( $_POST['chain_checkout_save'] ) ) {
+		if ( ! isset( $_POST['xdwp_save'] ) ) {
 			return;
 		}
 
@@ -144,10 +140,10 @@ class Chain_Checkout_Admin {
 			return;
 		}
 
-		check_admin_referer( 'chain_checkout_save_settings', 'chain_checkout_nonce' );
+		check_admin_referer( 'xdwp_save_settings', 'xdwp_nonce' );
 
-		$raw = isset( $_POST['chain_checkout'] ) && is_array( $_POST['chain_checkout'] )
-			? wp_unslash( $_POST['chain_checkout'] ) // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$raw = isset( $_POST['xdwp'] ) && is_array( $_POST['xdwp'] )
+			? wp_unslash( $_POST['xdwp'] ) // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 			: array();
 
 		// Checkbox flags absent when unchecked.
@@ -166,12 +162,12 @@ class Chain_Checkout_Admin {
 			$raw['price_coin_show'] = 'no';
 		}
 
-		$clean = Chain_Checkout_Settings::sanitize( $raw );
-		Chain_Checkout_Settings::update( $clean );
+		$clean = Xdwp_Settings::sanitize( $raw );
+		Xdwp_Settings::update( $clean );
 
 		// Keep WooCommerce gateway title/description in sync when saved from plugin General tab.
 		if ( 'general' === $tab ) {
-			$wc_key = 'woocommerce_' . CHAIN_CHECKOUT_GATEWAY_ID . '_settings';
+			$wc_key = 'woocommerce_' . XDWP_GATEWAY_ID . '_settings';
 			$wc     = get_option( $wc_key, array() );
 			if ( ! is_array( $wc ) ) {
 				$wc = array();
@@ -186,8 +182,8 @@ class Chain_Checkout_Admin {
 		}
 
 		add_settings_error(
-			'chain_checkout',
-			'chain_checkout_saved',
+			'xdwp',
+			'xdwp_saved',
 			__( 'Settings saved.', 'xorro-direct-wallet-payments-woocommerce' ),
 			'success'
 		);
@@ -202,7 +198,7 @@ class Chain_Checkout_Admin {
 		}
 		$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
 		if ( ! $screen || false === strpos( (string) $screen->id, 'xorro-direct-wallet-payments-woocommerce' ) ) {
-			$payable = Chain_Checkout_Coins::get_payable();
+			$payable = Xdwp_Coins::get_payable();
 			if ( ! empty( $payable ) ) {
 				return;
 			}
@@ -211,7 +207,7 @@ class Chain_Checkout_Admin {
 				return;
 			}
 		} else {
-			$payable = Chain_Checkout_Coins::get_payable();
+			$payable = Xdwp_Coins::get_payable();
 			if ( ! empty( $payable ) ) {
 				return;
 			}
@@ -242,33 +238,33 @@ class Chain_Checkout_Admin {
 		}
 
 		// Assets are enqueued on admin_enqueue_scripts; print late if that missed.
-		if ( ! wp_style_is( 'chain-checkout-admin', 'enqueued' ) ) {
-			$ver = CHAIN_CHECKOUT_VERSION;
-			$css = CHAIN_CHECKOUT_PATH . 'assets/css/admin.css';
+		if ( ! wp_style_is( 'xdwp-admin', 'enqueued' ) ) {
+			$ver = XDWP_VERSION;
+			$css = XDWP_PATH . 'assets/css/admin.css';
 			if ( is_readable( $css ) ) {
-				$ver = CHAIN_CHECKOUT_VERSION . '.' . (string) filemtime( $css );
+				$ver = XDWP_VERSION . '.' . (string) filemtime( $css );
 			}
 			wp_enqueue_style( 'dashicons' );
 			wp_enqueue_style(
-				'chain-checkout-admin',
-				CHAIN_CHECKOUT_URL . 'assets/css/admin.css',
+				'xdwp-admin',
+				XDWP_URL . 'assets/css/admin.css',
 				array( 'dashicons' ),
 				$ver
 			);
 		}
-		if ( ! wp_script_is( 'chain-checkout-admin', 'enqueued' ) ) {
+		if ( ! wp_script_is( 'xdwp-admin', 'enqueued' ) ) {
 			wp_enqueue_script(
-				'chain-checkout-admin',
-				CHAIN_CHECKOUT_URL . 'assets/js/admin.js',
+				'xdwp-admin',
+				XDWP_URL . 'assets/js/admin.js',
 				array( 'jquery' ),
-				CHAIN_CHECKOUT_VERSION,
+				XDWP_VERSION,
 				true
 			);
 			wp_localize_script(
-				'chain-checkout-admin',
-				'chainCheckoutAdmin',
+				'xdwp-admin',
+				'xdwpAdmin',
 				array(
-					'defaultIcon'      => class_exists( 'Chain_Checkout_Branding' ) ? Chain_Checkout_Branding::default_icon_url() : '',
+					'defaultIcon'      => class_exists( 'Xdwp_Branding' ) ? Xdwp_Branding::default_icon_url() : '',
 					'mediaTitle'       => __( 'Select checkout icon', 'xorro-direct-wallet-payments-woocommerce' ),
 					'mediaButton'      => __( 'Use this icon', 'xorro-direct-wallet-payments-woocommerce' ),
 					'mediaUnavailable' => __( 'Media library is not available.', 'xorro-direct-wallet-payments-woocommerce' ),
@@ -277,16 +273,16 @@ class Chain_Checkout_Admin {
 		}
 		wp_enqueue_media();
 
-		if ( did_action( 'admin_print_styles' ) && wp_style_is( 'chain-checkout-admin', 'enqueued' ) ) {
-			wp_print_styles( 'chain-checkout-admin' );
+		if ( did_action( 'admin_print_styles' ) && wp_style_is( 'xdwp-admin', 'enqueued' ) ) {
+			wp_print_styles( 'xdwp-admin' );
 		}
 
 		$tab      = self::current_tab();
-		$settings = Chain_Checkout_Settings::all();
-		$groups   = Chain_Checkout_Coins::grouped();
+		$settings = Xdwp_Settings::all();
+		$groups   = Xdwp_Coins::grouped();
 
-		settings_errors( 'chain_checkout' );
+		settings_errors( 'xdwp' );
 
-		include CHAIN_CHECKOUT_PATH . 'includes/admin/views/settings-page.php';
+		include XDWP_PATH . 'includes/admin/views/settings-page.php';
 	}
 }

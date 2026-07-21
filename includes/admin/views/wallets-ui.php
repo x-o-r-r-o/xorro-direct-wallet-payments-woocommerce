@@ -3,7 +3,7 @@
  * Wallets management UI (repeatable address rows).
  * Only coins enabled under the Coins tab are listed.
  *
- * @package ChainCheckout
+ * @package Xdwp
  *
  * @var array $settings
  * @var array $enabled
@@ -57,37 +57,37 @@ foreach ( $sections as $section_key => $section_label ) {
  */
 $render_row = static function ( $id, $addr = '' ) {
 	?>
-	<div class="chain-checkout-wallet-row">
+	<div class="xdwp-wallet-row">
 		<input
 			type="text"
-			class="chain-checkout-wallet-input regular-text code"
-			name="chain_checkout[wallets][<?php echo esc_attr( $id ); ?>][]"
+			class="xdwp-wallet-input regular-text code"
+			name="xdwp[wallets][<?php echo esc_attr( $id ); ?>][]"
 			value="<?php echo esc_attr( $addr ); ?>"
 			placeholder="<?php esc_attr_e( 'Paste wallet address', 'xorro-direct-wallet-payments-woocommerce' ); ?>"
 			autocomplete="off"
 			spellcheck="false"
 			data-coin="<?php echo esc_attr( $id ); ?>"
 		/>
-		<div class="chain-checkout-wallet-row__btns">
-			<button type="button" class="button chain-checkout-wallet-copy" data-chain-checkout-action="copy">
+		<div class="xdwp-wallet-row__btns">
+			<button type="button" class="button xdwp-wallet-copy" data-xdwp-action="copy">
 				<?php esc_html_e( 'Copy', 'xorro-direct-wallet-payments-woocommerce' ); ?>
 			</button>
-			<button type="button" class="button chain-checkout-wallet-remove" data-chain-checkout-action="remove" aria-label="<?php esc_attr_e( 'Remove address', 'xorro-direct-wallet-payments-woocommerce' ); ?>">
+			<button type="button" class="button xdwp-wallet-remove" data-xdwp-action="remove" aria-label="<?php esc_attr_e( 'Remove address', 'xorro-direct-wallet-payments-woocommerce' ); ?>">
 				<span aria-hidden="true">&times;</span>
 			</button>
 		</div>
-		<span class="chain-checkout-wallet-row__status" aria-hidden="true"></span>
+		<span class="xdwp-wallet-row__status" aria-hidden="true"></span>
 	</div>
 	<?php
 };
 ?>
-<div class="chain-checkout-wallets" id="chain-checkout-wallets" data-total="<?php echo esc_attr( (string) $total ); ?>">
+<div class="xdwp-wallets" id="xdwp-wallets" data-total="<?php echo esc_attr( (string) $total ); ?>">
 
-	<header class="chain-checkout-wallets__hero">
-		<div class="chain-checkout-wallets__hero-text">
-			<h2 class="chain-checkout-wallets__heading"><?php esc_html_e( 'Wallet addresses', 'xorro-direct-wallet-payments-woocommerce' ); ?></h2>
+	<header class="xdwp-wallets__hero">
+		<div class="xdwp-wallets__hero-text">
+			<h2 class="xdwp-wallets__heading"><?php esc_html_e( 'Wallet addresses', 'xorro-direct-wallet-payments-woocommerce' ); ?></h2>
 			<p><?php esc_html_e( 'Add one or more receiving addresses for each activated coin. Extra addresses rotate automatically when rotation is on.', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
-			<p class="chain-checkout-wallets__hero-link">
+			<p class="xdwp-wallets__hero-link">
 				<?php
 				echo wp_kses(
 					sprintf(
@@ -101,22 +101,22 @@ $render_row = static function ( $id, $addr = '' ) {
 			</p>
 		</div>
 		<?php if ( $enabled_count > 0 ) : ?>
-			<div class="chain-checkout-wallets__stats">
-				<div class="chain-checkout-wallets__stat">
-					<span class="chain-checkout-wallets__stat-value"><?php echo esc_html( (string) $enabled_count ); ?></span>
-					<span class="chain-checkout-wallets__stat-label"><?php esc_html_e( 'Coins', 'xorro-direct-wallet-payments-woocommerce' ); ?></span>
+			<div class="xdwp-wallets__stats">
+				<div class="xdwp-wallets__stat">
+					<span class="xdwp-wallets__stat-value"><?php echo esc_html( (string) $enabled_count ); ?></span>
+					<span class="xdwp-wallets__stat-label"><?php esc_html_e( 'Coins', 'xorro-direct-wallet-payments-woocommerce' ); ?></span>
 				</div>
-				<div class="chain-checkout-wallets__stat">
-					<span class="chain-checkout-wallets__stat-value" id="chain-checkout-wallet-counter-num"><?php echo esc_html( (string) $total ); ?></span>
-					<span class="chain-checkout-wallets__stat-label"><?php esc_html_e( 'Addresses', 'xorro-direct-wallet-payments-woocommerce' ); ?></span>
+				<div class="xdwp-wallets__stat">
+					<span class="xdwp-wallets__stat-value" id="xdwp-wallet-counter-num"><?php echo esc_html( (string) $total ); ?></span>
+					<span class="xdwp-wallets__stat-label"><?php esc_html_e( 'Addresses', 'xorro-direct-wallet-payments-woocommerce' ); ?></span>
 				</div>
 			</div>
 		<?php endif; ?>
 	</header>
 
 	<?php if ( empty( $enabled ) || 0 === $enabled_count ) : ?>
-		<div class="chain-checkout-wallets__empty-state">
-			<div class="chain-checkout-wallets__empty-icon" aria-hidden="true">◇</div>
+		<div class="xdwp-wallets__empty-state">
+			<div class="xdwp-wallets__empty-icon" aria-hidden="true">◇</div>
 			<p>
 				<?php
 				echo wp_kses(
@@ -139,12 +139,12 @@ $render_row = static function ( $id, $addr = '' ) {
 			</p>
 		</div>
 	<?php else : ?>
-		<div class="chain-checkout-wallets__toolbar">
-			<label class="chain-checkout-wallets__search">
+		<div class="xdwp-wallets__toolbar">
+			<label class="xdwp-wallets__search">
 				<span class="screen-reader-text"><?php esc_html_e( 'Search coins', 'xorro-direct-wallet-payments-woocommerce' ); ?></span>
-				<input type="search" id="chain-checkout-wallet-search" placeholder="<?php esc_attr_e( 'Filter by coin, symbol, or network…', 'xorro-direct-wallet-payments-woocommerce' ); ?>" />
+				<input type="search" id="xdwp-wallet-search" placeholder="<?php esc_attr_e( 'Filter by coin, symbol, or network…', 'xorro-direct-wallet-payments-woocommerce' ); ?>" />
 			</label>
-			<p class="chain-checkout-wallets__missing" id="chain-checkout-wallet-missing" <?php echo $missing_count ? '' : 'hidden'; ?>>
+			<p class="xdwp-wallets__missing" id="xdwp-wallet-missing" <?php echo $missing_count ? '' : 'hidden'; ?>>
 				<?php
 				if ( $missing_count ) {
 					printf(
@@ -170,12 +170,12 @@ $render_row = static function ( $id, $addr = '' ) {
 				}
 			}
 			?>
-			<section class="chain-checkout-wallets__section" data-section="<?php echo esc_attr( $section_key ); ?>">
+			<section class="xdwp-wallets__section" data-section="<?php echo esc_attr( $section_key ); ?>">
 				<details open>
-					<summary class="chain-checkout-wallets__section-title">
-						<span class="chain-checkout-wallets__section-label"><?php echo esc_html( $section_label ); ?></span>
-						<span class="chain-checkout-wallets__section-meta">
-							<span class="chain-checkout-wallets__section-coins">
+					<summary class="xdwp-wallets__section-title">
+						<span class="xdwp-wallets__section-label"><?php echo esc_html( $section_label ); ?></span>
+						<span class="xdwp-wallets__section-meta">
+							<span class="xdwp-wallets__section-coins">
 								<?php
 								printf(
 									/* translators: %d: number of coins in section */
@@ -184,10 +184,10 @@ $render_row = static function ( $id, $addr = '' ) {
 								);
 								?>
 							</span>
-							<span class="chain-checkout-wallets__section-count"><?php echo $section_total ? esc_html( (string) $section_total ) : ''; ?></span>
+							<span class="xdwp-wallets__section-count"><?php echo $section_total ? esc_html( (string) $section_total ) : ''; ?></span>
 						</span>
 					</summary>
-					<div class="chain-checkout-wallets__list">
+					<div class="xdwp-wallets__list">
 						<?php foreach ( $section_coins as $id => $coin ) : ?>
 							<?php
 							$addrs  = isset( $wallets[ $id ] ) && is_array( $wallets[ $id ] ) ? array_values( $wallets[ $id ] ) : array();
@@ -195,24 +195,24 @@ $render_row = static function ( $id, $addr = '' ) {
 							$search = strtolower( $coin['name'] . ' ' . $coin['symbol'] . ' ' . $id . ' ' . $coin['network'] . ' ' . $coin['type'] . ' ' . $coin['platform'] );
 							?>
 							<div
-								class="chain-checkout-wallet-card <?php echo $count ? 'has-addresses' : 'needs-address'; ?>"
+								class="xdwp-wallet-card <?php echo $count ? 'has-addresses' : 'needs-address'; ?>"
 								data-coin="<?php echo esc_attr( $id ); ?>"
 								data-verifier="<?php echo esc_attr( (string) $coin['verifier'] ); ?>"
 								data-search="<?php echo esc_attr( $search ); ?>"
 							>
-								<div class="chain-checkout-wallet-card__head">
-									<div class="chain-checkout-wallet-card__title">
-										<span class="chain-checkout-wallet-card__symbol"><?php echo esc_html( $coin['symbol'] ); ?></span>
-										<span class="chain-checkout-wallet-card__name"><?php echo esc_html( $coin['name'] ); ?></span>
+								<div class="xdwp-wallet-card__head">
+									<div class="xdwp-wallet-card__title">
+										<span class="xdwp-wallet-card__symbol"><?php echo esc_html( $coin['symbol'] ); ?></span>
+										<span class="xdwp-wallet-card__name"><?php echo esc_html( $coin['name'] ); ?></span>
 									</div>
-									<div class="chain-checkout-wallet-card__badges">
-										<span class="chain-checkout-pill"><?php echo esc_html( $coin['network'] ); ?></span>
-										<span class="chain-checkout-pill chain-checkout-pill--muted"><?php echo esc_html( strtoupper( $coin['type'] ) ); ?></span>
-										<span class="chain-checkout-wallet-card__count" data-count><?php echo esc_html( (string) $count ); ?></span>
+									<div class="xdwp-wallet-card__badges">
+										<span class="xdwp-pill"><?php echo esc_html( $coin['network'] ); ?></span>
+										<span class="xdwp-pill xdwp-pill--muted"><?php echo esc_html( strtoupper( $coin['type'] ) ); ?></span>
+										<span class="xdwp-wallet-card__count" data-count><?php echo esc_html( (string) $count ); ?></span>
 									</div>
 								</div>
 
-								<div class="chain-checkout-wallet-rows">
+								<div class="xdwp-wallet-rows">
 									<?php
 									if ( empty( $addrs ) ) {
 										$render_row( $id, '' );
@@ -224,14 +224,14 @@ $render_row = static function ( $id, $addr = '' ) {
 									?>
 								</div>
 
-								<div class="chain-checkout-wallet-card__actions">
-									<button type="button" class="button button-secondary chain-checkout-wallet-add" data-chain-checkout-action="add">
+								<div class="xdwp-wallet-card__actions">
+									<button type="button" class="button button-secondary xdwp-wallet-add" data-xdwp-action="add">
 										<?php esc_html_e( '+ Add address', 'xorro-direct-wallet-payments-woocommerce' ); ?>
 									</button>
-									<button type="button" class="button-link chain-checkout-wallet-clear" data-chain-checkout-action="clear" <?php disabled( 0 === $count ); ?>>
+									<button type="button" class="button-link xdwp-wallet-clear" data-xdwp-action="clear" <?php disabled( 0 === $count ); ?>>
 										<?php esc_html_e( 'Clear all', 'xorro-direct-wallet-payments-woocommerce' ); ?>
 									</button>
-									<span class="chain-checkout-wallet-hint" aria-live="polite"></span>
+									<span class="xdwp-wallet-hint" aria-live="polite"></span>
 								</div>
 							</div>
 						<?php endforeach; ?>
@@ -240,7 +240,7 @@ $render_row = static function ( $id, $addr = '' ) {
 			</section>
 		<?php endforeach; ?>
 
-		<p class="chain-checkout-wallets__empty" id="chain-checkout-wallets-empty" hidden><?php esc_html_e( 'No coins match your search.', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
+		<p class="xdwp-wallets__empty" id="xdwp-wallets-empty" hidden><?php esc_html_e( 'No coins match your search.', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
 
 	<?php endif; ?>
 </div>

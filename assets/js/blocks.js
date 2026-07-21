@@ -1,5 +1,5 @@
 /**
- * Checkout Blocks payment method for Chain Checkout.
+ * Checkout Blocks payment method for Xorro Wallet Payments.
  */
 (function () {
 	'use strict';
@@ -8,7 +8,7 @@
 		typeof wc === 'object' &&
 		wc.wcSettings &&
 		typeof wc.wcSettings.getSetting === 'function'
-			? wc.wcSettings.getSetting('chain_checkout_data', {})
+			? wc.wcSettings.getSetting('xdwp_data', {})
 			: {};
 
 	if (!settings || !settings.title) {
@@ -44,7 +44,12 @@
 			? window.wp.element.useEffect
 			: null;
 
-	if (!registerPaymentMethod || !createElement || !useState || !useEffect) {
+	var useRef =
+		window.wp && window.wp.element && window.wp.element.useRef
+			? window.wp.element.useRef
+			: null;
+
+	if (!registerPaymentMethod || !createElement || !useState || !useEffect || !useRef) {
 		return;
 	}
 
@@ -61,6 +66,8 @@
 	var iconW = parseInt(settings.iconWidth, 10) || 32;
 	var iconH = parseInt(settings.iconHeight, 10) || 32;
 	var titleText = decodeEntities(settings.title);
+	var ajaxUrl = settings.ajaxUrl || '';
+	var nonce = settings.nonce || '';
 
 	var Label = function () {
 		var children = [];
@@ -70,7 +77,7 @@
 					key: 'icon',
 					src: iconUrl,
 					alt: display === 'icon' ? titleText : '',
-					className: 'chain-checkout-gateway-icon',
+					className: 'xdwp-gateway-icon',
 					width: iconW,
 					height: iconH,
 					style: {
@@ -89,7 +96,7 @@
 			children.push(
 				createElement(
 					'span',
-					{ key: 'title', className: 'chain-checkout-blocks-label__text' },
+					{ key: 'title', className: 'xdwp-blocks-label__text' },
 					titleText
 				)
 			);
@@ -102,16 +109,20 @@
 				)
 			);
 		}
-		return createElement('span', { className: 'chain-checkout-blocks-label' }, children);
+		return createElement('span', { className: 'xdwp-blocks-label' }, children);
 	};
 
 	var Content = function (props) {
 		var eventRegistration = props.eventRegistration || {};
 		var emitResponse = props.emitResponse || {};
 		var initial = coins.length ? coins[0].id : '';
-		var stateTuple = useState(initial);
-		var coin = stateTuple[0];
-		var setCoin = stateTuple[1];
+		var coinState = useState(initial);
+		var coin = coinState[0];
+		var setCoin = coinState[1];
+		var quoteState = useState('');
+		var quote = quoteState[0];
+		var setQuote = quoteState[1];
+		var seqRef = useRef(0);
 
 		useEffect(
 			function () {
@@ -129,7 +140,7 @@
 						type: emitResponse.responseTypes.SUCCESS,
 						meta: {
 							paymentMethodData: {
-								chain_checkout_coin: coin
+								xdwp_coin: coin
 							}
 						}
 					};
@@ -139,34 +150,111 @@
 			[coin, eventRegistration, emitResponse]
 		);
 
+		useEffect(
+			function () {
+				if (!coin || !ajaxUrl || !nonce) {
+					setQuote('');
+					return undefined;
+				}
+
+				var seq = ++seqRef.current;
+				var aborted = false;
+				var controller =
+					typeof AbortController === 'function' ? new AbortController() : null;
+
+				setQuote('…');
+
+				var attempt = 0;
+
+				var run = function () {
+					var body = new FormData();
+					body.append('action', 'xdwp_quote');
+					body.append('nonce', nonce);
+					body.append('coin', coin);
+
+					fetch(ajaxUrl, {
+						method: 'POST',
+						body: body,
+						credentials: 'same-origin',
+						signal: controller ? controller.signal : undefined
+					})
+						.then(function (res) {
+							return res.json();
+						})
+						.then(function (res) {
+							if (aborted || seq !== seqRef.current) {
+								return;
+							}
+							if (res && res.success && res.data && res.data.amount) {
+								if (res.data.coin && res.data.coin !== coin) {
+									return;
+								}
+								setQuote('≈ ' + res.data.amount + ' ' + res.data.symbol);
+								return;
+							}
+							if (attempt < 1) {
+								attempt += 1;
+								window.setTimeout(run, 400);
+								return;
+							}
+							setQuote('');
+						})
+						.catch(function (err) {
+							if (aborted || seq !== seqRef.current) {
+								return;
+							}
+							if (err && err.name === 'AbortError') {
+								return;
+							}
+							if (attempt < 1) {
+								attempt += 1;
+								window.setTimeout(run, 400);
+								return;
+							}
+							setQuote('');
+						});
+				};
+
+				run();
+
+				return function () {
+					aborted = true;
+					if (controller) {
+						controller.abort();
+					}
+				};
+			},
+			[coin]
+		);
+
 		if (!coins.length) {
 			return createElement('p', null, __('No cryptocurrencies are configured.', 'xorro-direct-wallet-payments-woocommerce'));
 		}
 
 		return createElement(
 			'div',
-			{ className: 'chain-checkout-blocks' },
+			{ className: 'xdwp-blocks' },
 			settings.description
-				? createElement('p', { className: 'chain-checkout-desc' }, decodeEntities(settings.description))
+				? createElement('p', { className: 'xdwp-desc' }, decodeEntities(settings.description))
 				: null,
 			createElement(
 				'div',
-				{ className: 'chain-checkout-coin-grid' },
+				{ className: 'xdwp-coin-grid' },
 				coins.map(function (c) {
-					var classes = 'chain-checkout-coin-option';
+					var classes = 'xdwp-coin-option';
 					if (coin === c.id) {
 						classes += ' is-selected';
 					}
 					if (!c.icon) {
-						classes += ' chain-checkout-coin-option--text';
+						classes += ' xdwp-coin-option--text';
 					} else if (c.badge) {
-						classes += ' chain-checkout-coin-option--stable';
+						classes += ' xdwp-coin-option--stable';
 					}
 
 					var children = [
 						createElement('input', {
 							type: 'radio',
-							name: 'chain_checkout_coin_blocks',
+							name: 'xdwp_coin_blocks',
 							value: c.id,
 							checked: coin === c.id,
 							onChange: function () {
@@ -175,7 +263,7 @@
 						}),
 						createElement(
 							'span',
-							{ className: 'chain-checkout-coin-option__sr' },
+							{ className: 'xdwp-coin-option__sr' },
 							c.name
 						)
 					];
@@ -184,7 +272,7 @@
 						children.push(
 							createElement(
 								'span',
-								{ className: 'chain-checkout-coin-option__icon', 'aria-hidden': 'true' },
+								{ className: 'xdwp-coin-option__icon', 'aria-hidden': 'true' },
 								createElement('img', {
 									src: c.icon,
 									alt: '',
@@ -206,7 +294,7 @@
 							children.push(
 								createElement(
 									'span',
-									{ className: 'chain-checkout-coin-option__badge', 'aria-hidden': 'true' },
+									{ className: 'xdwp-coin-option__badge', 'aria-hidden': 'true' },
 									createElement('img', {
 										src: c.badge,
 										alt: '',
@@ -229,7 +317,7 @@
 						children.push(
 							createElement(
 								'span',
-								{ className: 'chain-checkout-coin-option__text', 'aria-hidden': 'true' },
+								{ className: 'xdwp-coin-option__text', 'aria-hidden': 'true' },
 								c.symbol || c.name
 							)
 						);
@@ -245,12 +333,17 @@
 						children
 					);
 				})
+			),
+			createElement(
+				'p',
+				{ className: 'xdwp-quote', 'aria-live': 'polite' },
+				quote
 			)
 		);
 	};
 
 	registerPaymentMethod({
-		name: 'chain_checkout',
+		name: 'xdwp',
 		label: createElement(Label, null),
 		ariaLabel: titleText,
 		canMakePayment: function () {

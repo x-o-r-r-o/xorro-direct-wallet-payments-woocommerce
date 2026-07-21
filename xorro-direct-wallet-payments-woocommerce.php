@@ -3,7 +3,7 @@
  * Plugin Name:       Xorro Direct Wallet Payments for WooCommerce
  * Plugin URI:        https://wordpress.org/plugins/xorro-direct-wallet-payments-woocommerce
  * Description:       Accept cryptocurrency payments directly to your own wallets — no third-party payment processor. Supports BTC, BCH, ETH, USDT, USDC, DAI and 70+ coins/tokens with automatic on-chain verification.
- * Version:           1.4.6
+ * Version:           1.5.0
  * Requires at least: 6.9
  * Requires PHP:      7.4
  * Requires Plugins:  woocommerce
@@ -16,20 +16,20 @@
  * WC requires at least: 10.0
  * WC tested up to:   10.8
  *
- * @package ChainCheckout
+ * @package Xdwp
  */
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'CHAIN_CHECKOUT_VERSION', '1.4.6' );
-define( 'CHAIN_CHECKOUT_FILE', __FILE__ );
-define( 'CHAIN_CHECKOUT_PATH', plugin_dir_path( __FILE__ ) );
-define( 'CHAIN_CHECKOUT_URL', plugin_dir_url( __FILE__ ) );
-define( 'CHAIN_CHECKOUT_BASENAME', plugin_basename( __FILE__ ) );
-define( 'CHAIN_CHECKOUT_GATEWAY_ID', 'chain_checkout' );
-define( 'CHAIN_CHECKOUT_MIN_WP', '6.9' );
-define( 'CHAIN_CHECKOUT_MIN_WC', '10.0' );
-define( 'CHAIN_CHECKOUT_MIN_PHP', '7.4' );
+define( 'XDWP_VERSION', '1.5.0' );
+define( 'XDWP_FILE', __FILE__ );
+define( 'XDWP_PATH', plugin_dir_path( __FILE__ ) );
+define( 'XDWP_URL', plugin_dir_url( __FILE__ ) );
+define( 'XDWP_BASENAME', plugin_basename( __FILE__ ) );
+define( 'XDWP_GATEWAY_ID', 'xdwp' );
+define( 'XDWP_MIN_WP', '6.9' );
+define( 'XDWP_MIN_WC', '10.0' );
+define( 'XDWP_MIN_PHP', '7.4' );
 
 /**
  * Declare WooCommerce feature compatibility early (HPOS + Checkout Blocks).
@@ -38,8 +38,8 @@ add_action(
 	'before_woocommerce_init',
 	static function () {
 		if ( class_exists( '\Automattic\WooCommerce\Utilities\FeaturesUtil' ) ) {
-			\Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'custom_order_tables', CHAIN_CHECKOUT_FILE, true );
-			\Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'cart_checkout_blocks', CHAIN_CHECKOUT_FILE, true );
+			\Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'custom_order_tables', XDWP_FILE, true );
+			\Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'cart_checkout_blocks', XDWP_FILE, true );
 		}
 	}
 );
@@ -50,22 +50,22 @@ add_action(
 register_activation_hook(
 	__FILE__,
 	static function () {
-		if ( version_compare( PHP_VERSION, CHAIN_CHECKOUT_MIN_PHP, '<' ) ) {
-			deactivate_plugins( CHAIN_CHECKOUT_BASENAME );
+		if ( version_compare( PHP_VERSION, XDWP_MIN_PHP, '<' ) ) {
+			deactivate_plugins( XDWP_BASENAME );
 			wp_die(
 				esc_html(
 					sprintf(
 						/* translators: 1: required PHP 2: current PHP */
 						__( 'Xorro Wallet Payments requires PHP %1$s or higher. You are running %2$s.', 'xorro-direct-wallet-payments-woocommerce' ),
-						CHAIN_CHECKOUT_MIN_PHP,
+						XDWP_MIN_PHP,
 						PHP_VERSION
 					)
 				)
 			);
 		}
 
-		require_once CHAIN_CHECKOUT_PATH . 'includes/class-chain-checkout-install.php';
-		Chain_Checkout_Install::activate();
+		require_once XDWP_PATH . 'includes/class-xdwp-install.php';
+		Xdwp_Install::activate();
 	}
 );
 
@@ -75,8 +75,8 @@ register_activation_hook(
 register_deactivation_hook(
 	__FILE__,
 	static function () {
-		require_once CHAIN_CHECKOUT_PATH . 'includes/class-chain-checkout-install.php';
-		Chain_Checkout_Install::deactivate();
+		require_once XDWP_PATH . 'includes/class-xdwp-install.php';
+		Xdwp_Install::deactivate();
 	}
 );
 
@@ -102,7 +102,7 @@ add_action(
 		}
 
 		global $wp_version;
-		if ( isset( $wp_version ) && version_compare( $wp_version, CHAIN_CHECKOUT_MIN_WP, '<' ) ) {
+		if ( isset( $wp_version ) && version_compare( $wp_version, XDWP_MIN_WP, '<' ) ) {
 			add_action(
 				'admin_notices',
 				static function () {
@@ -114,7 +114,7 @@ add_action(
 						sprintf(
 							/* translators: %s: WordPress version */
 							__( 'Xorro Wallet Payments requires WordPress %s or higher (WordPress 7.0 recommended).', 'xorro-direct-wallet-payments-woocommerce' ),
-							CHAIN_CHECKOUT_MIN_WP
+							XDWP_MIN_WP
 						)
 					);
 					echo '</p></div>';
@@ -123,7 +123,7 @@ add_action(
 			return;
 		}
 
-		if ( defined( 'WC_VERSION' ) && version_compare( WC_VERSION, CHAIN_CHECKOUT_MIN_WC, '<' ) ) {
+		if ( defined( 'WC_VERSION' ) && version_compare( WC_VERSION, XDWP_MIN_WC, '<' ) ) {
 			add_action(
 				'admin_notices',
 				static function () {
@@ -135,7 +135,7 @@ add_action(
 						sprintf(
 							/* translators: %s: WooCommerce version */
 							__( 'Xorro Wallet Payments requires WooCommerce %s or higher.', 'xorro-direct-wallet-payments-woocommerce' ),
-							CHAIN_CHECKOUT_MIN_WC
+							XDWP_MIN_WC
 						)
 					);
 					echo '</p></div>';
@@ -144,11 +144,11 @@ add_action(
 			return;
 		}
 
-		require_once CHAIN_CHECKOUT_PATH . 'includes/class-chain-checkout-install.php';
-		Chain_Checkout_Install::maybe_upgrade();
+		require_once XDWP_PATH . 'includes/class-xdwp-install.php';
+		Xdwp_Install::maybe_upgrade();
 
-		require_once CHAIN_CHECKOUT_PATH . 'includes/class-chain-checkout.php';
-		Chain_Checkout::instance();
+		require_once XDWP_PATH . 'includes/class-xdwp.php';
+		Xdwp::instance();
 	},
 	20
 );

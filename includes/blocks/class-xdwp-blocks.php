@@ -2,7 +2,7 @@
 /**
  * WooCommerce Checkout Blocks payment method integration.
  *
- * @package ChainCheckout
+ * @package Xdwp
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -10,21 +10,21 @@ defined( 'ABSPATH' ) || exit;
 use Automattic\WooCommerce\Blocks\Payments\Integrations\AbstractPaymentMethodType;
 
 /**
- * Class Chain_Checkout_Blocks
+ * Class Xdwp_Blocks
  */
-final class Chain_Checkout_Blocks extends AbstractPaymentMethodType {
+final class Xdwp_Blocks extends AbstractPaymentMethodType {
 
 	/**
 	 * Payment method name matching gateway ID.
 	 *
 	 * @var string
 	 */
-	protected $name = CHAIN_CHECKOUT_GATEWAY_ID;
+	protected $name = XDWP_GATEWAY_ID;
 
 	/**
 	 * Gateway instance.
 	 *
-	 * @var Chain_Checkout_Gateway|null
+	 * @var Xdwp_Gateway|null
 	 */
 	private $gateway;
 
@@ -32,9 +32,9 @@ final class Chain_Checkout_Blocks extends AbstractPaymentMethodType {
 	 * Initialize.
 	 */
 	public function initialize() {
-		$this->settings = get_option( 'woocommerce_' . CHAIN_CHECKOUT_GATEWAY_ID . '_settings', array() );
+		$this->settings = get_option( 'woocommerce_' . XDWP_GATEWAY_ID . '_settings', array() );
 		$gateways       = WC()->payment_gateways()->payment_gateways();
-		$this->gateway  = isset( $gateways[ CHAIN_CHECKOUT_GATEWAY_ID ] ) ? $gateways[ CHAIN_CHECKOUT_GATEWAY_ID ] : null;
+		$this->gateway  = isset( $gateways[ XDWP_GATEWAY_ID ] ) ? $gateways[ XDWP_GATEWAY_ID ] : null;
 	}
 
 	/**
@@ -52,20 +52,31 @@ final class Chain_Checkout_Blocks extends AbstractPaymentMethodType {
 	 * @return array
 	 */
 	public function get_payment_method_script_handles() {
-		$handle = 'chain-checkout-blocks';
+		$handle = 'xdwp-blocks';
+
+		$css_ver = XDWP_VERSION;
+		$js_ver  = XDWP_VERSION;
+		$css     = XDWP_PATH . 'assets/css/frontend.css';
+		$js      = XDWP_PATH . 'assets/js/blocks.js';
+		if ( is_readable( $css ) ) {
+			$css_ver = XDWP_VERSION . '.' . (string) filemtime( $css );
+		}
+		if ( is_readable( $js ) ) {
+			$js_ver = XDWP_VERSION . '.' . (string) filemtime( $js );
+		}
 
 		wp_enqueue_style(
-			'chain-checkout-frontend',
-			CHAIN_CHECKOUT_URL . 'assets/css/frontend.css',
+			'xdwp-frontend',
+			XDWP_URL . 'assets/css/frontend.css',
 			array(),
-			CHAIN_CHECKOUT_VERSION
+			$css_ver
 		);
 
-		$branding = Chain_Checkout_Branding::frontend_data();
+		$branding = Xdwp_Branding::frontend_data();
 		wp_add_inline_style(
-			'chain-checkout-frontend',
+			'xdwp-frontend',
 			sprintf(
-				'.chain-checkout-blocks-label img.chain-checkout-gateway-icon{width:%1$dpx!important;height:%2$dpx!important;max-width:%1$dpx!important;max-height:%2$dpx!important;object-fit:contain;vertical-align:middle;}',
+				'.xdwp-blocks-label img.xdwp-gateway-icon{width:%1$dpx!important;height:%2$dpx!important;max-width:%1$dpx!important;max-height:%2$dpx!important;object-fit:contain;vertical-align:middle;}',
 				(int) $branding['iconWidth'],
 				(int) $branding['iconHeight']
 			)
@@ -73,7 +84,7 @@ final class Chain_Checkout_Blocks extends AbstractPaymentMethodType {
 
 		wp_register_script(
 			$handle,
-			CHAIN_CHECKOUT_URL . 'assets/js/blocks.js',
+			XDWP_URL . 'assets/js/blocks.js',
 			array(
 				'wc-blocks-registry',
 				'wc-settings',
@@ -81,12 +92,12 @@ final class Chain_Checkout_Blocks extends AbstractPaymentMethodType {
 				'wp-html-entities',
 				'wp-i18n',
 			),
-			CHAIN_CHECKOUT_VERSION,
+			$js_ver,
 			true
 		);
 
 		if ( function_exists( 'wp_set_script_translations' ) ) {
-			wp_set_script_translations( $handle, 'xorro-direct-wallet-payments-woocommerce', CHAIN_CHECKOUT_PATH . 'languages' );
+			wp_set_script_translations( $handle, 'xorro-direct-wallet-payments-woocommerce', XDWP_PATH . 'languages' );
 		}
 
 		return array( $handle );
@@ -99,8 +110,8 @@ final class Chain_Checkout_Blocks extends AbstractPaymentMethodType {
 	 */
 	public function get_payment_method_data() {
 		$coins = array();
-		foreach ( Chain_Checkout_Coins::get_payable() as $id => $coin ) {
-			$icons   = Chain_Checkout_Coins::icon_meta( $id );
+		foreach ( Xdwp_Coins::get_payable() as $id => $coin ) {
+			$icons   = Xdwp_Coins::icon_meta( $id );
 			$coins[] = array(
 				'id'     => $id,
 				'symbol' => $coin['symbol'],
@@ -115,8 +126,10 @@ final class Chain_Checkout_Blocks extends AbstractPaymentMethodType {
 				'description' => $this->gateway ? $this->gateway->get_description() : '',
 				'supports'    => $this->gateway ? array_filter( $this->gateway->supports ) : array( 'products' ),
 				'coins'       => $coins,
+				'ajaxUrl'     => admin_url( 'admin-ajax.php' ),
+				'nonce'       => wp_create_nonce( 'xdwp_checkout' ),
 			),
-			Chain_Checkout_Branding::frontend_data()
+			Xdwp_Branding::frontend_data()
 		);
 	}
 }

@@ -2,15 +2,15 @@
 /**
  * Checkout branding helpers (icon / title display).
  *
- * @package ChainCheckout
+ * @package Xdwp
  */
 
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Class Chain_Checkout_Branding
+ * Class Xdwp_Branding
  */
-class Chain_Checkout_Branding {
+class Xdwp_Branding {
 
 	const DEFAULT_WIDTH  = 32;
 	const DEFAULT_HEIGHT = 32;
@@ -36,7 +36,7 @@ class Chain_Checkout_Branding {
 	 * @return string both|icon|text
 	 */
 	public static function display_mode() {
-		$mode = Chain_Checkout_Settings::get( 'checkout_display', 'both' );
+		$mode = Xdwp_Settings::get( 'checkout_display', 'both' );
 		$mode = is_string( $mode ) ? sanitize_key( $mode ) : 'both';
 		return isset( self::display_modes()[ $mode ] ) ? $mode : 'both';
 	}
@@ -47,7 +47,7 @@ class Chain_Checkout_Branding {
 	 * @return string
 	 */
 	public static function title() {
-		$title = Chain_Checkout_Settings::get( 'title', __( 'Pay with Cryptocurrency', 'xorro-direct-wallet-payments-woocommerce' ) );
+		$title = Xdwp_Settings::get( 'title', __( 'Pay with Cryptocurrency', 'xorro-direct-wallet-payments-woocommerce' ) );
 		$title = is_string( $title ) ? trim( $title ) : '';
 		return '' !== $title ? $title : __( 'Pay with Cryptocurrency', 'xorro-direct-wallet-payments-woocommerce' );
 	}
@@ -58,7 +58,7 @@ class Chain_Checkout_Branding {
 	 * @return int
 	 */
 	public static function icon_width() {
-		return self::clamp_size( (int) Chain_Checkout_Settings::get( 'checkout_icon_width', self::DEFAULT_WIDTH ) );
+		return self::clamp_size( (int) Xdwp_Settings::get( 'checkout_icon_width', self::DEFAULT_WIDTH ) );
 	}
 
 	/**
@@ -67,7 +67,7 @@ class Chain_Checkout_Branding {
 	 * @return int
 	 */
 	public static function icon_height() {
-		return self::clamp_size( (int) Chain_Checkout_Settings::get( 'checkout_icon_height', self::DEFAULT_HEIGHT ) );
+		return self::clamp_size( (int) Xdwp_Settings::get( 'checkout_icon_height', self::DEFAULT_HEIGHT ) );
 	}
 
 	/**
@@ -93,7 +93,7 @@ class Chain_Checkout_Branding {
 	 * @return string
 	 */
 	public static function default_icon_url() {
-		return CHAIN_CHECKOUT_URL . 'assets/images/chain-checkout-icon.svg';
+		return XDWP_URL . 'assets/images/xdwp-icon.svg';
 	}
 
 	/**
@@ -106,7 +106,7 @@ class Chain_Checkout_Branding {
 			return '';
 		}
 
-		$attachment_id = absint( Chain_Checkout_Settings::get( 'checkout_icon_id', 0 ) );
+		$attachment_id = absint( Xdwp_Settings::get( 'checkout_icon_id', 0 ) );
 		if ( $attachment_id > 0 ) {
 			$url = wp_get_attachment_image_url( $attachment_id, 'full' );
 			if ( is_string( $url ) && '' !== $url ) {
@@ -133,7 +133,7 @@ class Chain_Checkout_Branding {
 		$title = self::title();
 
 		return sprintf(
-			'<img src="%1$s" alt="%2$s" class="chain-checkout-gateway-icon" width="%3$d" height="%4$d" style="width:%3$dpx;height:%4$dpx;max-width:%3$dpx;max-height:%4$dpx;object-fit:contain;vertical-align:middle;" />',
+			'<img src="%1$s" alt="%2$s" class="xdwp-gateway-icon" width="%3$d" height="%4$d" style="width:%3$dpx;height:%4$dpx;max-width:%3$dpx;max-height:%4$dpx;object-fit:contain;vertical-align:middle;" />',
 			esc_url( $url ),
 			esc_attr( $title ),
 			$w,

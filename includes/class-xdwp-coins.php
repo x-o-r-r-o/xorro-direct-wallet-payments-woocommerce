@@ -2,15 +2,15 @@
 /**
  * Supported coins, networks, and metadata.
  *
- * @package ChainCheckout
+ * @package Xdwp
  */
 
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Class Chain_Checkout_Coins
+ * Class Xdwp_Coins
  */
-class Chain_Checkout_Coins {
+class Xdwp_Coins {
 
 	/**
 	 * Get all coin definitions keyed by coin ID.
@@ -132,7 +132,7 @@ class Chain_Checkout_Coins {
 		 *
 		 * @param array $coins Coin definitions.
 		 */
-		return apply_filters( 'chain_checkout_coins', $coins );
+		return apply_filters( 'xdwp_coins', $coins );
 	}
 
 	/**
@@ -188,7 +188,7 @@ class Chain_Checkout_Coins {
 	 * @return array<string, array<string, mixed>>
 	 */
 	public static function get_payable() {
-		$enabled = Chain_Checkout_Settings::get( 'enabled_coins', array() );
+		$enabled = Xdwp_Settings::get( 'enabled_coins', array() );
 		if ( ! is_array( $enabled ) ) {
 			$enabled = array();
 		}
@@ -199,7 +199,7 @@ class Chain_Checkout_Coins {
 			if ( ! $coin ) {
 				continue;
 			}
-			$wallets = Chain_Checkout_Wallets::get_addresses( $coin_id );
+			$wallets = Xdwp_Wallets::get_addresses( $coin_id );
 			if ( empty( $wallets ) ) {
 				continue;
 			}
@@ -220,11 +220,11 @@ class Chain_Checkout_Coins {
 		if ( '' === $slug ) {
 			return '';
 		}
-		$file = CHAIN_CHECKOUT_PATH . 'assets/svg/coins/' . $slug . '.svg';
+		$file = XDWP_PATH . 'assets/svg/coins/' . $slug . '.svg';
 		if ( ! is_readable( $file ) ) {
 			return '';
 		}
-		return CHAIN_CHECKOUT_URL . 'assets/svg/coins/' . $slug . '.svg';
+		return XDWP_URL . 'assets/svg/coins/' . $slug . '.svg';
 	}
 
 	/**

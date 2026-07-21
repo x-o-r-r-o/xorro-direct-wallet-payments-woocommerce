@@ -2,24 +2,24 @@
 /**
  * AJAX endpoints for checkout coin list and payment status.
  *
- * @package ChainCheckout
+ * @package Xdwp
  */
 
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Class Chain_Checkout_Ajax
+ * Class Xdwp_Ajax
  */
-class Chain_Checkout_Ajax {
+class Xdwp_Ajax {
 
 	/**
 	 * Init hooks.
 	 */
 	public static function init() {
-		add_action( 'wp_ajax_chain_checkout_status', array( __CLASS__, 'payment_status' ) );
-		add_action( 'wp_ajax_nopriv_chain_checkout_status', array( __CLASS__, 'payment_status' ) );
-		add_action( 'wp_ajax_chain_checkout_quote', array( __CLASS__, 'quote' ) );
-		add_action( 'wp_ajax_nopriv_chain_checkout_quote', array( __CLASS__, 'quote' ) );
+		add_action( 'wp_ajax_xdwp_status', array( __CLASS__, 'payment_status' ) );
+		add_action( 'wp_ajax_nopriv_xdwp_status', array( __CLASS__, 'payment_status' ) );
+		add_action( 'wp_ajax_xdwp_quote', array( __CLASS__, 'quote' ) );
+		add_action( 'wp_ajax_nopriv_xdwp_quote', array( __CLASS__, 'quote' ) );
 		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'register_assets' ) );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'register_admin_assets' ) );
 	}
@@ -28,45 +28,51 @@ class Chain_Checkout_Ajax {
 	 * Register frontend assets (enqueued on demand).
 	 */
 	public static function register_assets() {
-		$css_ver = CHAIN_CHECKOUT_VERSION;
-		$js_ver  = CHAIN_CHECKOUT_VERSION;
-		$css     = CHAIN_CHECKOUT_PATH . 'assets/css/frontend.css';
-		$js      = CHAIN_CHECKOUT_PATH . 'assets/js/frontend.js';
+		$css_ver = XDWP_VERSION;
+		$js_ver  = XDWP_VERSION;
+		$css     = XDWP_PATH . 'assets/css/frontend.css';
+		$js      = XDWP_PATH . 'assets/js/frontend.js';
 		if ( is_readable( $css ) ) {
-			$css_ver = CHAIN_CHECKOUT_VERSION . '.' . (string) filemtime( $css );
+			$css_ver = XDWP_VERSION . '.' . (string) filemtime( $css );
 		}
 		if ( is_readable( $js ) ) {
-			$js_ver = CHAIN_CHECKOUT_VERSION . '.' . (string) filemtime( $js );
+			$js_ver = XDWP_VERSION . '.' . (string) filemtime( $js );
 		}
 
 		wp_register_style(
-			'chain-checkout-frontend',
-			CHAIN_CHECKOUT_URL . 'assets/css/frontend.css',
+			'xdwp-frontend',
+			XDWP_URL . 'assets/css/frontend.css',
 			array(),
 			$css_ver
 		);
 
 		wp_register_script(
-			'chain-checkout-qrcode',
-			CHAIN_CHECKOUT_URL . 'assets/js/qrcode.min.js',
+			'xdwp-qrcode',
+			XDWP_URL . 'assets/js/qrcode.min.js',
 			array(),
 			'1.0.0',
 			true
 		);
 
 		wp_register_script(
-			'chain-checkout-frontend',
-			CHAIN_CHECKOUT_URL . 'assets/js/frontend.js',
-			array( 'chain-checkout-qrcode' ),
+			'xdwp-frontend',
+			XDWP_URL . 'assets/js/frontend.js',
+			array( 'xdwp-qrcode' ),
 			$js_ver,
 			true
 		);
 
+		$checkout_js_ver = XDWP_VERSION;
+		$checkout_js     = XDWP_PATH . 'assets/js/checkout.js';
+		if ( is_readable( $checkout_js ) ) {
+			$checkout_js_ver = XDWP_VERSION . '.' . (string) filemtime( $checkout_js );
+		}
+
 		wp_register_script(
-			'chain-checkout-checkout',
-			CHAIN_CHECKOUT_URL . 'assets/js/checkout.js',
+			'xdwp-checkout',
+			XDWP_URL . 'assets/js/checkout.js',
 			array( 'jquery' ),
-			CHAIN_CHECKOUT_VERSION,
+			$checkout_js_ver,
 			true
 		);
 	}
@@ -84,36 +90,36 @@ class Chain_Checkout_Ajax {
 			return;
 		}
 
-		$ver = CHAIN_CHECKOUT_VERSION;
-		$css = CHAIN_CHECKOUT_PATH . 'assets/css/admin.css';
+		$ver = XDWP_VERSION;
+		$css = XDWP_PATH . 'assets/css/admin.css';
 		if ( is_readable( $css ) ) {
-			$ver = CHAIN_CHECKOUT_VERSION . '.' . (string) filemtime( $css );
+			$ver = XDWP_VERSION . '.' . (string) filemtime( $css );
 		}
 
 		wp_enqueue_style( 'dashicons' );
 		wp_enqueue_style(
-			'chain-checkout-admin',
-			CHAIN_CHECKOUT_URL . 'assets/css/admin.css',
+			'xdwp-admin',
+			XDWP_URL . 'assets/css/admin.css',
 			array( 'dashicons' ),
 			$ver
 		);
 
 		wp_enqueue_script(
-			'chain-checkout-admin',
-			CHAIN_CHECKOUT_URL . 'assets/js/admin.js',
+			'xdwp-admin',
+			XDWP_URL . 'assets/js/admin.js',
 			array( 'jquery' ),
-			CHAIN_CHECKOUT_VERSION,
+			XDWP_VERSION,
 			true
 		);
 
-		$wallets_js  = CHAIN_CHECKOUT_PATH . 'assets/js/wallets.js';
-		$wallets_ver = CHAIN_CHECKOUT_VERSION;
+		$wallets_js  = XDWP_PATH . 'assets/js/wallets.js';
+		$wallets_ver = XDWP_VERSION;
 		if ( is_readable( $wallets_js ) ) {
-			$wallets_ver = CHAIN_CHECKOUT_VERSION . '.' . (string) filemtime( $wallets_js );
+			$wallets_ver = XDWP_VERSION . '.' . (string) filemtime( $wallets_js );
 		}
 		wp_enqueue_script(
-			'chain-checkout-wallets',
-			CHAIN_CHECKOUT_URL . 'assets/js/wallets.js',
+			'xdwp-wallets',
+			XDWP_URL . 'assets/js/wallets.js',
 			array(),
 			$wallets_ver,
 			true
@@ -136,15 +142,15 @@ class Chain_Checkout_Ajax {
 			'addressesConfigured' => __( '%d addresses', 'xorro-direct-wallet-payments-woocommerce' ),
 			/* translators: %d: coins still missing a wallet */
 			'missingWallets'      => __( '%d coin(s) still need an address', 'xorro-direct-wallet-payments-woocommerce' ),
-			'defaultIcon'         => Chain_Checkout_Branding::default_icon_url(),
+			'defaultIcon'         => Xdwp_Branding::default_icon_url(),
 			'mediaTitle'          => __( 'Select checkout icon', 'xorro-direct-wallet-payments-woocommerce' ),
 			'mediaButton'         => __( 'Use this icon', 'xorro-direct-wallet-payments-woocommerce' ),
 			'mediaUnavailable'    => __( 'Media library is not available.', 'xorro-direct-wallet-payments-woocommerce' ),
 		);
 
-		wp_localize_script( 'chain-checkout-admin', 'chainCheckoutAdmin', $admin_i18n );
-		// wallets.js also reads window.chainCheckoutAdmin.
-		wp_localize_script( 'chain-checkout-wallets', 'chainCheckoutAdmin', $admin_i18n );
+		wp_localize_script( 'xdwp-admin', 'xdwpAdmin', $admin_i18n );
+		// wallets.js also reads window.xdwpAdmin.
+		wp_localize_script( 'xdwp-wallets', 'xdwpAdmin', $admin_i18n );
 	}
 
 	/**
@@ -160,10 +166,10 @@ class Chain_Checkout_Ajax {
 			$deny();
 		}
 
-		check_ajax_referer( 'chain_checkout_status_' . $order_id, 'nonce' );
+		check_ajax_referer( 'xdwp_status_' . $order_id, 'nonce' );
 
 		$ip = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : 'unknown';
-		$rate_key = 'chain_checkout_status_' . md5( $ip . '|' . $order_id );
+		$rate_key = 'xdwp_status_' . md5( $ip . '|' . $order_id );
 		$count    = (int) get_transient( $rate_key );
 		if ( $count > 120 ) {
 			wp_send_json_error( array( 'message' => __( 'Too many requests. Please wait a moment.', 'xorro-direct-wallet-payments-woocommerce' ) ), 429 );
@@ -173,7 +179,7 @@ class Chain_Checkout_Ajax {
 		$order = wc_get_order( $order_id );
 
 		// Uniform denial — avoid leaking whether an order ID is a Xorro Wallet Payments order.
-		if ( ! $order || $order->get_payment_method() !== CHAIN_CHECKOUT_GATEWAY_ID ) {
+		if ( ! $order || ! Xdwp_Order::is_ours( $order ) ) {
 			$deny();
 		}
 
@@ -192,18 +198,18 @@ class Chain_Checkout_Ajax {
 			$deny();
 		}
 
-		Chain_Checkout_Order::maybe_expire( $order );
+		Xdwp_Order::maybe_expire( $order );
 		$order = wc_get_order( $order_id );
 
-		$status = $order->get_meta( '_chain_checkout_status' );
+		$status = Xdwp_Order::meta( $order, 'status' );
 
 		// Throttle live chain checks from the browser poll (cron remains primary).
-		if ( 'awaiting' === $status && 'yes' === Chain_Checkout_Settings::get( 'auto_verify', 'yes' ) ) {
-			$throttle_key = 'chain_checkout_ajax_verify_' . $order_id;
+		if ( 'awaiting' === $status && 'yes' === Xdwp_Settings::get( 'auto_verify', 'yes' ) ) {
+			$throttle_key = 'xdwp_ajax_verify_' . $order_id;
 			if ( ! get_transient( $throttle_key ) ) {
 				set_transient( $throttle_key, 1, 45 );
-				if ( Chain_Checkout_Verifier::verify_order( $order ) ) {
-					Chain_Checkout_Order::mark_paid( $order );
+				if ( Xdwp_Verifier::verify_order( $order ) ) {
+					Xdwp_Order::mark_paid( $order );
 					$order  = wc_get_order( $order_id );
 					$status = 'paid';
 				}
@@ -213,7 +219,7 @@ class Chain_Checkout_Ajax {
 		wp_send_json_success(
 			array(
 				'status'  => $status,
-				'expires' => (int) $order->get_meta( '_chain_checkout_expires' ),
+				'expires' => (int) Xdwp_Order::meta( $order, 'expires' ),
 				'paid'    => ( 'paid' === $status ),
 				'expired' => ( 'expired' === $status ),
 			)
@@ -224,10 +230,10 @@ class Chain_Checkout_Ajax {
 	 * Live quote for selected coin at checkout.
 	 */
 	public static function quote() {
-		check_ajax_referer( 'chain_checkout_checkout', 'nonce' );
+		check_ajax_referer( 'xdwp_checkout', 'nonce' );
 
 		$ip = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : 'unknown';
-		$rate_key = 'chain_checkout_quote_' . md5( $ip );
+		$rate_key = 'xdwp_quote_' . md5( $ip );
 		$count    = (int) get_transient( $rate_key );
 		if ( $count > 60 ) {
 			wp_send_json_error( array( 'message' => __( 'Too many requests. Please wait a moment.', 'xorro-direct-wallet-payments-woocommerce' ) ), 429 );
@@ -235,8 +241,8 @@ class Chain_Checkout_Ajax {
 		set_transient( $rate_key, $count + 1, MINUTE_IN_SECONDS );
 
 		$coin_id = isset( $_POST['coin'] ) ? sanitize_text_field( wp_unslash( $_POST['coin'] ) ) : '';
-		$coin    = Chain_Checkout_Coins::get( $coin_id );
-		$payable = Chain_Checkout_Coins::get_payable();
+		$coin    = Xdwp_Coins::get( $coin_id );
+		$payable = Xdwp_Coins::get_payable();
 
 		if ( ! $coin || ! isset( $payable[ $coin_id ] ) ) {
 			wp_send_json_error( array( 'message' => __( 'Coin not available.', 'xorro-direct-wallet-payments-woocommerce' ) ), 400 );
@@ -247,7 +253,7 @@ class Chain_Checkout_Ajax {
 		}
 
 		$total  = (float) WC()->cart->get_total( 'edit' );
-		$amount = Chain_Checkout_Prices::fiat_to_crypto( $total, $coin_id );
+		$amount = Xdwp_Prices::fiat_to_crypto( $total, $coin_id );
 
 		if ( '' === $amount ) {
 			wp_send_json_error( array( 'message' => __( 'Unable to fetch exchange rate. Try again shortly.', 'xorro-direct-wallet-payments-woocommerce' ) ), 503 );

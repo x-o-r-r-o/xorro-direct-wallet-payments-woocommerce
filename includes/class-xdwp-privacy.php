@@ -2,15 +2,15 @@
 /**
  * Privacy Policy suggested content for WordPress Settings → Privacy.
  *
- * @package ChainCheckout
+ * @package Xdwp
  */
 
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Class Chain_Checkout_Privacy
+ * Class Xdwp_Privacy
  */
-class Chain_Checkout_Privacy {
+class Xdwp_Privacy {
 
 	/**
 	 * Init.

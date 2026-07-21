@@ -5,7 +5,7 @@
 (function () {
 	'use strict';
 
-	var cfg = window.chainCheckoutAdmin || {};
+	var cfg = window.xdwpAdmin || {};
 
 	function ready(fn) {
 		if (document.readyState === 'loading') {
@@ -16,10 +16,10 @@
 	}
 
 	function initIconPicker() {
-		var uploadBtn = document.getElementById('chain-checkout-icon-upload');
-		var resetBtn = document.getElementById('chain-checkout-icon-reset');
-		var idInput = document.getElementById('chain-checkout-icon-id');
-		var preview = document.getElementById('chain-checkout-icon-preview');
+		var uploadBtn = document.getElementById('xdwp-icon-upload');
+		var resetBtn = document.getElementById('xdwp-icon-reset');
+		var idInput = document.getElementById('xdwp-icon-id');
+		var preview = document.getElementById('xdwp-icon-preview');
 		if (!uploadBtn || !idInput || !preview) {
 			return;
 		}
@@ -65,9 +65,9 @@
 	}
 
 	ready(function () {
-		var admin = document.querySelector('.chain-checkout-admin, .chain-checkout-options-wrap');
+		var admin = document.querySelector('.xdwp-admin, .xdwp-options-wrap');
 		if (admin) {
-			admin.classList.add('chain-checkout-admin--ready');
+			admin.classList.add('xdwp-admin--ready');
 		}
 		initIconPicker();
 	});

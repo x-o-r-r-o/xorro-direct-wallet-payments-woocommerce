@@ -2,18 +2,21 @@
 /**
  * Fiat ↔ crypto price conversion via CoinGecko.
  *
- * @package ChainCheckout
+ * @package Xdwp
  */
 
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Class Chain_Checkout_Prices
+ * Class Xdwp_Prices
  */
-class Chain_Checkout_Prices {
+class Xdwp_Prices {
 
-	const TRANSIENT_KEY = 'chain_checkout_price_cache';
-	const CACHE_TTL     = 120;
+	const TRANSIENT_KEY = 'xdwp_price_cache';
+	/** Prefer fresh rates within this window. */
+	const CACHE_TTL = 120;
+	/** Keep cached rates available for stale fallback (must be >= CACHE_TTL). */
+	const STALE_TTL = 600;
 
 	/**
 	 * Convert fiat order total to crypto amount.
@@ -25,7 +28,7 @@ class Chain_Checkout_Prices {
 	 * @return string Crypto amount string, or empty on failure.
 	 */
 	public static function fiat_to_crypto( $fiat_amount, $coin_id, $currency = '', $unique_amount = false ) {
-		$coin = Chain_Checkout_Coins::get( $coin_id );
+		$coin = Xdwp_Coins::get( $coin_id );
 		if ( ! $coin ) {
 			return '';
 		}
@@ -41,11 +44,11 @@ class Chain_Checkout_Prices {
 
 		$amount = (float) $fiat_amount / $rate;
 
-		if ( $unique_amount && 'yes' === Chain_Checkout_Settings::get( 'unique_amounts', 'yes' ) ) {
+		if ( $unique_amount && 'yes' === Xdwp_Settings::get( 'unique_amounts', 'yes' ) ) {
 			$amount = self::apply_unique_dust( $amount, $coin_id );
 		}
 
-		return Chain_Checkout_Coins::format_amount( $amount, $coin_id );
+		return Xdwp_Coins::format_amount( $amount, $coin_id );
 	}
 
 	/**
@@ -56,7 +59,7 @@ class Chain_Checkout_Prices {
 	 * @return float
 	 */
 	public static function apply_unique_dust( $amount, $coin_id ) {
-		$coin     = Chain_Checkout_Coins::get( $coin_id );
+		$coin     = Xdwp_Coins::get( $coin_id );
 		$decimals = $coin ? min( (int) $coin['decimals'], 8 ) : 8;
 
 		// Low-decimal assets cannot safely encode unique dust without large overcharge.
@@ -82,7 +85,7 @@ class Chain_Checkout_Prices {
 	private static function next_amount_seq() {
 		global $wpdb;
 
-		$option = 'chain_checkout_amount_seq';
+		$option = 'xdwp_amount_seq';
 		// Ensure row exists.
 		add_option( $option, 0, '', 'no' );
 
@@ -116,7 +119,7 @@ class Chain_Checkout_Prices {
 			$cache = array();
 		}
 
-		$key = $coingecko_id . '_' . $currency;
+		$key     = $coingecko_id . '_' . $currency;
 		$updated = (int) get_transient( self::TRANSIENT_KEY . '_updated' );
 		$fresh   = $updated && ( time() - $updated ) < self::CACHE_TTL;
 
@@ -124,14 +127,19 @@ class Chain_Checkout_Prices {
 			return (float) $cache[ $key ];
 		}
 
-		self::refresh_rates( array( $coingecko_id ), $currency );
-		$cache = get_transient( self::TRANSIENT_KEY );
-		if ( is_array( $cache ) && isset( $cache[ $key ] ) ) {
-			return (float) $cache[ $key ];
+		// Prefer rates returned by this refresh so a concurrent cache write cannot drop them.
+		$fetched = self::refresh_rates( array( $coingecko_id ), $currency );
+		if ( isset( $fetched[ $key ] ) && is_numeric( $fetched[ $key ] ) && (float) $fetched[ $key ] > 0 ) {
+			return (float) $fetched[ $key ];
 		}
 
-		// Do not serve stale rates older than 10 minutes after a failed refresh.
-		if ( isset( $cache[ $key ] ) && is_numeric( $cache[ $key ] ) && $updated && ( time() - $updated ) < ( 10 * MINUTE_IN_SECONDS ) ) {
+		$cache = get_transient( self::TRANSIENT_KEY );
+		if ( ! is_array( $cache ) ) {
+			$cache = array();
+		}
+
+		// Serve stale rates for up to STALE_TTL when a live refresh fails.
+		if ( isset( $cache[ $key ] ) && is_numeric( $cache[ $key ] ) && $updated && ( time() - $updated ) < self::STALE_TTL ) {
 			return (float) $cache[ $key ];
 		}
 
@@ -143,6 +151,7 @@ class Chain_Checkout_Prices {
 	 *
 	 * @param array  $ids      CoinGecko IDs.
 	 * @param string $currency Fiat currency.
+	 * @return array Map of "{coingecko_id}_{currency}" => rate for rates fetched in this call.
 	 */
 	public static function refresh_rates( array $ids = array(), $currency = '' ) {
 		if ( '' === $currency ) {
@@ -152,25 +161,21 @@ class Chain_Checkout_Prices {
 
 		if ( empty( $ids ) ) {
 			$ids = array();
-			foreach ( Chain_Checkout_Coins::all() as $coin ) {
+			foreach ( Xdwp_Coins::all() as $coin ) {
 				$ids[] = $coin['coingecko_id'];
 			}
 			$ids = array_values( array_unique( $ids ) );
 		}
 
 		// CoinGecko allows comma-separated ids; chunk to stay under URL limits.
-		$chunks = array_chunk( $ids, 50 );
-		$cache  = get_transient( self::TRANSIENT_KEY );
-		if ( ! is_array( $cache ) ) {
-			$cache = array();
-		}
-		$got_any = false;
+		$chunks    = array_chunk( $ids, 50 );
+		$new_rates = array();
 
-		$api_key = Chain_Checkout_Settings::get( 'coingecko_api_key', '' );
+		$api_key = Xdwp_Settings::get( 'coingecko_api_key', '' );
 		// Free/Demo keys use api.coingecko.com + x-cg-demo-api-key.
 		// Paid Pro keys use pro-api.coingecko.com + x-cg-pro-api-key.
-		$is_pro  = $api_key && self::coingecko_key_is_pro( $api_key );
-		$base    = $is_pro
+		$is_pro = $api_key && self::coingecko_key_is_pro( $api_key );
+		$base   = $is_pro
 			? 'https://pro-api.coingecko.com/api/v3/simple/price'
 			: 'https://api.coingecko.com/api/v3/simple/price';
 
@@ -208,7 +213,7 @@ class Chain_Checkout_Prices {
 			if ( 200 !== (int) $code || ! is_array( $body ) ) {
 				// If Pro endpoint rejected the key, retry once as Demo on the free host.
 				if ( $api_key && $is_pro && in_array( (int) $code, array( 401, 403 ), true ) ) {
-					$retry_url = add_query_arg(
+					$retry_url  = add_query_arg(
 						array(
 							'ids'           => implode( ',', $chunk ),
 							'vs_currencies' => $currency,
@@ -222,7 +227,7 @@ class Chain_Checkout_Prices {
 							'x-cg-demo-api-key' => $api_key,
 						),
 					);
-					$response = wp_remote_get( $retry_url, $retry_args );
+					$response   = wp_remote_get( $retry_url, $retry_args );
 					if ( is_wp_error( $response ) ) {
 						continue;
 					}
@@ -238,16 +243,23 @@ class Chain_Checkout_Prices {
 
 			foreach ( $body as $id => $prices ) {
 				if ( isset( $prices[ $currency ] ) ) {
-					$cache[ $id . '_' . $currency ] = (float) $prices[ $currency ];
-					$got_any = true;
+					$new_rates[ $id . '_' . $currency ] = (float) $prices[ $currency ];
 				}
 			}
 		}
 
-		if ( $got_any ) {
-			set_transient( self::TRANSIENT_KEY, $cache, self::CACHE_TTL );
+		if ( ! empty( $new_rates ) ) {
+			// Re-read before write so concurrent coin quotes do not clobber each other.
+			$latest = get_transient( self::TRANSIENT_KEY );
+			if ( ! is_array( $latest ) ) {
+				$latest = array();
+			}
+			$cache = array_merge( $latest, $new_rates );
+			set_transient( self::TRANSIENT_KEY, $cache, self::STALE_TTL );
 			set_transient( self::TRANSIENT_KEY . '_updated', time(), DAY_IN_SECONDS );
 		}
+
+		return $new_rates;
 	}
 
 	/**
@@ -275,12 +287,12 @@ class Chain_Checkout_Prices {
 	 */
 	public static function cron_refresh() {
 		$ids      = array();
-		$enabled  = Chain_Checkout_Settings::get( 'enabled_coins', array() );
+		$enabled  = Xdwp_Settings::get( 'enabled_coins', array() );
 		if ( ! is_array( $enabled ) ) {
 			return;
 		}
 		foreach ( $enabled as $coin_id ) {
-			$coin = Chain_Checkout_Coins::get( $coin_id );
+			$coin = Xdwp_Coins::get( $coin_id );
 			if ( $coin ) {
 				$ids[] = $coin['coingecko_id'];
 			}

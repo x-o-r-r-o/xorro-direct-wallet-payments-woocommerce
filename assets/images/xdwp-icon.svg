@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Chain Checkout">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Xorro Wallet Payments">
   <rect width="64" height="64" rx="12" fill="#0B3D2E"/>
   <circle cx="32" cy="32" r="18" fill="none" stroke="#3DDC97" stroke-width="4"/>
   <path d="M32 18v28M22 28h20M22 36h20" stroke="#F4F7F5" stroke-width="3" stroke-linecap="round"/>

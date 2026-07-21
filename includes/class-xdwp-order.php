@@ -2,26 +2,53 @@
 /**
  * Order payment lifecycle helpers.
  *
- * @package ChainCheckout
+ * @package Xdwp
  */
 
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Class Chain_Checkout_Order
+ * Class Xdwp_Order
  */
-class Chain_Checkout_Order {
+class Xdwp_Order {
 
 	/**
 	 * Init hooks.
 	 */
 	public static function init() {
-		add_action( 'woocommerce_thankyou_' . CHAIN_CHECKOUT_GATEWAY_ID, array( __CLASS__, 'render_payment_box' ), 10, 1 );
+		add_action( 'woocommerce_thankyou_' . XDWP_GATEWAY_ID, array( __CLASS__, 'render_payment_box' ), 10, 1 );
 		add_action( 'woocommerce_view_order', array( __CLASS__, 'maybe_render_on_view' ), 5 );
 		add_action( 'add_meta_boxes', array( __CLASS__, 'add_order_metabox' ) );
 		add_action( 'woocommerce_admin_order_data_after_billing_address', array( __CLASS__, 'admin_order_info' ), 10, 1 );
-		add_action( 'admin_post_chain_checkout_mark_paid', array( __CLASS__, 'handle_mark_paid' ) );
+		add_action( 'admin_post_xdwp_mark_paid', array( __CLASS__, 'handle_mark_paid' ) );
 		add_filter( 'woocommerce_get_price_html', array( __CLASS__, 'maybe_append_crypto_price' ), 20, 2 );
+	}
+
+	/**
+	 * Whether this order uses Xorro Wallet Payments.
+	 *
+	 * @param WC_Order $order Order.
+	 * @return bool
+	 */
+	public static function is_ours( $order ) {
+		if ( ! $order instanceof WC_Order ) {
+			return false;
+		}
+		return XDWP_GATEWAY_ID === $order->get_payment_method();
+	}
+
+	/**
+	 * Read plugin order meta (`_xdwp_{suffix}`).
+	 *
+	 * @param WC_Order $order  Order.
+	 * @param string   $suffix Meta suffix (e.g. status, amount).
+	 * @return mixed
+	 */
+	public static function meta( $order, $suffix ) {
+		if ( ! $order instanceof WC_Order ) {
+			return '';
+		}
+		return $order->get_meta( '_xdwp_' . sanitize_key( $suffix ) );
 	}
 
 	/**
@@ -32,31 +59,31 @@ class Chain_Checkout_Order {
 	 * @return bool
 	 */
 	public static function assign_payment( $order, $coin_id ) {
-		$coin = Chain_Checkout_Coins::get( $coin_id );
+		$coin = Xdwp_Coins::get( $coin_id );
 		if ( ! $coin ) {
 			return false;
 		}
 
-		$address = Chain_Checkout_Wallets::pick_address( $coin_id );
+		$address = Xdwp_Wallets::pick_address( $coin_id );
 		if ( ! $address ) {
 			return false;
 		}
 
-		$amount = Chain_Checkout_Prices::fiat_to_crypto( (float) $order->get_total(), $coin_id, $order->get_currency(), true );
+		$amount = Xdwp_Prices::fiat_to_crypto( (float) $order->get_total(), $coin_id, $order->get_currency(), true );
 		if ( '' === $amount || (float) $amount <= 0 ) {
 			return false;
 		}
 
-		$window  = (int) Chain_Checkout_Settings::get( 'payment_window', 60 );
+		$window  = (int) Xdwp_Settings::get( 'payment_window', 60 );
 		$started = time();
 		$expires = $started + ( $window * MINUTE_IN_SECONDS );
 
-		$order->update_meta_data( '_chain_checkout_coin', $coin_id );
-		$order->update_meta_data( '_chain_checkout_address', $address );
-		$order->update_meta_data( '_chain_checkout_amount', $amount );
-		$order->update_meta_data( '_chain_checkout_started', $started );
-		$order->update_meta_data( '_chain_checkout_expires', $expires );
-		$order->update_meta_data( '_chain_checkout_status', 'awaiting' );
+		$order->update_meta_data( '_xdwp_coin', $coin_id );
+		$order->update_meta_data( '_xdwp_address', $address );
+		$order->update_meta_data( '_xdwp_amount', $amount );
+		$order->update_meta_data( '_xdwp_started', $started );
+		$order->update_meta_data( '_xdwp_expires', $expires );
+		$order->update_meta_data( '_xdwp_status', 'awaiting' );
 		$order->save();
 
 		$order->update_status(
@@ -84,7 +111,7 @@ class Chain_Checkout_Order {
 		}
 
 		$order_id = $order->get_id();
-		$lock_key = 'chain_checkout_paying_' . $order_id;
+		$lock_key = 'xdwp_paying_' . $order_id;
 
 		// Atomic-ish lock: add_option fails if key already exists.
 		if ( ! add_option( $lock_key, (string) time(), '', 'no' ) ) {
@@ -102,7 +129,7 @@ class Chain_Checkout_Order {
 				return;
 			}
 
-			$status = $order->get_meta( '_chain_checkout_status' );
+			$status = Xdwp_Order::meta( $order, 'status' );
 			if ( 'paid' === $status ) {
 				return;
 			}
@@ -111,13 +138,13 @@ class Chain_Checkout_Order {
 			}
 
 			if ( $order->is_paid() ) {
-				$order->update_meta_data( '_chain_checkout_status', 'paid' );
-				$order->update_meta_data( '_chain_checkout_confirmed_at', time() );
+				$order->update_meta_data( '_xdwp_status', 'paid' );
+				$order->update_meta_data( '_xdwp_confirmed_at', time() );
 				$order->save();
 				return;
 			}
 
-			$txid = $order->get_meta( '_chain_checkout_txid' );
+			$txid = Xdwp_Order::meta( $order, 'txid' );
 			$order->payment_complete( $txid ? $txid : '' );
 
 			// Only mark plugin status after WooCommerce no longer needs payment.
@@ -126,11 +153,11 @@ class Chain_Checkout_Order {
 				return;
 			}
 
-			$order->update_meta_data( '_chain_checkout_status', 'paid' );
-			$order->update_meta_data( '_chain_checkout_confirmed_at', time() );
+			$order->update_meta_data( '_xdwp_status', 'paid' );
+			$order->update_meta_data( '_xdwp_confirmed_at', time() );
 			$order->save();
 
-			$target = Chain_Checkout_Settings::get( 'order_status', 'processing' );
+			$target = Xdwp_Settings::get( 'order_status', 'processing' );
 
 			if ( 'completed' === $target && 'completed' !== $order->get_status() ) {
 				$order->update_status( 'completed', __( 'Crypto payment confirmed on-chain.', 'xorro-direct-wallet-payments-woocommerce' ) );
@@ -159,21 +186,21 @@ class Chain_Checkout_Order {
 		if ( ! in_array( $order->get_status(), array( 'on-hold', 'pending' ), true ) ) {
 			return;
 		}
-		if ( 'awaiting' !== $order->get_meta( '_chain_checkout_status' ) ) {
+		if ( 'awaiting' !== Xdwp_Order::meta( $order, 'status' ) ) {
 			return;
 		}
-		$expires = (int) $order->get_meta( '_chain_checkout_expires' );
+		$expires = (int) Xdwp_Order::meta( $order, 'expires' );
 		if ( ! $expires || time() <= $expires ) {
 			return;
 		}
 
-		$grace = max( 0, (int) Chain_Checkout_Settings::get( 'expiry_grace_minutes', 30 ) ) * MINUTE_IN_SECONDS;
+		$grace = max( 0, (int) Xdwp_Settings::get( 'expiry_grace_minutes', 30 ) ) * MINUTE_IN_SECONDS;
 		if ( time() <= ( $expires + $grace ) ) {
 			// Still within grace — keep awaiting so verifier/cron can recover late txs.
 			return;
 		}
 
-		$order->update_meta_data( '_chain_checkout_status', 'expired' );
+		$order->update_meta_data( '_xdwp_status', 'expired' );
 		$order->save();
 		$order->update_status(
 			'failed',
@@ -188,7 +215,7 @@ class Chain_Checkout_Order {
 	 */
 	public static function render_payment_box( $order_id ) {
 		$order = wc_get_order( $order_id );
-		if ( ! $order || $order->get_payment_method() !== CHAIN_CHECKOUT_GATEWAY_ID ) {
+		if ( ! $order || ! Xdwp_Order::is_ours( $order ) ) {
 			return;
 		}
 		self::load_template( $order );
@@ -201,10 +228,10 @@ class Chain_Checkout_Order {
 	 */
 	public static function maybe_render_on_view( $order_id ) {
 		$order = wc_get_order( $order_id );
-		if ( ! $order || $order->get_payment_method() !== CHAIN_CHECKOUT_GATEWAY_ID ) {
+		if ( ! $order || ! Xdwp_Order::is_ours( $order ) ) {
 			return;
 		}
-		if ( 'awaiting' !== $order->get_meta( '_chain_checkout_status' ) ) {
+		if ( 'awaiting' !== Xdwp_Order::meta( $order, 'status' ) ) {
 			return;
 		}
 		self::load_template( $order );
@@ -223,70 +250,70 @@ class Chain_Checkout_Order {
 			return;
 		}
 
-		$coin_id = $order->get_meta( '_chain_checkout_coin' );
-		$coin    = Chain_Checkout_Coins::get( $coin_id );
-		$address = $order->get_meta( '_chain_checkout_address' );
-		$amount  = $order->get_meta( '_chain_checkout_amount' );
-		$expires = (int) $order->get_meta( '_chain_checkout_expires' );
-		$status  = $order->get_meta( '_chain_checkout_status' );
+		$coin_id = Xdwp_Order::meta( $order, 'coin' );
+		$coin    = Xdwp_Coins::get( $coin_id );
+		$address = Xdwp_Order::meta( $order, 'address' );
+		$amount  = Xdwp_Order::meta( $order, 'amount' );
+		$expires = (int) Xdwp_Order::meta( $order, 'expires' );
+		$status  = Xdwp_Order::meta( $order, 'status' );
 
 		if ( ! $coin || ! $address || ! $amount ) {
-			echo '<p class="chain-checkout-error">' . esc_html__( 'Payment details are unavailable for this order.', 'xorro-direct-wallet-payments-woocommerce' ) . '</p>';
+			echo '<p class="xdwp-error">' . esc_html__( 'Payment details are unavailable for this order.', 'xorro-direct-wallet-payments-woocommerce' ) . '</p>';
 			return;
 		}
 
-		$uri = Chain_Checkout_Coins::payment_uri( $coin_id, $address, $amount );
+		$uri = Xdwp_Coins::payment_uri( $coin_id, $address, $amount );
 
 		// Ensure handles exist even if wp_enqueue_scripts already ran.
-		if ( ! wp_style_is( 'chain-checkout-frontend', 'registered' ) ) {
+		if ( ! wp_style_is( 'xdwp-frontend', 'registered' ) ) {
 			wp_register_style(
-				'chain-checkout-frontend',
-				CHAIN_CHECKOUT_URL . 'assets/css/frontend.css',
+				'xdwp-frontend',
+				XDWP_URL . 'assets/css/frontend.css',
 				array(),
-				CHAIN_CHECKOUT_VERSION
+				XDWP_VERSION
 			);
 		}
-		if ( ! wp_script_is( 'chain-checkout-qrcode', 'registered' ) ) {
+		if ( ! wp_script_is( 'xdwp-qrcode', 'registered' ) ) {
 			wp_register_script(
-				'chain-checkout-qrcode',
-				CHAIN_CHECKOUT_URL . 'assets/js/qrcode.min.js',
+				'xdwp-qrcode',
+				XDWP_URL . 'assets/js/qrcode.min.js',
 				array(),
 				'1.0.0',
 				true
 			);
 		}
-		if ( ! wp_script_is( 'chain-checkout-frontend', 'registered' ) ) {
+		if ( ! wp_script_is( 'xdwp-frontend', 'registered' ) ) {
 			wp_register_script(
-				'chain-checkout-frontend',
-				CHAIN_CHECKOUT_URL . 'assets/js/frontend.js',
-				array( 'chain-checkout-qrcode' ),
-				CHAIN_CHECKOUT_VERSION,
+				'xdwp-frontend',
+				XDWP_URL . 'assets/js/frontend.js',
+				array( 'xdwp-qrcode' ),
+				XDWP_VERSION,
 				true
 			);
 		}
 
-		wp_enqueue_style( 'chain-checkout-frontend' );
-		wp_enqueue_script( 'chain-checkout-qrcode' );
-		wp_enqueue_script( 'chain-checkout-frontend' );
+		wp_enqueue_style( 'xdwp-frontend' );
+		wp_enqueue_script( 'xdwp-qrcode' );
+		wp_enqueue_script( 'xdwp-frontend' );
 
 		// Ensure footer prints these even when thank-you runs after the normal enqueue pass.
 		add_action(
 			'wp_footer',
 			static function () {
-				if ( ! wp_script_is( 'chain-checkout-frontend', 'done' ) ) {
-					wp_print_scripts( 'chain-checkout-qrcode' );
-					wp_print_scripts( 'chain-checkout-frontend' );
+				if ( ! wp_script_is( 'xdwp-frontend', 'done' ) ) {
+					wp_print_scripts( 'xdwp-qrcode' );
+					wp_print_scripts( 'xdwp-frontend' );
 				}
 			},
 			5
 		);
 
 		wp_localize_script(
-			'chain-checkout-frontend',
-			'chainCheckoutData',
+			'xdwp-frontend',
+			'xdwpData',
 			array(
 				'ajaxUrl'   => admin_url( 'admin-ajax.php' ),
-				'nonce'     => wp_create_nonce( 'chain_checkout_status_' . $order->get_id() ),
+				'nonce'     => wp_create_nonce( 'xdwp_status_' . $order->get_id() ),
 				'orderId'   => $order->get_id(),
 				'orderKey'  => $order->get_order_key(),
 				'expires'   => $expires,
@@ -305,7 +332,7 @@ class Chain_Checkout_Order {
 			)
 		);
 
-		include CHAIN_CHECKOUT_PATH . 'templates/payment.php';
+		include XDWP_PATH . 'templates/payment.php';
 	}
 
 	/**
@@ -326,7 +353,7 @@ class Chain_Checkout_Order {
 		}
 
 		add_meta_box(
-			'chain_checkout_order',
+			'xdwp_order',
 			__( 'Xorro Wallet Payments', 'xorro-direct-wallet-payments-woocommerce' ),
 			array( __CLASS__, 'render_metabox' ),
 			$screen,
@@ -342,24 +369,24 @@ class Chain_Checkout_Order {
 	 */
 	public static function render_metabox( $post_or_order ) {
 		$order = ( $post_or_order instanceof WC_Order ) ? $post_or_order : wc_get_order( $post_or_order->ID );
-		if ( ! $order || $order->get_payment_method() !== CHAIN_CHECKOUT_GATEWAY_ID ) {
+		if ( ! $order || ! Xdwp_Order::is_ours( $order ) ) {
 			echo '<p>' . esc_html__( 'Not a Xorro Wallet Payments order.', 'xorro-direct-wallet-payments-woocommerce' ) . '</p>';
 			return;
 		}
 
-		$coin_id = $order->get_meta( '_chain_checkout_coin' );
-		$coin    = Chain_Checkout_Coins::get( $coin_id );
+		$coin_id = Xdwp_Order::meta( $order, 'coin' );
+		$coin    = Xdwp_Coins::get( $coin_id );
 		echo '<p><strong>' . esc_html__( 'Coin:', 'xorro-direct-wallet-payments-woocommerce' ) . '</strong> ' . esc_html( $coin ? $coin['name'] : $coin_id ) . '</p>';
-		echo '<p><strong>' . esc_html__( 'Amount:', 'xorro-direct-wallet-payments-woocommerce' ) . '</strong> ' . esc_html( $order->get_meta( '_chain_checkout_amount' ) ) . '</p>';
-		echo '<p><strong>' . esc_html__( 'Address:', 'xorro-direct-wallet-payments-woocommerce' ) . '</strong><br><code style="word-break:break-all;">' . esc_html( $order->get_meta( '_chain_checkout_address' ) ) . '</code></p>';
-		echo '<p><strong>' . esc_html__( 'Status:', 'xorro-direct-wallet-payments-woocommerce' ) . '</strong> ' . esc_html( $order->get_meta( '_chain_checkout_status' ) ) . '</p>';
+		echo '<p><strong>' . esc_html__( 'Amount:', 'xorro-direct-wallet-payments-woocommerce' ) . '</strong> ' . esc_html( Xdwp_Order::meta( $order, 'amount' ) ) . '</p>';
+		echo '<p><strong>' . esc_html__( 'Address:', 'xorro-direct-wallet-payments-woocommerce' ) . '</strong><br><code style="word-break:break-all;">' . esc_html( Xdwp_Order::meta( $order, 'address' ) ) . '</code></p>';
+		echo '<p><strong>' . esc_html__( 'Status:', 'xorro-direct-wallet-payments-woocommerce' ) . '</strong> ' . esc_html( Xdwp_Order::meta( $order, 'status' ) ) . '</p>';
 
-		if ( 'awaiting' === $order->get_meta( '_chain_checkout_status' ) && current_user_can( 'manage_woocommerce' ) ) {
+		if ( 'awaiting' === Xdwp_Order::meta( $order, 'status' ) && current_user_can( 'manage_woocommerce' ) ) {
 			?>
 			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
-				<input type="hidden" name="action" value="chain_checkout_mark_paid" />
+				<input type="hidden" name="action" value="xdwp_mark_paid" />
 				<input type="hidden" name="order_id" value="<?php echo esc_attr( (string) $order->get_id() ); ?>" />
-				<?php wp_nonce_field( 'chain_checkout_mark_paid_' . $order->get_id() ); ?>
+				<?php wp_nonce_field( 'xdwp_mark_paid_' . $order->get_id() ); ?>
 				<p><button type="submit" class="button button-primary"><?php esc_html_e( 'Mark payment received', 'xorro-direct-wallet-payments-woocommerce' ); ?></button></p>
 			</form>
 			<p class="description"><?php esc_html_e( 'Use for chains without auto-verify, or if detection is delayed.', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
@@ -380,10 +407,10 @@ class Chain_Checkout_Order {
 		}
 
 		$order_id = isset( $_POST['order_id'] ) ? absint( $_POST['order_id'] ) : 0;
-		check_admin_referer( 'chain_checkout_mark_paid_' . $order_id );
+		check_admin_referer( 'xdwp_mark_paid_' . $order_id );
 
 		$order = wc_get_order( $order_id );
-		if ( $order && $order->get_payment_method() === CHAIN_CHECKOUT_GATEWAY_ID ) {
+		if ( $order && Xdwp_Order::is_ours( $order ) ) {
 			self::mark_paid( $order );
 			$order->add_order_note( __( 'Payment marked as received manually by admin.', 'xorro-direct-wallet-payments-woocommerce' ) );
 		}
@@ -400,15 +427,15 @@ class Chain_Checkout_Order {
 	 * @return string
 	 */
 	public static function maybe_append_crypto_price( $html, $product ) {
-		if ( is_admin() || 'yes' !== Chain_Checkout_Settings::get( 'price_coin_show', 'no' ) ) {
+		if ( is_admin() || 'yes' !== Xdwp_Settings::get( 'price_coin_show', 'no' ) ) {
 			return $html;
 		}
 		if ( ! $product instanceof WC_Product ) {
 			return $html;
 		}
 
-		$coin_id = Chain_Checkout_Settings::get( 'price_coin_ticker', 'BTC' );
-		$coin    = Chain_Checkout_Coins::get( $coin_id );
+		$coin_id = Xdwp_Settings::get( 'price_coin_ticker', 'BTC' );
+		$coin    = Xdwp_Coins::get( $coin_id );
 		if ( ! $coin ) {
 			return $html;
 		}
@@ -418,12 +445,12 @@ class Chain_Checkout_Order {
 			return $html;
 		}
 
-		$amount = Chain_Checkout_Prices::fiat_to_crypto( $price, $coin_id, get_woocommerce_currency(), false );
+		$amount = Xdwp_Prices::fiat_to_crypto( $price, $coin_id, get_woocommerce_currency(), false );
 		if ( '' === $amount ) {
 			return $html;
 		}
 
-		$html .= ' <span class="chain-checkout-product-price">/ ' . esc_html( $amount . ' ' . $coin['symbol'] ) . '</span>';
+		$html .= ' <span class="xdwp-product-price">/ ' . esc_html( $amount . ' ' . $coin['symbol'] ) . '</span>';
 		return $html;
 	}
 
@@ -433,9 +460,9 @@ class Chain_Checkout_Order {
 	 * @param WC_Order $order Order.
 	 */
 	public static function admin_order_info( $order ) {
-		if ( $order->get_payment_method() !== CHAIN_CHECKOUT_GATEWAY_ID ) {
+		if ( ! Xdwp_Order::is_ours( $order ) ) {
 			return;
 		}
-		echo '<p><strong>' . esc_html__( 'Xorro Wallet Payments', 'xorro-direct-wallet-payments-woocommerce' ) . ':</strong> ' . esc_html( $order->get_meta( '_chain_checkout_coin' ) ) . ' / ' . esc_html( $order->get_meta( '_chain_checkout_amount' ) ) . '</p>';
+		echo '<p><strong>' . esc_html__( 'Xorro Wallet Payments', 'xorro-direct-wallet-payments-woocommerce' ) . ':</strong> ' . esc_html( Xdwp_Order::meta( $order, 'coin' ) ) . ' / ' . esc_html( Xdwp_Order::meta( $order, 'amount' ) ) . '</p>';
 	}
 }

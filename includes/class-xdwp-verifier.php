@@ -2,15 +2,15 @@
 /**
  * On-chain payment verification via public blockchain APIs.
  *
- * @package ChainCheckout
+ * @package Xdwp
  */
 
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Class Chain_Checkout_Verifier
+ * Class Xdwp_Verifier
  */
-class Chain_Checkout_Verifier {
+class Xdwp_Verifier {
 
 	/**
 	 * Verify whether a payment matching order meta has been received.
@@ -24,20 +24,20 @@ class Chain_Checkout_Verifier {
 			return false;
 		}
 
-		if ( 'awaiting' !== $order->get_meta( '_chain_checkout_status' ) ) {
+		if ( 'awaiting' !== Xdwp_Order::meta( $order, 'status' ) ) {
 			return false;
 		}
 
-		$coin_id = $order->get_meta( '_chain_checkout_coin' );
-		$address = $order->get_meta( '_chain_checkout_address' );
-		$amount  = $order->get_meta( '_chain_checkout_amount' );
-		$started = (int) $order->get_meta( '_chain_checkout_started' );
+		$coin_id = Xdwp_Order::meta( $order, 'coin' );
+		$address = Xdwp_Order::meta( $order, 'address' );
+		$amount  = Xdwp_Order::meta( $order, 'amount' );
+		$started = (int) Xdwp_Order::meta( $order, 'started' );
 
 		if ( ! $coin_id || ! $address || ! $amount || ! $started ) {
 			return false;
 		}
 
-		$coin = Chain_Checkout_Coins::get( $coin_id );
+		$coin = Xdwp_Coins::get( $coin_id );
 		if ( ! $coin ) {
 			return false;
 		}
@@ -61,7 +61,7 @@ class Chain_Checkout_Verifier {
 			return false;
 		}
 
-		$order->update_meta_data( '_chain_checkout_txid', $txid );
+		$order->update_meta_data( '_xdwp_txid', $txid );
 		$order->save();
 
 		return true;
@@ -84,13 +84,13 @@ class Chain_Checkout_Verifier {
 		// Absolute epsilon: a few base units (unique dust uses ~1000–9999 units).
 		$abs_eps = max( $unit * 50, $unit );
 
-		$tolerance_pct = max( 0.0, (float) Chain_Checkout_Settings::get( 'underpayment_percent', 1 ) );
+		$tolerance_pct = max( 0.0, (float) Xdwp_Settings::get( 'underpayment_percent', 1 ) );
 		$pct_under     = $target * ( $tolerance_pct / 100 );
 		$pct_over      = $target * ( max( $tolerance_pct, 0.5 ) / 100 );
 
 		// Never let % tolerance exceed half a unique-dust step when unique amounts are on.
 		$max_band = $abs_eps;
-		if ( 'yes' === Chain_Checkout_Settings::get( 'unique_amounts', 'yes' ) && $decimals > 4 ) {
+		if ( 'yes' === Xdwp_Settings::get( 'unique_amounts', 'yes' ) && $decimals > 4 ) {
 			// Dust range is 1000..9999 units; keep band well below that gap.
 			$max_band = max( $abs_eps, $unit * 400 );
 		} else {
@@ -120,15 +120,15 @@ class Chain_Checkout_Verifier {
 			array(
 				'limit'          => 25,
 				'status'         => array( 'on-hold', 'pending' ),
-				'payment_method' => CHAIN_CHECKOUT_GATEWAY_ID,
+				'payment_method' => XDWP_GATEWAY_ID,
 				'exclude'        => array( absint( $order_id ) ),
 				'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
 					array(
-						'key'   => '_chain_checkout_status',
+						'key'   => '_xdwp_status',
 						'value' => 'awaiting',
 					),
 					array(
-						'key'   => '_chain_checkout_address',
+						'key'   => '_xdwp_address',
 						'value' => $address,
 					),
 				),
@@ -141,7 +141,7 @@ class Chain_Checkout_Verifier {
 		}
 
 		$decimals = isset( $coin['decimals'] ) ? (int) $coin['decimals'] : 8;
-		$unique   = ( 'yes' === Chain_Checkout_Settings::get( 'unique_amounts', 'yes' ) );
+		$unique   = ( 'yes' === Xdwp_Settings::get( 'unique_amounts', 'yes' ) );
 
 		// Low-decimal / no unique dust: only one awaiting order may share an address.
 		if ( ! $unique || $decimals <= 4 ) {
@@ -154,7 +154,7 @@ class Chain_Checkout_Verifier {
 			if ( ! $other instanceof WC_Order ) {
 				continue;
 			}
-			$other_amount = (string) $other->get_meta( '_chain_checkout_amount' );
+			$other_amount = (string) Xdwp_Order::meta( $other, 'amount' );
 			if ( $amount && hash_equals( $amount, $other_amount ) ) {
 				return false;
 			}
@@ -182,7 +182,7 @@ class Chain_Checkout_Verifier {
 			return false;
 		}
 
-		$claim_key = 'chain_checkout_txid_claim_' . md5( $txid );
+		$claim_key = 'xdwp_txid_claim_' . md5( $txid );
 		$payload   = absint( $order_id ) . '|' . time();
 
 		if ( ! add_option( $claim_key, $payload, '', 'no' ) ) {
@@ -190,7 +190,7 @@ class Chain_Checkout_Verifier {
 			$parts    = explode( '|', $existing, 2 );
 			$owner    = isset( $parts[0] ) ? (int) $parts[0] : 0;
 			$claimed  = isset( $parts[1] ) ? (int) $parts[1] : 0;
-			$ttl      = WEEK_IN_SECONDS + ( (int) Chain_Checkout_Settings::get( 'payment_window', 60 ) * MINUTE_IN_SECONDS );
+			$ttl      = WEEK_IN_SECONDS + ( (int) Xdwp_Settings::get( 'payment_window', 60 ) * MINUTE_IN_SECONDS );
 
 			if ( $owner === absint( $order_id ) ) {
 				return true;
@@ -218,7 +218,7 @@ class Chain_Checkout_Verifier {
 	 * @return int
 	 */
 	private static function min_confirmations() {
-		return max( 0, min( 64, (int) Chain_Checkout_Settings::get( 'min_confirmations', 1 ) ) );
+		return max( 0, min( 64, (int) Xdwp_Settings::get( 'min_confirmations', 1 ) ) );
 	}
 
 	/**
@@ -318,7 +318,7 @@ class Chain_Checkout_Verifier {
 				'exclude'    => array( absint( $exclude_order ) ),
 				'meta_query' => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
 					array(
-						'key'   => '_chain_checkout_txid',
+						'key'   => '_xdwp_txid',
 						'value' => $txid,
 					),
 				),
@@ -557,12 +557,12 @@ class Chain_Checkout_Verifier {
 	 * @return string
 	 */
 	private static function etherscan_api_key() {
-		$key = Chain_Checkout_Settings::get( 'etherscan_api_key', '' );
+		$key = Xdwp_Settings::get( 'etherscan_api_key', '' );
 		if ( $key ) {
 			return $key;
 		}
 		foreach ( array( 'bscscan_api_key', 'polygonscan_api_key', 'arbiscan_api_key', 'optimistic_api_key', 'snowtrace_api_key' ) as $legacy ) {
-			$legacy_key = Chain_Checkout_Settings::get( $legacy, '' );
+			$legacy_key = Xdwp_Settings::get( $legacy, '' );
 			if ( $legacy_key ) {
 				return $legacy_key;
 			}
@@ -731,7 +731,7 @@ class Chain_Checkout_Verifier {
 	 * @return bool
 	 */
 	private static function check_solana( $address, $min, $max, $since, array $coin ) {
-		$helius = Chain_Checkout_Settings::get( 'helius_api_key', '' );
+		$helius = Xdwp_Settings::get( 'helius_api_key', '' );
 		$rpc    = $helius
 			? 'https://mainnet.helius-rpc.com/?api-key=' . rawurlencode( $helius )
 			: 'https://api.mainnet-beta.solana.com';
@@ -914,7 +914,7 @@ class Chain_Checkout_Verifier {
 	 */
 	private static function check_tron( $address, $min, $max, $since, array $coin ) {
 		$tron_headers = array();
-		$tron_key     = Chain_Checkout_Settings::get( 'trongrid_api_key', '' );
+		$tron_key     = Xdwp_Settings::get( 'trongrid_api_key', '' );
 		if ( $tron_key ) {
 			$tron_headers['TRON-PRO-API-KEY'] = $tron_key;
 		}
@@ -1065,7 +1065,7 @@ class Chain_Checkout_Verifier {
 		$headers = array_merge(
 			array(
 				'Accept'     => 'application/json',
-				'User-Agent' => 'ChainCheckout/' . CHAIN_CHECKOUT_VERSION . '; WordPress/' . get_bloginfo( 'version' ),
+				'User-Agent' => 'Xdwp/' . XDWP_VERSION . '; WordPress/' . get_bloginfo( 'version' ),
 			),
 			is_array( $extra_headers ) ? $extra_headers : array()
 		);
@@ -1102,7 +1102,7 @@ class Chain_Checkout_Verifier {
 				'headers' => array(
 					'Content-Type' => 'application/json',
 					'Accept'       => 'application/json',
-					'User-Agent'   => 'ChainCheckout/' . CHAIN_CHECKOUT_VERSION . '; WordPress/' . get_bloginfo( 'version' ),
+					'User-Agent'   => 'Xdwp/' . XDWP_VERSION . '; WordPress/' . get_bloginfo( 'version' ),
 				),
 				'body'    => wp_json_encode( $body ),
 			)
@@ -1474,7 +1474,7 @@ class Chain_Checkout_Verifier {
 	 */
 	private static function check_dot( $address, $min, $max, $since ) {
 		$headers = array();
-		$api_key = Chain_Checkout_Settings::get( 'subscan_api_key', '' );
+		$api_key = Xdwp_Settings::get( 'subscan_api_key', '' );
 		if ( $api_key ) {
 			$headers['x-api-key'] = $api_key;
 		}
@@ -1527,7 +1527,7 @@ class Chain_Checkout_Verifier {
 			rawurlencode( $address )
 		);
 		$headers = array();
-		$vb_key  = Chain_Checkout_Settings::get( 'viewblock_api_key', '' );
+		$vb_key  = Xdwp_Settings::get( 'viewblock_api_key', '' );
 		if ( $vb_key ) {
 			$headers['X-APIKEY'] = $vb_key;
 		}
@@ -1587,7 +1587,7 @@ class Chain_Checkout_Verifier {
 			array(
 				'Content-Type' => 'application/json',
 				'Accept'       => 'application/json',
-				'User-Agent'   => 'ChainCheckout/' . CHAIN_CHECKOUT_VERSION . '; WordPress/' . get_bloginfo( 'version' ),
+				'User-Agent'   => 'Xdwp/' . XDWP_VERSION . '; WordPress/' . get_bloginfo( 'version' ),
 			),
 			$headers
 		);

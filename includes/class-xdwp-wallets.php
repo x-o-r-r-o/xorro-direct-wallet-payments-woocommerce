@@ -2,15 +2,15 @@
 /**
  * Wallet address storage and rotation.
  *
- * @package ChainCheckout
+ * @package Xdwp
  */
 
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Class Chain_Checkout_Wallets
+ * Class Xdwp_Wallets
  */
-class Chain_Checkout_Wallets {
+class Xdwp_Wallets {
 
 	/**
 	 * Sanitize wallets map: coin_id => array of addresses.
@@ -20,7 +20,7 @@ class Chain_Checkout_Wallets {
 	 */
 	public static function sanitize_wallets( array $wallets ) {
 		$clean = array();
-		$valid = array_keys( Chain_Checkout_Coins::all() );
+		$valid = array_keys( Xdwp_Coins::all() );
 
 		foreach ( $wallets as $coin_id => $addresses ) {
 			$coin_id = sanitize_text_field( $coin_id );
@@ -65,7 +65,7 @@ class Chain_Checkout_Wallets {
 	 * @return bool
 	 */
 	public static function is_plausible_address( $coin_id, $address ) {
-		$coin = Chain_Checkout_Coins::get( $coin_id );
+		$coin = Xdwp_Coins::get( $coin_id );
 		if ( ! $coin || '' === $address ) {
 			return false;
 		}
@@ -143,7 +143,7 @@ class Chain_Checkout_Wallets {
 	 * @return array<int, string>
 	 */
 	public static function get_addresses( $coin_id ) {
-		$wallets = Chain_Checkout_Settings::get( 'wallets', array() );
+		$wallets = Xdwp_Settings::get( 'wallets', array() );
 		if ( ! is_array( $wallets ) || empty( $wallets[ $coin_id ] ) || ! is_array( $wallets[ $coin_id ] ) ) {
 			return array();
 		}
@@ -162,11 +162,11 @@ class Chain_Checkout_Wallets {
 			return '';
 		}
 
-		if ( 'yes' !== Chain_Checkout_Settings::get( 'wallet_rotation', 'yes' ) || count( $addresses ) === 1 ) {
+		if ( 'yes' !== Xdwp_Settings::get( 'wallet_rotation', 'yes' ) || count( $addresses ) === 1 ) {
 			return $addresses[0];
 		}
 
-		$index_key = 'chain_checkout_wallet_idx_' . sanitize_key( $coin_id );
+		$index_key = 'xdwp_wallet_idx_' . sanitize_key( $coin_id );
 		$count     = count( $addresses );
 		$index     = self::next_wallet_index( $index_key, $count );
 		return $addresses[ $index % $count ];

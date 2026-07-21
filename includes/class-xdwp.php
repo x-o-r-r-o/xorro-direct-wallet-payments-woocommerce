@@ -2,27 +2,27 @@
 /**
  * Main plugin bootstrap.
  *
- * @package ChainCheckout
+ * @package Xdwp
  */
 
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Class Chain_Checkout
+ * Class Xdwp
  */
-final class Chain_Checkout {
+final class Xdwp {
 
 	/**
 	 * Singleton instance.
 	 *
-	 * @var Chain_Checkout|null
+	 * @var Xdwp|null
 	 */
 	private static $instance = null;
 
 	/**
 	 * Get singleton.
 	 *
-	 * @return Chain_Checkout
+	 * @return Xdwp
 	 */
 	public static function instance() {
 		if ( null === self::$instance ) {
@@ -43,20 +43,20 @@ final class Chain_Checkout {
 	 * Load required files.
 	 */
 	private function includes() {
-		require_once CHAIN_CHECKOUT_PATH . 'includes/class-chain-checkout-coins.php';
-		require_once CHAIN_CHECKOUT_PATH . 'includes/class-chain-checkout-settings.php';
-		require_once CHAIN_CHECKOUT_PATH . 'includes/class-chain-checkout-branding.php';
-		require_once CHAIN_CHECKOUT_PATH . 'includes/class-chain-checkout-privacy.php';
-		require_once CHAIN_CHECKOUT_PATH . 'includes/class-chain-checkout-prices.php';
-		require_once CHAIN_CHECKOUT_PATH . 'includes/class-chain-checkout-wallets.php';
-		require_once CHAIN_CHECKOUT_PATH . 'includes/class-chain-checkout-verifier.php';
-		require_once CHAIN_CHECKOUT_PATH . 'includes/class-chain-checkout-order.php';
-		require_once CHAIN_CHECKOUT_PATH . 'includes/class-chain-checkout-cron.php';
-		require_once CHAIN_CHECKOUT_PATH . 'includes/class-chain-checkout-ajax.php';
-		require_once CHAIN_CHECKOUT_PATH . 'includes/class-chain-checkout-gateway.php';
+		require_once XDWP_PATH . 'includes/class-xdwp-coins.php';
+		require_once XDWP_PATH . 'includes/class-xdwp-settings.php';
+		require_once XDWP_PATH . 'includes/class-xdwp-branding.php';
+		require_once XDWP_PATH . 'includes/class-xdwp-privacy.php';
+		require_once XDWP_PATH . 'includes/class-xdwp-prices.php';
+		require_once XDWP_PATH . 'includes/class-xdwp-wallets.php';
+		require_once XDWP_PATH . 'includes/class-xdwp-verifier.php';
+		require_once XDWP_PATH . 'includes/class-xdwp-order.php';
+		require_once XDWP_PATH . 'includes/class-xdwp-cron.php';
+		require_once XDWP_PATH . 'includes/class-xdwp-ajax.php';
+		require_once XDWP_PATH . 'includes/class-xdwp-gateway.php';
 
 		if ( is_admin() ) {
-			require_once CHAIN_CHECKOUT_PATH . 'includes/admin/class-chain-checkout-admin.php';
+			require_once XDWP_PATH . 'includes/admin/class-xdwp-admin.php';
 		}
 	}
 
@@ -68,13 +68,13 @@ final class Chain_Checkout {
 		add_filter( 'woocommerce_payment_gateways', array( $this, 'register_gateway' ) );
 		add_action( 'woocommerce_blocks_loaded', array( $this, 'register_blocks_support' ) );
 
-		Chain_Checkout_Cron::init();
-		Chain_Checkout_Ajax::init();
-		Chain_Checkout_Order::init();
-		Chain_Checkout_Privacy::init();
+		Xdwp_Cron::init();
+		Xdwp_Ajax::init();
+		Xdwp_Order::init();
+		Xdwp_Privacy::init();
 
 		if ( is_admin() ) {
-			Chain_Checkout_Admin::init();
+			Xdwp_Admin::init();
 		}
 	}
 
@@ -85,7 +85,7 @@ final class Chain_Checkout {
 	 * @return array
 	 */
 	public function add_cron_schedules( $schedules ) {
-		$schedules['chain_checkout_every_minute'] = array(
+		$schedules['xdwp_every_minute'] = array(
 			'interval' => 60,
 			'display'  => __( 'Every Minute (Xorro Wallet Payments)', 'xorro-direct-wallet-payments-woocommerce' ),
 		);
@@ -99,7 +99,7 @@ final class Chain_Checkout {
 	 * @return array
 	 */
 	public function register_gateway( $gateways ) {
-		$gateways[] = 'Chain_Checkout_Gateway';
+		$gateways[] = 'Xdwp_Gateway';
 		return $gateways;
 	}
 
@@ -111,12 +111,12 @@ final class Chain_Checkout {
 			return;
 		}
 
-		require_once CHAIN_CHECKOUT_PATH . 'includes/blocks/class-chain-checkout-blocks.php';
+		require_once XDWP_PATH . 'includes/blocks/class-xdwp-blocks.php';
 
 		add_action(
 			'woocommerce_blocks_payment_method_type_registration',
 			static function ( $registry ) {
-				$registry->register( new Chain_Checkout_Blocks() );
+				$registry->register( new Xdwp_Blocks() );
 			}
 		);
 	}

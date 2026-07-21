@@ -2,17 +2,17 @@
 /**
  * Plugin settings helper.
  *
- * @package ChainCheckout
+ * @package Xdwp
  */
 
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Class Chain_Checkout_Settings
+ * Class Xdwp_Settings
  */
-class Chain_Checkout_Settings {
+class Xdwp_Settings {
 
-	const OPTION_KEY = 'chain_checkout_settings';
+	const OPTION_KEY = 'xdwp_settings';
 
 	/**
 	 * Get all settings.
@@ -106,15 +106,15 @@ class Chain_Checkout_Settings {
 			$clean['description'] = sanitize_textarea_field( wp_unslash( $input['description'] ) );
 		}
 
-		$clean = Chain_Checkout_Branding::sanitize_from_input( $input, $clean );
+		$clean = Xdwp_Branding::sanitize_from_input( $input, $clean );
 
 		if ( isset( $input['price_coin_ticker'] ) ) {
 			$ticker = sanitize_text_field( $input['price_coin_ticker'] );
-			$clean['price_coin_ticker'] = Chain_Checkout_Coins::get( $ticker ) ? $ticker : 'BTC';
+			$clean['price_coin_ticker'] = Xdwp_Coins::get( $ticker ) ? $ticker : 'BTC';
 		}
 
 		if ( isset( $input['enabled_coins'] ) && is_array( $input['enabled_coins'] ) ) {
-			$valid = array_keys( Chain_Checkout_Coins::all() );
+			$valid = array_keys( Xdwp_Coins::all() );
 			$clean['enabled_coins'] = array_values(
 				array_intersect(
 					array_map( 'sanitize_text_field', $input['enabled_coins'] ),
@@ -124,7 +124,7 @@ class Chain_Checkout_Settings {
 		}
 
 		if ( isset( $input['wallets'] ) && is_array( $input['wallets'] ) ) {
-			$submitted = Chain_Checkout_Wallets::sanitize_wallets( $input['wallets'] );
+			$submitted = Xdwp_Wallets::sanitize_wallets( $input['wallets'] );
 			$existing  = isset( $clean['wallets'] ) && is_array( $clean['wallets'] ) ? $clean['wallets'] : array();
 			// Merge so saving a partial wallets form does not wipe addresses for coins not shown.
 			$clean['wallets'] = array_merge( $existing, $submitted );
