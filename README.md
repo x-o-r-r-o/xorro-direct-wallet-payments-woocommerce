@@ -38,7 +38,7 @@ HTTPS is strongly recommended.
 
 ## Installation
 
-1. Download the latest release ZIP from [Releases](https://github.com/x-o-r-r-o/xorro-direct-wallet-payments-woocommerce/releases) (exclude `tests/` and `.git` from wordpress.org packages), or clone into `wp-content/plugins/xorro-direct-wallet-payments-woocommerce`:
+1. Download the latest **WordPress install ZIP** from [Releases](https://github.com/x-o-r-r-o/xorro-direct-wallet-payments-woocommerce/releases) (`xorro-direct-wallet-payments-woocommerce-x.y.z.zip`), or clone into `wp-content/plugins/xorro-direct-wallet-payments-woocommerce`:
 
 ```bash
 git clone https://github.com/x-o-r-r-o/xorro-direct-wallet-payments-woocommerce.git
@@ -50,6 +50,17 @@ git clone https://github.com/x-o-r-r-o/xorro-direct-wallet-payments-woocommerce.
 5. Configure rates & explorer keys under **Prices & APIs**.
 6. Enable the gateway under **WooCommerce → Settings → Payments → Xorro Wallet Payments**.
 7. (Optional) Under **Xorro Wallet Payments → General**, set checkout title, icon, size, and whether to show icon, text, or both.
+
+### Auto-updates from GitHub
+
+From **1.5.5**, the plugin checks [GitHub Releases](https://github.com/x-o-r-r-o/xorro-direct-wallet-payments-woocommerce/releases) for newer versions and shows the normal WordPress update UI.
+
+1. Install **1.5.5+** once (manual ZIP upload or clone).
+2. Open **Dashboard → Plugins**.
+3. Optionally click **Enable auto-updates** next to the plugin.
+4. When a new `vX.Y.Z` release is published with the WordPress ZIP asset, WordPress will offer (or auto-apply) the update.
+
+Draft and pre-release GitHub tags are ignored. Use published releases only.
 
 ## External services
 
@@ -82,6 +93,10 @@ php tests/smoke-test.php
 ## Changelog
 
 See [readme.txt](readme.txt).
+
+### 1.5.5
+
+- GitHub Releases auto-updates via WordPress Dashboard (Update URI + release ZIP assets)
 
 ### 1.5.4
 
