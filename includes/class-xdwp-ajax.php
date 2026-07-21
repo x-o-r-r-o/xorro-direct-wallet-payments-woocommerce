@@ -253,7 +253,7 @@ class Xdwp_Ajax {
 		}
 
 		$total  = (float) WC()->cart->get_total( 'edit' );
-		$amount = Xdwp_Prices::fiat_to_crypto( $total, $coin_id );
+		$amount = Xdwp_Prices::checkout_quote( $total, $coin_id );
 
 		if ( '' === $amount ) {
 			wp_send_json_error( array( 'message' => __( 'Unable to fetch exchange rate. Try again shortly.', 'xorro-direct-wallet-payments-woocommerce' ) ), 503 );
@@ -266,8 +266,8 @@ class Xdwp_Ajax {
 				'amount'  => $amount,
 				'symbol'  => $coin['symbol'],
 				'fiat'    => wc_price( $total ),
-				'approx'  => true,
-				'message' => __( 'Approximate — exact amount is shown after you place the order.', 'xorro-direct-wallet-payments-woocommerce' ),
+				'approx'  => false,
+				'message' => __( 'Exact amount due if you place the order now.', 'xorro-direct-wallet-payments-woocommerce' ),
 			)
 		);
 	}

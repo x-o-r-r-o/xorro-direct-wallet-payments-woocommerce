@@ -132,6 +132,9 @@ xdwp_assert( false !== strpos( $verifier, 'helius-rpc.com' ), 'Helius RPC presen
 xdwp_assert( false !== strpos( $verifier, 'TRON-PRO-API-KEY' ), 'TronGrid key header present' );
 xdwp_assert( false !== strpos( $verifier, 'function match_band' ), 'verifier match_band helper' );
 xdwp_assert( false !== strpos( $verifier, 'etherscan_confirmed' ), 'verifier confirmation check' );
+xdwp_assert( false !== strpos( $verifier, 'confirmations_ok' ), 'verifier confirmations_ok helper' );
+xdwp_assert( false !== strpos( $verifier, 'block_depth_ok' ), 'verifier block_depth_ok helper' );
+xdwp_assert( false !== strpos( $verifier, 'http_get_int' ), 'verifier tip height helper' );
 xdwp_assert( false !== strpos( $verifier, 'finalized' ), 'solana finalized commitment' );
 
 $order_php = file_get_contents( $root . '/includes/class-xdwp-order.php' );
@@ -145,7 +148,7 @@ xdwp_assert( false !== strpos( $ajax, 'xdwp_status_' ), 'ajax order-bound nonce'
 
 // --- Headers ---
 $main = file_get_contents( $root . '/xorro-direct-wallet-payments-woocommerce.php' );
-xdwp_assert( false !== strpos( $main, 'Version:           1.5.1' ), 'plugin version 1.5.1' );
+xdwp_assert( false !== strpos( $main, 'Version:           1.5.2' ), 'plugin version 1.5.2' );
 xdwp_assert( false !== strpos( $main, 'Author:            xorro' ), 'author is xorro' );
 xdwp_assert( false !== strpos( $main, 'Author URI:        https://github.com/x-o-r-r-o/xorro-direct-wallet-payments-woocommerce' ), 'author URI is GitHub repo' );
 xdwp_assert( false === strpos( $main, 'Author URI:        https://wordpress.org/plugins/xdwp' ), 'author URI not same as plugin URI' );
@@ -204,11 +207,11 @@ xdwp_assert( false !== strpos( $readme_md, 'Checkout branding' ), 'README.md bra
 
 $readme = file_get_contents( $root . '/readme.txt' );
 xdwp_assert( false !== strpos( $readme, 'Tested up to: 7.0' ), 'readme Tested up to WP 7.0' );
-xdwp_assert( false !== strpos( $readme, 'Stable tag: 1.5.1' ), 'readme stable 1.5.1' );
+xdwp_assert( false !== strpos( $readme, 'Stable tag: 1.5.2' ), 'readme stable 1.5.2' );
 
 $readme = file_get_contents( $root . '/readme.txt' );
 xdwp_assert( false !== strpos( $readme, '== External services ==' ), 'readme external services section' );
-xdwp_assert( false !== strpos( $readme, '1.5.1' ), 'readme 1.5.1 changelog' );
+xdwp_assert( false !== strpos( $readme, '1.5.2' ), 'readme 1.5.2 changelog' );
 $privacy = file_get_contents( $root . '/includes/class-xdwp-privacy.php' );
 xdwp_assert( false !== strpos( $privacy, 'wp_add_privacy_policy_content' ), 'privacy policy content registered' );
 xdwp_assert( is_file( $root . '/assets/js/qrcode.LICENSE.txt' ), 'qrcode license attribution' );
@@ -272,6 +275,10 @@ xdwp_assert( false !== strpos( file_get_contents( $root . '/assets/js/checkout.j
 xdwp_assert( false !== strpos( file_get_contents( $root . '/assets/js/blocks.js' ), 'xdwp_quote' ), 'blocks live quote' );
 xdwp_assert( false !== strpos( file_get_contents( $root . '/assets/js/blocks.js' ), 'getPaymentMethodData' ), 'blocks uses getPaymentMethodData' );
 xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp.php' ), "did_action( 'woocommerce_blocks_loaded' )" ), 'blocks registration handles late bootstrap' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-prices.php' ), 'checkout_quote' ), 'session checkout quote reservation' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-prices.php' ), 'take_checkout_quote' ), 'order consumes checkout quote' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-ajax.php' ), 'checkout_quote' ), 'ajax uses reserved checkout quote' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-order.php' ), 'take_checkout_quote' ), 'assign_payment reuses checkout quote' );
 xdwp_assert( false !== strpos( $readme, '== External services ==' ), 'readme external services section present' );
 xdwp_assert( false !== strpos( $readme, 'XRPSCan' ), 'readme documents XRPSCan' );
 xdwp_assert( false !== strpos( $readme, 'Subscan' ), 'readme documents Subscan' );

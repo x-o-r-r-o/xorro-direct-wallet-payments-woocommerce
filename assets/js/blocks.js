@@ -194,7 +194,8 @@
 								if (res.data.coin && res.data.coin !== coin) {
 									return;
 								}
-								var label = '≈ ' + res.data.amount + ' ' + res.data.symbol;
+								var prefix = res.data.approx ? '≈ ' : '';
+								var label = prefix + res.data.amount + ' ' + res.data.symbol;
 								if (res.data.message) {
 									label += ' — ' + res.data.message;
 								}

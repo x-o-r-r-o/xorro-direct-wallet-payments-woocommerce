@@ -4,7 +4,7 @@ Tags: woocommerce, cryptocurrency, bitcoin, ethereum, payments, usdt, crypto che
 Requires at least: 6.9
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.5.1
+Stable tag: 1.5.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -255,6 +255,11 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 
 == Changelog ==
 
+= 1.5.2 =
+* Hardened confirmation gating for BTC, Blockchair UTXO, Solana, TRON, ALGO, DOT, and other non-EVM verifiers (fail closed when depth/success cannot be verified)
+* Checkout quotes now reserve the exact unique-dust amount used on the thank-you payment page
+* Clarified minimum-confirmations setting applies beyond EVM explorers
+
 = 1.5.1 =
 * Security: Blockchair verifier no longer falls back to an unrelated address payload
 * Hardened EVM/TRON confirmation checks; payment page keeps polling through expiry grace
@@ -363,6 +368,9 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.5.2 =
+Stronger multi-chain confirmation gating and exact checkout quotes matching the payment page. Update recommended.
 
 = 1.5.1 =
 Payment matching, checkout quote hardening, and Checkout Blocks registration fix. Update recommended for all stores.

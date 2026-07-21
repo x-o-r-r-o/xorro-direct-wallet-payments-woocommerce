@@ -120,7 +120,7 @@ $active  = isset( $tabs[ $tab ] ) ? $tabs[ $tab ] : $tabs['general'];
 										<th scope="row"><?php esc_html_e( 'Minimum confirmations', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
 										<td>
 											<input type="number" min="0" max="64" name="xdwp[min_confirmations]" value="<?php echo esc_attr( (string) ( $settings['min_confirmations'] ?? 1 ) ); ?>" class="small-text cc-input" />
-											<p class="description"><?php esc_html_e( 'Required on-chain confirmations before marking an order paid (EVM explorers that report confirmations).', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
+											<p class="description"><?php esc_html_e( 'Required on-chain confirmations before marking an order paid. Applied across supported explorers/RPCs (fail closed when depth cannot be verified).', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
 										</td>
 									</tr>
 									<tr>

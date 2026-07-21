@@ -83,6 +83,11 @@ php tests/smoke-test.php
 
 See [readme.txt](readme.txt).
 
+### 1.5.2
+
+- Fail-closed confirmation depth across major non-EVM verifiers
+- Checkout reserves the same unique-dust amount used after place-order
+
 ### 1.5.1
 
 - Blockchair fail-closed matching; stronger confirmations; grace-period polling; clearer quote errors

@@ -69,7 +69,7 @@ class Xdwp_Order {
 			return false;
 		}
 
-		$amount = Xdwp_Prices::fiat_to_crypto( (float) $order->get_total(), $coin_id, $order->get_currency(), true );
+		$amount = Xdwp_Prices::take_checkout_quote( (float) $order->get_total(), $coin_id, $order->get_currency() );
 		if ( '' === $amount || (float) $amount <= 0 ) {
 			return false;
 		}

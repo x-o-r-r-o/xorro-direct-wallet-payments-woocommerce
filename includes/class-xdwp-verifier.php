@@ -213,6 +213,13 @@ class Xdwp_Verifier {
 	}
 
 	/**
+	 * Per-request tip height cache (seconds).
+	 *
+	 * @var array<string, array{h:int,t:int}>
+	 */
+	private static $tip_cache = array();
+
+	/**
 	 * Minimum confirmations required before accepting a payment.
 	 *
 	 * @return int
@@ -222,21 +229,80 @@ class Xdwp_Verifier {
 	}
 
 	/**
+	 * Fail-closed confirmation depth check.
+	 *
+	 * @param int|string|null $have Observed confirmations (null/empty = unknown).
+	 * @return bool
+	 */
+	private static function confirmations_ok( $have ) {
+		$need = self::min_confirmations();
+		if ( $need <= 0 ) {
+			return true;
+		}
+		if ( null === $have || '' === $have ) {
+			return false;
+		}
+		return (int) $have >= $need;
+	}
+
+	/**
+	 * Confirmations from tx block height vs tip (null when either is missing).
+	 *
+	 * @param int $tx_block Tx block height.
+	 * @param int $tip_block Chain tip height.
+	 * @return int|null
+	 */
+	private static function tip_depth( $tx_block, $tip_block ) {
+		$tx_block  = (int) $tx_block;
+		$tip_block = (int) $tip_block;
+		if ( $tx_block <= 0 || $tip_block <= 0 ) {
+			return null;
+		}
+		return $tip_block - $tx_block + 1;
+	}
+
+	/**
+	 * Whether block depth meets min_confirmations (fail closed if tip/tx unknown).
+	 *
+	 * @param int $tx_block  Tx block height.
+	 * @param int $tip_block Tip height.
+	 * @return bool
+	 */
+	private static function block_depth_ok( $tx_block, $tip_block ) {
+		return self::confirmations_ok( self::tip_depth( $tx_block, $tip_block ) );
+	}
+
+	/**
+	 * Cached tip height for a chain key.
+	 *
+	 * @param string   $key     Cache key.
+	 * @param callable $fetcher Returns int tip or 0/null.
+	 * @return int Tip height or 0.
+	 */
+	private static function cached_tip( $key, $fetcher ) {
+		$now = time();
+		if ( isset( self::$tip_cache[ $key ] ) && ( $now - self::$tip_cache[ $key ]['t'] ) < 30 ) {
+			return (int) self::$tip_cache[ $key ]['h'];
+		}
+		$height = (int) call_user_func( $fetcher );
+		if ( $height > 0 ) {
+			self::$tip_cache[ $key ] = array(
+				'h' => $height,
+				't' => $now,
+			);
+		}
+		return $height;
+	}
+
+	/**
 	 * Whether an Etherscan tx row has enough confirmations (when the field is present).
 	 *
 	 * @param array $tx Tx row.
 	 * @return bool
 	 */
 	private static function etherscan_confirmed( array $tx ) {
-		$need = self::min_confirmations();
-		if ( $need <= 0 ) {
-			return true;
-		}
 		// Fail closed when the explorer omits confirmation depth.
-		if ( ! isset( $tx['confirmations'] ) ) {
-			return false;
-		}
-		return (int) $tx['confirmations'] >= $need;
+		return self::confirmations_ok( isset( $tx['confirmations'] ) ? $tx['confirmations'] : null );
 	}
 
 	/**
@@ -427,10 +493,29 @@ class Xdwp_Verifier {
 			return false;
 		}
 
+		$need = self::min_confirmations();
+		$tip  = 0;
+		if ( $need > 0 ) {
+			$tip = self::cached_tip(
+				'bs:' . $base,
+				static function () use ( $base ) {
+					return self::http_get_int( trailingslashit( $base ) . 'blocks/tip/height' );
+				}
+			);
+			// Fail closed when depth is required but tip is unavailable.
+			if ( $tip <= 0 ) {
+				return false;
+			}
+		}
+
 		foreach ( $response as $tx ) {
 			$status = isset( $tx['status'] ) ? $tx['status'] : array();
 			// Require at least one confirmation — never accept 0-conf.
 			if ( empty( $status['confirmed'] ) ) {
+				continue;
+			}
+			$block_height = isset( $status['block_height'] ) ? (int) $status['block_height'] : 0;
+			if ( $need > 0 && ! self::block_depth_ok( $block_height, $tip ) ) {
 				continue;
 			}
 			$time = isset( $status['block_time'] ) ? (int) $status['block_time'] : 0;
@@ -508,9 +593,10 @@ class Xdwp_Verifier {
 			if ( $block_id <= 0 ) {
 				continue;
 			}
-			if ( $need > 1 && isset( $data['transaction']['block_id'] ) && isset( $response['context']['state'] ) ) {
-				$tip = (int) $response['context']['state'];
-				if ( $tip > 0 && ( $tip - $block_id + 1 ) < $need ) {
+			if ( $need > 0 ) {
+				$tip = isset( $response['context']['state'] ) ? (int) $response['context']['state'] : 0;
+				// Fail closed when tip is missing — do not accept at 1-conf when merchant asked for more depth.
+				if ( ! self::block_depth_ok( $block_id, $tip ) ) {
 					continue;
 				}
 			}
@@ -729,6 +815,29 @@ class Xdwp_Verifier {
 			? 'https://mainnet.helius-rpc.com/?api-key=' . rawurlencode( $helius )
 			: 'https://api.mainnet-beta.solana.com';
 
+		$need        = self::min_confirmations();
+		$commitment  = ( $need <= 0 ) ? 'confirmed' : 'finalized';
+		$tip_slot    = 0;
+		if ( $need > 1 ) {
+			$tip_slot = self::cached_tip(
+				'sol:' . md5( $rpc ),
+				static function () use ( $rpc, $commitment ) {
+					$res = self::http_post_json(
+						$rpc,
+						array(
+							'jsonrpc' => '2.0',
+							'id'      => 1,
+							'method'  => 'getSlot',
+							'params'  => array( array( 'commitment' => $commitment ) ),
+						)
+					);
+					return isset( $res['result'] ) ? (int) $res['result'] : 0;
+				}
+			);
+			if ( $tip_slot <= 0 ) {
+				return false;
+			}
+		}
 		if ( 'spl' === $coin['type'] && ! empty( $coin['contract'] ) ) {
 			$watch = array( $address );
 			// Resolve associated token accounts for this mint so SPL transfers are visible.
@@ -784,13 +893,19 @@ class Xdwp_Verifier {
 							array(
 								'encoding'                       => 'jsonParsed',
 								'maxSupportedTransactionVersion' => 0,
-								'commitment'                     => 'finalized',
+								'commitment'                     => $commitment,
 							),
 						),
 					);
 					$tx = self::http_post_json( $rpc, $tx_body );
 					if ( empty( $tx['result']['meta'] ) ) {
 						continue;
+					}
+					if ( $need > 1 ) {
+						$slot = isset( $tx['result']['slot'] ) ? (int) $tx['result']['slot'] : 0;
+						if ( ! self::block_depth_ok( $slot, $tip_slot ) ) {
+							continue;
+						}
 					}
 					$meta = $tx['result']['meta'];
 					if ( isset( $meta['err'] ) && null !== $meta['err'] ) {
@@ -839,13 +954,19 @@ class Xdwp_Verifier {
 					array(
 						'encoding'                       => 'jsonParsed',
 						'maxSupportedTransactionVersion' => 0,
-						'commitment'                     => 'finalized',
+						'commitment'                     => $commitment,
 					),
 				),
 			);
 			$tx = self::http_post_json( $rpc, $tx_body );
 			if ( empty( $tx['result']['meta'] ) || ! is_array( $tx['result']['meta'] ) ) {
 				continue;
+			}
+			if ( $need > 1 ) {
+				$slot = isset( $tx['result']['slot'] ) ? (int) $tx['result']['slot'] : 0;
+				if ( ! self::block_depth_ok( $slot, $tip_slot ) ) {
+					continue;
+				}
 			}
 			$meta = $tx['result']['meta'];
 			if ( isset( $meta['err'] ) && null !== $meta['err'] ) {
@@ -978,10 +1099,30 @@ class Xdwp_Verifier {
 		}
 		// Prefer explicit confirmation count when TronGrid provides it.
 		if ( isset( $tx['confirmations'] ) ) {
-			return (int) $tx['confirmations'] >= $need;
+			return self::confirmations_ok( $tx['confirmations'] );
 		}
-		// Confirmed txs from TronGrid include a block timestamp; unconfirmed often lack it.
-		return ! empty( $tx['block_timestamp'] );
+		$tx_block = 0;
+		if ( isset( $tx['block'] ) ) {
+			$tx_block = (int) $tx['block'];
+		} elseif ( isset( $tx['blockNumber'] ) ) {
+			$tx_block = (int) $tx['blockNumber'];
+		} elseif ( isset( $tx['block_number'] ) ) {
+			$tx_block = (int) $tx['block_number'];
+		}
+		if ( $tx_block <= 0 ) {
+			return false;
+		}
+		$tip = self::cached_tip(
+			'tron',
+			static function () {
+				$res = self::http_post_json( 'https://api.trongrid.io/wallet/getnowblock', array() );
+				if ( isset( $res['block_header']['raw_data']['number'] ) ) {
+					return (int) $res['block_header']['raw_data']['number'];
+				}
+				return 0;
+			}
+		);
+		return self::block_depth_ok( $tx_block, $tip );
 	}
 
 	/**
@@ -1012,6 +1153,18 @@ class Xdwp_Verifier {
 			}
 			if ( ! $time || $time < $since ) {
 				continue;
+			}
+			// Ledger-final APIs: require validated success markers when confirmations are required.
+			if ( self::min_confirmations() > 0 ) {
+				if ( isset( $tx['validated'] ) && ! $tx['validated'] ) {
+					continue;
+				}
+				if ( isset( $tx['meta']['TransactionResult'] ) && 'tesSUCCESS' !== $tx['meta']['TransactionResult'] ) {
+					continue;
+				}
+				if ( empty( $tx['hash'] ) && empty( $tx['tx']['hash'] ) ) {
+					continue;
+				}
 			}
 			$dest = '';
 			if ( ! empty( $tx['Destination'] ) ) {
@@ -1065,6 +1218,14 @@ class Xdwp_Verifier {
 			if ( ! $time || $time < $since ) {
 				continue;
 			}
+			if ( self::min_confirmations() > 0 ) {
+				if ( isset( $tx['transaction_successful'] ) && ! $tx['transaction_successful'] ) {
+					continue;
+				}
+				if ( empty( $tx['transaction_hash'] ) && empty( $tx['id'] ) ) {
+					continue;
+				}
+			}
 			if ( ! empty( $tx['asset_type'] ) && 'native' !== $tx['asset_type'] ) {
 				continue;
 			}
@@ -1079,7 +1240,8 @@ class Xdwp_Verifier {
 	/**
 	 * HTTP GET JSON helper.
 	 *
-	 * @param string $url URL.
+	 * @param string               $url            URL.
+	 * @param array<string,string> $extra_headers Extra headers.
 	 * @return array|null
 	 */
 	private static function http_get( $url, $extra_headers = array() ) {
@@ -1106,6 +1268,41 @@ class Xdwp_Verifier {
 		}
 		$body = json_decode( wp_remote_retrieve_body( $response ), true );
 		return is_array( $body ) ? $body : null;
+	}
+
+	/**
+	 * HTTP GET that returns a plain integer body (e.g. Blockstream tip height).
+	 *
+	 * @param string $url URL.
+	 * @return int
+	 */
+	private static function http_get_int( $url ) {
+		$response = wp_remote_get(
+			$url,
+			array(
+				'timeout' => 15,
+				'headers' => array(
+					'Accept'     => 'text/plain, application/json',
+					'User-Agent' => 'Xdwp/' . XDWP_VERSION . '; WordPress/' . get_bloginfo( 'version' ),
+				),
+			)
+		);
+		if ( is_wp_error( $response ) ) {
+			return 0;
+		}
+		$code = wp_remote_retrieve_response_code( $response );
+		if ( $code < 200 || $code >= 300 ) {
+			return 0;
+		}
+		$body = trim( (string) wp_remote_retrieve_body( $response ) );
+		if ( is_numeric( $body ) ) {
+			return (int) $body;
+		}
+		$json = json_decode( $body, true );
+		if ( is_numeric( $json ) ) {
+			return (int) $json;
+		}
+		return 0;
 	}
 
 	/**
@@ -1157,10 +1354,38 @@ class Xdwp_Verifier {
 		if ( empty( $response['transactions'] ) || ! is_array( $response['transactions'] ) ) {
 			return false;
 		}
+
+		$need = self::min_confirmations();
+		$tip  = 0;
+		if ( $need > 0 ) {
+			$tip = self::cached_tip(
+				'algo',
+				static function () {
+					$status = self::http_get( 'https://mainnet-idx.algonode.cloud/v2/status' );
+					if ( isset( $status['round'] ) ) {
+						return (int) $status['round'];
+					}
+					if ( isset( $status['last-round'] ) ) {
+						return (int) $status['last-round'];
+					}
+					return 0;
+				}
+			);
+			if ( $tip <= 0 ) {
+				return false;
+			}
+		}
+
 		foreach ( $response['transactions'] as $tx ) {
 			$time = isset( $tx['round-time'] ) ? (int) $tx['round-time'] : 0;
 			if ( ! $time || $time < $since ) {
 				continue;
+			}
+			if ( $need > 0 ) {
+				$confirmed_round = isset( $tx['confirmed-round'] ) ? (int) $tx['confirmed-round'] : 0;
+				if ( ! self::block_depth_ok( $confirmed_round, $tip ) ) {
+					continue;
+				}
 			}
 			$pay = isset( $tx['payment-transaction'] ) ? $tx['payment-transaction'] : array();
 			if ( empty( $pay['receiver'] ) || 0 !== strcasecmp( $pay['receiver'], $address ) ) {
@@ -1199,6 +1424,14 @@ class Xdwp_Verifier {
 			}
 			if ( ! $time || $time < $since ) {
 				continue;
+			}
+			if ( self::min_confirmations() > 0 ) {
+				if ( empty( $tx['consensus_timestamp'] ) ) {
+					continue;
+				}
+				if ( isset( $tx['result'] ) && 'SUCCESS' !== strtoupper( (string) $tx['result'] ) ) {
+					continue;
+				}
 			}
 			if ( empty( $tx['transfers'] ) || ! is_array( $tx['transfers'] ) ) {
 				continue;
@@ -1265,6 +1498,18 @@ class Xdwp_Verifier {
 			if ( ! $receiver || 0 !== strcasecmp( $receiver, $address ) ) {
 				continue;
 			}
+			if ( self::min_confirmations() > 0 ) {
+				$status = isset( $tx['status'] ) ? $tx['status'] : ( isset( $tx['outcomes']['status'] ) ? $tx['outcomes']['status'] : null );
+				if ( is_array( $status ) && isset( $status['Failure'] ) ) {
+					continue;
+				}
+				if ( is_string( $status ) && false !== stripos( $status, 'fail' ) ) {
+					continue;
+				}
+				if ( empty( $tx['transaction_hash'] ) && empty( $tx['hash'] ) ) {
+					continue;
+				}
+			}
 			$raw = '0';
 			if ( isset( $tx['actions_agg']['deposit'] ) ) {
 				$raw = (string) $tx['actions_agg']['deposit'];
@@ -1318,6 +1563,16 @@ class Xdwp_Verifier {
 			$time = ! empty( $tx['timestamp'] ) ? strtotime( $tx['timestamp'] ) : 0;
 			if ( ! $time || $time < $since ) {
 				continue;
+			}
+			if ( self::min_confirmations() > 0 ) {
+				$code = isset( $tx['code'] ) ? (int) $tx['code'] : -1;
+				if ( 0 !== $code ) {
+					continue;
+				}
+				$height = isset( $tx['height'] ) ? (int) $tx['height'] : 0;
+				if ( $height <= 0 && empty( $tx['txhash'] ) ) {
+					continue;
+				}
 			}
 			$events = isset( $tx['events'] ) ? $tx['events'] : array();
 			$amount_uatom = 0;
@@ -1386,6 +1641,14 @@ class Xdwp_Verifier {
 			if ( empty( $tx['receiver'] ) || 0 !== strcasecmp( $tx['receiver'], $address ) ) {
 				continue;
 			}
+			if ( self::min_confirmations() > 0 ) {
+				if ( isset( $tx['status'] ) && 'success' !== strtolower( (string) $tx['status'] ) ) {
+					continue;
+				}
+				if ( empty( $tx['txHash'] ) ) {
+					continue;
+				}
+			}
 			$raw = isset( $tx['value'] ) ? (string) $tx['value'] : '0';
 			if ( self::raw_amount_in_band( $raw, 18, $min, $max ) ) {
 				return ! empty( $tx['txHash'] ) ? (string) $tx['txHash'] : false;
@@ -1421,6 +1684,14 @@ class Xdwp_Verifier {
 			$to = isset( $tx['to'] ) ? $tx['to'] : '';
 			if ( ! $to || 0 !== strcasecmp( $to, $address ) ) {
 				continue;
+			}
+			if ( self::min_confirmations() > 0 ) {
+				if ( isset( $tx['receipt']['exitCode'] ) && 0 !== (int) $tx['receipt']['exitCode'] ) {
+					continue;
+				}
+				if ( empty( $tx['cid'] ) ) {
+					continue;
+				}
 			}
 			// Filfox value is often in attoFIL (1 FIL = 1e18).
 			$raw = isset( $tx['value'] ) ? (string) $tx['value'] : '0';
@@ -1467,6 +1738,14 @@ class Xdwp_Verifier {
 			}
 			if ( empty( $data['to'] ) || 0 !== strcasecmp( $data['to'], $address ) ) {
 				continue;
+			}
+			if ( self::min_confirmations() > 0 ) {
+				if ( isset( $row['irreversible'] ) && ! $row['irreversible'] ) {
+					continue;
+				}
+				if ( empty( $row['trx_id'] ) && empty( $row['trxid'] ) ) {
+					continue;
+				}
 			}
 			$qty = isset( $data['quantity'] ) ? $data['quantity'] : '';
 			if ( ! preg_match( '/^([0-9.]+)\s+EOS$/', trim( $qty ), $m ) ) {
@@ -1519,6 +1798,18 @@ class Xdwp_Verifier {
 			}
 			if ( empty( $tx['to'] ) || 0 !== strcasecmp( $tx['to'], $address ) ) {
 				continue;
+			}
+			if ( self::min_confirmations() > 0 ) {
+				if ( isset( $tx['success'] ) && ! $tx['success'] ) {
+					continue;
+				}
+				if ( isset( $tx['confirmations'] ) ) {
+					if ( ! self::confirmations_ok( $tx['confirmations'] ) ) {
+						continue;
+					}
+				} elseif ( empty( $tx['hash'] ) ) {
+					continue;
+				}
 			}
 			// Subscan amount is often human-readable string; or planck via amount_v2.
 			if ( isset( $tx['amount'] ) && is_numeric( $tx['amount'] ) ) {
@@ -1576,6 +1867,17 @@ class Xdwp_Verifier {
 			}
 			if ( ! $to || 0 !== strcasecmp( $to, $address ) ) {
 				continue;
+			}
+			if ( self::min_confirmations() > 0 ) {
+				if ( isset( $tx['receiptSuccess'] ) && ! $tx['receiptSuccess'] ) {
+					continue;
+				}
+				if ( isset( $tx['success'] ) && ! $tx['success'] ) {
+					continue;
+				}
+				if ( empty( $tx['hash'] ) && empty( $tx['ID'] ) ) {
+					continue;
+				}
 			}
 			$value = 0.0;
 			if ( isset( $tx['value'] ) && is_numeric( $tx['value'] ) ) {

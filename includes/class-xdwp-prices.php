@@ -17,6 +17,8 @@ class Xdwp_Prices {
 	const CACHE_TTL = 120;
 	/** Keep cached rates available for stale fallback (must be >= CACHE_TTL). */
 	const STALE_TTL = 600;
+	/** WC session key for reserved checkout crypto amount. */
+	const CHECKOUT_QUOTE_SESSION = 'xdwp_checkout_quote';
 
 	/**
 	 * Convert fiat order total to crypto amount.
@@ -49,6 +51,116 @@ class Xdwp_Prices {
 		}
 
 		return Xdwp_Coins::format_amount( $amount, $coin_id );
+	}
+
+	/**
+	 * Fingerprint for a checkout quote reservation.
+	 *
+	 * @param float  $fiat_amount Fiat total.
+	 * @param string $coin_id     Coin ID.
+	 * @param string $currency    Fiat currency.
+	 * @return string
+	 */
+	private static function checkout_quote_fingerprint( $fiat_amount, $coin_id, $currency ) {
+		return md5(
+			strtoupper( (string) $coin_id ) . '|' .
+			strtoupper( (string) $currency ) . '|' .
+			number_format( (float) $fiat_amount, 2, '.', '' )
+		);
+	}
+
+	/**
+	 * Reserve (or reuse) an exact checkout crypto amount in the WC session.
+	 *
+	 * Unique dust is allocated once per cart fingerprint so AJAX polls do not
+	 * burn the global dust sequence, and place-order can reuse the same amount.
+	 *
+	 * @param float  $fiat_amount Fiat total.
+	 * @param string $coin_id     Coin ID.
+	 * @param string $currency    Fiat currency.
+	 * @return string Crypto amount or empty.
+	 */
+	public static function checkout_quote( $fiat_amount, $coin_id, $currency = '' ) {
+		if ( '' === $currency ) {
+			$currency = get_woocommerce_currency();
+		}
+		$fiat_amount = (float) $fiat_amount;
+		$fingerprint = self::checkout_quote_fingerprint( $fiat_amount, $coin_id, $currency );
+
+		$session  = ( function_exists( 'WC' ) && WC()->session ) ? WC()->session : null;
+		$existing = $session ? $session->get( self::CHECKOUT_QUOTE_SESSION ) : null;
+
+		if (
+			is_array( $existing )
+			&& isset( $existing['fingerprint'], $existing['amount'], $existing['expires'] )
+			&& (string) $existing['fingerprint'] === $fingerprint
+			&& (int) $existing['expires'] > time()
+			&& '' !== (string) $existing['amount']
+			&& (float) $existing['amount'] > 0
+		) {
+			return (string) $existing['amount'];
+		}
+
+		$amount = self::fiat_to_crypto( $fiat_amount, $coin_id, $currency, true );
+		if ( '' === $amount ) {
+			return '';
+		}
+
+		if ( $session ) {
+			$window = max( 5, (int) Xdwp_Settings::get( 'payment_window', 60 ) );
+			$session->set(
+				self::CHECKOUT_QUOTE_SESSION,
+				array(
+					'fingerprint' => $fingerprint,
+					'coin_id'     => $coin_id,
+					'currency'    => $currency,
+					'fiat'        => $fiat_amount,
+					'amount'      => $amount,
+					'expires'     => time() + ( $window * MINUTE_IN_SECONDS ),
+				)
+			);
+		}
+
+		return $amount;
+	}
+
+	/**
+	 * Consume a reserved checkout quote at order creation (or mint a fresh one).
+	 *
+	 * @param float  $fiat_amount Fiat total.
+	 * @param string $coin_id     Coin ID.
+	 * @param string $currency    Fiat currency.
+	 * @return string Crypto amount or empty.
+	 */
+	public static function take_checkout_quote( $fiat_amount, $coin_id, $currency = '' ) {
+		if ( '' === $currency ) {
+			$currency = get_woocommerce_currency();
+		}
+		$fiat_amount = (float) $fiat_amount;
+		$fingerprint = self::checkout_quote_fingerprint( $fiat_amount, $coin_id, $currency );
+
+		$session  = ( function_exists( 'WC' ) && WC()->session ) ? WC()->session : null;
+		$existing = $session ? $session->get( self::CHECKOUT_QUOTE_SESSION ) : null;
+		$amount   = '';
+
+		if (
+			is_array( $existing )
+			&& isset( $existing['fingerprint'], $existing['amount'], $existing['expires'] )
+			&& (string) $existing['fingerprint'] === $fingerprint
+			&& (int) $existing['expires'] > time()
+			&& '' !== (string) $existing['amount']
+			&& (float) $existing['amount'] > 0
+		) {
+			$amount = (string) $existing['amount'];
+		} else {
+			$amount = self::fiat_to_crypto( $fiat_amount, $coin_id, $currency, true );
+		}
+
+		if ( $session ) {
+			$session->set( self::CHECKOUT_QUOTE_SESSION, null );
+		}
+
+		return $amount;
 	}
 
 	/**
