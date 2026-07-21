@@ -14,28 +14,28 @@ defined( 'ABSPATH' ) || exit;
 $tabs = array(
 	'general' => array(
 		'label' => __( 'General', 'xorro-direct-wallet-payments-woocommerce' ),
-		'url'   => admin_url( 'admin.php?page=chain-checkout' ),
+		'url'   => admin_url( 'admin.php?page=xorro-direct-wallet-payments-woocommerce' ),
 		'icon'  => 'dashicons-admin-generic',
 		'title' => __( 'General', 'xorro-direct-wallet-payments-woocommerce' ),
 		'desc'  => __( 'Payment window, order status, checkout branding, and gateway options.', 'xorro-direct-wallet-payments-woocommerce' ),
 	),
 	'coins'   => array(
 		'label' => __( 'Coins', 'xorro-direct-wallet-payments-woocommerce' ),
-		'url'   => admin_url( 'admin.php?page=chain-checkout-coins' ),
+		'url'   => admin_url( 'admin.php?page=xorro-direct-wallet-payments-woocommerce-coins' ),
 		'icon'  => 'dashicons-cart',
 		'title' => __( 'Coins', 'xorro-direct-wallet-payments-woocommerce' ),
 		'desc'  => __( 'Enable the coins and networks you want to accept. Add at least one wallet for each enabled coin.', 'xorro-direct-wallet-payments-woocommerce' ),
 	),
 	'wallets' => array(
 		'label' => __( 'Wallets', 'xorro-direct-wallet-payments-woocommerce' ),
-		'url'   => admin_url( 'admin.php?page=chain-checkout-wallets' ),
+		'url'   => admin_url( 'admin.php?page=xorro-direct-wallet-payments-woocommerce-wallets' ),
 		'icon'  => 'dashicons-money-alt',
 		'title' => __( 'Wallets', 'xorro-direct-wallet-payments-woocommerce' ),
 		'desc'  => __( 'Receiving addresses for enabled coins. Use multiple addresses for rotation.', 'xorro-direct-wallet-payments-woocommerce' ),
 	),
 	'prices'  => array(
 		'label' => __( 'Prices & APIs', 'xorro-direct-wallet-payments-woocommerce' ),
-		'url'   => admin_url( 'admin.php?page=chain-checkout-prices' ),
+		'url'   => admin_url( 'admin.php?page=xorro-direct-wallet-payments-woocommerce-prices' ),
 		'icon'  => 'dashicons-chart-area',
 		'title' => __( 'Prices & APIs', 'xorro-direct-wallet-payments-woocommerce' ),
 		'desc'  => __( 'Exchange rates and blockchain API keys for quotes and auto-verification.', 'xorro-direct-wallet-payments-woocommerce' ),

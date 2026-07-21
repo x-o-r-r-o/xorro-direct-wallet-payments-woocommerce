@@ -53,7 +53,7 @@ class Chain_Checkout_Admin {
 	 * @return array
 	 */
 	public static function action_links( $links ) {
-		$url = admin_url( 'admin.php?page=chain-checkout' );
+		$url = admin_url( 'admin.php?page=xorro-direct-wallet-payments-woocommerce' );
 		array_unshift(
 			$links,
 			'<a href="' . esc_url( $url ) . '">' . esc_html__( 'Settings', 'xorro-direct-wallet-payments-woocommerce' ) . '</a>'
@@ -89,7 +89,7 @@ class Chain_Checkout_Admin {
 			__( 'Coins', 'xorro-direct-wallet-payments-woocommerce' ),
 			__( 'Coins', 'xorro-direct-wallet-payments-woocommerce' ),
 			'manage_woocommerce',
-			'chain-checkout-coins',
+			'xorro-direct-wallet-payments-woocommerce-coins',
 			array( __CLASS__, 'render_page' )
 		);
 
@@ -98,7 +98,7 @@ class Chain_Checkout_Admin {
 			__( 'Wallets', 'xorro-direct-wallet-payments-woocommerce' ),
 			__( 'Wallets', 'xorro-direct-wallet-payments-woocommerce' ),
 			'manage_woocommerce',
-			'chain-checkout-wallets',
+			'xorro-direct-wallet-payments-woocommerce-wallets',
 			array( __CLASS__, 'render_page' )
 		);
 
@@ -107,7 +107,7 @@ class Chain_Checkout_Admin {
 			__( 'Prices & APIs', 'xorro-direct-wallet-payments-woocommerce' ),
 			__( 'Prices & APIs', 'xorro-direct-wallet-payments-woocommerce' ),
 			'manage_woocommerce',
-			'chain-checkout-prices',
+			'xorro-direct-wallet-payments-woocommerce-prices',
 			array( __CLASS__, 'render_page' )
 		);
 	}
@@ -121,6 +121,10 @@ class Chain_Checkout_Admin {
 		$page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : 'xorro-direct-wallet-payments-woocommerce'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$map  = array(
 			'xorro-direct-wallet-payments-woocommerce'         => 'general',
+			'xorro-direct-wallet-payments-woocommerce-coins'   => 'coins',
+			'xorro-direct-wallet-payments-woocommerce-wallets' => 'wallets',
+			'xorro-direct-wallet-payments-woocommerce-prices'  => 'prices',
+			// Legacy slugs (pre-1.4.6) still resolve to the correct tab if bookmarked.
 			'chain-checkout-coins'   => 'coins',
 			'chain-checkout-wallets' => 'wallets',
 			'chain-checkout-prices'  => 'prices',
@@ -218,7 +222,7 @@ class Chain_Checkout_Admin {
 			sprintf(
 				/* translators: %s: settings URL */
 				__( 'Xorro Direct Wallet Payments for WooCommerce is installed. Enable coins and add wallet addresses in %s to start accepting payments.', 'xorro-direct-wallet-payments-woocommerce' ),
-				'<a href="' . esc_url( admin_url( 'admin.php?page=chain-checkout-coins' ) ) . '">' . esc_html__( 'Xorro Wallet Payments settings', 'xorro-direct-wallet-payments-woocommerce' ) . '</a>'
+				'<a href="' . esc_url( admin_url( 'admin.php?page=xorro-direct-wallet-payments-woocommerce-coins' ) ) . '">' . esc_html__( 'Xorro Wallet Payments settings', 'xorro-direct-wallet-payments-woocommerce' ) . '</a>'
 			),
 			array(
 				'a' => array(

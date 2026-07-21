@@ -145,7 +145,7 @@ chain_checkout_assert( false !== strpos( $ajax, 'chain_checkout_status_' ), 'aja
 
 // --- Headers ---
 $main = file_get_contents( $root . '/chain-checkout.php' );
-chain_checkout_assert( false !== strpos( $main, 'Version:           1.4.5' ), 'plugin version 1.4.5' );
+chain_checkout_assert( false !== strpos( $main, 'Version:           1.4.6' ), 'plugin version 1.4.6' );
 chain_checkout_assert( false !== strpos( $main, 'Author:            xorro' ), 'author is xorro' );
 chain_checkout_assert( false !== strpos( $main, 'Author URI:        https://github.com/x-o-r-r-o' ), 'author URI is GitHub' );
 chain_checkout_assert( false === strpos( $main, 'Author URI:        https://wordpress.org/plugins/chain-checkout' ), 'author URI not same as plugin URI' );
@@ -204,11 +204,11 @@ chain_checkout_assert( false !== strpos( $readme_md, 'Checkout branding' ), 'REA
 
 $readme = file_get_contents( $root . '/readme.txt' );
 chain_checkout_assert( false !== strpos( $readme, 'Tested up to: 7.0' ), 'readme Tested up to WP 7.0' );
-chain_checkout_assert( false !== strpos( $readme, 'Stable tag: 1.4.5' ), 'readme stable 1.4.5' );
+chain_checkout_assert( false !== strpos( $readme, 'Stable tag: 1.4.6' ), 'readme stable 1.4.6' );
 
 $readme = file_get_contents( $root . '/readme.txt' );
 chain_checkout_assert( false !== strpos( $readme, '== External services ==' ), 'readme external services section' );
-chain_checkout_assert( false !== strpos( $readme, '1.4.4' ), 'readme 1.4.5 changelog' );
+chain_checkout_assert( false !== strpos( $readme, '1.4.4' ), 'readme 1.4.6 changelog' );
 $privacy = file_get_contents( $root . '/includes/class-chain-checkout-privacy.php' );
 chain_checkout_assert( false !== strpos( $privacy, 'wp_add_privacy_policy_content' ), 'privacy policy content registered' );
 chain_checkout_assert( is_file( $root . '/assets/js/qrcode.LICENSE.txt' ), 'qrcode license attribution' );
@@ -222,6 +222,11 @@ chain_checkout_assert( false === strpos( file_get_contents( $root . '/includes/a
 chain_checkout_assert( false === strpos( file_get_contents( $root . '/includes/admin/class-chain-checkout-admin.php' ), '<link rel="stylesheet"' ), 'admin has no raw stylesheet link' );
 chain_checkout_assert( false === strpos( file_get_contents( $root . '/includes/class-chain-checkout-gateway.php' ), "echo '<style" ), 'gateway has no raw style echo' );
 chain_checkout_assert( false === strpos( $payment_tpl, '<script>' ), 'payment template has no inline script' );
+chain_checkout_assert( is_file( $root . '/assets/js/wallets.js' ), 'wallets.js present' );
+chain_checkout_assert( false === strpos( file_get_contents( $root . '/includes/admin/views/wallets-ui.php' ), '<script' ), 'wallets UI has no inline script' );
+chain_checkout_assert( false !== strpos( file_get_contents( $root . '/includes/admin/class-chain-checkout-admin.php' ), 'xorro-direct-wallet-payments-woocommerce-coins' ), 'admin coins slug renamed' );
+chain_checkout_assert( false === strpos( file_get_contents( $root . '/assets/js/blocks.js' ), "'chain-checkout'" ), 'blocks.js uses new text domain' );
+chain_checkout_assert( false !== strpos( file_get_contents( $root . '/includes/class-chain-checkout-prices.php' ), 'LAST_INSERT_ID' ), 'atomic amount seq' );
 chain_checkout_assert( false !== strpos( $readme, '== External services ==' ), 'readme external services section present' );
 chain_checkout_assert( false !== strpos( $readme, 'XRPSCan' ), 'readme documents XRPSCan' );
 chain_checkout_assert( false !== strpos( $readme, 'Subscan' ), 'readme documents Subscan' );

@@ -1,6 +1,6 @@
 /**
  * Admin JS — branding media picker + ready state.
- * Wallets Add/Remove is handled by the inline script in wallets-ui.php.
+ * Wallets Add/Remove is handled by assets/js/wallets.js.
  */
 (function () {
 	'use strict';

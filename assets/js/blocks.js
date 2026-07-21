@@ -122,7 +122,7 @@
 					if (!coin) {
 						return {
 							type: emitResponse.responseTypes.ERROR,
-							message: __('Please select a cryptocurrency.', 'chain-checkout')
+							message: __('Please select a cryptocurrency.', 'xorro-direct-wallet-payments-woocommerce')
 						};
 					}
 					return {
@@ -140,7 +140,7 @@
 		);
 
 		if (!coins.length) {
-			return createElement('p', null, __('No cryptocurrencies are configured.', 'chain-checkout'));
+			return createElement('p', null, __('No cryptocurrencies are configured.', 'xorro-direct-wallet-payments-woocommerce'));
 		}
 
 		return createElement(

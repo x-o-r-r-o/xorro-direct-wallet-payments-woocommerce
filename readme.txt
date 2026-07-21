@@ -4,7 +4,7 @@ Tags: woocommerce, cryptocurrency, bitcoin, ethereum, payments, usdt, crypto che
 Requires at least: 6.9
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.4.5
+Stable tag: 1.4.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -255,6 +255,11 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 
 == Changelog ==
 
+= 1.4.6 =
+* Fixed admin settings URLs after rename; enqueue wallets.js (no raw script tag)
+* Unique dust spaced to avoid match-band overlap; atomic amount sequence via LAST_INSERT_ID
+* Fixed Blocks JS text domain
+
 = 1.4.5 =
 * Renamed to Xorro Direct Wallet Payments for WooCommerce (distinctive slug/text domain for wordpress.org)
 * Enqueue CSS/JS via WordPress APIs only (removed raw admin <link>/<style> and payment-page <script>)
@@ -343,6 +348,9 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.4.6 =
+Fixes admin navigation and unique-amount matching after the 1.4.5 rename.
 
 = 1.4.5 =
 wordpress.org compliance: new distinctive name/slug, proper asset enqueue, fuller external-service disclosure. Request slug xorro-direct-wallet-payments-woocommerce when uploading.

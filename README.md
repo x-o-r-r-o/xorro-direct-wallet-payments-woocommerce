@@ -73,6 +73,10 @@ php tests/smoke-test.php
 
 See [readme.txt](readme.txt).
 
+### 1.4.6
+
+- Fixed admin URLs, wallets enqueue, unique-dust spacing, Blocks text domain
+
 ### 1.4.5
 
 - Renamed for wordpress.org distinctiveness; proper CSS/JS enqueue; fuller external-service docs; removed load_plugin_textdomain

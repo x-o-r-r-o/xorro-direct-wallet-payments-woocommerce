@@ -65,14 +65,17 @@ class Chain_Checkout_Prices {
 		}
 
 		$counter = self::next_amount_seq();
-		$dust_units = 1000 + ( $counter % 9000 );
+		// Space dust by 1000 units so match bands (~±400 units) never overlap across concurrent orders.
+		$step       = 1000;
+		$slots      = 9; // 1000..9000 inclusive in steps of 1000.
+		$dust_units = $step + ( ( $counter % $slots ) * $step );
 		$dust       = $dust_units / pow( 10, $decimals );
 
 		return $amount + $dust;
 	}
 
 	/**
-	 * Atomic-ish sequence for unique dust (avoids duplicate dust under concurrent checkout).
+	 * Atomic sequence for unique dust (avoids duplicate dust under concurrent checkout).
 	 *
 	 * @return int
 	 */
@@ -83,16 +86,17 @@ class Chain_Checkout_Prices {
 		// Ensure row exists.
 		add_option( $option, 0, '', 'no' );
 
+		// Atomic increment + return via LAST_INSERT_ID (connection-local).
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$wpdb->query(
 			$wpdb->prepare(
-				"UPDATE {$wpdb->options} SET option_value = ( CAST(option_value AS UNSIGNED) + 1 ) % 9000 WHERE option_name = %s",
+				"UPDATE {$wpdb->options} SET option_value = LAST_INSERT_ID( ( CAST(option_value AS UNSIGNED) + 1 ) ) WHERE option_name = %s",
 				$option
 			)
 		);
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		$value = (int) $wpdb->get_var( $wpdb->prepare( "SELECT option_value FROM {$wpdb->options} WHERE option_name = %s", $option ) );
+		$value = (int) $wpdb->get_var( 'SELECT LAST_INSERT_ID()' );
 		wp_cache_delete( $option, 'options' );
 
 		return $value;

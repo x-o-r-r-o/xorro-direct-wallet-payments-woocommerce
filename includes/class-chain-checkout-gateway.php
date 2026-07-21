@@ -98,7 +98,7 @@ class Chain_Checkout_Gateway extends WC_Payment_Gateway {
 				'description' => sprintf(
 					/* translators: %s: admin URL */
 					__( 'Configure coins, wallets, prices, and API keys under %s.', 'xorro-direct-wallet-payments-woocommerce' ),
-					'<a href="' . esc_url( admin_url( 'admin.php?page=chain-checkout' ) ) . '">' . esc_html__( 'Xorro Wallet Payments settings', 'xorro-direct-wallet-payments-woocommerce' ) . '</a>'
+					'<a href="' . esc_url( admin_url( 'admin.php?page=xorro-direct-wallet-payments-woocommerce' ) ) . '">' . esc_html__( 'Xorro Wallet Payments settings', 'xorro-direct-wallet-payments-woocommerce' ) . '</a>'
 				),
 			),
 		);
