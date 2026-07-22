@@ -94,6 +94,12 @@ php tests/smoke-test.php
 
 See [readme.txt](readme.txt).
 
+### 1.5.16
+
+- Security: XRP credits delivered_amount only (never Amount/DeliverMax — partial-payment underpay)
+- Security: XRP object amounts treat value as drops (/1e6), matching XRPSCan (never whole-XRP mis-scale)
+- Security: ATOM transfer events require recipient match (empty recipient cannot credit wallet)
+
 ### 1.5.15
 
 - Security: manual mark-paid enforces same eligibility as admin UI (no txid squatting on cancelled/ineligible orders)

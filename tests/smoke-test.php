@@ -168,6 +168,11 @@ xdwp_assert( false !== strpos( $order_php, "'expired'" ) && false !== strpos( $o
 xdwp_assert( false !== strpos( $verifier, "'cancelled'" ) && false !== strpos( $verifier, 'max_peers' ), 'cancelled in peer status list' );
 xdwp_assert( false !== strpos( $order_php, "_xdwp_status', 'cancelled'" ), 'xdwp_status cancelled on terminal' );
 xdwp_assert( false !== strpos( $verifier, "has_validated && ! \$tx['validated']" ), 'XRP rejects validated===false' );
+xdwp_assert( false !== strpos( $verifier, 'xrp_delivered_xrp' ), 'XRP uses delivered_amount helper' );
+xdwp_assert( false !== strpos( $verifier, 'xrp_amount_to_xrp' ), 'XRP amount parser present' );
+xdwp_assert( false !== strpos( $verifier, "return ( (float) \$raw['value'] ) / 1e6;" ), 'XRP object value is drops not whole XRP' );
+xdwp_assert( false === strpos( $verifier, "isset( \$tx['Amount'] ) ? \$tx['Amount']" ), 'XRP does not credit Amount field' );
+xdwp_assert( false !== strpos( $verifier, "if ( ! \$recipient || 0 !== strcasecmp( \$recipient, \$address ) )" ), 'ATOM requires recipient match' );
 xdwp_assert( false !== strpos( $verifier, "! \$has_receipt || \$tx['receiptSuccess']" ), 'ZIL requires all present success flags' );
 
 $settings_php = file_get_contents( $root . '/includes/class-xdwp-settings.php' );
@@ -216,8 +221,8 @@ xdwp_assert( false !== strpos( file_get_contents( $root . '/uninstall.php' ), 'x
 
 // --- Headers ---
 $main = file_get_contents( $root . '/xorro-direct-wallet-payments-woocommerce.php' );
-xdwp_assert( false !== strpos( $main, 'Version:           1.5.15' ), 'plugin version 1.5.15' );
-xdwp_assert( false !== strpos( $main, "XDWP_VERSION', '1.5.15'" ), 'XDWP_VERSION 1.5.15' );
+xdwp_assert( false !== strpos( $main, 'Version:           1.5.16' ), 'plugin version 1.5.16' );
+xdwp_assert( false !== strpos( $main, "XDWP_VERSION', '1.5.16'" ), 'XDWP_VERSION 1.5.16' );
 xdwp_assert( false !== strpos( $main, 'Author:            xorro' ), 'author is xorro' );
 xdwp_assert( false !== strpos( $main, 'Author URI:        https://github.com/x-o-r-r-o' ), 'author URI is GitHub profile' );
 xdwp_assert( false === strpos( $main, 'Author URI:        https://github.com/x-o-r-r-o/xorro-direct-wallet-payments-woocommerce' ), 'author URI not the plugin repo' );
@@ -277,11 +282,11 @@ xdwp_assert( false !== strpos( $readme_md, 'Checkout branding' ), 'README.md bra
 
 $readme = file_get_contents( $root . '/readme.txt' );
 xdwp_assert( false !== strpos( $readme, 'Tested up to: 7.0' ), 'readme Tested up to WP 7.0' );
-xdwp_assert( false !== strpos( $readme, 'Stable tag: 1.5.15' ), 'readme stable 1.5.15' );
+xdwp_assert( false !== strpos( $readme, 'Stable tag: 1.5.16' ), 'readme stable 1.5.16' );
 
 $readme = file_get_contents( $root . '/readme.txt' );
 xdwp_assert( false !== strpos( $readme, '== External services ==' ), 'readme external services section' );
-xdwp_assert( false !== strpos( $readme, '1.5.15' ), 'readme 1.5.15 changelog' );
+xdwp_assert( false !== strpos( $readme, '1.5.16' ), 'readme 1.5.16 changelog' );
 $privacy = file_get_contents( $root . '/includes/class-xdwp-privacy.php' );
 xdwp_assert( false !== strpos( $privacy, 'wp_add_privacy_policy_content' ), 'privacy policy content registered' );
 xdwp_assert( is_file( $root . '/assets/js/qrcode.LICENSE.txt' ), 'qrcode license attribution' );

@@ -4,7 +4,7 @@ Tags: woocommerce, cryptocurrency, bitcoin, ethereum, payments, usdt, crypto che
 Requires at least: 6.9
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.5.15
+Stable tag: 1.5.16
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -255,6 +255,11 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 
 == Changelog ==
 
+= 1.5.16 =
+* Security: XRP credits delivered_amount only (never Amount/DeliverMax — partial-payment underpay)
+* Security: XRP object amounts treat value as drops (/1e6), matching XRPSCan (never whole-XRP mis-scale)
+* Security: ATOM transfer events require recipient match (empty recipient cannot credit wallet)
+
 = 1.5.15 =
 * Security: manual mark-paid enforces same eligibility as admin UI (no txid squatting on cancelled/ineligible orders)
 * Security: release txid claim if mark-paid fails after reserve; normalize txids to lowercase
@@ -437,6 +442,9 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.5.16 =
+Security: XRP delivered_amount only + drops scale for XRPSCan objects; ATOM requires recipient. Update recommended.
 
 = 1.5.15 =
 Security: manual mark-paid eligibility matches admin UI; release txid claim on failed mark-paid; normalize txids to lowercase. Update recommended.

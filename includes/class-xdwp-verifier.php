@@ -537,6 +537,68 @@ class Xdwp_Verifier {
 	}
 
 	/**
+	 * Parse a native-XRP amount field to XRP (never issued IOUs).
+	 *
+	 * Numeric strings and XRPSCan object form {"value":…,"currency":"XRP"}
+	 * both store drops — always divide by 1e6. Never treat object value as
+	 * whole XRP (that would credit ~1e6× underpayment as full payment).
+	 *
+	 * @param mixed $raw Amount field.
+	 * @return float|null XRP amount or null if unusable / IOU.
+	 */
+	private static function xrp_amount_to_xrp( $raw ) {
+		if ( is_numeric( $raw ) ) {
+			return ( (float) $raw ) / 1e6;
+		}
+		if ( ! is_array( $raw ) ) {
+			return null;
+		}
+		$currency = isset( $raw['currency'] ) ? strtoupper( (string) $raw['currency'] ) : '';
+		if ( '' !== $currency && 'XRP' !== $currency ) {
+			return null;
+		}
+		if ( ! isset( $raw['value'] ) || ! is_numeric( $raw['value'] ) ) {
+			return null;
+		}
+		return ( (float) $raw['value'] ) / 1e6;
+	}
+
+	/**
+	 * Credited native XRP for a Payment — delivered_amount only (never Amount/DeliverMax).
+	 *
+	 * Partial payments set Amount to the maximum while delivering less; matching on
+	 * Amount would mark underpaid orders as paid (Bitfinex-class).
+	 *
+	 * @param array $tx Explorer / XRPL transaction row.
+	 * @return float|null
+	 */
+	private static function xrp_delivered_xrp( $tx ) {
+		if ( ! is_array( $tx ) ) {
+			return null;
+		}
+		$candidates = array();
+		if ( isset( $tx['meta']['delivered_amount'] ) ) {
+			$candidates[] = $tx['meta']['delivered_amount'];
+		}
+		if ( isset( $tx['meta']['DeliveredAmount'] ) ) {
+			$candidates[] = $tx['meta']['DeliveredAmount'];
+		}
+		if ( isset( $tx['delivered_amount'] ) ) {
+			$candidates[] = $tx['delivered_amount'];
+		}
+		if ( isset( $tx['DeliveredAmount'] ) ) {
+			$candidates[] = $tx['DeliveredAmount'];
+		}
+		foreach ( $candidates as $raw ) {
+			$amount = self::xrp_amount_to_xrp( $raw );
+			if ( null !== $amount && $amount > 0 ) {
+				return $amount;
+			}
+		}
+		return null;
+	}
+
+	/**
 	 * Decode a Cosmos LCD attribute if it looks like base64; otherwise return as-is.
 	 *
 	 * @param string $value Raw attribute.
@@ -1559,12 +1621,16 @@ class Xdwp_Verifier {
 			if ( ! $dest ) {
 				continue;
 			}
-			$amount = 0;
-			$raw    = isset( $tx['Amount'] ) ? $tx['Amount'] : ( isset( $tx['tx']['Amount'] ) ? $tx['tx']['Amount'] : 0 );
-			// Native XRP only (drops as numeric string). Skip issued IOUs.
-			if ( is_numeric( $raw ) ) {
-				$amount = ( (float) $raw ) / 1e6;
-			} else {
+			// Credited amount only — never Amount/DeliverMax (partial-payment underpay).
+			$amount = self::xrp_delivered_xrp( $tx );
+			if ( null === $amount && isset( $tx['tx'] ) && is_array( $tx['tx'] ) ) {
+				$nested = $tx['tx'];
+				if ( empty( $nested['meta'] ) && ! empty( $tx['meta'] ) ) {
+					$nested['meta'] = $tx['meta'];
+				}
+				$amount = self::xrp_delivered_xrp( $nested );
+			}
+			if ( null === $amount ) {
 				continue;
 			}
 			if ( self::amount_in_band( $amount, $min, $max ) ) {
@@ -1991,7 +2057,8 @@ class Xdwp_Verifier {
 					}
 				}
 				$recipient = isset( $attrs['recipient'] ) ? $attrs['recipient'] : '';
-				if ( $recipient && 0 !== strcasecmp( $recipient, $address ) ) {
+				// Require recipient match — empty recipient must not credit this wallet.
+				if ( ! $recipient || 0 !== strcasecmp( $recipient, $address ) ) {
 					continue;
 				}
 				if ( empty( $attrs['amount'] ) ) {
