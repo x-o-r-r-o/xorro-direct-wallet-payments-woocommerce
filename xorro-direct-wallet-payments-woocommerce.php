@@ -3,7 +3,7 @@
  * Plugin Name:       Xorro Direct Wallet Payments for WooCommerce
  * Plugin URI:        https://github.com/x-o-r-r-o/xorro-direct-wallet-payments-woocommerce
  * Description:       Accept cryptocurrency payments directly to your own wallets — no third-party payment processor. Supports BTC, BCH, ETH, USDT, USDC, DAI and 70+ coins/tokens with automatic on-chain verification.
- * Version:           1.5.16
+ * Version:           1.5.17
  * Requires at least: 6.9
  * Requires PHP:      7.4
  * Requires Plugins:  woocommerce
@@ -22,7 +22,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'XDWP_VERSION', '1.5.16' );
+define( 'XDWP_VERSION', '1.5.17' );
 define( 'XDWP_FILE', __FILE__ );
 define( 'XDWP_PATH', plugin_dir_path( __FILE__ ) );
 define( 'XDWP_URL', plugin_dir_url( __FILE__ ) );
@@ -94,6 +94,32 @@ register_deactivation_hook(
 add_action(
 	'plugins_loaded',
 	static function () {
+		// PHP is only checked at activation time; a host downgrade afterward
+		// (or restoring a backup taken under an older activation) would
+		// otherwise hit fatal syntax/runtime errors deep in the plugin
+		// instead of a clear notice.
+		if ( version_compare( PHP_VERSION, XDWP_MIN_PHP, '<' ) ) {
+			add_action(
+				'admin_notices',
+				static function () {
+					if ( ! current_user_can( 'activate_plugins' ) ) {
+						return;
+					}
+					echo '<div class="notice notice-error"><p>';
+					echo esc_html(
+						sprintf(
+							/* translators: 1: required PHP version, 2: current PHP version */
+							__( 'Xorro Wallet Payments requires PHP %1$s or higher. You are running %2$s.', 'xorro-direct-wallet-payments-woocommerce' ),
+							XDWP_MIN_PHP,
+							PHP_VERSION
+						)
+					);
+					echo '</p></div>';
+				}
+			);
+			return;
+		}
+
 		if ( ! class_exists( 'WooCommerce' ) ) {
 			add_action(
 				'admin_notices',
@@ -153,7 +179,15 @@ add_action(
 		}
 
 		require_once XDWP_PATH . 'includes/class-xdwp-install.php';
-		Xdwp_Install::maybe_upgrade();
+		// Defer to `init`: maybe_upgrade() builds its defaults array with
+		// translatable strings (title/description), and calling __() this
+		// early (still on `plugins_loaded`) trips WordPress's "translation
+		// loaded too early" notice on every request. Everything it does
+		// (write settings defaults, self-heal cron events) is safe a few
+		// hook priorities later in the same request — nothing reads
+		// `xdwp_settings` before `init` (every read site already falls back
+		// to its own caller-supplied default if the option isn't there yet).
+		add_action( 'init', array( 'Xdwp_Install', 'maybe_upgrade' ), 5 );
 
 		require_once XDWP_PATH . 'includes/class-xdwp.php';
 		Xdwp::instance();

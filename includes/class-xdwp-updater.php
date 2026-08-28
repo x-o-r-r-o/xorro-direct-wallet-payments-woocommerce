@@ -29,7 +29,7 @@ class Xdwp_Updater {
 		add_filter( 'update_plugins_' . self::UPDATE_HOST, array( __CLASS__, 'filter_update' ), 10, 4 );
 		add_filter( 'plugins_api', array( __CLASS__, 'plugins_api' ), 20, 3 );
 		add_filter( 'pre_set_site_transient_update_plugins', array( __CLASS__, 'inject_transient' ) );
-		add_filter( 'upgrader_pre_download', array( __CLASS__, 'verify_and_download' ), 10, 3 );
+		add_filter( 'upgrader_pre_download', array( __CLASS__, 'verify_and_download' ), 10, 4 );
 		add_action( 'upgrader_process_complete', array( __CLASS__, 'clear_cache_after_upgrade' ), 10, 2 );
 	}
 
@@ -171,13 +171,20 @@ class Xdwp_Updater {
 	/**
 	 * Download our package only from allowlisted hosts and verify SHA-256 when available.
 	 *
-	 * @param bool|WP_Error $reply    Short-circuit value.
-	 * @param string        $package  Package URL.
-	 * @param WP_Upgrader   $upgrader Upgrader.
+	 * @param bool|WP_Error $reply      Short-circuit value.
+	 * @param string        $package    Package URL.
+	 * @param WP_Upgrader   $upgrader   Upgrader.
+	 * @param array         $hook_extra Extra args WordPress passes for a single-plugin update, including 'plugin'.
 	 * @return bool|string|WP_Error Local file path on success.
 	 */
-	public static function verify_and_download( $reply, $package, $upgrader ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter
+	public static function verify_and_download( $reply, $package, $upgrader, $hook_extra = array() ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter
 		if ( false !== $reply ) {
+			return $reply;
+		}
+
+		// When WordPress identifies which plugin this download is for, only
+		// ever act on our own — never intercept another plugin's update.
+		if ( ! empty( $hook_extra['plugin'] ) && XDWP_BASENAME !== $hook_extra['plugin'] ) {
 			return $reply;
 		}
 
@@ -434,6 +441,9 @@ class Xdwp_Updater {
 	 * @return bool
 	 */
 	private static function is_allowed_package_url( $url ) {
+		if ( 'https' !== strtolower( (string) wp_parse_url( $url, PHP_URL_SCHEME ) ) ) {
+			return false;
+		}
 		$host = strtolower( (string) wp_parse_url( $url, PHP_URL_HOST ) );
 		$ok   = array(
 			'github.com',

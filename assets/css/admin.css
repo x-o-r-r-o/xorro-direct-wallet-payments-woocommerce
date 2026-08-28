@@ -871,6 +871,16 @@ body.xdwp-admin-page #wpbody-content > .wrap > h1.wp-heading-inline {
 	background: #a7aaad;
 }
 
+.xdwp-wallet-card__warning {
+	margin: 0;
+	padding: 0.55rem 0.75rem;
+	border-left: 3px solid #dba617;
+	background: #fef8ee;
+	color: #50575e;
+	font-size: 12.5px;
+	line-height: 1.5;
+}
+
 .xdwp-wallet-rows {
 	display: flex;
 	flex-direction: column;

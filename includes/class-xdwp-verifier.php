@@ -75,6 +75,34 @@ class Xdwp_Verifier {
 	}
 
 	/**
+	 * Atomically create an option only if it does not already exist.
+	 *
+	 * add_option() cannot be used for this: since WP 4.2 it performs an
+	 * `INSERT ... ON DUPLICATE KEY UPDATE` and returns true whether it created
+	 * a new row or silently overwrote an existing one — so two concurrent
+	 * callers racing to create the same lock/reservation/claim key can both
+	 * be told they exclusively created it. `INSERT IGNORE` reports exactly
+	 * 1 affected row when a new row was inserted, and 0 (no error, no
+	 * overwrite) when the key already existed, giving a real compare-and-set.
+	 *
+	 * @param string $key   Option name.
+	 * @param string $value Option value.
+	 * @return bool True only if this call actually created the row.
+	 */
+	public static function atomic_add_option( $key, $value ) {
+		global $wpdb;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange
+		$inserted = $wpdb->query(
+			$wpdb->prepare(
+				"INSERT IGNORE INTO {$wpdb->options} (option_name, option_value, autoload) VALUES (%s, %s, 'off')",
+				$key,
+				$value
+			)
+		);
+		return 1 === (int) $inserted;
+	}
+
+	/**
 	 * Build an absolute match band that cannot overwhelm unique dust.
 	 *
 	 * Percentage underpayment is capped so concurrent shared-wallet orders remain distinguishable.
@@ -255,7 +283,7 @@ class Xdwp_Verifier {
 		$grace   = (int) Xdwp_Settings::get( 'expiry_grace_minutes', 30 );
 		$ttl     = max( HOUR_IN_SECONDS, ( ( $window + $grace ) * MINUTE_IN_SECONDS ) + DAY_IN_SECONDS );
 
-		if ( ! add_option( $key, $payload, '', 'no' ) ) {
+		if ( ! self::atomic_add_option( $key, $payload ) ) {
 			$existing = (string) get_option( $key, '' );
 			$parts    = explode( '|', $existing, 2 );
 			$owner    = isset( $parts[0] ) ? (int) $parts[0] : 0;
@@ -369,7 +397,7 @@ class Xdwp_Verifier {
 		$claim_key = 'xdwp_txid_claim_' . md5( $txid );
 		$payload   = absint( $order_id ) . '|' . time();
 
-		if ( ! add_option( $claim_key, $payload, '', 'no' ) ) {
+		if ( ! self::atomic_add_option( $claim_key, $payload ) ) {
 			$existing = (string) get_option( $claim_key, '' );
 			$parts    = explode( '|', $existing, 2 );
 			$owner    = isset( $parts[0] ) ? (int) $parts[0] : 0;
@@ -805,7 +833,8 @@ class Xdwp_Verifier {
 				if ( ! empty( $vout['scriptpubkey_address'] ) ) {
 					$addr = $vout['scriptpubkey_address'];
 				}
-				if ( 0 === strcasecmp( $addr, $address ) && isset( $vout['value'] ) ) {
+				// Base58Check is case-sensitive (unlike EIP-55 hex) — exact match only.
+				if ( '' !== $addr && hash_equals( (string) $address, (string) $addr ) && isset( $vout['value'] ) ) {
 					$sum += ( (float) $vout['value'] ) / pow( 10, $decimals );
 				}
 			}
@@ -885,13 +914,21 @@ class Xdwp_Verifier {
 					if ( 0 === stripos( $recv_bare, 'bitcoincash:' ) ) {
 						$recv_bare = substr( $recv_bare, strlen( 'bitcoincash:' ) );
 					}
-					if (
-						0 === strcasecmp( $recipient, $address )
-						|| 0 === strcasecmp( $recipient, $lookup )
-						|| 0 === strcasecmp( $recv_bare, $lookup )
-						|| 0 === strcasecmp( 'bitcoincash:' . $recv_bare, $address )
-						|| 0 === strcasecmp( 'bitcoincash:' . $lookup, $recipient )
-					) {
+					if ( 'bitcoin-cash' === $chain ) {
+						// CashAddr's own checksum is explicitly case-insensitive by spec
+						// (unlike BTC-style Bech32) — case-insensitive match is correct here.
+						$match = (
+							0 === strcasecmp( $recipient, $address )
+							|| 0 === strcasecmp( $recipient, $lookup )
+							|| 0 === strcasecmp( $recv_bare, $lookup )
+							|| 0 === strcasecmp( 'bitcoincash:' . $recv_bare, $address )
+							|| 0 === strcasecmp( 'bitcoincash:' . $lookup, $recipient )
+						);
+					} else {
+						// LTC/DOGE legacy addresses are Base58Check — case-sensitive, exact match only.
+						$match = hash_equals( $address, $recipient ) || hash_equals( $lookup, $recipient );
+					}
+					if ( $match ) {
 						$sum += ( (float) $out['value'] ) / 1e8;
 					}
 				}
@@ -1324,7 +1361,8 @@ class Xdwp_Verifier {
 				} elseif ( ! empty( $tx['to_address'] ) ) {
 					$to = (string) $tx['to_address'];
 				}
-				if ( '' === $to || 0 !== strcasecmp( $to, $address ) ) {
+				// TRON addresses are Base58Check — case-sensitive, exact match only.
+				if ( '' === $to || ! hash_equals( (string) $address, $to ) ) {
 					continue;
 				}
 				$contract = '';
@@ -1333,7 +1371,7 @@ class Xdwp_Verifier {
 				} elseif ( ! empty( $tx['contract_address'] ) ) {
 					$contract = (string) $tx['contract_address'];
 				}
-				if ( '' === $contract || 0 !== strcasecmp( $contract, (string) $coin['contract'] ) ) {
+				if ( '' === $contract || ! hash_equals( (string) $coin['contract'], $contract ) ) {
 					continue;
 				}
 				$time = isset( $tx['block_timestamp'] ) ? (int) floor( $tx['block_timestamp'] / 1000 ) : 0;
@@ -1407,14 +1445,15 @@ class Xdwp_Verifier {
 		if ( '' === $candidate || '' === $address ) {
 			return false;
 		}
-		if ( 0 === strcasecmp( $candidate, $address ) ) {
+		// TRON addresses are Base58Check — case-sensitive, exact match only.
+		if ( hash_equals( $address, $candidate ) ) {
 			return true;
 		}
 		// Hex form (41 + 20 bytes) — convert to base58check before comparing.
 		$hex = preg_replace( '/^0x/i', '', $candidate );
 		if ( is_string( $hex ) && preg_match( '/^41[0-9a-fA-F]{40}$/', $hex ) ) {
 			$base58 = self::tron_hex_to_base58( $hex );
-			return ( '' !== $base58 && 0 === strcasecmp( $base58, $address ) );
+			return ( '' !== $base58 && hash_equals( $address, $base58 ) );
 		}
 		return false;
 	}
@@ -1453,7 +1492,10 @@ class Xdwp_Verifier {
 			return '';
 		}
 
-		$digits = array( 0 );
+		// Digits start empty (not [0]) so an all-zero payload naturally
+		// produces zero significant digits — seeding [0] here would emit one
+		// spurious extra '1' on top of the leading-zero '1's below.
+		$digits = array();
 		foreach ( $bytes as $byte ) {
 			$carry = $byte;
 			foreach ( $digits as $i => $digit ) {
@@ -1615,7 +1657,8 @@ class Xdwp_Verifier {
 			} elseif ( ! empty( $tx['tx']['Destination'] ) ) {
 				$dest = $tx['tx']['Destination'];
 			}
-			if ( $dest && 0 !== strcasecmp( $dest, $address ) ) {
+			// XRP addresses are Base58Check — case-sensitive, exact match only.
+			if ( $dest && ! hash_equals( (string) $address, (string) $dest ) ) {
 				continue;
 			}
 			if ( ! $dest ) {
@@ -2250,7 +2293,8 @@ class Xdwp_Verifier {
 			if ( ! $time || $time < $since ) {
 				continue;
 			}
-			if ( empty( $tx['to'] ) || 0 !== strcasecmp( $tx['to'], $address ) ) {
+			// SS58 addresses are case-sensitive — exact match only.
+			if ( empty( $tx['to'] ) || ! hash_equals( (string) $address, (string) $tx['to'] ) ) {
 				continue;
 			}
 			// Require explicit success + hash; confirmations alone must not accept failed transfers.

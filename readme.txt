@@ -4,7 +4,7 @@ Tags: woocommerce, cryptocurrency, bitcoin, ethereum, payments, usdt, crypto che
 Requires at least: 6.9
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.5.16
+Stable tag: 1.5.17
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -255,6 +255,21 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 
 == Changelog ==
 
+= 1.5.17 =
+* Security: payment/txid/amount-slot locks no longer rely on add_option() (WP core has used INSERT...ON DUPLICATE KEY since 4.2, so two concurrent callers could both believe they held the same lock — verified against WP core and reproduced at the database level)
+* Security: on-chain address matching for BTC/LTC/DOGE, TRON, XRP, and Polkadot is now exact (case-sensitive), matching how Base58Check/SS58 actually encode — previously case-insensitive, which is only correct for EIP-55 EVM addresses
+* Fix: manual "Mark payment received" button did nothing — its form was nested inside WordPress's order-edit form (invalid HTML, silently dropped), so the click just saved the order instead of submitting; this is the only way to complete a Monero payment
+* Fix: order note for manual mark-paid is now attributed to the acting admin instead of "system"
+* Fix: trashing then restoring a stale order under HPOS (WooCommerce's default order storage) silently skipped the plugin's terminal-state safeguard, letting a dead order re-arm for auto-verification
+* Fix: a customer's checkout coin selection could silently revert to a different coin due to an unsequenced update_order_review AJAX race
+* Fix: cron polling now uses a real mutex (previous add_option()-based guard had the same non-exclusive issue as above) and stops after 50s instead of risking a timeout
+* Fix: `wc_get_orders()` args in cron no longer trigger WooCommerce's "not supported on the current order datastore" notice under HPOS
+* Hardening: emails the site admin when a wallet payout address is added, changed, or removed
+* Hardening: registers a GDPR personal-data exporter/eraser so a customer's crypto order metadata is included in WordPress's own Export/Erase Personal Data tools
+* Hardening: clear warning on XRP/EOS/XLM/HBAR/ATOM wallet fields that destination tags/memos aren't supported — don't use a shared or exchange-hosted address
+* Hardening: plugin update downloads verify scheme (https-only) and are scoped to this plugin's own basename
+* Fix: `_load_textdomain_just_in_time` notice on every page load (translated strings were being built before `init`)
+
 = 1.5.16 =
 * Security: XRP credits delivered_amount only (never Amount/DeliverMax — partial-payment underpay)
 * Security: XRP object amounts treat value as drops (/1e6), matching XRPSCan (never whole-XRP mis-scale)
@@ -442,6 +457,9 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.5.17 =
+Security: payment/txid locks were not exclusive under concurrent verification (add_option() on modern MySQL); address matching for BTC/LTC/DOGE/TRON/XRP/DOT is now case-sensitive. Also fixes a completely non-functional "Mark payment received" button (blocks Monero payments). Update recommended.
 
 = 1.5.16 =
 Security: XRP delivered_amount only + drops scale for XRPSCan objects; ATOM requires recipient. Update recommended.

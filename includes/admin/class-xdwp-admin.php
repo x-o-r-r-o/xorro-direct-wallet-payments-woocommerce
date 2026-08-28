@@ -251,6 +251,11 @@ class Xdwp_Admin {
 
 		// Checkbox flags absent when unchecked.
 		$tab = self::current_tab();
+
+		// Capture the pre-save wallets so we can notify the merchant if a payout
+		// address changes — the single highest-value field this settings page
+		// controls, otherwise gated at the exact same level as a cosmetic setting.
+		$wallets_before = ( 'wallets' === $tab ) ? Xdwp_Settings::get( 'wallets', array() ) : null;
 		if ( 'general' === $tab ) {
 			foreach ( array( 'unique_amounts', 'wallet_rotation', 'auto_verify' ) as $flag ) {
 				if ( ! isset( $raw[ $flag ] ) ) {
@@ -284,6 +289,10 @@ class Xdwp_Admin {
 			update_option( $wc_key, $wc );
 		}
 
+		if ( 'wallets' === $tab && is_array( $wallets_before ) && isset( $clean['wallets'] ) ) {
+			self::maybe_notify_wallet_change( $wallets_before, $clean['wallets'] );
+		}
+
 		$rejected = class_exists( 'Xdwp_Wallets' ) ? Xdwp_Wallets::last_rejected_count() : 0;
 		if ( 'wallets' === $tab && $rejected > 0 ) {
 			add_settings_error(
@@ -308,6 +317,65 @@ class Xdwp_Admin {
 			'xdwp_saved',
 			__( 'Settings saved.', 'xorro-direct-wallet-payments-woocommerce' ),
 			'success'
+		);
+	}
+
+	/**
+	 * Email the site admin whenever a payout wallet address is added, removed,
+	 * or changed. Wallet edits are gated behind the same `manage_woocommerce`
+	 * capability as every other setting on this screen — appropriate for
+	 * day-to-day config, but this one field controls where every future
+	 * customer payment for a coin is sent, with no chargeback path once funds
+	 * move. This gives the store owner a signal if a shop-manager account
+	 * (malicious or compromised) redirects a payout address, since the save
+	 * itself is otherwise indistinguishable from any other routine change.
+	 *
+	 * @param array $before Wallets keyed by coin ID before this save.
+	 * @param array $after  Wallets keyed by coin ID after this save.
+	 */
+	private static function maybe_notify_wallet_change( array $before, array $after ) {
+		$coin_ids = array_unique( array_merge( array_keys( $before ), array_keys( $after ) ) );
+		$changes  = array();
+
+		foreach ( $coin_ids as $coin_id ) {
+			$old_addrs = isset( $before[ $coin_id ] ) ? (array) $before[ $coin_id ] : array();
+			$new_addrs = isset( $after[ $coin_id ] ) ? (array) $after[ $coin_id ] : array();
+			if ( $old_addrs === $new_addrs ) {
+				continue;
+			}
+			$coin  = class_exists( 'Xdwp_Coins' ) ? Xdwp_Coins::get( $coin_id ) : null;
+			$label = ( $coin && ! empty( $coin['name'] ) ) ? $coin['name'] . ' (' . $coin_id . ')' : $coin_id;
+			$changes[] = sprintf(
+				"%s\n  Before: %s\n  After:  %s",
+				$label,
+				$old_addrs ? implode( ', ', $old_addrs ) : '(none)',
+				$new_addrs ? implode( ', ', $new_addrs ) : '(none)'
+			);
+		}
+
+		if ( empty( $changes ) ) {
+			return;
+		}
+
+		$user = wp_get_current_user();
+		$body = sprintf(
+			/* translators: 1: site URL, 2: user login, 3: user ID, 4: date/time, 5: list of changed wallets */
+			__( "A Xorro Wallet Payments payout address was changed on %1\$s by %2\$s (user #%3\$d) at %4\$s.\n\nIf this wasn't you, secure this account immediately — this controls where future customer crypto payments are sent, and non-custodial crypto payments cannot be reversed once sent.\n\n%5\$s", 'xorro-direct-wallet-payments-woocommerce' ),
+			home_url( '/' ),
+			( $user && $user->exists() ) ? $user->user_login : __( 'an unknown user', 'xorro-direct-wallet-payments-woocommerce' ),
+			$user ? (int) $user->ID : 0,
+			current_time( 'mysql' ),
+			implode( "\n\n", $changes )
+		);
+
+		wp_mail(
+			get_option( 'admin_email' ),
+			sprintf(
+				/* translators: %s: site name */
+				__( '[%s] Wallet payout address changed', 'xorro-direct-wallet-payments-woocommerce' ),
+				wp_specialchars_decode( get_bloginfo( 'name' ), ENT_QUOTES )
+			),
+			$body
 		);
 	}
 

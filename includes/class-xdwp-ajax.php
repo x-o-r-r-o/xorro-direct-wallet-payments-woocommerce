@@ -89,7 +89,15 @@ class Xdwp_Ajax {
 			$deny();
 		}
 
-		check_ajax_referer( 'xdwp_status_' . $order_id, 'nonce' );
+		// Explicit $die=false so an invalid nonce falls through to the same
+		// uniform JSON denial as every other failure path below, rather than
+		// wp_die()'s bare "-1" — a different response shape/status than the
+		// rest of this endpoint (does not itself leak order existence, since
+		// nonce validity depends on the requester's own session, not a
+		// per-order secret, but keeping the shape consistent regardless).
+		if ( ! check_ajax_referer( 'xdwp_status_' . $order_id, 'nonce', false ) ) {
+			$deny();
+		}
 
 		$ip = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : 'unknown';
 		$rate_key = 'xdwp_status_' . md5( $ip . '|' . $order_id );

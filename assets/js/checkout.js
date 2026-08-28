@@ -3,9 +3,31 @@
 
 	var quoteSeq = 0;
 	var quoteXhr = null;
+	// The coin the shopper actually clicked, independent of whatever the
+	// server last rendered as "checked" (see restoreUserCoin() below).
+	var lastUserCoin = null;
 
 	function selectedCoin() {
 		return $('input[name="xdwp_coin"]:checked').val() || '';
+	}
+
+	/**
+	 * WooCommerce re-renders the whole payment_fields() fragment on every
+	 * update_order_review (billing/shipping field changes, etc.), and those
+	 * requests are not sequenced — a slower request started *before* the
+	 * shopper picked a coin can still resolve *after*, silently reverting
+	 * the visible selection back to whatever coin was checked when that
+	 * particular request was sent. Re-assert the shopper's actual last
+	 * choice against whatever the fragment swap just rendered.
+	 */
+	function restoreUserCoin() {
+		if (!lastUserCoin) {
+			return;
+		}
+		var $target = $('input[name="xdwp_coin"][value="' + lastUserCoin + '"]');
+		if ($target.length && !$target.prop('checked')) {
+			$target.prop('checked', true);
+		}
 	}
 
 	function gatewaySelected() {
@@ -98,6 +120,7 @@
 	}
 
 	function fetchQuote() {
+		restoreUserCoin();
 		if (!gatewaySelected()) {
 			return;
 		}
@@ -108,7 +131,10 @@
 		startQuoteRequest(coin, ++quoteSeq, 0);
 	}
 
-	$(document.body).on('change', 'input[name="xdwp_coin"]', fetchQuote);
+	$(document.body).on('change', 'input[name="xdwp_coin"]', function () {
+		lastUserCoin = selectedCoin();
+		fetchQuote();
+	});
 	$(document.body).on('updated_checkout payment_method_selected', fetchQuote);
 
 	$(function () {

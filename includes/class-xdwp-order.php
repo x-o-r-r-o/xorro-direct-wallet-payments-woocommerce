@@ -23,6 +23,7 @@ class Xdwp_Order {
 		add_action( 'admin_post_xdwp_mark_paid', array( __CLASS__, 'handle_mark_paid' ) );
 		add_filter( 'woocommerce_get_price_html', array( __CLASS__, 'maybe_append_crypto_price' ), 20, 2 );
 		add_action( 'woocommerce_order_status_changed', array( __CLASS__, 'on_status_changed' ), 10, 4 );
+		add_action( 'woocommerce_trash_order', array( __CLASS__, 'on_order_terminal' ), 10, 1 );
 	}
 
 	/**
@@ -42,6 +43,16 @@ class Xdwp_Order {
 
 	/**
 	 * Mark plugin payment as cancelled so AJAX/cron cannot resurrect the order.
+	 *
+	 * Called both from `on_status_changed()` (cancelled/refunded, and trash on
+	 * setups where it fires `woocommerce_order_status_changed`) and directly
+	 * from the `woocommerce_trash_order` hook: under HPOS — WooCommerce's
+	 * default order storage — trashing an order writes status via a raw
+	 * `$wpdb->update()` and only fires `woocommerce_trash_order`, never
+	 * `woocommerce_order_status_changed`, so relying on the status-changed
+	 * hook alone silently skips this safeguard whenever a stale order is
+	 * trashed and later restored. Safe to call from both hooks — this is a
+	 * no-op once `_xdwp_status` is already outside `awaiting`/`expired`.
 	 *
 	 * @param int            $order_id Order ID.
 	 * @param WC_Order|null  $order    Order object.
@@ -163,8 +174,8 @@ class Xdwp_Order {
 		$lock_key = 'xdwp_paying_' . $order_id;
 		$now      = (string) time();
 
-		// Atomic lock: add_option fails if key already exists; stale takeover uses compare-and-swap.
-		if ( ! add_option( $lock_key, $now, '', 'no' ) ) {
+		// Atomic lock via a real INSERT-only compare-and-set; stale takeover uses compare-and-swap.
+		if ( ! Xdwp_Verifier::atomic_add_option( $lock_key, $now ) ) {
 			$existing = (string) get_option( $lock_key, '' );
 			// Fresh lock younger than 2 minutes — another worker owns it.
 			if ( $existing && ( time() - (int) $existing ) < 120 ) {
@@ -483,8 +494,19 @@ class Xdwp_Order {
 			&& in_array( $order->get_status(), array( 'pending', 'on-hold', 'failed' ), true );
 
 		if ( $can_mark ) {
+			/*
+			 * This metabox is rendered inside WordPress's single overarching
+			 * #post edit-order <form>. A nested <form> here is invalid HTML —
+			 * browsers drop the inner <form> tag while parsing, so these
+			 * fields would silently submit as part of the *order-edit* form
+			 * (posting to admin.php?page=wc-orders, not admin-post.php) and
+			 * "Mark payment received" would appear to do nothing. We render
+			 * plain markup instead and build a real, detached <form> in JS
+			 * on click, appended directly to <body> so it isn't nested.
+			 */
+			$box_id = 'xdwp-mark-paid-' . (int) $order->get_id();
 			?>
-			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+			<div class="xdwp-mark-paid-box" id="<?php echo esc_attr( $box_id ); ?>">
 				<input type="hidden" name="action" value="xdwp_mark_paid" />
 				<input type="hidden" name="order_id" value="<?php echo esc_attr( (string) $order->get_id() ); ?>" />
 				<?php wp_nonce_field( 'xdwp_mark_paid_' . $order->get_id() ); ?>
@@ -498,9 +520,47 @@ class Xdwp_Order {
 						<?php esc_html_e( 'I confirm this transaction paid this order on-chain.', 'xorro-direct-wallet-payments-woocommerce' ); ?>
 					</label>
 				</p>
-				<p><button type="submit" class="button button-primary"><?php esc_html_e( 'Mark payment received', 'xorro-direct-wallet-payments-woocommerce' ); ?></button></p>
-			</form>
+				<p><button type="button" class="button button-primary xdwp-mark-paid-submit"><?php esc_html_e( 'Mark payment received', 'xorro-direct-wallet-payments-woocommerce' ); ?></button></p>
+			</div>
 			<p class="description"><?php esc_html_e( 'Requires a txid. Use for chains without auto-verify, delayed detection, or late payments after expiry.', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
+			<script>
+			( function () {
+				var box = document.getElementById( <?php echo wp_json_encode( $box_id ); ?> );
+				if ( ! box ) {
+					return;
+				}
+				box.querySelector( '.xdwp-mark-paid-submit' ).addEventListener( 'click', function () {
+					var sourceFields = Array.prototype.slice.call( box.querySelectorAll( 'input' ) );
+					// Validate the real, visible fields in place first — reportValidity()
+					// works on form-associated elements even without a <form> ancestor
+					// and shows the browser's normal native validation UI.
+					var valid = sourceFields.every( function ( field ) {
+						return field.reportValidity();
+					} );
+					if ( ! valid ) {
+						return;
+					}
+					var form = document.createElement( 'form' );
+					form.method = 'post';
+					form.action = <?php echo wp_json_encode( esc_url_raw( admin_url( 'admin-post.php' ) ) ); ?>;
+					form.style.display = 'none';
+					// Copy current values into fresh fields; the visible box is left untouched.
+					sourceFields.forEach( function ( field ) {
+						if ( field.type === 'checkbox' && ! field.checked ) {
+							// Native forms omit unchecked checkboxes entirely.
+							return;
+						}
+						var copy = document.createElement( 'input' );
+						copy.type = 'hidden';
+						copy.name = field.name;
+						copy.value = field.value;
+						form.appendChild( copy );
+					} );
+					document.body.appendChild( form );
+					form.submit();
+				} );
+			} )();
+			</script>
 			<?php
 		}
 	}
@@ -569,7 +629,9 @@ class Xdwp_Order {
 				/* translators: %s: transaction id */
 				__( 'Payment marked as received manually by admin (txid: %s).', 'xorro-direct-wallet-payments-woocommerce' ),
 				$txid
-			)
+			),
+			false,
+			true
 		);
 
 		wp_safe_redirect( wp_get_referer() ? wp_get_referer() : admin_url( 'edit.php?post_type=shop_order' ) );
