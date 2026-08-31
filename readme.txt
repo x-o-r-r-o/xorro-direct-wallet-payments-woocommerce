@@ -4,7 +4,7 @@ Tags: woocommerce, cryptocurrency, bitcoin, ethereum, payments, usdt, crypto che
 Requires at least: 6.9
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.5.19
+Stable tag: 1.5.20
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -255,7 +255,12 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 
 == Changelog ==
 
-= 1.5.17 =
+= 1.5.20 =
+* New: Telos (TLOS) — verified but accidentally left out of the 1.5.19 batch
+* New: 12 more coins/tokens — BitTorrent, ChainGPT, Gravity, LayerZero, Rejuve.AI, and 1inch on a second network (BSC or Arbitrum) alongside their existing chain, plus Baby Doge Coin, Holo, Poolz Finance, Solar (Swipe), and the Ethereum-bridged form of Injective — every contract address verified against CoinGecko's platform data
+* Registry now covers 178 coins/tokens (up from 81 at the start of this audit)
+
+= 1.5.19 =
 * Security: payment/txid/amount-slot locks no longer rely on add_option() (WP core has used INSERT...ON DUPLICATE KEY since 4.2, so two concurrent callers could both believe they held the same lock — verified against WP core and reproduced at the database level)
 * Security: on-chain address matching for BTC/LTC/DOGE, TRON, XRP, and Polkadot is now exact (case-sensitive), matching how Base58Check/SS58 actually encode — previously case-insensitive, which is only correct for EIP-55 EVM addresses
 * Fix: manual "Mark payment received" button did nothing — its form was nested inside WordPress's order-edit form (invalid HTML, silently dropped), so the click just saved the order instead of submitting; this is the only way to complete a Monero payment

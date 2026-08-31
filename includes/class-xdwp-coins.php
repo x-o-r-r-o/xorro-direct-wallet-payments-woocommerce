@@ -200,6 +200,25 @@ class Xdwp_Coins {
 			'TLOS'   => self::def( 'TLOS', 'Telos', 'ethereum', 'telos', 'erc20', 18, 'eth', '0x193f4A4a6ea24102F49b931dEEEB931F6E32405D', 'ethereum' ),
 			'PYUSD'  => self::def( 'PYUSD', 'PayPal USD', 'ethereum', 'paypal-usd', 'erc20', 6, 'eth', '0x6c3ea9036406852006290770BEdFcAbA0e23A0e8', 'ethereum' ),
 			'EURT'   => self::def( 'EURT', 'Euro Tether', 'ethereum', 'tether-eurt', 'erc20', 6, 'eth', '0xC581b735A1688071A1746c968e0798D642EDE491', 'ethereum' ),
+
+			// Second-network variants of tokens added above (same project, address already
+			// verified as part of that lookup — no new research needed for these).
+			'FLOKIBSC' => self::def( 'FLOKIBSC', 'Floki (BSC)', 'binance-smart-chain', 'floki', 'bep20', 9, 'bnb', '0xfb5B838b6cfEEdC2873aB27866079AC55363D37E', 'bsc' ),
+			'1INCHBSC' => self::def( '1INCHBSC', '1inch Network (BSC)', 'binance-smart-chain', '1inch', 'bep20', 18, 'bnb', '0x111111111117dC0aa78b770fA6A738034120C302', 'bsc' ),
+			'BTTBSC'   => self::def( 'BTTBSC', 'BitTorrent (BSC)', 'binance-smart-chain', 'bittorrent', 'bep20', 18, 'bnb', '0x352Cb5E19b12FC216548a2677bD0fce83BAe434B', 'bsc' ),
+			'ZRO_ARB'  => self::def( 'ZRO_ARB', 'LayerZero (Arbitrum)', 'arbitrum-one', 'layerzero', 'erc20', 18, 'eth', '0x6985884C4392D348587B19cb9eAAf157F13271cd', 'arbitrum', 'ZRO' ),
+			'CGPT_BSC' => self::def( 'CGPT_BSC', 'ChainGPT (BSC)', 'binance-smart-chain', 'chaingpt', 'bep20', 18, 'bnb', '0x9840652DC04fb9db2C43853633f0F62BE6f00f98', 'bsc', 'CGPT' ),
+			'G_BSC'    => self::def( 'G_BSC', 'Gravity (by Galxe) (BSC)', 'binance-smart-chain', 'g-token', 'bep20', 18, 'bnb', '0x9C7BEBa8F6eF6643aBd725e45a4E8387eF260649', 'bsc', 'G' ),
+			'RJV_BSC'  => self::def( 'RJV_BSC', 'Rejuve.AI (BSC)', 'binance-smart-chain', 'rejuve-ai', 'bep20', 6, 'bnb', '0x602b6C6cCE5f95c00603bd07D8Fa7EBaF3747d44', 'bsc', 'RJV' ),
+
+			// Final round: newly researched (not second-network variants of earlier entries).
+			'BABYDOGE' => self::def( 'BABYDOGE', 'Baby Doge Coin', 'binance-smart-chain', 'baby-doge-coin', 'bep20', 9, 'bnb', '0xc748673057861a797275CD8A068AbB95A902e8de', 'bsc' ),
+			'HOT'      => self::def( 'HOT', 'Holo', 'ethereum', 'holotoken', 'erc20', 18, 'eth', '0x6c6EE5e31d828De241282B9606C8e98Ea48526E2', 'ethereum' ),
+			'POOLX'    => self::def( 'POOLX', 'Poolz Finance', 'binance-smart-chain', 'poolz-finance-2', 'bep20', 18, 'bnb', '0xbaEa9ABA1454Df334943951D51116aE342EAb255', 'bsc' ),
+			'SXP'      => self::def( 'SXP', 'Solar', 'binance-smart-chain', 'swipe', 'bep20', 18, 'bnb', '0x47BEAD2563dCBf3bF2c9407fEa4dC236fabA485A', 'bsc' ),
+			// Injective's native chain is Cosmos-based; this is the ERC-20-wrapped form on
+			// Ethereum only — a customer sending native-chain INJ would not be detected here.
+			'INJ'      => self::def( 'INJ', 'Injective (bridged)', 'ethereum', 'injective-protocol', 'erc20', 18, 'eth', '0xe28b3B32B6c345A34FF64674606124Dd5Aceca30', 'ethereum' ),
 			'TRVL'   => self::def( 'TRVL', 'Dtravel', 'ethereum', 'dtravel', 'erc20', 18, 'eth', '0xd47BDF574B4F76210ed503e0EFe81B58Aa061f3d', 'ethereum' ),
 
 			// Additional BNB Chain BEP-20 tokens (all contracts verified against CoinGecko's platform data).
