@@ -721,6 +721,13 @@ class Xdwp_Verifier {
 				return self::check_blockchair( 'litecoin', $address, $min, $max, $since );
 			case 'doge':
 				return self::check_blockchair( 'dogecoin', $address, $min, $max, $since );
+			case 'dash':
+				return self::check_blockchair( 'dash', $address, $min, $max, $since );
+			case 'zec':
+				return self::check_blockchair( 'zcash', $address, $min, $max, $since );
+			case 'xec':
+				// eCash rebased 1,000,000 old base units per XEC — 2 effective decimals, not 8.
+				return self::check_blockchair( 'ecash', $address, $min, $max, $since, 2 );
 			case 'eth':
 			case 'ethereum':
 				return self::check_evm( 1, $address, $min, $max, $since, $coin );
@@ -849,13 +856,19 @@ class Xdwp_Verifier {
 	/**
 	 * Blockchair address transactions.
 	 *
-	 * @param string $chain   Chain slug.
-	 * @param string $address Address.
-	 * @param float  $min     Min amount.
-	 * @param int    $since   Since timestamp.
+	 * @param string $chain    Chain slug.
+	 * @param string $address  Address.
+	 * @param float  $min      Min amount.
+	 * @param float  $max      Max amount.
+	 * @param int    $since    Since timestamp.
+	 * @param int    $decimals Base-unit decimals for this chain (default 8 — BTC-style satoshis).
+	 *                         eCash (XEC) rebased its display unit in 2021 to 1,000,000 old base
+	 *                         units per coin, i.e. 2 effective decimals relative to Blockchair's
+	 *                         raw value field — passing the wrong decimals here would silently
+	 *                         under- or over-count every payment on that chain.
 	 * @return bool
 	 */
-	private static function check_blockchair( $chain, $address, $min, $max, $since ) {
+	private static function check_blockchair( $chain, $address, $min, $max, $since, $decimals = 8 ) {
 		$lookup = $address;
 		// Bitcoin Cash CashAddr may include a prefix Blockchair rejects in the path.
 		if ( 'bitcoin-cash' === $chain && 0 === stripos( $address, 'bitcoincash:' ) ) {
@@ -929,7 +942,7 @@ class Xdwp_Verifier {
 						$match = hash_equals( $address, $recipient ) || hash_equals( $lookup, $recipient );
 					}
 					if ( $match ) {
-						$sum += ( (float) $out['value'] ) / 1e8;
+						$sum += ( (float) $out['value'] ) / pow( 10, $decimals );
 					}
 				}
 			}

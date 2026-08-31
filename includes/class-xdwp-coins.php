@@ -33,6 +33,10 @@ class Xdwp_Coins {
 			'ETH'  => self::def( 'ETH', 'Ethereum', 'ethereum', 'ethereum', 'native', 18, 'eth' ),
 			'LTC'  => self::def( 'LTC', 'Litecoin', 'litecoin', 'litecoin', 'native', 8, 'ltc' ),
 			'DOGE' => self::def( 'DOGE', 'Dogecoin', 'dogecoin', 'dogecoin', 'native', 8, 'doge' ),
+			'DASH' => self::def( 'DASH', 'Dash', 'dash', 'dash', 'native', 8, 'dash' ),
+			'ZEC'  => self::def( 'ZEC', 'Zcash', 'zcash', 'zcash', 'native', 8, 'zec' ),
+			// eCash rebased 1,000,000 old base units per XEC in 2021 — 2 effective decimals.
+			'XEC'  => self::def( 'XEC', 'eCash', 'ecash', 'ecash', 'native', 2, 'xec' ),
 			'BNB'  => self::def( 'BNB', 'BNB', 'binance-smart-chain', 'binancecoin', 'native', 18, 'bnb', '', 'bsc' ),
 			'SOL'  => self::def( 'SOL', 'Solana', 'solana', 'solana', 'native', 9, 'sol' ),
 			'TRX'  => self::def( 'TRX', 'TRON', 'tron', 'tron', 'native', 6, 'trx' ),
@@ -79,6 +83,23 @@ class Xdwp_Coins {
 			'USDT_BASE'  => self::def( 'USDT_BASE', 'Tether (Base)', 'base', 'tether', 'erc20', 6, 'eth', '0xfde4C96c8593536E9F378a799fE87E5bE24637C8', 'base', 'USDT' ),
 			'USDT_SOL'   => self::def( 'USDT_SOL', 'Tether (Solana)', 'solana', 'tether', 'spl', 6, 'sol', 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB', 'solana', 'USDT' ),
 			'USDT_TRX'   => self::def( 'USDT_TRX', 'Tether (TRON)', 'tron', 'tether', 'trc20', 6, 'trx', 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t', 'tron', 'USDT' ),
+
+			// Other TRON TRC-20 tokens.
+			'TUSD_TRX' => self::def( 'TUSD_TRX', 'TrueUSD (TRON)', 'tron', 'true-usd', 'trc20', 18, 'trx', 'TUpMhErZL2fhh4sVNULAbNKLokS4GjC1F4', 'tron', 'TUSD' ),
+			'USDD'     => self::def( 'USDD', 'USDD', 'tron', 'usdd', 'trc20', 18, 'trx', 'TXDk8mbtRbXeYuMNS83CfKPaYYT8XWv9Hz', 'tron' ),
+			'BTT'      => self::def( 'BTT', 'BitTorrent', 'tron', 'bittorrent', 'trc20', 18, 'trx', 'TAFjULxiVgT4qWk6UZwjqwZXTSaGaqnVp4', 'tron' ),
+			'JST'      => self::def( 'JST', 'JUST', 'tron', 'just', 'trc20', 18, 'trx', 'TCFLL5dx5ZJdKnWuesXxi1VPwjLVmWZZy9', 'tron' ),
+			'USDJ'     => self::def( 'USDJ', 'JUST Stablecoin', 'tron', 'just-stablecoin', 'trc20', 18, 'trx', 'TMwFHYXLJaRUPeW6421aqXL4ZEzPRFGkGT', 'tron' ),
+			'SUN'      => self::def( 'SUN', 'Sun Token', 'tron', 'sun-token', 'trc20', 18, 'trx', 'TSSMHYeV2uE9qYH95DqyoCuNCzEL1NvU3S', 'tron' ),
+			'WIN'      => self::def( 'WIN', 'WINkLink', 'tron', 'wink', 'trc20', 6, 'trx', 'TLa2f6VPqDgRE67v1736s7bJ8Ray5wYjU7', 'tron' ),
+			'SUNDOG'   => self::def( 'SUNDOG', 'Sundog', 'tron', 'sundog', 'trc20', 18, 'trx', 'TXL6rJbvmjD46zeN1JssfgxvSo99qC8MRT', 'tron' ),
+
+			// Other Solana SPL tokens.
+			'ZBC'    => self::def( 'ZBC', 'Zebec Protocol', 'solana', 'zebec-protocol', 'spl', 9, 'sol', 'zebeczgi5fSEtbpfQKVZKCJ3WgYXxjkMUkNNx7fLKAF', 'solana' ),
+			'GARI'   => self::def( 'GARI', 'Gari Network', 'solana', 'gari-network', 'spl', 9, 'sol', 'CKaKtYvz6dKPyMvYq9Rh3UBrnNqYZAyd7iF4hJtjUvks', 'solana' ),
+			'MEW'    => self::def( 'MEW', 'cat in a dogs world', 'solana', 'cat-in-a-dogs-world', 'spl', 5, 'sol', 'MEW1gQWJ3nEXg2qgERiKu7FAFj79PHvQVREQUzScPP5', 'solana' ),
+			'PONKE'  => self::def( 'PONKE', 'Ponke', 'solana', 'ponke', 'spl', 9, 'sol', '5z3EqYQo9HiCEs3R84RCDMu2n7anpDMxRhdK8PSWmrRC', 'solana' ),
+			'MYRO'   => self::def( 'MYRO', 'Myro', 'solana', 'myro', 'spl', 6, 'sol', 'Bm3dgkZrjH7eaz1GBH1R2ZHkp7nZUoPNJhjekoxepump', 'solana' ),
 
 			// USDC multi-network.
 			'USDC_ETH'   => self::def( 'USDC_ETH', 'USD Coin (Ethereum)', 'ethereum', 'usd-coin', 'erc20', 6, 'eth', '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', 'ethereum', 'USDC' ),
@@ -452,6 +473,15 @@ class Xdwp_Coins {
 		if ( 'doge' === $verifier || 'doge' === $scheme ) {
 			return self::bip21_uri( 'dogecoin', $address, $amount );
 		}
+		if ( 'dash' === $verifier || 'dash' === $scheme ) {
+			return self::bip21_uri( 'dash', $address, $amount );
+		}
+		if ( 'zec' === $verifier || 'zec' === $scheme ) {
+			return self::bip21_uri( 'zcash', $address, $amount );
+		}
+		if ( 'xec' === $verifier || 'xec' === $scheme ) {
+			return self::bip21_uri( 'ecash', $address, $amount );
+		}
 		if ( 'bch' === $verifier || 'bch' === $scheme ) {
 			// CashAddr often includes bitcoincash: already — avoid double scheme.
 			if ( 0 === stripos( $address, 'bitcoincash:' ) ) {
@@ -625,7 +655,7 @@ class Xdwp_Coins {
 			return false;
 		}
 		$supported = array(
-			'btc', 'bch', 'ltc', 'doge', 'eth', 'ethereum', 'arbitrum', 'optimism', 'base', 'bsc', 'matic', 'avax', 'ftm', 'cro', 'etc',
+			'btc', 'bch', 'ltc', 'doge', 'dash', 'zec', 'xec', 'eth', 'ethereum', 'arbitrum', 'optimism', 'base', 'bsc', 'matic', 'avax', 'ftm', 'cro', 'etc',
 			'sol', 'solana', 'trx', 'tron', 'xrp', 'xlm',
 			'algo', 'hbar', 'near', 'atom', 'egld', 'fil', 'eos', 'dot', 'zil',
 		);

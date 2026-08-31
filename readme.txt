@@ -4,7 +4,7 @@ Tags: woocommerce, cryptocurrency, bitcoin, ethereum, payments, usdt, crypto che
 Requires at least: 6.9
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.5.17
+Stable tag: 1.5.18
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -269,6 +269,12 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 * Hardening: clear warning on XRP/EOS/XLM/HBAR/ATOM wallet fields that destination tags/memos aren't supported — don't use a shared or exchange-hosted address
 * Hardening: plugin update downloads verify scheme (https-only) and are scoped to this plugin's own basename
 * Fix: `_load_textdomain_just_in_time` notice on every page load (translated strings were being built before `init`)
+
+= 1.5.18 =
+* New: Dash (DASH), Zcash transparent (ZEC), and eCash (XEC) — all verified via Blockchair
+* New: TrueUSD, USDD, BitTorrent (BTT), JUST (JST), USDJ, Sun (SUN), WINkLink (WIN), and Sundog on TRON (TRC-20)
+* New: Zebec (ZBC), Gari, cat in a dogs world (MEW), Ponke, and Myro on Solana (SPL)
+* Fix: `check_blockchair()` now takes a per-chain decimals parameter — eCash rebased its display unit 1,000,000:1 in 2021, so the previous hardcoded /1e8 scaling would have under-counted every XEC payment 1,000x
 
 = 1.5.16 =
 * Security: XRP credits delivered_amount only (never Amount/DeliverMax — partial-payment underpay)
