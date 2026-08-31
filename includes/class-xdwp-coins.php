@@ -47,6 +47,11 @@ class Xdwp_Coins {
 			'XLM'  => self::def( 'XLM', 'Stellar', 'stellar', 'stellar', 'native', 7, 'xlm' ),
 			'DOT'  => self::def( 'DOT', 'Polkadot', 'polkadot', 'polkadot', 'native', 10, 'dot' ),
 			'ATOM' => self::def( 'ATOM', 'Cosmos', 'cosmos', 'cosmos', 'native', 6, 'atom' ),
+			'SCRT' => self::def( 'SCRT', 'Secret', 'secret', 'secret', 'native', 6, 'scrt' ),
+			'SEI'  => self::def( 'SEI', 'Sei', 'sei', 'sei-network', 'native', 6, 'sei' ),
+			// Native Cosmos-SDK chain — distinct from the Ethereum-bridged INJ
+			// above, which shares this coingecko_id but a different platform.
+			'INJ_NATIVE' => self::def( 'INJ_NATIVE', 'Injective', 'injective', 'injective-protocol', 'native', 18, 'inj', '', 'inj_native', 'INJ' ),
 			'EOS'  => self::def( 'EOS', 'EOS', 'eos', 'eos', 'native', 4, 'eos' ),
 			'ETC'  => self::def( 'ETC', 'Ethereum Classic', 'ethereum-classic', 'ethereum-classic', 'native', 18, 'etc' ),
 			'ZIL'  => self::def( 'ZIL', 'Zilliqa', 'zilliqa', 'zilliqa', 'native', 12, 'zil' ),
@@ -220,6 +225,20 @@ class Xdwp_Coins {
 			// Ethereum only — a customer sending native-chain INJ would not be detected here.
 			'INJ'      => self::def( 'INJ', 'Injective (bridged)', 'ethereum', 'injective-protocol', 'erc20', 18, 'eth', '0xe28b3B32B6c345A34FF64674606124Dd5Aceca30', 'ethereum' ),
 			'TRVL'   => self::def( 'TRVL', 'Dtravel', 'ethereum', 'dtravel', 'erc20', 18, 'eth', '0xd47BDF574B4F76210ed503e0EFe81B58Aa061f3d', 'ethereum' ),
+
+			// Coin-coverage completeness pass: original Ethereum-side FEG has been fully
+			// delisted from CoinGecko since its 2022 v1/v2 migration — only the BSC form
+			// (feg-token-2) is still tracked.
+			'FEG'        => self::def( 'FEG', 'FEG Token', 'binance-smart-chain', 'feg-token-2', 'bep20', 18, 'bnb', '0xf3C7CECF8cBC3066F9a87b310cebe198D00479aC', 'bsc' ),
+			'TOMOERC20'  => self::def( 'TOMOERC20', 'TomoChain (ERC-20)', 'ethereum', 'tomoe', 'erc20', 18, 'eth', '0x05D3606d5c81EB9b7B18530995eC9B29da05FaBa', 'ethereum' ),
+			'TLOS_BSC'   => self::def( 'TLOS_BSC', 'Telos (BSC)', 'binance-smart-chain', 'telos', 'bep20', 18, 'bnb', '0x193f4A4a6ea24102F49b931dEEEB931F6E32405D', 'bsc', 'TLOS' ),
+			// CoinGecko tracks Polygon-bridged WBTC under its own id (decimals/contract are
+			// authoritative there), separate from the plugin's existing Ethereum WBTC entry.
+			'WBTC_POLYGON' => self::def( 'WBTC_POLYGON', 'Wrapped Bitcoin (Polygon)', 'polygon-pos', 'polygon-bridged-wbtc-polygon-pos', 'erc20', 8, 'eth', '0x1BFD67037B42Cf73acF2047067bd4F2C47D9BfD6', 'matic', 'WBTC' ),
+			// CoinGecko lists this project under ticker ACN post-rebrand; kept as AITECH here
+			// to match the store's existing coin-selection UI/ticker.
+			'AITECH'     => self::def( 'AITECH', 'Solidus Ai Tech', 'ethereum', 'solidus-aitech', 'erc20', 18, 'eth', '0x3e76dd57e649a263a532cc9bcc58b32a065fb2a4', 'ethereum' ),
+			'ZK'         => self::def( 'ZK', 'ZKsync', 'ethereum', 'zksync', 'erc20', 18, 'eth', '0x66A5CFB2E9C529f14FE6364aD1075df3a649c0a5', 'ethereum' ),
 
 			// Additional BNB Chain BEP-20 tokens (all contracts verified against CoinGecko's platform data).
 			'AVABSC'    => self::def( 'AVABSC', 'AVA (Travala) Bridged (BSC)', 'binance-smart-chain', 'ava-foundation-bridged-ava-bsc', 'bep20', 18, 'bnb', '0xD9483ea7214FCFd89B4Fb8f513B544920e315A52', 'bsc' ),
@@ -751,7 +770,7 @@ class Xdwp_Coins {
 		$supported = array(
 			'btc', 'bch', 'ltc', 'doge', 'dash', 'zec', 'xec', 'eth', 'ethereum', 'arbitrum', 'optimism', 'base', 'bsc', 'matic', 'avax', 'ftm', 'cro', 'etc',
 			'sol', 'solana', 'trx', 'tron', 'xrp', 'xlm',
-			'algo', 'hbar', 'near', 'atom', 'egld', 'fil', 'eos', 'dot', 'zil',
+			'algo', 'hbar', 'near', 'atom', 'scrt', 'sei', 'inj_native', 'egld', 'fil', 'eos', 'dot', 'zil',
 		);
 		return in_array( $coin['verifier'], $supported, true );
 	}

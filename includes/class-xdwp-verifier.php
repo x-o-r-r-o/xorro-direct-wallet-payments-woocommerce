@@ -767,6 +767,12 @@ class Xdwp_Verifier {
 				return self::check_near( $address, $min, $max, $since );
 			case 'atom':
 				return self::check_atom( $address, $min, $max, $since );
+			case 'scrt':
+				return self::check_scrt( $address, $min, $max, $since );
+			case 'sei':
+				return self::check_sei( $address, $min, $max, $since );
+			case 'inj_native':
+				return self::check_inj_native( $address, $min, $max, $since );
 			case 'egld':
 				return self::check_egld( $address, $min, $max, $since );
 			case 'fil':
@@ -2071,17 +2077,89 @@ class Xdwp_Verifier {
 	 * @return string|false
 	 */
 	private static function check_atom( $address, $min, $max, $since ) {
+		return self::check_cosmos( 'https://cosmos-rest.publicnode.com', 'uatom', 6, $address, $min, $max, $since );
+	}
+
+	/**
+	 * Secret Network SCRT — public LCD.
+	 *
+	 * Privacy on Secret Network applies to CosmWasm contract state and SNIP-20
+	 * tokens, not to native SCRT moved via a standard bank MsgSend — those
+	 * transfer events are plaintext on public LCD nodes the same as any other
+	 * transparent Cosmos-SDK chain, so this is safe to auto-verify the same way.
+	 *
+	 * @param string $address Address.
+	 * @param float  $min     Min.
+	 * @param float  $max     Max.
+	 * @param int    $since   Since.
+	 * @return string|false
+	 */
+	private static function check_scrt( $address, $min, $max, $since ) {
+		return self::check_cosmos( 'https://rest.lavenderfive.com:443/secretnetwork', 'uscrt', 6, $address, $min, $max, $since );
+	}
+
+	/**
+	 * Sei Network SEI — public LCD.
+	 *
+	 * Sei's publicnode LCD rejects the standard `query=` param used by every
+	 * other Cosmos-SDK chain here ("must declare at least one event to
+	 * search") and requires `events=` instead — everything else about the
+	 * response shape is identical.
+	 *
+	 * @param string $address Address.
+	 * @param float  $min     Min.
+	 * @param float  $max     Max.
+	 * @param int    $since   Since.
+	 * @return string|false
+	 */
+	private static function check_sei( $address, $min, $max, $since ) {
+		return self::check_cosmos( 'https://sei-rest.publicnode.com', 'usei', 6, $address, $min, $max, $since, 'events' );
+	}
+
+	/**
+	 * Injective's native Cosmos-SDK chain — public LCD.
+	 *
+	 * Distinct from the plugin's existing Ethereum-bridged ERC-20 INJ. Unlike
+	 * most Cosmos-SDK chains, Injective's native token uses 18 decimals (it is
+	 * deliberately EVM-compatible), not the usual 6.
+	 *
+	 * @param string $address Address.
+	 * @param float  $min     Min.
+	 * @param float  $max     Max.
+	 * @param int    $since   Since.
+	 * @return string|false
+	 */
+	private static function check_inj_native( $address, $min, $max, $since ) {
+		return self::check_cosmos( 'https://injective-rest.publicnode.com', 'inj', 18, $address, $min, $max, $since );
+	}
+
+	/**
+	 * Shared Cosmos-SDK LCD REST verifier (transfer events on a bank MsgSend).
+	 *
+	 * @param string $lcd_base    LCD REST base URL (no trailing slash required).
+	 * @param string $denom       Base-unit denom to match in the amount string (e.g. "uatom").
+	 * @param int    $decimals    Human-unit decimals for this chain's denom.
+	 * @param string $address     Recipient bech32 address.
+	 * @param float  $min         Min amount.
+	 * @param float  $max         Max amount.
+	 * @param int    $since       Since timestamp.
+	 * @param string $query_style 'query' (default, most LCD nodes) or 'events'
+	 *                            (required by some nodes, e.g. Sei's publicnode LCD).
+	 * @return string|false
+	 */
+	private static function check_cosmos( $lcd_base, $denom, $decimals, $address, $min, $max, $since, $query_style = 'query' ) {
 		// Strict bech32-ish chars only — reject query injection via crafted wallet saves.
 		if ( ! preg_match( '/^[a-z0-9]{10,128}$/', $address ) ) {
 			return false;
 		}
-		$url = add_query_arg(
+		$param = ( 'events' === $query_style ) ? 'events' : 'query';
+		$url   = add_query_arg(
 			array(
-				'query'            => "transfer.recipient='" . $address . "'",
+				$param             => "transfer.recipient='" . $address . "'",
 				'order_by'         => 'ORDER_BY_DESC',
 				'pagination.limit' => 20,
 			),
-			'https://cosmos-rest.publicnode.com/cosmos/tx/v1beta1/txs'
+			rtrim( $lcd_base, '/' ) . '/cosmos/tx/v1beta1/txs'
 		);
 		$response = self::http_get( $url );
 		if ( empty( $response['tx_responses'] ) || ! is_array( $response['tx_responses'] ) ) {
@@ -2098,8 +2176,8 @@ class Xdwp_Verifier {
 			if ( ! self::soft_finality_ok( $validated ) ) {
 				continue;
 			}
-			$events = isset( $tx['events'] ) ? $tx['events'] : array();
-			$amount_uatom = 0;
+			$events      = isset( $tx['events'] ) ? $tx['events'] : array();
+			$amount_raw  = 0;
 			foreach ( $events as $event ) {
 				if ( empty( $event['type'] ) || 'transfer' !== $event['type'] ) {
 					continue;
@@ -2126,14 +2204,14 @@ class Xdwp_Verifier {
 				if ( empty( $attrs['amount'] ) ) {
 					continue;
 				}
-				if ( preg_match( '/(\d+)uatom/', $attrs['amount'], $m ) ) {
-					$amount_uatom += (int) $m[1];
+				if ( preg_match( '/(\d+)' . preg_quote( $denom, '/' ) . '(?!\w)/', $attrs['amount'], $m ) ) {
+					$amount_raw += (int) $m[1];
 				}
 			}
-			if ( $amount_uatom <= 0 ) {
+			if ( $amount_raw <= 0 ) {
 				continue;
 			}
-			if ( self::raw_amount_in_band( (string) $amount_uatom, 6, $min, $max ) ) {
+			if ( self::raw_amount_in_band( (string) $amount_raw, $decimals, $min, $max ) ) {
 				return ! empty( $tx['txhash'] ) ? (string) $tx['txhash'] : false;
 			}
 		}

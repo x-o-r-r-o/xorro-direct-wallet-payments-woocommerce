@@ -147,6 +147,12 @@ class Xdwp_Wallets {
 				return (bool) preg_match( '/^[1-9A-HJ-NP-Za-km-z]{46,50}$/', $address );
 			case 'atom':
 				return (bool) preg_match( '/^cosmos1[a-z0-9]{38,58}$/', $address );
+			case 'scrt':
+				return (bool) preg_match( '/^secret1[a-z0-9]{38,58}$/', $address );
+			case 'sei':
+				return (bool) preg_match( '/^sei1[a-z0-9]{38,58}$/', $address );
+			case 'inj_native':
+				return (bool) preg_match( '/^inj1[a-z0-9]{38,58}$/', $address );
 			case 'algo':
 				return (bool) preg_match( '/^[A-Z2-7]{58}$/', $address );
 			case 'near':
