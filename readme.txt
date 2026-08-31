@@ -4,7 +4,7 @@ Tags: woocommerce, cryptocurrency, bitcoin, ethereum, payments, usdt, crypto che
 Requires at least: 6.9
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.5.20
+Stable tag: 1.5.21
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -254,6 +254,12 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 * QR Code generator (`assets/js/qrcode.min.js`) — MIT-licensed library by davidshimjs (https://github.com/davidshimjs/qrcodejs). Source is publicly available; the bundled file is minified for production use.
 
 == Changelog ==
+
+= 1.5.21 =
+* Security/correctness: eCash (XEC) payment matching compared destination addresses case-sensitively — XEC uses the same CashAddr scheme as Bitcoin Cash, which is case-insensitive by spec, so a legitimate payment could fail to match on a case difference and never mark the order paid
+* Hardening: added dedicated wallet-address format validation for Dash, Zcash, and eCash (previously fell through to a generic length check) — also rejects Zcash shielded (z-address) addresses on save, since Blockchair's transparent-chain lookup can never see payments to one
+* Hygiene: uninstall now also removes the cron mutex option, closing the one option key not already covered by the cleanup patterns
+* Re-audited the full payment-verification, AJAX, admin, updater, and order-state-machine code paths against the project's security audit checklist — no other findings
 
 = 1.5.20 =
 * New: Telos (TLOS) — verified but accidentally left out of the 1.5.19 batch

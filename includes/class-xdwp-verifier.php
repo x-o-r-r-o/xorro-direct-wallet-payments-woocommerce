@@ -870,9 +870,12 @@ class Xdwp_Verifier {
 	 */
 	private static function check_blockchair( $chain, $address, $min, $max, $since, $decimals = 8 ) {
 		$lookup = $address;
-		// Bitcoin Cash CashAddr may include a prefix Blockchair rejects in the path.
+		// Bitcoin Cash and eCash both use CashAddr, which may include a prefix
+		// Blockchair rejects in the path.
 		if ( 'bitcoin-cash' === $chain && 0 === stripos( $address, 'bitcoincash:' ) ) {
 			$lookup = substr( $address, strlen( 'bitcoincash:' ) );
+		} elseif ( 'ecash' === $chain && 0 === stripos( $address, 'ecash:' ) ) {
+			$lookup = substr( $address, strlen( 'ecash:' ) );
 		}
 
 		$url      = sprintf( 'https://api.blockchair.com/%s/dashboards/address/%s?limit=25', rawurlencode( $chain ), rawurlencode( $lookup ) );
@@ -923,19 +926,22 @@ class Xdwp_Verifier {
 						continue;
 					}
 					$recipient = (string) $out['recipient'];
-					$recv_bare = $recipient;
-					if ( 0 === stripos( $recv_bare, 'bitcoincash:' ) ) {
-						$recv_bare = substr( $recv_bare, strlen( 'bitcoincash:' ) );
-					}
-					if ( 'bitcoin-cash' === $chain ) {
+					if ( 'bitcoin-cash' === $chain || 'ecash' === $chain ) {
 						// CashAddr's own checksum is explicitly case-insensitive by spec
 						// (unlike BTC-style Bech32) — case-insensitive match is correct here.
+						// eCash uses the same CashAddr scheme as Bitcoin Cash, just with an
+						// "ecash:" prefix instead of "bitcoincash:".
+						$prefix    = 'ecash' === $chain ? 'ecash:' : 'bitcoincash:';
+						$recv_bare = $recipient;
+						if ( 0 === stripos( $recv_bare, $prefix ) ) {
+							$recv_bare = substr( $recv_bare, strlen( $prefix ) );
+						}
 						$match = (
 							0 === strcasecmp( $recipient, $address )
 							|| 0 === strcasecmp( $recipient, $lookup )
 							|| 0 === strcasecmp( $recv_bare, $lookup )
-							|| 0 === strcasecmp( 'bitcoincash:' . $recv_bare, $address )
-							|| 0 === strcasecmp( 'bitcoincash:' . $lookup, $recipient )
+							|| 0 === strcasecmp( $prefix . $recv_bare, $address )
+							|| 0 === strcasecmp( $prefix . $lookup, $recipient )
 						);
 					} else {
 						// LTC/DOGE legacy addresses are Base58Check — case-sensitive, exact match only.

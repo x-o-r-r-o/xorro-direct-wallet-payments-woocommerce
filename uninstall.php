@@ -12,6 +12,7 @@ delete_option( 'xdwp_settings' );
 delete_option( 'xdwp_version' );
 delete_option( 'xdwp_amount_seq' );
 delete_option( 'woocommerce_xdwp_settings' );
+delete_option( 'xdwp_cron_running' );
 
 wp_clear_scheduled_hook( 'xdwp_check_payments' );
 wp_clear_scheduled_hook( 'xdwp_refresh_prices' );

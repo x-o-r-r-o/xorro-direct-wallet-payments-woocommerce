@@ -105,6 +105,19 @@ class Xdwp_Wallets {
 				return (bool) preg_match( '/^(ltc1|[LM3])[a-zA-HJ-NP-Z0-9]{25,62}$/', $address );
 			case 'doge':
 				return (bool) preg_match( '/^D[5-9A-HJ-NP-U][1-9A-HJ-NP-Za-km-z]{32}$/', $address );
+			case 'dash':
+				return (bool) preg_match( '/^[X7][1-9A-HJ-NP-Za-km-z]{25,34}$/', $address );
+			case 'zec':
+				// Transparent (t1/t3) addresses only — shielded z-addresses (zs.../zc...)
+				// aren't visible to Blockchair's transparent-chain lookup and would
+				// silently break payment detection if accepted here.
+				return (bool) preg_match( '/^t[13][1-9A-HJ-NP-Za-km-z]{33,34}$/', $address );
+			case 'xec':
+				$addr = $address;
+				if ( 0 === stripos( $addr, 'ecash:' ) ) {
+					$addr = substr( $addr, strlen( 'ecash:' ) );
+				}
+				return (bool) preg_match( '/^(q|p)[a-z0-9]{41}$/', $addr );
 			case 'eth':
 			case 'ethereum':
 			case 'arbitrum':
