@@ -781,6 +781,28 @@ class Xdwp_Verifier {
 				return self::check_aptos( $address, $min, $max, $since );
 			case 'kas':
 				return self::check_kaspa( $address, $min, $max, $since );
+			case 'one':
+				return self::check_evm_clone( 'https://explorer.harmony.one/api', $address, $min, $max, $since, $coin );
+			case 'pls':
+				return self::check_evm_clone( 'https://api.scan.pulsechain.com/api', $address, $min, $max, $since, $coin );
+			case 'sysevm':
+				return self::check_evm_clone( 'https://explorer.syscoin.org/api', $address, $min, $max, $since, $coin );
+			case 'boba':
+				return self::check_evm_clone( 'https://api.routescan.io/v2/network/mainnet/evm/288/etherscan/api', $address, $min, $max, $since, $coin );
+			case 'brise':
+				return self::check_blockscout_v2_native( 'https://brisescan.com', $address, $min, $max, $since );
+			case 'xdc':
+				// XDC addresses are commonly written with an "xdc" prefix instead
+				// of "0x" — same account, cosmetic-only difference; normalize
+				// before reusing the existing Etherscan V2 EVM path (chain 50).
+				$xdc_address = ( 0 === stripos( $address, 'xdc' ) ) ? ( '0x' . substr( $address, 3 ) ) : $address;
+				return self::check_evm( 50, $xdc_address, $min, $max, $since, $coin );
+			case 'xtz':
+				return self::check_tezos( $address, $min, $max, $since );
+			case 'xno':
+				return self::check_nano( $address, $min, $max, $since );
+			case 'waves':
+				return self::check_waves( $address, $min, $max, $since );
 			case 'egld':
 				return self::check_egld( $address, $min, $max, $since );
 			case 'fil':
@@ -799,6 +821,11 @@ class Xdwp_Verifier {
 				// (not an indexed key on the standard Cairo ERC-20), and the block
 				// explorer API that can (Voyager) has no free tier — kept manual
 				// rather than wiring up a paid-only auto-verify dependency.
+				return false;
+			case 'kaia':
+				// Kaia's only explorer API (Kaiascan) is credit-metered with an
+				// unconfirmed free daily allowance — kept manual rather than risk
+				// exhausting an uncertain quota under repeated polling.
 				return false;
 			default:
 				return false;
@@ -1125,6 +1152,182 @@ class Xdwp_Verifier {
 				continue;
 			}
 			if ( self::raw_amount_in_band( $tx['value'], $dec, $min, $max ) ) {
+				return ! empty( $tx['hash'] ) ? (string) $tx['hash'] : false;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * EVM native/token verification via a keyless "legacy Etherscan-clone" API
+	 * (Blockscout's `module=account&action=txlist|tokentx` shape, also served
+	 * byte-identical by Routescan) — one generalized function per base URL,
+	 * for small EVM chains Etherscan V2 doesn't cover.
+	 *
+	 * @param string $base_api Full API base including its own trailing "/api" segment.
+	 * @param string $address  Address.
+	 * @param float  $min      Min.
+	 * @param float  $max      Max.
+	 * @param int    $since    Since.
+	 * @param array  $coin     Coin def.
+	 * @return string|false
+	 */
+	private static function check_evm_clone( $base_api, $address, $min, $max, $since, array $coin ) {
+		$type = isset( $coin['type'] ) ? $coin['type'] : 'native';
+		if ( in_array( $type, array( 'erc20', 'bep20' ), true ) && ! empty( $coin['contract'] ) ) {
+			return self::check_evm_clone_token( $base_api, $address, $coin['contract'], $min, $max, $since, (int) $coin['decimals'] );
+		}
+		return self::check_evm_clone_native( $base_api, $address, $min, $max, $since );
+	}
+
+	/**
+	 * Legacy Etherscan-clone native transfers.
+	 *
+	 * @param string $base_api API base.
+	 * @param string $address  Address.
+	 * @param float  $min      Min.
+	 * @param float  $max      Max.
+	 * @param int    $since    Since.
+	 * @return string|false
+	 */
+	private static function check_evm_clone_native( $base_api, $address, $min, $max, $since ) {
+		$query = array(
+			'module'     => 'account',
+			'action'     => 'txlist',
+			'address'    => $address,
+			'startblock' => 0,
+			'endblock'   => 99999999,
+			'page'       => 1,
+			'offset'     => 100,
+			'sort'       => 'desc',
+		);
+		$url      = $base_api . '?' . http_build_query( $query );
+		$response = self::http_get( $url );
+		if ( ! is_array( $response ) || empty( $response['result'] ) || ! is_array( $response['result'] ) ) {
+			return false;
+		}
+
+		foreach ( $response['result'] as $tx ) {
+			if ( empty( $tx['to'] ) || 0 !== strcasecmp( $tx['to'], $address ) ) {
+				continue;
+			}
+			if ( ! empty( $tx['isError'] ) && '0' !== (string) $tx['isError'] ) {
+				continue;
+			}
+			if ( ! self::etherscan_confirmed( $tx ) ) {
+				continue;
+			}
+			$time = isset( $tx['timeStamp'] ) ? (int) $tx['timeStamp'] : 0;
+			if ( ! $time || $time < $since ) {
+				continue;
+			}
+			if ( ! isset( $tx['value'] ) ) {
+				continue;
+			}
+			if ( self::raw_amount_in_band( $tx['value'], 18, $min, $max ) ) {
+				return ! empty( $tx['hash'] ) ? (string) $tx['hash'] : false;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Legacy Etherscan-clone token transfers.
+	 *
+	 * @param string $base_api API base.
+	 * @param string $address  Address.
+	 * @param string $contract Contract.
+	 * @param float  $min      Min.
+	 * @param float  $max      Max.
+	 * @param int    $since    Since.
+	 * @param int    $decimals Decimals.
+	 * @return string|false
+	 */
+	private static function check_evm_clone_token( $base_api, $address, $contract, $min, $max, $since, $decimals ) {
+		if ( ! $contract ) {
+			return false;
+		}
+		$query = array(
+			'module'          => 'account',
+			'action'          => 'tokentx',
+			'contractaddress' => $contract,
+			'address'         => $address,
+			'page'            => 1,
+			'offset'          => 100,
+			'sort'            => 'desc',
+		);
+		$url      = $base_api . '?' . http_build_query( $query );
+		$response = self::http_get( $url );
+		if ( ! is_array( $response ) || empty( $response['result'] ) || ! is_array( $response['result'] ) ) {
+			return false;
+		}
+
+		foreach ( $response['result'] as $tx ) {
+			if ( empty( $tx['to'] ) || 0 !== strcasecmp( $tx['to'], $address ) ) {
+				continue;
+			}
+			if ( empty( $tx['contractAddress'] ) || 0 !== strcasecmp( (string) $tx['contractAddress'], (string) $contract ) ) {
+				continue;
+			}
+			if ( ! self::etherscan_confirmed( $tx ) ) {
+				continue;
+			}
+			$time = isset( $tx['timeStamp'] ) ? (int) $tx['timeStamp'] : 0;
+			if ( ! $time || $time < $since ) {
+				continue;
+			}
+			if ( ! isset( $tx['value'] ) ) {
+				continue;
+			}
+			if ( self::raw_amount_in_band( $tx['value'], (int) $decimals, $min, $max ) ) {
+				return ! empty( $tx['hash'] ) ? (string) $tx['hash'] : false;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Bitgert (BSC-fork-of-a-fork) — Blockscout's newer v2 API. Its legacy
+	 * `module=account&action=txlist` path reliably times out on this
+	 * particular deployment; the v2 JSON shape (nested `to.hash`/`from.hash`,
+	 * ISO-8601 `timestamp`, direct `confirmations` int) works reliably.
+	 *
+	 * @param string $base_url Explorer base (no trailing slash).
+	 * @param string $address  Address.
+	 * @param float  $min      Min.
+	 * @param float  $max      Max.
+	 * @param int    $since    Since.
+	 * @return string|false
+	 */
+	private static function check_blockscout_v2_native( $base_url, $address, $min, $max, $since ) {
+		$url      = rtrim( $base_url, '/' ) . '/api/v2/addresses/' . rawurlencode( $address ) . '/transactions';
+		$response = self::http_get( $url );
+		if ( ! is_array( $response ) || empty( $response['items'] ) || ! is_array( $response['items'] ) ) {
+			return false;
+		}
+
+		foreach ( $response['items'] as $tx ) {
+			$to = isset( $tx['to']['hash'] ) ? (string) $tx['to']['hash'] : '';
+			if ( '' === $to || 0 !== strcasecmp( $to, $address ) ) {
+				continue;
+			}
+			if ( empty( $tx['status'] ) || 'ok' !== $tx['status'] ) {
+				continue;
+			}
+			if ( ! self::confirmations_ok( isset( $tx['confirmations'] ) ? $tx['confirmations'] : null ) ) {
+				continue;
+			}
+			$time = isset( $tx['timestamp'] ) ? strtotime( (string) $tx['timestamp'] ) : 0;
+			if ( ! $time || $time < $since ) {
+				continue;
+			}
+			if ( ! isset( $tx['value'] ) ) {
+				continue;
+			}
+			if ( self::raw_amount_in_band( $tx['value'], 18, $min, $max ) ) {
 				return ! empty( $tx['hash'] ) ? (string) $tx['hash'] : false;
 			}
 		}
@@ -2498,6 +2701,205 @@ class Xdwp_Verifier {
 			}
 			if ( self::amount_in_band( $sum, $min, $max ) ) {
 				return $hash;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Tezos (XTZ) — TzKT's public API (no key required).
+	 *
+	 * @param string $address Address (tz1/tz2/tz3).
+	 * @param float  $min     Min.
+	 * @param float  $max     Max.
+	 * @param int    $since   Since.
+	 * @return string|false
+	 */
+	private static function check_tezos( $address, $min, $max, $since ) {
+		if ( ! preg_match( '/^tz[1-3][1-9A-HJ-NP-Za-km-z]{33}$/', $address ) ) {
+			return false;
+		}
+
+		$url      = sprintf( 'https://api.tzkt.io/v1/accounts/%s/operations?type=transaction&limit=20', rawurlencode( $address ) );
+		$response = self::http_get( $url );
+		if ( ! is_array( $response ) || empty( $response ) ) {
+			return false;
+		}
+
+		$need = self::min_confirmations();
+		$tip  = 0;
+		if ( $need > 0 ) {
+			$tip = self::cached_tip(
+				'xtz',
+				static function () {
+					$res = self::http_get( 'https://api.tzkt.io/v1/head' );
+					return ( is_array( $res ) && isset( $res['level'] ) ) ? (int) $res['level'] : 0;
+				}
+			);
+			if ( $tip <= 0 ) {
+				return false;
+			}
+		}
+
+		foreach ( $response as $op ) {
+			// Tezos operations can be included in a block and still fail
+			// (applied/failed/backtracked/skipped) — only "applied" is a real payment.
+			if ( empty( $op['status'] ) || 'applied' !== $op['status'] ) {
+				continue;
+			}
+			$target = isset( $op['target']['address'] ) ? (string) $op['target']['address'] : '';
+			if ( '' === $target || ! hash_equals( $address, $target ) ) {
+				continue;
+			}
+			$time = isset( $op['timestamp'] ) ? strtotime( (string) $op['timestamp'] ) : 0;
+			if ( ! $time || $time < $since ) {
+				continue;
+			}
+			if ( $need > 0 ) {
+				$level = isset( $op['level'] ) ? (int) $op['level'] : 0;
+				if ( ! self::block_depth_ok( $level, $tip ) ) {
+					continue;
+				}
+			}
+			if ( ! isset( $op['amount'] ) ) {
+				continue;
+			}
+			if ( self::raw_amount_in_band( (string) $op['amount'], 6, $min, $max ) ) {
+				return ! empty( $op['hash'] ) ? (string) $op['hash'] : false;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Nano (XNO) — public RPC proxy (no key required).
+	 *
+	 * Nano's block-lattice means every account has its own chain; querying
+	 * `account_history` for the merchant's own address scopes results to
+	 * that account by construction, so a "receive" block found here
+	 * unambiguously landed on this account — no separate destination-match
+	 * check is needed the way address-shared chains require.
+	 *
+	 * @param string $address Address (nano_/xrb_ prefix).
+	 * @param float  $min     Min.
+	 * @param float  $max     Max.
+	 * @param int    $since   Since.
+	 * @return string|false
+	 */
+	private static function check_nano( $address, $min, $max, $since ) {
+		if ( ! preg_match( '/^(nano|xrb)_[13456789abcdefghijkmnopqrstuwxyz]{60}$/', $address ) ) {
+			return false;
+		}
+
+		$body     = array(
+			'action'  => 'account_history',
+			'account' => $address,
+			'count'   => 20,
+		);
+		$response = self::http_post_json( 'https://rpc.nano.to', $body );
+		if ( ! is_array( $response ) || empty( $response['history'] ) || ! is_array( $response['history'] ) ) {
+			return false;
+		}
+
+		// Nano has near-instant asynchronous per-account confirmation via ORV, not
+		// a global block depth — a merchant asking for >1 confirmations is refused
+		// up front rather than pretending depth was checked (soft_finality_ok()'s
+		// standard fail-closed behavior for chains with no depth concept).
+		if ( ! self::soft_finality_ok( true ) ) {
+			return false;
+		}
+
+		foreach ( $response['history'] as $block ) {
+			if ( empty( $block['type'] ) || 'receive' !== $block['type'] ) {
+				continue;
+			}
+			if ( empty( $block['confirmed'] ) || 'true' !== (string) $block['confirmed'] ) {
+				continue;
+			}
+			$time = isset( $block['local_timestamp'] ) ? (int) $block['local_timestamp'] : 0;
+			if ( ! $time || $time < $since ) {
+				continue;
+			}
+			if ( ! isset( $block['amount'] ) ) {
+				continue;
+			}
+			// 10^30 raw = 1 NANO — an unusually high decimals count, confirmed
+			// precisely (not assumed from another chain's convention).
+			if ( self::raw_amount_in_band( (string) $block['amount'], 30, $min, $max ) ) {
+				return ! empty( $block['hash'] ) ? (string) $block['hash'] : false;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Waves — public node REST API (no key required).
+	 *
+	 * @param string $address Address (mainnet, "3P..." prefix).
+	 * @param float  $min     Min.
+	 * @param float  $max     Max.
+	 * @param int    $since   Since.
+	 * @return string|false
+	 */
+	private static function check_waves( $address, $min, $max, $since ) {
+		if ( ! preg_match( '/^3P[1-9A-HJ-NP-Za-km-z]{33}$/', $address ) ) {
+			return false;
+		}
+
+		$url      = sprintf( 'https://nodes.wavesnodes.com/transactions/address/%s/limit/20', rawurlencode( $address ) );
+		$response = self::http_get( $url );
+		// Response shape is double-nested: a single-element outer array wrapping the tx list.
+		$list = ( is_array( $response ) && isset( $response[0] ) && is_array( $response[0] ) ) ? $response[0] : null;
+		if ( ! is_array( $list ) || empty( $list ) ) {
+			return false;
+		}
+
+		$need = self::min_confirmations();
+		$tip  = 0;
+		if ( $need > 0 ) {
+			$tip = self::cached_tip(
+				'waves',
+				static function () {
+					$res = self::http_get( 'https://nodes.wavesnodes.com/blocks/height' );
+					return ( is_array( $res ) && isset( $res['height'] ) ) ? (int) $res['height'] : 0;
+				}
+			);
+			if ( $tip <= 0 ) {
+				return false;
+			}
+		}
+
+		foreach ( $list as $tx ) {
+			// Type 4 = transfer; a null assetId is the native WAVES leg (a non-null
+			// assetId on the same tx type is a different token riding it).
+			if ( empty( $tx['type'] ) || 4 !== (int) $tx['type'] ) {
+				continue;
+			}
+			if ( array_key_exists( 'assetId', $tx ) && null !== $tx['assetId'] ) {
+				continue;
+			}
+			$recipient = isset( $tx['recipient'] ) ? (string) $tx['recipient'] : '';
+			if ( '' === $recipient || ! hash_equals( $address, $recipient ) ) {
+				continue;
+			}
+			if ( isset( $tx['applicationStatus'] ) && 'succeeded' !== $tx['applicationStatus'] ) {
+				continue;
+			}
+			$time = isset( $tx['timestamp'] ) ? (int) ( (float) $tx['timestamp'] / 1000 ) : 0;
+			if ( ! $time || $time < $since ) {
+				continue;
+			}
+			if ( $need > 0 ) {
+				$height = isset( $tx['height'] ) ? (int) $tx['height'] : 0;
+				if ( ! self::block_depth_ok( $height, $tip ) ) {
+					continue;
+				}
+			}
+			if ( ! isset( $tx['amount'] ) ) {
+				continue;
+			}
+			if ( self::raw_amount_in_band( (string) $tx['amount'], 8, $min, $max ) ) {
+				return ! empty( $tx['id'] ) ? (string) $tx['id'] : false;
 			}
 		}
 		return false;

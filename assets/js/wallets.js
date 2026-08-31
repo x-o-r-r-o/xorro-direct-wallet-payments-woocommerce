@@ -26,6 +26,13 @@
 				ftm: /^0x[a-fA-F0-9]{40}$/,
 				cro: /^0x[a-fA-F0-9]{40}$/,
 				etc: /^0x[a-fA-F0-9]{40}$/,
+				one: /^0x[a-fA-F0-9]{40}$/,
+				pls: /^0x[a-fA-F0-9]{40}$/,
+				sysevm: /^0x[a-fA-F0-9]{40}$/,
+				boba: /^0x[a-fA-F0-9]{40}$/,
+				brise: /^0x[a-fA-F0-9]{40}$/,
+				kaia: /^0x[a-fA-F0-9]{40}$/,
+				xdc: /^(xdc|0x)?[a-fA-F0-9]{40}$/,
 				sol: /^[1-9A-HJ-NP-Za-km-z]{32,44}$/,
 				solana: /^[1-9A-HJ-NP-Za-km-z]{32,44}$/,
 				trx: /^T[1-9A-HJ-NP-Za-km-z]{33}$/,
@@ -48,6 +55,9 @@
 				ada: /^addr1[a-z0-9]{50,110}$/,
 				apt: /^(0x)?[0-9a-fA-F]{1,64}$/,
 				kas: /^kaspa:[a-z0-9]{61,64}$/,
+				xtz: /^tz[1-3][1-9A-HJ-NP-Za-km-z]{33}$/,
+				xno: /^(nano|xrb)_[13456789abcdefghijkmnopqrstuwxyz]{60}$/,
+				waves: /^3P[1-9A-HJ-NP-Za-km-z]{33}$/,
 				strk: /^(0x)?[0-9a-fA-F]{1,64}$/
 			};
 

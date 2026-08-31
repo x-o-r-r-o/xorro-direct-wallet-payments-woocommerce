@@ -402,7 +402,7 @@ class Xdwp_Admin {
 		if ( '' === $key ) {
 			foreach ( $payable as $coin_id => $coin ) {
 				$verifier = isset( $coin['verifier'] ) ? (string) $coin['verifier'] : '';
-				if ( in_array( $verifier, array( 'eth', 'ethereum', 'arbitrum', 'optimism', 'base', 'bsc', 'bnb', 'matic', 'avax', 'ftm', 'cro', 'etc' ), true ) ) {
+				if ( in_array( $verifier, array( 'eth', 'ethereum', 'arbitrum', 'optimism', 'base', 'bsc', 'bnb', 'matic', 'avax', 'ftm', 'cro', 'etc', 'xdc' ), true ) ) {
 					$needs_etherscan = true;
 					break;
 				}

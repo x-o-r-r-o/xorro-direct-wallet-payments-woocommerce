@@ -130,7 +130,20 @@ class Xdwp_Wallets {
 			case 'ftm':
 			case 'cro':
 			case 'etc':
+			case 'one':
+			case 'pls':
+			case 'sysevm':
+			case 'boba':
+			case 'brise':
+			case 'kaia':
 				return (bool) preg_match( '/^0x[a-fA-F0-9]{40}$/', $address );
+			case 'xdc':
+				// Same account as a normal 0x address, just commonly written with
+				// an "xdc" prefix instead — accept either.
+				$xdc_addr = 0 === stripos( $address, 'xdc' ) ? substr( $address, 3 ) : $address;
+				return 0 === strpos( $xdc_addr, '0x' )
+					? (bool) preg_match( '/^0x[a-fA-F0-9]{40}$/', $xdc_addr )
+					: (bool) preg_match( '/^[a-fA-F0-9]{40}$/', $xdc_addr );
 			case 'sol':
 			case 'solana':
 				return (bool) preg_match( '/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $address );
@@ -168,6 +181,12 @@ class Xdwp_Wallets {
 				return (bool) preg_match( '/^[0-9a-fA-F]{1,64}$/', $addr );
 			case 'kas':
 				return (bool) preg_match( '/^kaspa:[a-z0-9]{61,64}$/', $address );
+			case 'xtz':
+				return (bool) preg_match( '/^tz[1-3][1-9A-HJ-NP-Za-km-z]{33}$/', $address );
+			case 'xno':
+				return (bool) preg_match( '/^(nano|xrb)_[13456789abcdefghijkmnopqrstuwxyz]{60}$/', $address );
+			case 'waves':
+				return (bool) preg_match( '/^3P[1-9A-HJ-NP-Za-km-z]{33}$/', $address );
 			case 'strk':
 				// Starknet account addresses are felt252 values — like Aptos,
 				// commonly rendered with leading zero bytes trimmed.

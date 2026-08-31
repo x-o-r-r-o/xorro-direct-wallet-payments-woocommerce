@@ -4,7 +4,7 @@ Tags: woocommerce, cryptocurrency, bitcoin, ethereum, payments, usdt, crypto che
 Requires at least: 6.9
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.5.27
+Stable tag: 1.5.28
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -254,6 +254,17 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 * QR Code generator (`assets/js/qrcode.min.js`) — MIT-licensed library by davidshimjs (https://github.com/davidshimjs/qrcodejs). Source is publicly available; the bundled file is minified for production use.
 
 == Changelog ==
+
+= 1.5.28 =
+* New: 10 more coins across 8 new chain integrations
+  * Harmony (ONE), PulseChain (PLS), Syscoin NEVM (SYSEVM), and Boba Network's BOBA token — small EVM-compatible chains not covered by Etherscan V2, verified via a new generalized "legacy Etherscan-clone" helper (the same field shape used by Blockscout and, for Boba, Routescan) rather than writing four near-identical one-off verifiers
+  * Bitgert (BRISE) — same family, but its Blockscout deployment's legacy API path reliably times out, so this uses the newer v2 API shape instead
+  * XDC Network — needed no new verifier at all: it's already covered by Etherscan V2 (chain id 50), just wired in with address normalization since XDC addresses are commonly written with an "xdc" prefix instead of "0x"
+  * Tezos (XTZ), Nano (XNO), and Waves — verified via their own public, keyless APIs (TzKT, a public Nano RPC proxy, and a public Waves node respectively). Nano's decimals (30!) were confirmed precisely, not assumed, given how easy that figure is to get wrong
+  * Kaia (KAIA, formerly Klaytn) — added as payable with manual confirmation only (like Monero): its only explorer API is credit-metered with an unconfirmed free daily allowance, not worth risking exhaustion under this plugin's repeated polling pattern
+* Every auto-verified addition live-tested against a real address with real transaction history before shipping; all correctly rejected an impossible amount band and returned false rather than a false match
+* EthereumPoW (ETHW) investigated and confirmed dead — its announced explorers are either domain-squatted or fail to resolve — not added
+* Registry now covers 210 coins/tokens
 
 = 1.5.27 =
 * New: Starknet (STRK) — added as a payable coin with manual confirmation only, the same model as Monero. Detecting an incoming transfer automatically would require Voyager's paid block-explorer API (Starknet's own JSON-RPC can't filter Transfer events by recipient — that field isn't an indexed key on the standard Cairo ERC-20, and Voyager has no free tier), so this ships without wiring up a paid-only dependency. Customers can still pay; the merchant confirms via the existing "mark paid" flow

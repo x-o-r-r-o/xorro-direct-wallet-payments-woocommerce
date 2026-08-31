@@ -1,11 +1,11 @@
 Coin icons
 ==========
 Many color SVGs are from cryptocurrency-icons (https://github.com/spothq/cryptocurrency-icons),
-licensed CC0 1.0 Universal: 1inch, aave, ada, ape, arb, ata, atom, avax, axs, base, bat, bch,
+licensed CC0 1.0 Universal: 1inch, aave, ada, ape, arb, ata, atom, avax, axs, base, bat, bch, one,
 bnb, btc, btt, cake, chz, comp, crv, cro, cvc, dai, dash, doge, dot, egld, enj, eos, etc,
 eth, fil, ftm, ftt, fun, grt, gusd, hbar, hex, hot, knc, ldo, link, ltc, mana, matic, mkr,
 near, omg, op, pepe, rep, sand, shib, sol, trx, tusd, uni, usdc, usdp, usdt-round, wbtc,
-xlm, xmr, xrp, yfi, zec, zil.
+xlm, xmr, xrp, xtz, xno (as nano.svg, ticker rebrand), waves, yfi, zec, zil.
 
 Additional icons (hbar, cro, ftm, near, axs, cake, ftt, ata, egld) are simple
 original geometric marks bundled with Xorro Wallet Payments for catalog coverage.

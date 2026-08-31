@@ -269,6 +269,35 @@ class Xdwp_Coins {
 			// Kaspa — official public REST API (no key required); see check_kaspa().
 			'KAS' => self::def( 'KAS', 'Kaspa', 'kaspa', 'kaspa', 'native', 8, 'kaspa' ),
 
+			// Small EVM chains not covered by Etherscan V2 — verified via a keyless
+			// "legacy Etherscan-clone" API (Blockscout, or Routescan for Boba) that
+			// serves the same field shape; see check_evm_clone().
+			'ONE'    => self::def( 'ONE', 'Harmony', 'harmony-shard-0', 'harmony', 'native', 18, 'eth', '', 'one' ),
+			'PLS'    => self::def( 'PLS', 'PulseChain', 'pulsechain', 'pulsechain', 'native', 18, 'eth', '', 'pls' ),
+			'SYSEVM' => self::def( 'SYSEVM', 'Syscoin (NEVM)', 'syscoin-nevm', 'syscoin', 'native', 18, 'eth', '', 'sysevm' ),
+			// Boba's native gas currency is bridged ETH; BOBA itself is a
+			// separate ERC-20 governance token on that same L2.
+			'BOBA'   => self::def( 'BOBA', 'Boba Network', 'boba', 'boba-network', 'erc20', 18, 'eth', '0xa18bF3994C0Cc6E3b63ac420308E5383f53120D7', 'boba' ),
+			// Bitgert's legacy Etherscan-clone path reliably times out on its
+			// Blockscout deployment — uses the newer v2 API shape instead.
+			'BRISEMAINNET' => self::def( 'BRISEMAINNET', 'Bitgert', 'bitgert', 'bitrise-token', 'native', 18, 'eth', '', 'brise', 'BRISE' ),
+			// XDC is already covered by Etherscan V2 (chain id 50) — addresses are
+			// commonly written with an "xdc" prefix instead of "0x" (same account).
+			'XDC'    => self::def( 'XDC', 'XDC Network', 'xdc-network', 'xdce-crowd-sale', 'native', 18, 'eth', '', 'xdc' ),
+
+			// Standalone chains with good keyless public APIs; see check_tezos(),
+			// check_nano(), check_waves().
+			'XTZ'   => self::def( 'XTZ', 'Tezos', 'tezos', 'tezos', 'native', 6, 'xtz' ),
+			'XNO'   => self::def( 'XNO', 'Nano', 'nano', 'nano', 'native', 30, 'nano' ),
+			'WAVES' => self::def( 'WAVES', 'Waves', 'waves', 'waves', 'native', 8, 'waves' ),
+
+			// Kaia (formerly Klaytn) — manual confirmation only (like XMR). Its only
+			// explorer API (Kaiascan) is credit-metered with an unconfirmed free
+			// daily allowance; risking exhaustion under this plugin's repeated
+			// checkout-poll + cron-sweep pattern wasn't worth it. Not wiring up
+			// auto-verify against an uncertain quota.
+			'KAIA' => self::def( 'KAIA', 'Kaia', 'kaia', 'kaia', 'native', 18, 'kaia' ),
+
 			// Starknet — manual confirmation only (like XMR). Detecting an incoming
 			// transfer requires Voyager's block-explorer API (Starknet's own
 			// JSON-RPC can't filter transfer events by recipient — the standard
@@ -824,7 +853,8 @@ class Xdwp_Coins {
 			'btc', 'bch', 'ltc', 'doge', 'dash', 'zec', 'xec', 'eth', 'ethereum', 'arbitrum', 'optimism', 'base', 'bsc', 'matic', 'avax', 'ftm', 'cro', 'etc',
 			'sol', 'solana', 'trx', 'tron', 'xrp', 'xlm',
 			'algo', 'hbar', 'near', 'atom', 'scrt', 'sei', 'inj_native', 'egld', 'fil', 'eos', 'dot', 'zil',
-			'ton', 'ada', 'apt', 'kas',
+			'ton', 'ada', 'apt', 'kas', 'one', 'pls', 'sysevm', 'boba', 'brise', 'xdc',
+			'xtz', 'xno', 'waves',
 		);
 		return in_array( $coin['verifier'], $supported, true );
 	}
