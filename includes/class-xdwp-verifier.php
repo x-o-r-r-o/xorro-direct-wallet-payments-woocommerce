@@ -2494,7 +2494,12 @@ class Xdwp_Verifier {
 			}
 			$in   = ( ! empty( $tx['in_msg'] ) && is_array( $tx['in_msg'] ) ) ? $tx['in_msg'] : array();
 			$dest = isset( $in['destination'] ) ? (string) $in['destination'] : '';
-			if ( '' === $dest || ( $target && 0 !== strcasecmp( $dest, $target ) ) ) {
+			// toncenter's account-scoped tx list includes both directions — fail
+			// closed (never match) if normalization couldn't produce a comparable
+			// target, rather than degrading to "any non-empty destination passes,"
+			// which would misidentify an outgoing send from this same wallet as an
+			// incoming payment.
+			if ( '' === $dest || '' === $target || 0 !== strcasecmp( $dest, $target ) ) {
 				continue;
 			}
 			$desc       = ( ! empty( $tx['description'] ) && is_array( $tx['description'] ) ) ? $tx['description'] : array();
@@ -2555,7 +2560,9 @@ class Xdwp_Verifier {
 				continue;
 			}
 			$dest = isset( $tx['destination'] ) ? (string) $tx['destination'] : '';
-			if ( '' === $dest || ( $target && 0 !== strcasecmp( $dest, $target ) ) ) {
+			// Same fail-closed reasoning as check_ton_native() — never fall back
+			// to "any non-empty destination" if normalization produced nothing.
+			if ( '' === $dest || '' === $target || 0 !== strcasecmp( $dest, $target ) ) {
 				continue;
 			}
 			$aborted   = ! empty( $tx['transaction_aborted'] );

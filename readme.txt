@@ -4,7 +4,7 @@ Tags: woocommerce, cryptocurrency, bitcoin, ethereum, payments, usdt, crypto che
 Requires at least: 6.9
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.5.28
+Stable tag: 1.5.29
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -254,6 +254,12 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 * QR Code generator (`assets/js/qrcode.min.js`) — MIT-licensed library by davidshimjs (https://github.com/davidshimjs/qrcodejs). Source is publicly available; the bundled file is minified for production use.
 
 == Changelog ==
+
+= 1.5.29 =
+* Security/correctness: re-audited the full payment-verification engine against the project's security audit checklist, focused on every chain integration added since the last full pass (TON, Cardano, Aptos, Kaspa, Starknet, Kaia, the small-EVM-chain family, Tezos, Nano, Waves). Found and fixed a real destination-matching bug: `check_ton_native()`/`check_ton_jetton()` compared the transaction's destination against a client-side-normalized form of the merchant's address, but if that normalization ever failed to produce a value, the check silently degraded to "any non-empty destination passes" instead of rejecting — since toncenter's account-scoped transaction list includes both incoming and outgoing transfers, this could in principle let an outgoing send from the merchant's own wallet be misidentified as an incoming customer payment. Now fails closed (never matches) when normalization doesn't produce a comparable value
+* Hardening: added TON and Waves to the admin Wallets page's shared-address/memo warning — both chains have a real comment/attachment field commonly used for exchange-style shared deposit addresses that this plugin's verifiers don't check, the same category of risk already flagged for XRP/EOS/XLM/HBAR/ATOM/SCRT/SEI/native INJ
+* `AUDIT_PROMPT.md` updated to reflect the full current scope of the payment-verification engine (previously only listed the original ~17 chain integrations; now documents all 27+, including the address-normalization fail-closed requirement this pass's finding revealed)
+* No other findings — AJAX, admin, updater, atomic counters, and order-state-machine code paths (unchanged since the last full audit) were spot-checked for regressions and remain sound
 
 = 1.5.28 =
 * New: 10 more coins across 8 new chain integrations

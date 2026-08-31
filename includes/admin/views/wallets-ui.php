@@ -212,7 +212,7 @@ $render_row = static function ( $id, $addr = '' ) {
 									</div>
 								</div>
 
-								<?php if ( in_array( (string) $coin['verifier'], array( 'xrp', 'eos', 'xlm', 'hbar', 'atom', 'scrt', 'sei', 'inj_native' ), true ) ) : ?>
+								<?php if ( in_array( (string) $coin['verifier'], array( 'xrp', 'eos', 'xlm', 'hbar', 'atom', 'scrt', 'sei', 'inj_native', 'ton', 'waves' ), true ) ) : ?>
 									<p class="xdwp-wallet-card__warning">
 										<?php esc_html_e( 'This network is matched by address + amount only — a destination tag/memo is not supported. Use an address only this store controls, never a shared or exchange-hosted address, or unrelated payments to the same address could be misattributed.', 'xorro-direct-wallet-payments-woocommerce' ); ?>
 									</p>
