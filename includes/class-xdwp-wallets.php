@@ -153,6 +153,19 @@ class Xdwp_Wallets {
 				return (bool) preg_match( '/^sei1[a-z0-9]{38,58}$/', $address );
 			case 'inj_native':
 				return (bool) preg_match( '/^inj1[a-z0-9]{38,58}$/', $address );
+			case 'ton':
+				// Accept any TON address form (raw "workchain:hex", or 48-char
+				// friendly base64/base64url, bounceable or not) — the verifier
+				// itself normalizes whichever form is stored here.
+				return (bool) preg_match( '/^-?\d+:[0-9a-fA-F]{64}$/', $address )
+					|| (bool) preg_match( '/^[A-Za-z0-9_-]{48}$/', $address );
+			case 'ada':
+				return (bool) preg_match( '/^addr1[a-z0-9]{50,110}$/', $address );
+			case 'apt':
+				// Accept with or without 0x and with any zero-padding — the
+				// verifier normalizes to full 66-char form before matching.
+				$addr = 0 === stripos( $address, '0x' ) ? substr( $address, 2 ) : $address;
+				return (bool) preg_match( '/^[0-9a-fA-F]{1,64}$/', $addr );
 			case 'algo':
 				return (bool) preg_match( '/^[A-Z2-7]{58}$/', $address );
 			case 'near':

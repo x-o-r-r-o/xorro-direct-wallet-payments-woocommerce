@@ -380,7 +380,8 @@ class Xdwp_Admin {
 	}
 
 	/**
-	 * Warn when auto-verify needs an Etherscan key for enabled EVM coins.
+	 * Warn when auto-verify needs an Etherscan key for enabled EVM coins,
+	 * or an Aptos API key for enabled APT.
 	 */
 	public static function api_key_notice() {
 		if ( ! current_user_can( 'manage_woocommerce' ) ) {
@@ -393,35 +394,54 @@ class Xdwp_Admin {
 		if ( ! $screen || false === strpos( (string) $screen->id, 'xorro-direct-wallet-payments-woocommerce' ) ) {
 			return;
 		}
-		$key = trim( (string) Xdwp_Settings::get( 'etherscan_api_key', '' ) );
-		if ( '' !== $key ) {
-			return;
-		}
+
+		$payable = Xdwp_Coins::get_payable();
+
+		$key             = trim( (string) Xdwp_Settings::get( 'etherscan_api_key', '' ) );
 		$needs_etherscan = false;
-		foreach ( Xdwp_Coins::get_payable() as $coin_id => $coin ) {
-			$verifier = isset( $coin['verifier'] ) ? (string) $coin['verifier'] : '';
-			if ( in_array( $verifier, array( 'eth', 'ethereum', 'arbitrum', 'optimism', 'base', 'bsc', 'bnb', 'matic', 'avax', 'ftm', 'cro', 'etc' ), true ) ) {
-				$needs_etherscan = true;
-				break;
+		if ( '' === $key ) {
+			foreach ( $payable as $coin_id => $coin ) {
+				$verifier = isset( $coin['verifier'] ) ? (string) $coin['verifier'] : '';
+				if ( in_array( $verifier, array( 'eth', 'ethereum', 'arbitrum', 'optimism', 'base', 'bsc', 'bnb', 'matic', 'avax', 'ftm', 'cro', 'etc' ), true ) ) {
+					$needs_etherscan = true;
+					break;
+				}
 			}
 		}
-		if ( ! $needs_etherscan ) {
-			return;
-		}
-		echo '<div class="notice notice-warning"><p>';
-		echo wp_kses(
-			sprintf(
-				/* translators: %s: Prices & APIs settings URL */
-				__( 'Automatic verification for ETH and other EVM coins requires an Etherscan API V2 key. Add one under %s.', 'xorro-direct-wallet-payments-woocommerce' ),
-				'<a href="' . esc_url( admin_url( 'admin.php?page=xorro-direct-wallet-payments-woocommerce-prices' ) ) . '">' . esc_html__( 'Prices & APIs', 'xorro-direct-wallet-payments-woocommerce' ) . '</a>'
-			),
-			array(
-				'a' => array(
-					'href' => true,
+		if ( $needs_etherscan ) {
+			echo '<div class="notice notice-warning"><p>';
+			echo wp_kses(
+				sprintf(
+					/* translators: %s: Prices & APIs settings URL */
+					__( 'Automatic verification for ETH and other EVM coins requires an Etherscan API V2 key. Add one under %s.', 'xorro-direct-wallet-payments-woocommerce' ),
+					'<a href="' . esc_url( admin_url( 'admin.php?page=xorro-direct-wallet-payments-woocommerce-prices' ) ) . '">' . esc_html__( 'Prices & APIs', 'xorro-direct-wallet-payments-woocommerce' ) . '</a>'
 				),
-			)
-		);
-		echo '</p></div>';
+				array(
+					'a' => array(
+						'href' => true,
+					),
+				)
+			);
+			echo '</p></div>';
+		}
+
+		$aptos_key = trim( (string) Xdwp_Settings::get( 'aptos_api_key', '' ) );
+		if ( '' === $aptos_key && isset( $payable['APT'] ) ) {
+			echo '<div class="notice notice-warning"><p>';
+			echo wp_kses(
+				sprintf(
+					/* translators: %s: Prices & APIs settings URL */
+					__( 'Automatic verification for APT requires an Aptos API key. Add one under %s.', 'xorro-direct-wallet-payments-woocommerce' ),
+					'<a href="' . esc_url( admin_url( 'admin.php?page=xorro-direct-wallet-payments-woocommerce-prices' ) ) . '">' . esc_html__( 'Prices & APIs', 'xorro-direct-wallet-payments-woocommerce' ) . '</a>'
+				),
+				array(
+					'a' => array(
+						'href' => true,
+					),
+				)
+			);
+			echo '</p></div>';
+		}
 	}
 
 	/**

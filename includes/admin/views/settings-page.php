@@ -446,6 +446,30 @@ $active  = isset( $tabs[ $tab ] ) ? $tabs[ $tab ] : $tabs['general'];
 										</td>
 									</tr>
 									<tr>
+										<th scope="row"><?php esc_html_e( 'Aptos API key', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
+										<td>
+											<input type="password" class="regular-text cc-input" name="xdwp[aptos_api_key]" value="" placeholder="<?php echo esc_attr( Xdwp_Settings::api_key_input_placeholder( 'aptos_api_key' ) ); ?>" autocomplete="new-password" />
+											<p class="description">
+												<?php
+												echo wp_kses(
+													sprintf(
+														/* translators: %s: URL */
+														__( 'Required for APT auto-verify — Aptos&#8217;s public indexer rate-limits anonymous requests too aggressively to use without one. Free at %s', 'xorro-direct-wallet-payments-woocommerce' ),
+														'<a href="https://geomi.dev/" target="_blank" rel="noopener noreferrer">Aptos Build (geomi.dev)</a>'
+													),
+													array(
+														'a' => array(
+															'href'   => true,
+															'target' => true,
+															'rel'    => true,
+														),
+													)
+												);
+												?>
+											</p>
+										</td>
+									</tr>
+									<tr>
 										<th scope="row"><?php esc_html_e( 'Show crypto price on products', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
 										<td>
 											<label class="cc-check">

@@ -4,7 +4,7 @@ Tags: woocommerce, cryptocurrency, bitcoin, ethereum, payments, usdt, crypto che
 Requires at least: 6.9
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.5.24
+Stable tag: 1.5.25
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -254,6 +254,15 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 * QR Code generator (`assets/js/qrcode.min.js`) — MIT-licensed library by davidshimjs (https://github.com/davidshimjs/qrcodejs). Source is publicly available; the bundled file is minified for production use.
 
 == Changelog ==
+
+= 1.5.25 =
+* New: three brand-new blockchain integrations, each with its own from-scratch verifier (not just new tokens on an already-supported chain):
+  * TON (The Open Network) — native Toncoin plus 8 Jetton tokens (Notcoin, Catizen, Hamster Kombat, Dogs, Cats, X Empire, JetTon Games, TON Station), verified via toncenter's public API. Accepts any TON address form (raw or friendly, bounceable or not) and normalizes correctly before matching
+  * Cardano (ADA) — verified via Koios's public API (no key required), matching eUTXO outputs the same way BCH/LTC/DOGE already sum multi-output payments
+  * Aptos (APT) — verified via the Aptos Indexer GraphQL API. Requires a free Aptos API key (new field under Prices & APIs) because Aptos's post-migration Fungible Asset balance model makes anonymous indexer access impractically rate-limited; deposit-event detection confirmed directly against Aptos's own indexer source code
+* Fix: the admin Wallets tab's client-side address-format validation (assets/js/wallets.js) had fallen behind the server-side rules over several past releases — DOT, ATOM, ALGO, NEAR, FIL, HBAR, EGLD, ZIL, EOS, and every chain added this session had no dedicated client-side pattern and fell back to a generic length check. Not a functional break (the fallback still worked), but synced the full pattern list so format mistakes are caught immediately while typing, not just on save
+* Icons added for all 10 new coins (real brand icon for ADA; original monogram placeholders for TON and its 8 Jettons, pending real brand assets)
+* Registry now covers 198 coins/tokens
 
 = 1.5.24 =
 * Fix: the "Product price coin" dropdown under Prices & APIs labeled its USDT/USDC options "Tether (Ethereum)" / "USD Coin (Ethereum)" — reads like a different, missing coin. Since this setting only controls a price-reference display (shown as "/ 50.00 USDT" next to product prices, chain-agnostic), relabeled to plain USDT/USDC; the Coins and Wallets tabs, where the network distinction is meaningful, are unaffected

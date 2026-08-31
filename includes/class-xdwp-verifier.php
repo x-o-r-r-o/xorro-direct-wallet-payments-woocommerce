@@ -773,6 +773,12 @@ class Xdwp_Verifier {
 				return self::check_sei( $address, $min, $max, $since );
 			case 'inj_native':
 				return self::check_inj_native( $address, $min, $max, $since );
+			case 'ton':
+				return self::check_ton( $address, $min, $max, $since, $coin );
+			case 'ada':
+				return self::check_cardano( $address, $min, $max, $since );
+			case 'apt':
+				return self::check_aptos( $address, $min, $max, $since );
 			case 'egld':
 				return self::check_egld( $address, $min, $max, $since );
 			case 'fil':
@@ -2216,6 +2222,387 @@ class Xdwp_Verifier {
 			}
 		}
 		return false;
+	}
+
+	/**
+	 * TON (native transfers or Jettons) — dispatch by coin type.
+	 *
+	 * @param string $address Address (any TON form — raw or friendly, bounceable or not).
+	 * @param float  $min     Min.
+	 * @param float  $max     Max.
+	 * @param int    $since   Since.
+	 * @param array  $coin    Coin definition.
+	 * @return string|false
+	 */
+	private static function check_ton( $address, $min, $max, $since, array $coin ) {
+		if ( 'jetton' === $coin['type'] && ! empty( $coin['contract'] ) ) {
+			return self::check_ton_jetton( $address, $coin['contract'], (int) $coin['decimals'], $min, $max, $since );
+		}
+		return self::check_ton_native( $address, $min, $max, $since );
+	}
+
+	/**
+	 * Native TON — toncenter v3 API.
+	 *
+	 * toncenter accepts a TON address in any of its string forms (raw
+	 * "workchain:hex" or 48-char friendly base64/base64url, bounceable or
+	 * not) directly as the `account` query param and resolves them to the
+	 * same account server-side — no client-side form conversion is needed
+	 * for the lookup itself. We still normalize both sides to raw form
+	 * before comparing, as defense-in-depth against a future API response
+	 * shape change.
+	 *
+	 * @param string $address Address (any TON form).
+	 * @param float  $min     Min.
+	 * @param float  $max     Max.
+	 * @param int    $since   Since.
+	 * @return string|false
+	 */
+	private static function check_ton_native( $address, $min, $max, $since ) {
+		if ( ! self::ton_address_looks_valid( $address ) ) {
+			return false;
+		}
+		$target = self::ton_to_raw_address( $address );
+		$url    = add_query_arg(
+			array(
+				'account'      => $address,
+				'start_utime'  => $since,
+				'limit'        => 20,
+				'sort'         => 'desc',
+			),
+			'https://toncenter.com/api/v3/transactions'
+		);
+		$response = self::http_get( $url );
+		if ( empty( $response['transactions'] ) || ! is_array( $response['transactions'] ) ) {
+			return false;
+		}
+		foreach ( $response['transactions'] as $tx ) {
+			$time = isset( $tx['now'] ) ? (int) $tx['now'] : 0;
+			if ( ! $time || $time < $since ) {
+				continue;
+			}
+			$in   = ( ! empty( $tx['in_msg'] ) && is_array( $tx['in_msg'] ) ) ? $tx['in_msg'] : array();
+			$dest = isset( $in['destination'] ) ? (string) $in['destination'] : '';
+			if ( '' === $dest || ( $target && 0 !== strcasecmp( $dest, $target ) ) ) {
+				continue;
+			}
+			$desc       = ( ! empty( $tx['description'] ) && is_array( $tx['description'] ) ) ? $tx['description'] : array();
+			$compute_ok = ! empty( $desc['compute_ph']['success'] );
+			$action_ok  = ! empty( $desc['action']['success'] );
+			$aborted    = ! empty( $desc['aborted'] );
+			$validated  = $compute_ok && $action_ok && ! $aborted;
+			if ( ! self::soft_finality_ok( $validated ) ) {
+				continue;
+			}
+			$value = isset( $in['value'] ) ? (string) $in['value'] : '0';
+			if ( self::raw_amount_in_band( $value, 9, $min, $max ) ) {
+				return ! empty( $tx['hash'] ) ? (string) $tx['hash'] : false;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * TON Jetton (token) transfers — toncenter v3 API.
+	 *
+	 * Jetton balances live in a separate per-owner "jetton wallet" contract,
+	 * not at the owner's own address — toncenter's jetton/transfers endpoint
+	 * resolves that server-side given the owner address + jetton master
+	 * contract, so no jetton-wallet-address derivation is needed here.
+	 *
+	 * @param string $address        Owner address (any TON form).
+	 * @param string $jetton_master  Jetton master contract address.
+	 * @param int    $decimals       Jetton decimals.
+	 * @param float  $min            Min.
+	 * @param float  $max            Max.
+	 * @param int    $since          Since.
+	 * @return string|false
+	 */
+	private static function check_ton_jetton( $address, $jetton_master, $decimals, $min, $max, $since ) {
+		if ( ! self::ton_address_looks_valid( $address ) ) {
+			return false;
+		}
+		$target = self::ton_to_raw_address( $address );
+		$url    = add_query_arg(
+			array(
+				'owner_address' => $address,
+				'jetton_master' => $jetton_master,
+				'direction'     => 'in',
+				'start_utime'   => $since,
+				'limit'         => 20,
+				'sort'          => 'desc',
+			),
+			'https://toncenter.com/api/v3/jetton/transfers'
+		);
+		$response = self::http_get( $url );
+		if ( empty( $response['jetton_transfers'] ) || ! is_array( $response['jetton_transfers'] ) ) {
+			return false;
+		}
+		foreach ( $response['jetton_transfers'] as $tx ) {
+			$time = isset( $tx['transaction_now'] ) ? (int) $tx['transaction_now'] : 0;
+			if ( ! $time || $time < $since ) {
+				continue;
+			}
+			$dest = isset( $tx['destination'] ) ? (string) $tx['destination'] : '';
+			if ( '' === $dest || ( $target && 0 !== strcasecmp( $dest, $target ) ) ) {
+				continue;
+			}
+			$aborted   = ! empty( $tx['transaction_aborted'] );
+			$validated = ! $aborted;
+			if ( ! self::soft_finality_ok( $validated ) ) {
+				continue;
+			}
+			$value = isset( $tx['amount'] ) ? (string) $tx['amount'] : '0';
+			if ( self::raw_amount_in_band( $value, $decimals, $min, $max ) ) {
+				return ! empty( $tx['transaction_hash'] ) ? (string) $tx['transaction_hash'] : false;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Loose shape check for any TON address form (raw or friendly) before
+	 * it's interpolated into a URL — rejects obvious junk without needing
+	 * a full base64/CRC decode just to pass a query param through.
+	 *
+	 * @param string $address Address.
+	 * @return bool
+	 */
+	private static function ton_address_looks_valid( $address ) {
+		$address = (string) $address;
+		if ( preg_match( '/^-?\d+:[0-9a-fA-F]{64}$/', $address ) ) {
+			return true;
+		}
+		return (bool) preg_match( '/^[A-Za-z0-9_-]{48}$/', $address );
+	}
+
+	/**
+	 * Normalize a TON address (raw or friendly, any bounceable/workchain
+	 * flag byte) to its canonical raw "workchain:HEX" form per TEP-0002,
+	 * for comparing against toncenter's (already-raw) response fields.
+	 *
+	 * @param string $address Address, any TON form.
+	 * @return string Raw form, or '' if the input isn't decodable.
+	 */
+	private static function ton_to_raw_address( $address ) {
+		$address = (string) $address;
+		if ( preg_match( '/^(-?\d+):([0-9a-fA-F]{64})$/', $address, $m ) ) {
+			return $m[1] . ':' . strtoupper( $m[2] );
+		}
+		if ( ! preg_match( '/^[A-Za-z0-9_-]{48}$/', $address ) ) {
+			return '';
+		}
+		$decoded = base64_decode( strtr( $address, '-_', '+/' ), true );
+		if ( false === $decoded || 36 !== strlen( $decoded ) ) {
+			return '';
+		}
+		$workchain_byte = ord( $decoded[1] );
+		$workchain      = $workchain_byte > 127 ? $workchain_byte - 256 : $workchain_byte;
+		$account_hex    = strtoupper( bin2hex( substr( $decoded, 2, 32 ) ) );
+		return $workchain . ':' . $account_hex;
+	}
+
+	/**
+	 * Cardano (ADA) — Koios public API (no key required).
+	 *
+	 * Two-step lookup: list recent tx hashes touching this address, then
+	 * resolve each candidate's actual per-output amounts. Cardano is eUTXO —
+	 * a single tx can have multiple outputs to the same address (or none),
+	 * so outputs are summed per matching address the same way the plugin
+	 * already sums multi-output UTXO-chain payments (BCH/LTC/DOGE).
+	 *
+	 * @param string $address Address (Shelley-era bech32, addr1...).
+	 * @param float  $min     Min.
+	 * @param float  $max     Max.
+	 * @param int    $since   Since.
+	 * @return string|false
+	 */
+	private static function check_cardano( $address, $min, $max, $since ) {
+		if ( ! preg_match( '/^addr1[a-z0-9]{50,110}$/', $address ) ) {
+			return false;
+		}
+
+		$txs = self::http_post_json(
+			'https://api.koios.rest/api/v1/address_txs',
+			array( '_addresses' => array( $address ) )
+		);
+		if ( ! is_array( $txs ) || empty( $txs ) ) {
+			return false;
+		}
+
+		$need = self::min_confirmations();
+		$tip  = 0;
+		if ( $need > 0 ) {
+			$tip = self::cached_tip(
+				'ada',
+				static function () {
+					$res = self::http_get( 'https://api.koios.rest/api/v1/tip' );
+					return ( is_array( $res ) && ! empty( $res[0]['block_height'] ) ) ? (int) $res[0]['block_height'] : 0;
+				}
+			);
+			if ( $tip <= 0 ) {
+				return false;
+			}
+		}
+
+		$hashes = array();
+		$blocks = array();
+		// Newest first; cap candidates resolved per poll to bound worst-case latency.
+		foreach ( array_slice( $txs, 0, 20 ) as $row ) {
+			$time = isset( $row['block_time'] ) ? (int) $row['block_time'] : 0;
+			if ( ! $time || $time < $since || empty( $row['tx_hash'] ) ) {
+				continue;
+			}
+			$hash             = (string) $row['tx_hash'];
+			$hashes[]         = $hash;
+			$blocks[ $hash ]  = isset( $row['block_height'] ) ? (int) $row['block_height'] : 0;
+		}
+		if ( empty( $hashes ) ) {
+			return false;
+		}
+
+		$utxo_rows = self::http_post_json(
+			'https://api.koios.rest/api/v1/tx_utxos',
+			array( '_tx_hashes' => $hashes )
+		);
+		if ( ! is_array( $utxo_rows ) ) {
+			return false;
+		}
+
+		foreach ( $utxo_rows as $tx ) {
+			$hash = isset( $tx['tx_hash'] ) ? (string) $tx['tx_hash'] : '';
+			if ( '' === $hash || ! isset( $blocks[ $hash ] ) ) {
+				continue;
+			}
+			if ( $need > 0 && ! self::block_depth_ok( $blocks[ $hash ], $tip ) ) {
+				continue;
+			}
+			if ( empty( $tx['outputs'] ) || ! is_array( $tx['outputs'] ) ) {
+				continue;
+			}
+			$sum = 0.0;
+			foreach ( $tx['outputs'] as $out ) {
+				$addr = isset( $out['payment_addr']['bech32'] ) ? (string) $out['payment_addr']['bech32'] : '';
+				if ( '' === $addr || ! hash_equals( $address, $addr ) ) {
+					continue;
+				}
+				$sum += ( (float) ( isset( $out['value'] ) ? $out['value'] : 0 ) ) / 1000000;
+			}
+			if ( self::amount_in_band( $sum, $min, $max ) ) {
+				return $hash;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Aptos (APT) — Aptos Indexer GraphQL API.
+	 *
+	 * Mainnet migrated APT balances from the legacy CoinStore resource model
+	 * to the Fungible Asset (FA) primary-store model in June 2025; ordinary
+	 * accounts no longer expose a queryable CoinStore/deposit-events resource
+	 * at the owner's own address (analogous to TON's jetton-wallet-vs-owner
+	 * split, one layer deeper), so the fullnode REST API alone cannot detect
+	 * an incoming transfer. The Indexer's `fungible_asset_activities` table
+	 * is the documented, working way to do this — but its anonymous-IP rate
+	 * limit is too aggressive for production use, so this requires a free
+	 * API key (unlike every other keyless verifier in this file) the same
+	 * way Etherscan V2 already does for EVM chains.
+	 *
+	 * Matches both the legacy handle-based event type
+	 * ("0x1::fungible_asset::DepositEvent") and the current module-event type
+	 * ("0x1::fungible_asset::Deposit") — confirmed directly from Aptos's own
+	 * indexer-processor source (v2_fungible_asset_utils.rs), since a mainnet
+	 * account could in principle still surface older rows.
+	 *
+	 * @param string $address Address (with or without 0x, any zero-padding).
+	 * @param float  $min     Min.
+	 * @param float  $max     Max.
+	 * @param int    $since   Since.
+	 * @return string|false
+	 */
+	private static function check_aptos( $address, $min, $max, $since ) {
+		$api_key = trim( (string) Xdwp_Settings::get( 'aptos_api_key', '' ) );
+		if ( '' === $api_key ) {
+			return false;
+		}
+		$target = self::aptos_normalize_address( $address );
+		if ( '' === $target ) {
+			return false;
+		}
+
+		$query = 'query($owner: String, $asset: String, $since: timestamp, $types: [String!]) {'
+			. ' fungible_asset_activities(where: {owner_address: {_eq: $owner}, asset_type: {_eq: $asset},'
+			. ' is_transaction_success: {_eq: true}, is_gas_fee: {_eq: false}, type: {_in: $types},'
+			. ' transaction_timestamp: {_gte: $since}}, order_by: {transaction_version: desc}, limit: 20)'
+			. ' { amount transaction_version transaction_timestamp } }';
+
+		$body = array(
+			'query'     => $query,
+			'variables' => array(
+				'owner' => $target,
+				'asset' => '0x1::aptos_coin::AptosCoin',
+				'since' => gmdate( 'Y-m-d\TH:i:s', (int) $since ),
+				'types' => array( '0x1::fungible_asset::Deposit', '0x1::fungible_asset::DepositEvent' ),
+			),
+		);
+
+		$response = self::http_post_json_headers(
+			'https://api.mainnet.aptoslabs.com/v1/graphql',
+			$body,
+			array( 'Authorization' => 'Bearer ' . $api_key )
+		);
+		$rows = isset( $response['data']['fungible_asset_activities'] ) ? $response['data']['fungible_asset_activities'] : null;
+		if ( ! is_array( $rows ) || empty( $rows ) ) {
+			return false;
+		}
+
+		// The where-clause already restricts to successful, non-gas-fee
+		// deposits — every returned row is by construction already
+		// "validated"; still route through the shared fail-closed gate so a
+		// merchant asking for >1 confirmations (a depth concept that doesn't
+		// exist for Aptos's BFT finality) is refused rather than silently
+		// ignored, matching every other soft-finality chain in this file.
+		if ( ! self::soft_finality_ok( true ) ) {
+			return false;
+		}
+
+		foreach ( $rows as $row ) {
+			$value = isset( $row['amount'] ) ? (string) $row['amount'] : '0';
+			if ( ! self::raw_amount_in_band( $value, 8, $min, $max ) ) {
+				continue;
+			}
+			$version = isset( $row['transaction_version'] ) ? (string) $row['transaction_version'] : '';
+			if ( '' === $version ) {
+				continue;
+			}
+			$detail = self::http_get( 'https://fullnode.mainnet.aptoslabs.com/v1/transactions/by_version/' . rawurlencode( $version ) );
+			$hash   = ( is_array( $detail ) && ! empty( $detail['hash'] ) ) ? (string) $detail['hash'] : '';
+			return '' !== $hash ? $hash : ( 'aptos-v' . $version );
+		}
+		return false;
+	}
+
+	/**
+	 * Normalize an Aptos address to full 66-char (0x + 64 hex) lowercase
+	 * form. Addresses under 32 bytes are commonly rendered with leading
+	 * zero bytes trimmed (e.g. framework address "0x1"), and the Indexer's
+	 * own stored owner_address values are fully zero-padded — comparing an
+	 * un-padded merchant-entered address directly would silently never
+	 * match.
+	 *
+	 * @param string $address Address, any padding.
+	 * @return string Normalized 66-char form, or '' if not decodable.
+	 */
+	private static function aptos_normalize_address( $address ) {
+		$address = strtolower( trim( (string) $address ) );
+		if ( 0 === strpos( $address, '0x' ) ) {
+			$address = substr( $address, 2 );
+		}
+		if ( '' === $address || ! preg_match( '/^[0-9a-f]{1,64}$/', $address ) ) {
+			return '';
+		}
+		return '0x' . str_pad( $address, 64, '0', STR_PAD_LEFT );
 	}
 
 	/**

@@ -55,6 +55,7 @@ class Xdwp_Settings {
 			'helius_api_key'    => 'XDWP_HELIUS_API_KEY',
 			'subscan_api_key'   => 'XDWP_SUBSCAN_API_KEY',
 			'viewblock_api_key' => 'XDWP_VIEWBLOCK_API_KEY',
+			'aptos_api_key'     => 'XDWP_APTOS_API_KEY',
 		);
 	}
 
@@ -173,6 +174,7 @@ class Xdwp_Settings {
 			'helius_api_key',
 			'subscan_api_key',
 			'viewblock_api_key',
+			'aptos_api_key',
 		) as $text_key ) {
 			if ( ! isset( $input[ $text_key ] ) ) {
 				continue;

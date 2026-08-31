@@ -259,6 +259,27 @@ class Xdwp_Coins {
 			'MATICUSDCE' => self::def( 'MATICUSDCE', 'USD Coin Bridged (Polygon PoS)', 'polygon-pos', 'bridged-usdc-polygon-pos-bridge', 'erc20', 6, 'eth', '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174', 'matic' ),
 			'BRETT'      => self::def( 'BRETT', 'Brett', 'base', 'based-brett', 'erc20', 18, 'eth', '0x532f27101965dd16442E59d40670FaF5eBB142E4', 'base' ),
 			'FITFI'      => self::def( 'FITFI', 'Step App', 'avalanche', 'step-app-fitfi', 'erc20', 18, 'eth', '0x714f020c54cC9D104b6F4f6998C63cE2a31D1888', 'avax' ),
+
+			// Cardano — Koios public API (no key required).
+			'ADA' => self::def( 'ADA', 'Cardano', 'cardano', 'cardano', 'native', 6, 'ada' ),
+
+			// Aptos — requires an Aptos API key (Prices & APIs); see check_aptos().
+			'APT' => self::def( 'APT', 'Aptos', 'aptos', 'aptos', 'native', 8, 'apt' ),
+
+			// TON (The Open Network) — toncenter v3 public API. Native TON and
+			// Jetton (TON's token standard) transfers both route through the
+			// same 'ton' verifier, which dispatches internally by coin type.
+			'TON'    => self::def( 'TON', 'Toncoin', 'the-open-network', 'the-open-network', 'native', 9, 'ton' ),
+			'NOT'    => self::def( 'NOT', 'Notcoin', 'the-open-network', 'notcoin', 'jetton', 9, 'ton', 'EQAvlWFDxGF2lXm67y4yzC17wYKD9A0guwPkMs1gOsM__NOT', 'ton' ),
+			'CATI'   => self::def( 'CATI', 'Catizen', 'the-open-network', 'catizen', 'jetton', 9, 'ton', 'EQD-cvR0Nz6XAyRBvbhz-abTrRC6sI5tvHvvpeQraV9UAAD7', 'ton' ),
+			'HMSTR'  => self::def( 'HMSTR', 'Hamster Kombat', 'the-open-network', 'hamster-kombat', 'jetton', 9, 'ton', 'EQAJ8uWd7EBqsmpSWaRdf_I-8R8-XHwh3gsNKhy-UrdrPcUo', 'ton' ),
+			'DOGS'   => self::def( 'DOGS', 'Dogs', 'the-open-network', 'dogs-2', 'jetton', 9, 'ton', 'EQCvxJy4eG8hyHBFsZ7eePxrRsUQSFE_jpptRAYBmcG_DOGS', 'ton' ),
+			'CATS'   => self::def( 'CATS', 'Cats', 'the-open-network', 'cats-2', 'jetton', 9, 'ton', 'EQA3AshPEVly8wQ6mZincrKC_CkJSKXqqjyg0VMsVjF_CATS', 'ton' ),
+			'X'      => self::def( 'X', 'X Empire', 'the-open-network', 'x-empire', 'jetton', 9, 'ton', 'EQB4zZusHsbU2vVTPqjhlokIOoiZhEdCMT703CWEzhTOo__X', 'ton' ),
+			'JETTON' => self::def( 'JETTON', 'JetTon Games', 'the-open-network', 'jetton', 'jetton', 9, 'ton', 'EQAQXlWJvGbbFfE8F3oS8s87lIgdovS455IsWFaRdmJetTon', 'ton' ),
+			// CoinGecko's own symbol for this one is MRSOON, not the ambiguous "SOON"
+			// (which collides with an unrelated Solana project) — kept distinct here.
+			'MRSOON' => self::def( 'MRSOON', 'TON Station', 'the-open-network', 'tonstation', 'jetton', 9, 'ton', 'EQCwe0g3cEFhsz4VK5nrtOZBkFeSISxhCVUqvON7Im__SOON', 'ton' ),
 		);
 
 		/**
@@ -276,7 +297,7 @@ class Xdwp_Coins {
 	 * @param string $name         Display name.
 	 * @param string $platform     CoinGecko platform / network slug.
 	 * @param string $coingecko_id CoinGecko asset id.
-	 * @param string $type         native|erc20|bep20|trc20|spl.
+	 * @param string $type         native|erc20|bep20|trc20|spl|jetton.
 	 * @param int    $decimals     Decimals.
 	 * @param string $uri_scheme   Payment URI scheme prefix.
 	 * @param string $contract     Token contract (optional).
@@ -653,7 +674,18 @@ class Xdwp_Coins {
 			return sprintf( 'cosmos:%s?amount=%s', $address, rawurlencode( self::normalize_decimal_amount( $amount ) ) );
 		}
 
-		// Bare address for remaining chains (ALGO, NEAR, DOT, FIL, HBAR, EGLD, ZIL, EOS, …).
+		// TON native transfer (Jettons fall through to the bare-address form below —
+		// a correct ton:// Jetton-transfer link needs the recipient's derived
+		// per-owner jetton-wallet address, not the owner's own address).
+		if ( 'ton' === $verifier && 'native' === $type ) {
+			return sprintf(
+				'ton://transfer/%s?amount=%s',
+				rawurlencode( $address ),
+				rawurlencode( self::to_base_units( $amount, 9 ) )
+			);
+		}
+
+		// Bare address for remaining chains (ADA, ALGO, NEAR, DOT, FIL, HBAR, EGLD, ZIL, EOS, …).
 		return $address;
 	}
 
@@ -771,6 +803,7 @@ class Xdwp_Coins {
 			'btc', 'bch', 'ltc', 'doge', 'dash', 'zec', 'xec', 'eth', 'ethereum', 'arbitrum', 'optimism', 'base', 'bsc', 'matic', 'avax', 'ftm', 'cro', 'etc',
 			'sol', 'solana', 'trx', 'tron', 'xrp', 'xlm',
 			'algo', 'hbar', 'near', 'atom', 'scrt', 'sei', 'inj_native', 'egld', 'fil', 'eos', 'dot', 'zil',
+			'ton', 'ada', 'apt',
 		);
 		return in_array( $coin['verifier'], $supported, true );
 	}

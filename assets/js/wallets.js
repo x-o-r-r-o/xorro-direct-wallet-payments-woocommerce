@@ -11,6 +11,9 @@
 				bch: /^(bitcoincash:)?(q|p)[a-z0-9]{41}$|^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$/,
 				ltc: /^(ltc1|[LM3])[a-zA-HJ-NP-Z0-9]{25,62}$/,
 				doge: /^D[5-9A-HJ-NP-U][1-9A-HJ-NP-Za-km-z]{32}$/,
+				dash: /^[X7][1-9A-HJ-NP-Za-km-z]{25,34}$/,
+				zec: /^t[13][1-9A-HJ-NP-Za-km-z]{33,34}$/,
+				xec: /^(ecash:)?(q|p)[a-z0-9]{41}$/,
 				eth: /^0x[a-fA-F0-9]{40}$/,
 				ethereum: /^0x[a-fA-F0-9]{40}$/,
 				arbitrum: /^0x[a-fA-F0-9]{40}$/,
@@ -28,7 +31,22 @@
 				trx: /^T[1-9A-HJ-NP-Za-km-z]{33}$/,
 				tron: /^T[1-9A-HJ-NP-Za-km-z]{33}$/,
 				xrp: /^r[1-9A-HJ-NP-Za-km-z]{24,34}$/,
-				xlm: /^G[A-Z2-7]{55}$/
+				xlm: /^G[A-Z2-7]{55}$/,
+				dot: /^[1-9A-HJ-NP-Za-km-z]{46,50}$/,
+				atom: /^cosmos1[a-z0-9]{38,58}$/,
+				scrt: /^secret1[a-z0-9]{38,58}$/,
+				sei: /^sei1[a-z0-9]{38,58}$/,
+				inj_native: /^inj1[a-z0-9]{38,58}$/,
+				algo: /^[A-Z2-7]{58}$/,
+				near: /^(([a-z0-9_-]{2,64}\.)*([a-z0-9_-]{2,64})\.near|[a-f0-9]{64})$|^[a-z0-9._-]{2,64}$/,
+				fil: /^f[0-9a-zA-Z]{8,128}$/,
+				hbar: /^0\.0\.\d{1,10}$/,
+				egld: /^erd1[a-z0-9]{58}$/,
+				zil: /^zil1[a-z0-9]{38}$/,
+				eos: /^[a-z1-5.]{1,12}$/,
+				ton: /^-?\d+:[0-9a-fA-F]{64}$|^[A-Za-z0-9_-]{48}$/,
+				ada: /^addr1[a-z0-9]{50,110}$/,
+				apt: /^(0x)?[0-9a-fA-F]{1,64}$/
 			};
 
 			function el(tag, attrs, html) {
