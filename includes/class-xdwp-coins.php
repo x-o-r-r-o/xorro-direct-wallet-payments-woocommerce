@@ -269,6 +269,15 @@ class Xdwp_Coins {
 			// Kaspa — official public REST API (no key required); see check_kaspa().
 			'KAS' => self::def( 'KAS', 'Kaspa', 'kaspa', 'kaspa', 'native', 8, 'kaspa' ),
 
+			// Starknet — manual confirmation only (like XMR). Detecting an incoming
+			// transfer requires Voyager's block-explorer API (Starknet's own
+			// JSON-RPC can't filter transfer events by recipient — the standard
+			// Cairo ERC-20's Transfer event doesn't index from/to as filterable
+			// keys), and Voyager has no free tier. Not wiring up a paid-only
+			// auto-verify dependency; customers can still pay, merchant confirms
+			// via the existing manual "mark paid" flow.
+			'STRK' => self::def( 'STRK', 'Starknet', 'starknet', 'starknet', 'native', 18, 'strk' ),
+
 			// TON (The Open Network) — toncenter v3 public API. Native TON and
 			// Jetton (TON's token standard) transfers both route through the
 			// same 'ton' verifier, which dispatches internally by coin type.

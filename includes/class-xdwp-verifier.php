@@ -794,6 +794,12 @@ class Xdwp_Verifier {
 			case 'xmr':
 				// Monero requires a private view key for inbound detection — kept manual.
 				return false;
+			case 'strk':
+				// Starknet's own JSON-RPC can't filter Transfer events by recipient
+				// (not an indexed key on the standard Cairo ERC-20), and the block
+				// explorer API that can (Voyager) has no free tier — kept manual
+				// rather than wiring up a paid-only auto-verify dependency.
+				return false;
 			default:
 				return false;
 		}

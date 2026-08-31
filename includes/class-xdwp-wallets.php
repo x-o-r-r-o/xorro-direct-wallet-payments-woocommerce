@@ -168,6 +168,11 @@ class Xdwp_Wallets {
 				return (bool) preg_match( '/^[0-9a-fA-F]{1,64}$/', $addr );
 			case 'kas':
 				return (bool) preg_match( '/^kaspa:[a-z0-9]{61,64}$/', $address );
+			case 'strk':
+				// Starknet account addresses are felt252 values — like Aptos,
+				// commonly rendered with leading zero bytes trimmed.
+				$addr = 0 === stripos( $address, '0x' ) ? substr( $address, 2 ) : $address;
+				return (bool) preg_match( '/^[0-9a-fA-F]{1,64}$/', $addr );
 			case 'algo':
 				return (bool) preg_match( '/^[A-Z2-7]{58}$/', $address );
 			case 'near':

@@ -47,7 +47,8 @@
 				ton: /^-?\d+:[0-9a-fA-F]{64}$|^[A-Za-z0-9_-]{48}$/,
 				ada: /^addr1[a-z0-9]{50,110}$/,
 				apt: /^(0x)?[0-9a-fA-F]{1,64}$/,
-				kas: /^kaspa:[a-z0-9]{61,64}$/
+				kas: /^kaspa:[a-z0-9]{61,64}$/,
+				strk: /^(0x)?[0-9a-fA-F]{1,64}$/
 			};
 
 			function el(tag, attrs, html) {
