@@ -4,7 +4,7 @@ Tags: woocommerce, cryptocurrency, bitcoin, ethereum, payments, usdt, crypto che
 Requires at least: 6.9
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.5.18
+Stable tag: 1.5.19
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -269,6 +269,10 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 * Hardening: clear warning on XRP/EOS/XLM/HBAR/ATOM wallet fields that destination tags/memos aren't supported — don't use a shared or exchange-hosted address
 * Hardening: plugin update downloads verify scheme (https-only) and are scoped to this plugin's own basename
 * Fix: `_load_textdomain_just_in_time` notice on every page load (translated strings were being built before `init`)
+
+= 1.5.19 =
+* New: 68 additional coins/tokens across Ethereum, BNB Chain, Polygon, Base, Avalanche, and Solana — every contract/mint address verified against CoinGecko's platform data (1inch, ARPA, Banana Gun, BAT, Brett, Cartesi, ChainGPT, Chiliz, Chromia, Civic, Coin98, COTI, Cudos, Cult DAO, DAO Maker, Enjin, Ethena USDe, Euro Tether, Floki, Frontier, FunFair, GALA, Gate, Gravity, Hex, Hoge Finance, HotCross, Illuvium, JasmyCoin, JUST STPT-adjacent tokens, Kyber Network Crystal, LayerZero, Leash, MX Token, Netvrk, Ocean Protocol, OKB, OMG Network, Augur, PayPal USD, Pullix, Radio Caca, RichQUACK, Sidus, SparkPoint, SuperVerse, Tether Gold, The Graph, Bitgert, Bridge AI, Centric Swap, ChangeNOW, Ethereum (BSC), Hot Cross, Rejuve.AI, Seedify.fund, Shiba Inu (BSC bridge), SPACE ID, Tokocrypto, USD Coin Bridged (Polygon), Verse, XCAD Network, XYO, Yearn.finance, Travala, and more)
+* Fix: caught and corrected before shipping — an internal typo would have added one wrong contract address; a full cross-check of every new address against its source verification data before commit is now standard practice
 
 = 1.5.18 =
 * New: Dash (DASH), Zcash transparent (ZEC), and eCash (XEC) — all verified via Blockchair
