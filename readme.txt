@@ -4,7 +4,7 @@ Tags: woocommerce, cryptocurrency, bitcoin, ethereum, payments, usdt, crypto che
 Requires at least: 6.9
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.5.23
+Stable tag: 1.5.24
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -254,6 +254,9 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 * QR Code generator (`assets/js/qrcode.min.js`) — MIT-licensed library by davidshimjs (https://github.com/davidshimjs/qrcodejs). Source is publicly available; the bundled file is minified for production use.
 
 == Changelog ==
+
+= 1.5.24 =
+* Fix: the "Product price coin" dropdown under Prices & APIs labeled its USDT/USDC options "Tether (Ethereum)" / "USD Coin (Ethereum)" — reads like a different, missing coin. Since this setting only controls a price-reference display (shown as "/ 50.00 USDT" next to product prices, chain-agnostic), relabeled to plain USDT/USDC; the Coins and Wallets tabs, where the network distinction is meaningful, are unaffected
 
 = 1.5.23 =
 * Fix: 104 of 187 coins (everything added since the original ~80-coin catalog) had no bundled icon and rendered as a plain text tile in the checkout coin picker and admin Coins list instead of an icon

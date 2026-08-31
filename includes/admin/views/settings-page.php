@@ -460,12 +460,22 @@ $active  = isset( $tabs[ $tab ] ) ? $tabs[ $tab ] : $tabs['general'];
 											<select name="xdwp[price_coin_ticker]" class="cc-input cc-input-select">
 												<?php
 												$ticker = $settings['price_coin_ticker'] ?? 'BTC';
+												// This is a pure price-reference display (shown as just the coin's
+												// symbol next to the product price, e.g. "/ 50.00 USDT") — the
+												// underlying chain used to price it is an implementation detail, so
+												// the stablecoin options are labeled by symbol alone rather than
+												// their (otherwise meaningful) per-network coin name.
+												$labels = array(
+													'USDT_ETH' => __( 'USDT', 'xorro-direct-wallet-payments-woocommerce' ),
+													'USDC_ETH' => __( 'USDC', 'xorro-direct-wallet-payments-woocommerce' ),
+												);
 												foreach ( array( 'BTC', 'ETH', 'USDT_ETH', 'USDC_ETH' ) as $opt ) {
 													$c = Xdwp_Coins::get( $opt );
 													if ( ! $c ) {
 														continue;
 													}
-													printf( '<option value="%s" %s>%s</option>', esc_attr( $opt ), selected( $ticker, $opt, false ), esc_html( $c['name'] ) );
+													$label = isset( $labels[ $opt ] ) ? $labels[ $opt ] : $c['name'];
+													printf( '<option value="%s" %s>%s</option>', esc_attr( $opt ), selected( $ticker, $opt, false ), esc_html( $label ) );
 												}
 												?>
 											</select>
