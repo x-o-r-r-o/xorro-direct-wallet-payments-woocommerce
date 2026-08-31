@@ -2,8 +2,8 @@
 /**
  * Plugin Name:       Xorro Direct Wallet Payments for WooCommerce
  * Plugin URI:        https://github.com/x-o-r-r-o/xorro-direct-wallet-payments-woocommerce
- * Description:       Accept cryptocurrency payments directly to your own wallets — no third-party payment processor. Supports BTC, BCH, ETH, USDT, USDC, DAI, TON, ADA, APT and 195+ coins/tokens with automatic on-chain verification.
- * Version:           1.5.25
+ * Description:       Accept cryptocurrency payments directly to your own wallets — no third-party payment processor. Supports BTC, BCH, ETH, USDT, USDC, DAI, TON, ADA, APT, KAS and 195+ coins/tokens with automatic on-chain verification.
+ * Version:           1.5.26
  * Requires at least: 6.9
  * Requires PHP:      7.4
  * Requires Plugins:  woocommerce
@@ -22,7 +22,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'XDWP_VERSION', '1.5.25' );
+define( 'XDWP_VERSION', '1.5.26' );
 define( 'XDWP_FILE', __FILE__ );
 define( 'XDWP_PATH', plugin_dir_path( __FILE__ ) );
 define( 'XDWP_URL', plugin_dir_url( __FILE__ ) );

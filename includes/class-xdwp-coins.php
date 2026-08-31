@@ -266,6 +266,9 @@ class Xdwp_Coins {
 			// Aptos — requires an Aptos API key (Prices & APIs); see check_aptos().
 			'APT' => self::def( 'APT', 'Aptos', 'aptos', 'aptos', 'native', 8, 'apt' ),
 
+			// Kaspa — official public REST API (no key required); see check_kaspa().
+			'KAS' => self::def( 'KAS', 'Kaspa', 'kaspa', 'kaspa', 'native', 8, 'kaspa' ),
+
 			// TON (The Open Network) — toncenter v3 public API. Native TON and
 			// Jetton (TON's token standard) transfers both route through the
 			// same 'ton' verifier, which dispatches internally by coin type.
@@ -674,6 +677,15 @@ class Xdwp_Coins {
 			return sprintf( 'cosmos:%s?amount=%s', $address, rawurlencode( self::normalize_decimal_amount( $amount ) ) );
 		}
 
+		// Kaspa — its own address format already textually embeds "kaspa:" as a
+		// prefix (like BCH's optional "bitcoincash:"), so the payable URI is just
+		// that same string with an amount query param appended, never a second
+		// "kaspa:" scheme prefix stacked on top.
+		if ( 'kas' === $verifier || 'kaspa' === $scheme ) {
+			$amount = self::normalize_decimal_amount( $amount );
+			return ( '' === $amount || '0' === $amount ) ? $address : $address . '?amount=' . $amount;
+		}
+
 		// TON native transfer (Jettons fall through to the bare-address form below —
 		// a correct ton:// Jetton-transfer link needs the recipient's derived
 		// per-owner jetton-wallet address, not the owner's own address).
@@ -803,7 +815,7 @@ class Xdwp_Coins {
 			'btc', 'bch', 'ltc', 'doge', 'dash', 'zec', 'xec', 'eth', 'ethereum', 'arbitrum', 'optimism', 'base', 'bsc', 'matic', 'avax', 'ftm', 'cro', 'etc',
 			'sol', 'solana', 'trx', 'tron', 'xrp', 'xlm',
 			'algo', 'hbar', 'near', 'atom', 'scrt', 'sei', 'inj_native', 'egld', 'fil', 'eos', 'dot', 'zil',
-			'ton', 'ada', 'apt',
+			'ton', 'ada', 'apt', 'kas',
 		);
 		return in_array( $coin['verifier'], $supported, true );
 	}

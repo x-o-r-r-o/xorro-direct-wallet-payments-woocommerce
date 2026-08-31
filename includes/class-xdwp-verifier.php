@@ -779,6 +779,8 @@ class Xdwp_Verifier {
 				return self::check_cardano( $address, $min, $max, $since );
 			case 'apt':
 				return self::check_aptos( $address, $min, $max, $since );
+			case 'kas':
+				return self::check_kaspa( $address, $min, $max, $since );
 			case 'egld':
 				return self::check_egld( $address, $min, $max, $since );
 			case 'fil':
@@ -2490,6 +2492,97 @@ class Xdwp_Verifier {
 			}
 			if ( self::amount_in_band( $sum, $min, $max ) ) {
 				return $hash;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Kaspa (KAS) — official public REST API (api.kaspa.org), no key required.
+	 *
+	 * Kaspa's GHOSTDAG BlockDAG has no simple linear block-confirmation
+	 * count; the API instead exposes `is_accepted` (has this tx been
+	 * accepted into the virtual selected chain at all) plus
+	 * `accepting_block_blue_score` — a monotonically increasing depth
+	 * analog comparable against the network tip's own blue score, fetched
+	 * separately. Both are required: a tx can appear before it's accepted,
+	 * and blue score alone doesn't distinguish "not yet accepted" from
+	 * "accepted but shallow."
+	 *
+	 * Post-Crescendo-hardfork (May 2025) Kaspa runs at ~10 blocks/second,
+	 * roughly 10x faster than the ~1 BPS most other chains here implicitly
+	 * assume when a merchant sets "min confirmations" — so the shared
+	 * setting is scaled up rather than fed directly into the generic
+	 * block-depth check, or a merchant's "3 confirmations" would mean
+	 * well under a second of real settlement time on this chain.
+	 *
+	 * @param string $address Address (kaspa:... bech32-style).
+	 * @param float  $min     Min.
+	 * @param float  $max     Max.
+	 * @param int    $since   Since.
+	 * @return string|false
+	 */
+	private static function check_kaspa( $address, $min, $max, $since ) {
+		if ( ! preg_match( '/^kaspa:[a-z0-9]{61,64}$/', $address ) ) {
+			return false;
+		}
+
+		$url      = sprintf( 'https://api.kaspa.org/addresses/%s/full-transactions?limit=20&resolve_previous_outpoints=no', rawurlencode( $address ) );
+		$response = self::http_get( $url );
+		if ( ! is_array( $response ) || empty( $response ) ) {
+			return false;
+		}
+
+		$need = self::min_confirmations();
+		$tip  = 0;
+		if ( $need > 0 ) {
+			$tip = self::cached_tip(
+				'kas',
+				static function () {
+					$res = self::http_get( 'https://api.kaspa.org/info/virtual-chain-blue-score' );
+					return ( is_array( $res ) && isset( $res['blueScore'] ) ) ? (int) $res['blueScore'] : 0;
+				}
+			);
+			if ( $tip <= 0 ) {
+				return false;
+			}
+		}
+
+		// ~10 blocks/second post-Crescendo — scale the shared confirmations
+		// setting so it means a comparable real-world wait as on slower chains.
+		$required_depth = $need * 10;
+
+		foreach ( $response as $tx ) {
+			$time = isset( $tx['block_time'] ) ? ( (int) ( (float) $tx['block_time'] / 1000 ) ) : 0;
+			if ( ! $time || $time < $since ) {
+				continue;
+			}
+			if ( empty( $tx['is_accepted'] ) ) {
+				continue;
+			}
+			if ( $need > 0 ) {
+				$tx_blue = isset( $tx['accepting_block_blue_score'] ) ? (int) $tx['accepting_block_blue_score'] : 0;
+				$depth   = self::tip_depth( $tx_blue, $tip );
+				if ( null === $depth || $depth < $required_depth ) {
+					continue;
+				}
+			}
+			if ( empty( $tx['outputs'] ) || ! is_array( $tx['outputs'] ) ) {
+				continue;
+			}
+			$sum = 0.0;
+			foreach ( $tx['outputs'] as $out ) {
+				$addr = isset( $out['script_public_key_address'] ) ? (string) $out['script_public_key_address'] : '';
+				if ( '' === $addr || ! hash_equals( $address, $addr ) ) {
+					continue;
+				}
+				$sum += ( (float) ( isset( $out['amount'] ) ? $out['amount'] : 0 ) ) / 100000000;
+			}
+			if ( self::amount_in_band( $sum, $min, $max ) ) {
+				if ( ! empty( $tx['transaction_id'] ) ) {
+					return (string) $tx['transaction_id'];
+				}
+				return ! empty( $tx['hash'] ) ? (string) $tx['hash'] : false;
 			}
 		}
 		return false;

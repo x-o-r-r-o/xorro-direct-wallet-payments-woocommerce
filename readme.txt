@@ -4,7 +4,7 @@ Tags: woocommerce, cryptocurrency, bitcoin, ethereum, payments, usdt, crypto che
 Requires at least: 6.9
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.5.25
+Stable tag: 1.5.26
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -254,6 +254,11 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 * QR Code generator (`assets/js/qrcode.min.js`) — MIT-licensed library by davidshimjs (https://github.com/davidshimjs/qrcodejs). Source is publicly available; the bundled file is minified for production use.
 
 == Changelog ==
+
+= 1.5.26 =
+* New: Kaspa (KAS) — a new from-scratch verifier via Kaspa's official public REST API (no key required). Kaspa's GHOSTDAG BlockDAG has no simple linear block-confirmation count, so this gates on the API's own `is_accepted` flag plus its accepting block's blue score compared against the network tip — scaled for Kaspa's ~10-blocks/second rate so the shared "minimum confirmations" setting means a comparable real-world wait as on slower chains. Live-tested against a real address with real transaction history
+* Icon added for KAS (original monogram placeholder, pending a real brand asset)
+* Registry now covers 199 coins/tokens
 
 = 1.5.25 =
 * New: three brand-new blockchain integrations, each with its own from-scratch verifier (not just new tokens on an already-supported chain):
