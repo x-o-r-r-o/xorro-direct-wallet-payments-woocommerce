@@ -197,6 +197,7 @@ class Xdwp_Coins {
 			'CGPT'   => self::def( 'CGPT', 'ChainGPT', 'ethereum', 'chaingpt', 'erc20', 18, 'eth', '0x25931894a86D47441213199621F1F2994e1c39Aa', 'ethereum' ),
 			'ZRO'    => self::def( 'ZRO', 'LayerZero', 'ethereum', 'layerzero', 'erc20', 18, 'eth', '0x6985884C4392D348587B19cb9eAAf157F13271cd', 'ethereum' ),
 			'G'      => self::def( 'G', 'Gravity (by Galxe)', 'ethereum', 'g-token', 'erc20', 18, 'eth', '0x9C7BEBa8F6eF6643aBd725e45a4E8387eF260649', 'ethereum' ),
+			'TLOS'   => self::def( 'TLOS', 'Telos', 'ethereum', 'telos', 'erc20', 18, 'eth', '0x193f4A4a6ea24102F49b931dEEEB931F6E32405D', 'ethereum' ),
 			'PYUSD'  => self::def( 'PYUSD', 'PayPal USD', 'ethereum', 'paypal-usd', 'erc20', 6, 'eth', '0x6c3ea9036406852006290770BEdFcAbA0e23A0e8', 'ethereum' ),
 			'EURT'   => self::def( 'EURT', 'Euro Tether', 'ethereum', 'tether-eurt', 'erc20', 6, 'eth', '0xC581b735A1688071A1746c968e0798D642EDE491', 'ethereum' ),
 			'TRVL'   => self::def( 'TRVL', 'Dtravel', 'ethereum', 'dtravel', 'erc20', 18, 'eth', '0xd47BDF574B4F76210ed503e0EFe81B58Aa061f3d', 'ethereum' ),
