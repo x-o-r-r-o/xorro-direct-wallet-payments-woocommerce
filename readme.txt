@@ -4,7 +4,7 @@ Tags: woocommerce, cryptocurrency, bitcoin, ethereum, payments, usdt, crypto che
 Requires at least: 6.9
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.5.22
+Stable tag: 1.5.23
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -254,6 +254,11 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 * QR Code generator (`assets/js/qrcode.min.js`) — MIT-licensed library by davidshimjs (https://github.com/davidshimjs/qrcodejs). Source is publicly available; the bundled file is minified for production use.
 
 == Changelog ==
+
+= 1.5.23 =
+* Fix: 104 of 187 coins (everything added since the original ~80-coin catalog) had no bundled icon and rendered as a plain text tile in the checkout coin picker and admin Coins list instead of an icon
+* Added 15 real brand icons from the project's existing CC0 icon source (cryptocurrency-icons) that were available but not yet bundled: 1INCH, BAT, BTT, CHZ, CVC, DASH, ENJ, FUN, GRT, HOT, KNC, OMG, REP, YFI, ZEC
+* Added original, deterministically-colored monogram placeholder icons for the remaining ~83 tickers with no available brand asset, so every coin now renders as a proper icon tile — clearly documented in ATTRIBUTION.txt as placeholders, not official logos, and safe to swap out individually later
 
 = 1.5.22 =
 * New: Secret Network (SCRT), Sei (SEI), and Injective's native chain (INJ, alongside the existing Ethereum-bridged form) — three new Cosmos-SDK chains verified through a shared LCD REST helper generalized from the existing ATOM verifier. Confirmed live that Secret Network's privacy applies to CosmWasm/SNIP-20 contract state, not plain bank-transfer SCRT, so standard auto-verification is safe there; Sei's public LCD needed a different query parameter than every other chain here, now handled per-chain
