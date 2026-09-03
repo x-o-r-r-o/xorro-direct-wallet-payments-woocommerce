@@ -67,7 +67,22 @@
 				gas: /^N[1-9A-HJ-NP-Za-km-z]{33}$/,
 				theta: /^0x[a-fA-F0-9]{40}$/,
 				tfuel: /^0x[a-fA-F0-9]{40}$/,
-				strk: /^(0x)?[0-9a-fA-F]{1,64}$/
+				strk: /^(0x)?[0-9a-fA-F]{1,64}$/,
+				dgb: /^D[1-9A-HJ-NP-Za-km-z]{33}$/,
+				kmd: /^R[1-9A-HJ-NP-Za-km-z]{33}$/,
+				xvg: /^D[1-9A-HJ-NP-Za-km-z]{33}$/,
+				qtum: /^Q[1-9A-HJ-NP-Za-km-z]{33}$/,
+				ark: /^A[1-9A-HJ-NP-Za-km-z]{33}$/,
+				ae: /^ak_[1-9A-HJ-NP-Za-km-z]{48,50}$/,
+				icx: /^hx[0-9a-f]{40}$/,
+				ont: /^A[1-9A-HJ-NP-Za-km-z]{33}$/,
+				klv: /^klv1[ac-hj-np-z02-9]{58}$/,
+				tet: /^0x[a-fA-F0-9]{40}$/,
+				xem: /^N[A-Z2-7]{39}$/,
+				xym: /^N[A-Z2-7]{38}$/,
+				rune: /^thor1[ac-hj-np-z02-9]{38}$/,
+				iotx: /^(io1[ac-hj-np-z02-9]{38,40}|0x[a-fA-F0-9]{40})$/,
+				cspr: /^(01[0-9a-fA-F]{64}|02[0-9a-fA-F]{66})$/
 			};
 
 			function el(tag, attrs, html) {

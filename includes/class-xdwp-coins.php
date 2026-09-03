@@ -289,6 +289,47 @@ class Xdwp_Coins {
 			'THETA' => self::def( 'THETA', 'Theta Network', 'theta', 'theta-token', 'native', 18, 'theta' ),
 			'TFUEL' => self::def( 'TFUEL', 'Theta Fuel', 'theta', 'theta-fuel', 'native', 18, 'theta' ),
 
+			// Esplora/Insight/bespoke UTXO explorers, each with a distinct API
+			// shape — see check_esplora(), check_insight(), check_verge_explorer().
+			'DGB' => self::def( 'DGB', 'DigiByte', 'digibyte', 'digibyte', 'native', 8, 'digibyte' ),
+			'KMD' => self::def( 'KMD', 'Komodo', 'komodo', 'komodo', 'native', 8, 'komodo' ),
+			'XVG' => self::def( 'XVG', 'Verge', 'verge', 'verge', 'native', 8, 'verge' ),
+
+			// Qtum — UTXO+EVM hybrid, verified via its own Insight-derived API
+			// (field names differ from check_insight()); see check_qtum().
+			'QTUM' => self::def( 'QTUM', 'Qtum', 'qtum', 'qtum', 'native', 8, 'qtum' ),
+
+			// Standalone chains with good keyless public APIs; see check_ark(),
+			// check_aeternity(), check_icon(), check_ontology(), check_klever(),
+			// check_tectum(), check_nem(), check_symbol(), check_thorchain().
+			'ARK'   => self::def( 'ARK', 'Ark', 'ark', 'ark', 'native', 8, 'ark' ),
+			'AE'    => self::def( 'AE', 'Aeternity', 'aeternity', 'aeternity', 'native', 18, 'aeternity' ),
+			'ICX'   => self::def( 'ICX', 'ICON', 'icon', 'icon', 'native', 18, 'icx' ),
+			'ONT'   => self::def( 'ONT', 'Ontology', 'ontology', 'ontology', 'native', 0, 'ontology' ),
+			'KLV'   => self::def( 'KLV', 'Klever', 'klever', 'klever', 'native', 6, 'klv' ),
+			'TET'   => self::def( 'TET', 'Tectum', 'tectum', 'tectum', 'native', 8, 'tectum' ),
+			'XEM'   => self::def( 'XEM', 'NEM', 'nem', 'nem', 'native', 6, 'nem' ),
+			'XYM'   => self::def( 'XYM', 'Symbol', 'symbol', 'symbol', 'native', 6, 'symbol' ),
+			'RUNE'  => self::def( 'RUNE', 'THORChain', 'thorchain', 'thorchain', 'native', 8, 'rune' ),
+
+			// LGCY Network's own "Supernova" mainnet and explorer are dead (DNS
+			// gone, confirmed from two independent network paths) — the coin as
+			// actually held/traded today is its leftover Ethereum ERC-20 token.
+			'LGCY' => self::def( 'LGCY', 'LGCY Network', 'ethereum', 'lgcy-network', 'erc20', 18, 'eth', '0xae697f994fc5ebc000f8e22ebffee04612f98a0d', 'ethereum' ),
+
+			// IoTeX — manual confirmation only (like XMR). Its only Etherscan/
+			// Blockscout-clone explorer API is dead in production (confirmed
+			// live: every module/action call errors or 502s), and the free EVM
+			// JSON-RPC has no address-history primitive. Not building a bespoke
+			// block-scanner for one chain.
+			'IOTX' => self::def( 'IOTX', 'IoTeX', 'iotex', 'iotex', 'native', 18, 'iotx' ),
+
+			// Casper — manual confirmation only (like XMR). No free/keyless
+			// "list address transactions" API exists: CSPR.cloud (which has one)
+			// requires a registered API key on every request (confirmed live via
+			// 401), and the public node RPC has no address-history index at all.
+			'CSPR' => self::def( 'CSPR', 'Casper', 'casper-network', 'casper-network', 'native', 9, 'cspr' ),
+
 			// Small EVM chains not covered by Etherscan V2 — verified via a keyless
 			// "legacy Etherscan-clone" API (Blockscout, or Routescan for Boba) that
 			// serves the same field shape; see check_evm_clone().
@@ -689,6 +730,15 @@ class Xdwp_Coins {
 		if ( 'pivx' === $verifier || 'pivx' === $scheme ) {
 			return self::bip21_uri( 'pivx', $address, $amount );
 		}
+		if ( 'dgb' === $verifier || 'dgb' === $scheme ) {
+			return self::bip21_uri( 'digibyte', $address, $amount );
+		}
+		if ( 'kmd' === $verifier || 'kmd' === $scheme ) {
+			return self::bip21_uri( 'komodo', $address, $amount );
+		}
+		if ( 'xvg' === $verifier || 'xvg' === $scheme ) {
+			return self::bip21_uri( 'verge', $address, $amount );
+		}
 		if ( 'bch' === $verifier || 'bch' === $scheme ) {
 			// CashAddr often includes bitcoincash: already — avoid double scheme.
 			if ( 0 === stripos( $address, 'bitcoincash:' ) ) {
@@ -888,6 +938,7 @@ class Xdwp_Coins {
 			'ton', 'ada', 'apt', 'kas', 'one', 'pls', 'sysevm', 'boba', 'brise', 'xdc',
 			'xtz', 'xno', 'waves',
 			'btg', 'firo', 'xzc', 'rvn', 'pivx', 'neo', 'gas', 'theta', 'tfuel',
+			'dgb', 'kmd', 'xvg', 'qtum', 'ark', 'ae', 'icx', 'ont', 'klv', 'tet', 'xem', 'xym', 'rune',
 		);
 		return in_array( $coin['verifier'], $supported, true );
 	}

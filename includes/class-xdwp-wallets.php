@@ -202,6 +202,38 @@ class Xdwp_Wallets {
 			case 'theta':
 			case 'tfuel':
 				return (bool) preg_match( '/^0x[a-fA-F0-9]{40}$/', $address );
+			case 'dgb':
+				return (bool) preg_match( '/^D[1-9A-HJ-NP-Za-km-z]{33}$/', $address );
+			case 'kmd':
+				return (bool) preg_match( '/^R[1-9A-HJ-NP-Za-km-z]{33}$/', $address );
+			case 'xvg':
+				return (bool) preg_match( '/^D[1-9A-HJ-NP-Za-km-z]{33}$/', $address );
+			case 'qtum':
+				return (bool) preg_match( '/^Q[1-9A-HJ-NP-Za-km-z]{33}$/', $address );
+			case 'ark':
+				return (bool) preg_match( '/^A[1-9A-HJ-NP-Za-km-z]{33}$/', $address );
+			case 'ae':
+				return (bool) preg_match( '/^ak_[1-9A-HJ-NP-Za-km-z]{48,50}$/', $address );
+			case 'icx':
+				return (bool) preg_match( '/^hx[0-9a-f]{40}$/', $address );
+			case 'ont':
+				return (bool) preg_match( '/^A[1-9A-HJ-NP-Za-km-z]{33}$/', $address );
+			case 'klv':
+				return (bool) preg_match( '/^klv1[ac-hj-np-z02-9]{58}$/', $address );
+			case 'tet':
+				return (bool) preg_match( '/^0x[a-fA-F0-9]{40}$/', $address );
+			case 'xem':
+				return (bool) preg_match( '/^N[A-Z2-7]{39}$/', $address );
+			case 'xym':
+				return (bool) preg_match( '/^N[A-Z2-7]{38}$/', $address );
+			case 'rune':
+				return (bool) preg_match( '/^thor1[ac-hj-np-z02-9]{38}$/', $address );
+			case 'iotx':
+				return (bool) preg_match( '/^io1[ac-hj-np-z02-9]{38,40}$/', $address )
+					|| (bool) preg_match( '/^0x[a-fA-F0-9]{40}$/', $address );
+			case 'cspr':
+				return (bool) preg_match( '/^01[0-9a-fA-F]{64}$/', $address )
+					|| (bool) preg_match( '/^02[0-9a-fA-F]{66}$/', $address );
 			case 'strk':
 				// Starknet account addresses are felt252 values — like Aptos,
 				// commonly rendered with leading zero bytes trimmed.

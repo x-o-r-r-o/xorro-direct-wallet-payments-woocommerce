@@ -844,6 +844,46 @@ class Xdwp_Verifier {
 				// unconfirmed free daily allowance — kept manual rather than risk
 				// exhausting an uncertain quota under repeated polling.
 				return false;
+			case 'dgb':
+				return self::check_esplora( 'https://digiexplorer.info', $address, $min, $max, $since );
+			case 'kmd':
+				return self::check_insight( 'https://kmdexplorer.io/insight-api-komodo', $address, $min, $max, $since );
+			case 'xvg':
+				return self::check_verge_explorer( $address, $min, $max, $since );
+			case 'qtum':
+				return self::check_qtum( $address, $min, $max, $since );
+			case 'ark':
+				return self::check_ark( $address, $min, $max, $since );
+			case 'ae':
+				return self::check_aeternity( $address, $min, $max, $since );
+			case 'icx':
+				return self::check_icon( $address, $min, $max, $since );
+			case 'ont':
+				return self::check_ontology( $address, $min, $max, $since );
+			case 'klv':
+				return self::check_klever( $address, $min, $max, $since );
+			case 'tet':
+				return self::check_tectum( $address, $min, $max, $since );
+			case 'xem':
+				return self::check_nem( $address, $min, $max, $since );
+			case 'xym':
+				return self::check_symbol( $address, $min, $max, $since );
+			case 'rune':
+				return self::check_thorchain( $address, $min, $max, $since );
+			case 'iotx':
+				// IoTeX's only Etherscan/Blockscout-clone API (iotexscan.io) is dead
+				// in production (confirmed live: every module/action call errors or
+				// 502s); the only working keyless path is raw JSON-RPC, which has no
+				// address-history primitive — kept manual rather than build a bespoke
+				// block-scanner for one chain.
+				return false;
+			case 'cspr':
+				// No free/keyless "list address transactions" API exists for Casper —
+				// CSPR.cloud (the one that has it) requires a registered API key on
+				// every request (confirmed live via 401), and the public node RPC has
+				// no address-history index at all. Kept manual rather than wire up a
+				// paid-only dependency or a customer-facing deploy-hash-paste flow.
+				return false;
 			default:
 				return false;
 		}
@@ -3584,6 +3624,797 @@ class Xdwp_Verifier {
 			}
 		}
 		return false;
+	}
+
+	/**
+	 * Esplora-style UTXO explorer (DigiByte's digiexplorer.info — same API
+	 * family as Blockstream's esplora/electrs). Distinct from both Blockbook
+	 * and Insight: the address endpoint returns aggregate stats only (no
+	 * txids), the tx list lives at a separate /address/{addr}/txs endpoint,
+	 * and no `confirmations` field exists anywhere — depth must be computed
+	 * against a separately-fetched tip height. Live-verified before coding.
+	 *
+	 * @param string $base     API base URL.
+	 * @param string $address  Address.
+	 * @param float  $min      Min.
+	 * @param float  $max      Max.
+	 * @param int    $since    Since.
+	 * @param int    $decimals Decimals.
+	 * @return string|false
+	 */
+	private static function check_esplora( $base, $address, $min, $max, $since, $decimals = 8 ) {
+		$list = self::http_get( $base . '/api/address/' . rawurlencode( $address ) . '/txs' );
+		if ( ! is_array( $list ) || empty( $list ) ) {
+			return false;
+		}
+
+		$need = self::min_confirmations();
+		$tip  = 0;
+		if ( $need > 0 ) {
+			$tip = self::cached_tip(
+				'esplora_' . md5( $base ),
+				static function () use ( $base ) {
+					return self::http_get_int( $base . '/api/blocks/tip/height' );
+				}
+			);
+			if ( $tip <= 0 ) {
+				return false;
+			}
+		}
+
+		foreach ( array_slice( $list, 0, 20 ) as $tx ) {
+			if ( ! is_array( $tx ) || empty( $tx['status']['confirmed'] ) ) {
+				continue;
+			}
+			$time = isset( $tx['status']['block_time'] ) ? (int) $tx['status']['block_time'] : 0;
+			if ( ! $time || $time < $since ) {
+				continue;
+			}
+			if ( $need > 0 ) {
+				$block = isset( $tx['status']['block_height'] ) ? (int) $tx['status']['block_height'] : 0;
+				if ( ! self::block_depth_ok( $block, $tip ) ) {
+					continue;
+				}
+			}
+			if ( empty( $tx['vout'] ) || ! is_array( $tx['vout'] ) ) {
+				continue;
+			}
+			$sum = 0.0;
+			foreach ( $tx['vout'] as $vout ) {
+				$addr = isset( $vout['scriptpubkey_address'] ) ? (string) $vout['scriptpubkey_address'] : '';
+				if ( '' === $addr || ! hash_equals( $address, $addr ) ) {
+					continue;
+				}
+				$sum += ( (float) ( isset( $vout['value'] ) ? $vout['value'] : 0 ) ) / pow( 10, $decimals );
+			}
+			if ( self::amount_in_band( $sum, $min, $max ) ) {
+				return isset( $tx['txid'] ) ? (string) $tx['txid'] : false;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Insight-API-style UTXO explorer (Komodo's kmdexplorer.io, bitcore-node
+	 * based). The address endpoint conveniently returns a `transactions`
+	 * txid array directly, and each tx exposes `confirmations` and
+	 * decimal-formatted `vout[].value` strings directly with
+	 * `vout[].scriptPubKey.addresses[]` — no separate tip lookup needed.
+	 * Live-verified before coding.
+	 *
+	 * @param string $base    Insight API root (e.g. https://host/insight-api-komodo).
+	 * @param string $address Address.
+	 * @param float  $min     Min.
+	 * @param float  $max     Max.
+	 * @param int    $since   Since.
+	 * @return string|false
+	 */
+	private static function check_insight( $base, $address, $min, $max, $since ) {
+		$info = self::http_get( $base . '/addr/' . rawurlencode( $address ) );
+		if ( ! is_array( $info ) || empty( $info['transactions'] ) || ! is_array( $info['transactions'] ) ) {
+			return false;
+		}
+
+		foreach ( array_slice( $info['transactions'], 0, 20 ) as $txid ) {
+			$tx = self::http_get( $base . '/tx/' . rawurlencode( (string) $txid ) );
+			if ( ! is_array( $tx ) ) {
+				continue;
+			}
+			$time = isset( $tx['time'] ) ? (int) $tx['time'] : ( isset( $tx['blocktime'] ) ? (int) $tx['blocktime'] : 0 );
+			if ( ! $time || $time < $since ) {
+				continue;
+			}
+			if ( ! self::confirmations_ok( isset( $tx['confirmations'] ) ? $tx['confirmations'] : null ) ) {
+				continue;
+			}
+			if ( empty( $tx['vout'] ) || ! is_array( $tx['vout'] ) ) {
+				continue;
+			}
+			$sum = 0.0;
+			foreach ( $tx['vout'] as $vout ) {
+				$addrs   = ( ! empty( $vout['scriptPubKey']['addresses'] ) && is_array( $vout['scriptPubKey']['addresses'] ) )
+					? $vout['scriptPubKey']['addresses']
+					: array();
+				$matched = false;
+				foreach ( $addrs as $a ) {
+					if ( hash_equals( $address, (string) $a ) ) {
+						$matched = true;
+						break;
+					}
+				}
+				if ( ! $matched ) {
+					continue;
+				}
+				// Insight's vout.value is already a decimal coin-unit string, not raw satoshis.
+				$sum += (float) ( isset( $vout['value'] ) ? $vout['value'] : 0 );
+			}
+			if ( self::amount_in_band( $sum, $min, $max ) ) {
+				return isset( $tx['txid'] ) ? (string) $tx['txid'] : (string) $txid;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Verge (XVG) — verge-blockchain.info's custom explorer API (not
+	 * Blockbook/Insight/Esplora-shaped). The address-history endpoint
+	 * returns only {txid,time,type,value}; full vout/confirmations require
+	 * a separate per-tx call. Live-verified before coding.
+	 *
+	 * @param string $address Address.
+	 * @param float  $min     Min.
+	 * @param float  $max     Max.
+	 * @param int    $since   Since.
+	 * @return string|false
+	 */
+	private static function check_verge_explorer( $address, $min, $max, $since ) {
+		$list = self::http_get( 'https://verge-blockchain.info/api/address/txs/' . rawurlencode( $address ) . '/0/20' );
+		if ( ! is_array( $list ) || empty( $list['data'] ) || ! is_array( $list['data'] ) ) {
+			return false;
+		}
+
+		foreach ( $list['data'] as $row ) {
+			$txid = isset( $row['txid'] ) ? (string) $row['txid'] : '';
+			if ( '' === $txid ) {
+				continue;
+			}
+			$tx = self::http_get( 'https://verge-blockchain.info/api/tx/' . rawurlencode( $txid ) );
+			if ( ! is_array( $tx ) || empty( $tx['data'] ) || ! is_array( $tx['data'] ) ) {
+				continue;
+			}
+			$tx   = $tx['data'];
+			$time = isset( $tx['blocktime'] ) ? (int) $tx['blocktime'] : ( isset( $tx['time'] ) ? (int) $tx['time'] : 0 );
+			if ( ! $time || $time < $since ) {
+				continue;
+			}
+			if ( ! self::confirmations_ok( isset( $tx['confirmations'] ) ? $tx['confirmations'] : null ) ) {
+				continue;
+			}
+			if ( empty( $tx['vout'] ) || ! is_array( $tx['vout'] ) ) {
+				continue;
+			}
+			$sum = 0.0;
+			foreach ( $tx['vout'] as $vout ) {
+				$addrs   = ( ! empty( $vout['scriptPubKey']['addresses'] ) && is_array( $vout['scriptPubKey']['addresses'] ) )
+					? $vout['scriptPubKey']['addresses']
+					: array();
+				$matched = false;
+				foreach ( $addrs as $a ) {
+					if ( hash_equals( $address, (string) $a ) ) {
+						$matched = true;
+						break;
+					}
+				}
+				if ( ! $matched ) {
+					continue;
+				}
+				$sum += (float) ( isset( $vout['value'] ) ? $vout['value'] : 0 );
+			}
+			if ( self::amount_in_band( $sum, $min, $max ) ) {
+				return $txid;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Qtum (QTUM) — qtum.info's Insight-derived REST API. UTXO-shaped like
+	 * check_insight(), but field names differ (outputs vs vout, address vs
+	 * addresses[]) so it isn't a drop-in reuse. `confirmations` is returned
+	 * directly. Live-verified before coding.
+	 *
+	 * @param string $address Address.
+	 * @param float  $min     Min.
+	 * @param float  $max     Max.
+	 * @param int    $since   Since.
+	 * @return string|false
+	 */
+	private static function check_qtum( $address, $min, $max, $since ) {
+		$list = self::http_get( 'https://qtum.info/api/address/' . rawurlencode( $address ) . '/txs?limit=20&offset=0' );
+		if ( ! is_array( $list ) || empty( $list['transactions'] ) || ! is_array( $list['transactions'] ) ) {
+			return false;
+		}
+
+		foreach ( array_slice( $list['transactions'], 0, 20 ) as $txid ) {
+			$tx = self::http_get( 'https://qtum.info/api/tx/' . rawurlencode( (string) $txid ) );
+			if ( ! is_array( $tx ) ) {
+				continue;
+			}
+			$time = isset( $tx['timestamp'] ) ? (int) $tx['timestamp'] : 0;
+			if ( ! $time || $time < $since ) {
+				continue;
+			}
+			if ( ! self::confirmations_ok( isset( $tx['confirmations'] ) ? $tx['confirmations'] : null ) ) {
+				continue;
+			}
+			if ( empty( $tx['outputs'] ) || ! is_array( $tx['outputs'] ) ) {
+				continue;
+			}
+			$sum = 0.0;
+			foreach ( $tx['outputs'] as $out ) {
+				$addr = isset( $out['address'] ) ? (string) $out['address'] : '';
+				if ( '' === $addr || ! hash_equals( $address, $addr ) ) {
+					continue;
+				}
+				$raw = preg_replace( '/\D/', '', (string) ( isset( $out['value'] ) ? $out['value'] : '0' ) );
+				$sum += ( '' === $raw ) ? 0.0 : ( (float) $raw ) / 1e8;
+			}
+			if ( self::amount_in_band( $sum, $min, $max ) ) {
+				return (string) $txid;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Ark (ARK) — official public API (api.ark.io), keyless. `confirmations`
+	 * is returned directly on every transaction — the simplest of this
+	 * batch. Live-verified before coding.
+	 *
+	 * @param string $address Address.
+	 * @param float  $min     Min.
+	 * @param float  $max     Max.
+	 * @param int    $since   Since.
+	 * @return string|false
+	 */
+	private static function check_ark( $address, $min, $max, $since ) {
+		$url      = 'https://api.ark.io/api/wallets/' . rawurlencode( $address ) . '/transactions/received?limit=20';
+		$response = self::http_get( $url );
+		if ( ! is_array( $response ) || empty( $response['data'] ) || ! is_array( $response['data'] ) ) {
+			return false;
+		}
+
+		foreach ( $response['data'] as $tx ) {
+			if ( isset( $tx['type'] ) && 0 !== (int) $tx['type'] ) {
+				continue; // Only plain transfers (type 0).
+			}
+			$time = isset( $tx['timestamp']['unix'] ) ? (int) $tx['timestamp']['unix'] : 0;
+			if ( ! $time || $time < $since ) {
+				continue;
+			}
+			if ( empty( $tx['recipient'] ) || ! hash_equals( $address, (string) $tx['recipient'] ) ) {
+				continue;
+			}
+			if ( ! self::confirmations_ok( isset( $tx['confirmations'] ) ? $tx['confirmations'] : null ) ) {
+				continue;
+			}
+			$raw = isset( $tx['amount'] ) ? (string) $tx['amount'] : '0';
+			if ( self::raw_amount_in_band( $raw, 8, $min, $max ) ) {
+				return isset( $tx['id'] ) ? (string) $tx['id'] : false;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Aeternity (AE) — official Foundation-run middleware (mdw/v2), keyless.
+	 * Recipient/amount live nested under `tx.*`, not top-level (verified
+	 * live). No confirmation field exists — Cuckoo-Cycle PoW gives only
+	 * probabilistic finality, so depth is computed against a separately
+	 * fetched tip height. Live-verified before coding.
+	 *
+	 * @param string $address Address.
+	 * @param float  $min     Min.
+	 * @param float  $max     Max.
+	 * @param int    $since   Since.
+	 * @return string|false
+	 */
+	private static function check_aeternity( $address, $min, $max, $since ) {
+		$url      = 'https://mainnet.aeternity.io/mdw/v2/txs?account=' . rawurlencode( $address ) . '&limit=20&direction=backward';
+		$response = self::http_get( $url );
+		if ( ! is_array( $response ) || empty( $response['data'] ) || ! is_array( $response['data'] ) ) {
+			return false;
+		}
+
+		$need = self::min_confirmations();
+		$tip  = 0;
+		if ( $need > 0 ) {
+			$tip = self::cached_tip(
+				'ae',
+				static function () {
+					$res = self::http_get( 'https://mainnet.aeternity.io/v2/key-blocks/current/height' );
+					return ( is_array( $res ) && isset( $res['height'] ) ) ? (int) $res['height'] : 0;
+				}
+			);
+			if ( $tip <= 0 ) {
+				return false;
+			}
+		}
+
+		foreach ( $response['data'] as $row ) {
+			$tx = isset( $row['tx'] ) && is_array( $row['tx'] ) ? $row['tx'] : array();
+			if ( empty( $tx['type'] ) || 'SpendTx' !== $tx['type'] ) {
+				continue;
+			}
+			$time = isset( $row['micro_time'] ) ? (int) ( (float) $row['micro_time'] / 1000 ) : 0;
+			if ( ! $time || $time < $since ) {
+				continue;
+			}
+			if ( empty( $tx['recipient_id'] ) || ! hash_equals( $address, (string) $tx['recipient_id'] ) ) {
+				continue;
+			}
+			if ( $need > 0 ) {
+				$block = isset( $row['block_height'] ) ? (int) $row['block_height'] : 0;
+				if ( ! self::block_depth_ok( $block, $tip ) ) {
+					continue;
+				}
+			}
+			$raw = isset( $tx['amount'] ) ? (string) $tx['amount'] : '0';
+			if ( self::raw_amount_in_band( $raw, 18, $min, $max ) ) {
+				return isset( $row['hash'] ) ? (string) $row['hash'] : false;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * ICON (ICX) — community-run tracker.icon.community, keyless. Amounts
+	 * are wei-style hex (`value`) — parsed via bcmath, never trusting the
+	 * API's own `value_decimal` float for the actual band comparison since
+	 * PHP float precision can silently lose accuracy at 18 decimals on
+	 * large payments. `status` is the tx execution result ("0x1" success),
+	 * not a confirmation depth — LFT2 BFT consensus is final on production,
+	 * so this is used directly as the soft-finality signal. Live-verified
+	 * before coding.
+	 *
+	 * @param string $address Address.
+	 * @param float  $min     Min.
+	 * @param float  $max     Max.
+	 * @param int    $since   Since.
+	 * @return string|false
+	 */
+	private static function check_icon( $address, $min, $max, $since ) {
+		$url      = 'https://tracker.icon.community/api/v1/transactions/address/' . rawurlencode( $address );
+		$response = self::http_get( $url );
+		if ( ! is_array( $response ) || empty( $response ) ) {
+			return false;
+		}
+
+		foreach ( $response as $tx ) {
+			if ( empty( $tx['to_address'] ) || ! hash_equals( $address, (string) $tx['to_address'] ) ) {
+				continue;
+			}
+			// block_timestamp is microseconds, not seconds.
+			$time = isset( $tx['block_timestamp'] ) ? (int) ( (float) $tx['block_timestamp'] / 1e6 ) : 0;
+			if ( ! $time || $time < $since ) {
+				continue;
+			}
+			$validated = isset( $tx['status'] ) && '0x1' === $tx['status'];
+			if ( ! self::soft_finality_ok( $validated ) ) {
+				continue;
+			}
+			$raw = self::hex_to_decimal_string( isset( $tx['value'] ) ? $tx['value'] : '0x0' );
+			if ( self::raw_amount_in_band( $raw, 18, $min, $max ) ) {
+				return isset( $tx['hash'] ) ? (string) $tx['hash'] : false;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Ontology (ONT) — explorer.ont.io's undocumented v2 API (endpoint
+	 * reverse-engineered from the explorer's JS bundle; verified live).
+	 * `amount` is already a human-decimal string (NOT raw base units),
+	 * and sometimes omits the decimal point entirely when the value is a
+	 * whole number — always `floatval()` it directly, never divide by
+	 * 10^decimals again. VBFT consensus is deterministically final on
+	 * production, so `confirm_flag` is used directly as the finality
+	 * signal. Live-verified before coding.
+	 *
+	 * @param string $address Address.
+	 * @param float  $min     Min.
+	 * @param float  $max     Max.
+	 * @param int    $since   Since.
+	 * @return string|false
+	 */
+	private static function check_ontology( $address, $min, $max, $since ) {
+		$url      = 'https://explorer.ont.io/v2/addresses/' . rawurlencode( $address ) . '/transactions?page_size=20&page_number=1';
+		$response = self::http_get( $url );
+		if ( ! is_array( $response ) || empty( $response['result'] ) || ! is_array( $response['result'] ) ) {
+			return false;
+		}
+
+		foreach ( $response['result'] as $tx ) {
+			$time = isset( $tx['tx_time'] ) ? (int) $tx['tx_time'] : 0;
+			if ( ! $time || $time < $since ) {
+				continue;
+			}
+			$validated = ! empty( $tx['confirm_flag'] ) && ! empty( $tx['tx_hash'] );
+			if ( ! self::soft_finality_ok( $validated ) ) {
+				continue;
+			}
+			if ( empty( $tx['transfers'] ) || ! is_array( $tx['transfers'] ) ) {
+				continue;
+			}
+			foreach ( $tx['transfers'] as $transfer ) {
+				$to = isset( $transfer['to_address'] ) ? (string) $transfer['to_address'] : '';
+				if ( '' === $to || ! hash_equals( $address, $to ) ) {
+					continue;
+				}
+				$asset = isset( $transfer['asset_name'] ) ? strtolower( (string) $transfer['asset_name'] ) : '';
+				if ( 'ont' !== $asset ) {
+					continue;
+				}
+				// Already human-decimal (pre-divided) — never re-divide by decimals.
+				$amount = isset( $transfer['amount'] ) ? (float) $transfer['amount'] : 0.0;
+				if ( self::amount_in_band( $amount, $min, $max ) ) {
+					return (string) $tx['tx_hash'];
+				}
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Klever (KLV) — Klever's own free, keyless Proxy API. Recipient/amount
+	 * live under `receipts[]` (mirrored in `contract[].parameter`), not
+	 * top-level fields — `sender` is the only top-level party. Live-verified
+	 * before coding.
+	 *
+	 * @param string $address Address.
+	 * @param float  $min     Min.
+	 * @param float  $max     Max.
+	 * @param int    $since   Since.
+	 * @return string|false
+	 */
+	private static function check_klever( $address, $min, $max, $since ) {
+		$url      = 'https://api.mainnet.klever.org/v1.0/address/' . rawurlencode( $address ) . '/transactions?limit=20';
+		$response = self::http_get( $url );
+		if ( ! is_array( $response ) || empty( $response['data']['transactions'] ) || ! is_array( $response['data']['transactions'] ) ) {
+			return false;
+		}
+
+		foreach ( $response['data']['transactions'] as $tx ) {
+			$time = isset( $tx['timestamp'] ) ? (int) $tx['timestamp'] : 0;
+			if ( ! $time || $time < $since ) {
+				continue;
+			}
+			$validated = isset( $tx['status'] ) && 'success' === $tx['status'] && ! empty( $tx['hash'] );
+			if ( ! self::soft_finality_ok( $validated ) ) {
+				continue;
+			}
+			if ( empty( $tx['receipts'] ) || ! is_array( $tx['receipts'] ) ) {
+				continue;
+			}
+			foreach ( $tx['receipts'] as $receipt ) {
+				$to = isset( $receipt['to'] ) ? (string) $receipt['to'] : '';
+				if ( '' === $to || ! hash_equals( $address, $to ) ) {
+					continue;
+				}
+				$asset_id = isset( $receipt['assetId'] ) ? (string) $receipt['assetId'] : '';
+				$type_str = isset( $receipt['typeString'] ) ? (string) $receipt['typeString'] : '';
+				if ( 'KLV' !== $asset_id || 'Transfer' !== $type_str ) {
+					continue;
+				}
+				$raw = isset( $receipt['value'] ) ? (string) $receipt['value'] : '0';
+				if ( self::raw_amount_in_band( $raw, 6, $min, $max ) ) {
+					return (string) $tx['hash'];
+				}
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Tectum (TET) — api.explorer.tectum.io (undocumented, reverse-engineered
+	 * from the explorer's JS bundle; verified live). A single 0x address is
+	 * a shared identity across multiple currencies in Tectum's wallet system,
+	 * so `CurrencyKey` must always be passed — filtering by address alone on
+	 * a different endpoint silently ignores it. Standardized on the active
+	 * `tectum4-t12v4-tet` chain (the legacy `tectum-t12-tet` chain still
+	 * exists but is not `isNew`). No confirmation-depth concept is exposed
+	 * ("instant finality" — presence with a blockNumber is treated as
+	 * final). Live-verified before coding.
+	 *
+	 * @param string $address Address.
+	 * @param float  $min     Min.
+	 * @param float  $max     Max.
+	 * @param int    $since   Since.
+	 * @return string|false
+	 */
+	private static function check_tectum( $address, $min, $max, $since ) {
+		$url      = 'https://api.explorer.tectum.io/explorer/transactions?Address=' . rawurlencode( $address ) . '&CurrencyKey=tectum4-t12v4-tet&limit=20';
+		$response = self::http_get( $url );
+		if ( ! is_array( $response ) || empty( $response['transactions'] ) || ! is_array( $response['transactions'] ) ) {
+			return false;
+		}
+
+		foreach ( $response['transactions'] as $tx ) {
+			$to = isset( $tx['to'] ) ? (string) $tx['to'] : '';
+			if ( '' === $to || 0 !== strcasecmp( $to, $address ) ) {
+				continue;
+			}
+			$time = isset( $tx['date'] ) ? strtotime( (string) $tx['date'] ) : 0;
+			if ( ! $time || $time < $since ) {
+				continue;
+			}
+			$validated = ! empty( $tx['blockNumber'] ) && ! empty( $tx['hash'] );
+			if ( ! self::soft_finality_ok( $validated ) ) {
+				continue;
+			}
+			$amount = isset( $tx['amount'] ) ? (float) $tx['amount'] : 0.0;
+			if ( self::amount_in_band( $amount, $min, $max ) ) {
+				return (string) $tx['hash'];
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * NEM (XEM) — a public NIS full node (no canonical/managed API exists
+	 * for NEM; a small fallback list of independently-confirmed-live
+	 * community nodes is used since any single node can go offline).
+	 * `timeStamp` is relative to the NEM network epoch (2015-03-29T00:06:25Z
+	 * = unix 1427587585), not unix time — verified live. A transaction
+	 * carrying a `mosaics` key is a mosaic transfer where `amount` acts as
+	 * a multiplier, NOT a plain-XEM value — only transactions with no
+	 * `mosaics` key are treated as XEM payments. Live-verified before coding.
+	 *
+	 * @param string $address Address.
+	 * @param float  $min     Min.
+	 * @param float  $max     Max.
+	 * @param int    $since   Since.
+	 * @return string|false
+	 */
+	private static function check_nem( $address, $min, $max, $since ) {
+		$nem_epoch = 1427587585;
+		$nodes     = array( 'http://hugealice.nem.ninja:7890', 'http://176.9.68.110:7890' );
+
+		$response = null;
+		foreach ( $nodes as $node ) {
+			$response = self::http_get( $node . '/account/transfers/all?address=' . rawurlencode( $address ) );
+			if ( is_array( $response ) && ! empty( $response['data'] ) ) {
+				break;
+			}
+			$response = null;
+		}
+		if ( ! is_array( $response ) || empty( $response['data'] ) || ! is_array( $response['data'] ) ) {
+			return false;
+		}
+
+		foreach ( $response['data'] as $row ) {
+			$tx = isset( $row['transaction'] ) && is_array( $row['transaction'] ) ? $row['transaction'] : array();
+			if ( isset( $tx['mosaics'] ) ) {
+				continue; // Mosaic-attached transfer — amount is not a plain-XEM value.
+			}
+			$recipient = isset( $tx['recipient'] ) ? (string) $tx['recipient'] : '';
+			if ( '' === $recipient || ! hash_equals( $address, $recipient ) ) {
+				continue;
+			}
+			$time = isset( $tx['timeStamp'] ) ? ( (int) $tx['timeStamp'] + $nem_epoch ) : 0;
+			if ( ! $time || $time < $since ) {
+				continue;
+			}
+			$need = self::min_confirmations();
+			if ( $need > 0 ) {
+				$tip = 0;
+				foreach ( $nodes as $node ) {
+					$h = self::http_get( $node . '/chain/height' );
+					if ( is_array( $h ) && ! empty( $h['height'] ) ) {
+						$tip = (int) $h['height'];
+						break;
+					}
+				}
+				$block = isset( $row['meta']['height'] ) ? (int) $row['meta']['height'] : 0;
+				if ( $tip <= 0 || ! self::block_depth_ok( $block, $tip ) ) {
+					continue;
+				}
+			}
+			$raw = isset( $tx['amount'] ) ? (string) $tx['amount'] : '0';
+			if ( self::raw_amount_in_band( $raw, 6, $min, $max ) ) {
+				return isset( $row['meta']['hash']['data'] ) ? (string) $row['meta']['hash']['data'] : false;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Symbol (XYM) — Symbol REST Gateway nodes (community-run; a small
+	 * fallback list is used). The `address=` query filters server-side, so
+	 * no manual hex/base32 address conversion is needed. Only
+	 * `type:16724` (TransferTransaction) rows carry `mosaics[]`/
+	 * `recipientAddress` — aggregate rows (type 16705) must be skipped.
+	 * Real BFT finalization exists (`chain/info.latestFinalizedBlock`), but
+	 * plain block-depth against the raw tip is used for consistency with
+	 * every other depth-based verifier here. Live-verified before coding.
+	 *
+	 * @param string $address Address.
+	 * @param float  $min     Min.
+	 * @param float  $max     Max.
+	 * @param int    $since   Since.
+	 * @return string|false
+	 */
+	private static function check_symbol( $address, $min, $max, $since ) {
+		$currency_mosaic_id = '6BED913FA20223F8';
+		$nodes               = array( 'https://xym.allnodes.me:3001', 'https://sn1.msus-symbol.com:3001' );
+
+		$response = null;
+		$node_used = '';
+		foreach ( $nodes as $node ) {
+			$response = self::http_get( $node . '/transactions/confirmed?address=' . rawurlencode( $address ) . '&pageSize=20&order=desc' );
+			if ( is_array( $response ) && isset( $response['data'] ) ) {
+				$node_used = $node;
+				break;
+			}
+			$response = null;
+		}
+		if ( ! is_array( $response ) || empty( $response['data'] ) || ! is_array( $response['data'] ) ) {
+			return false;
+		}
+
+		$need = self::min_confirmations();
+		$tip  = 0;
+		if ( $need > 0 ) {
+			$tip = self::cached_tip(
+				'xym',
+				static function () use ( $node_used ) {
+					$info = self::http_get( $node_used . '/chain/info' );
+					return ( is_array( $info ) && isset( $info['height'] ) ) ? (int) $info['height'] : 0;
+				}
+			);
+			if ( $tip <= 0 ) {
+				return false;
+			}
+		}
+
+		foreach ( $response['data'] as $row ) {
+			$tx = isset( $row['transaction'] ) && is_array( $row['transaction'] ) ? $row['transaction'] : array();
+			if ( ! isset( $tx['type'] ) || 16724 !== (int) $tx['type'] ) {
+				continue;
+			}
+			// Timestamps are Symbol epoch (network genesis) milliseconds — recipient
+			// matching isn't needed here since the API already filters by address.
+			$time = isset( $row['meta']['timestamp'] ) ? (int) ( ( (float) $row['meta']['timestamp'] / 1000 ) + 1615853185 ) : 0;
+			if ( ! $time || $time < $since ) {
+				continue;
+			}
+			if ( $need > 0 ) {
+				$block = isset( $row['meta']['height'] ) ? (int) $row['meta']['height'] : 0;
+				if ( ! self::block_depth_ok( $block, $tip ) ) {
+					continue;
+				}
+			}
+			if ( empty( $tx['mosaics'] ) || ! is_array( $tx['mosaics'] ) ) {
+				continue;
+			}
+			foreach ( $tx['mosaics'] as $mosaic ) {
+				$id = isset( $mosaic['id'] ) ? strtoupper( (string) $mosaic['id'] ) : '';
+				if ( $id !== $currency_mosaic_id ) {
+					continue;
+				}
+				$raw = isset( $mosaic['amount'] ) ? (string) $mosaic['amount'] : '0';
+				if ( self::raw_amount_in_band( $raw, 6, $min, $max ) ) {
+					return isset( $row['meta']['hash'] ) ? (string) $row['meta']['hash'] : false;
+				}
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * THORChain (RUNE) — via Midgard v2, accessed through a public gateway
+	 * mirror (the officially-documented `midgard.ninerealms.com` host has
+	 * no DNS A record at all — confirmed dead, not just unreachable from
+	 * one network — so a third-party keyless gateway is used instead;
+	 * revisit if Nine Realms restores their own host). Instant Tendermint
+	 * BFT finality, but block depth is still computed for consistency with
+	 * merchants who configure more than the default confirmations. Live-
+	 * verified before coding.
+	 *
+	 * @param string $address Address.
+	 * @param float  $min     Min.
+	 * @param float  $max     Max.
+	 * @param int    $since   Since.
+	 * @return string|false
+	 */
+	private static function check_thorchain( $address, $min, $max, $since ) {
+		$base     = 'https://gateway.liquify.com/chain/thorchain_midgard/v2';
+		$response = self::http_get( $base . '/actions?address=' . rawurlencode( $address ) . '&type=send&limit=20' );
+		if ( ! is_array( $response ) || empty( $response['actions'] ) || ! is_array( $response['actions'] ) ) {
+			return false;
+		}
+
+		$need = self::min_confirmations();
+		$tip  = 0;
+		if ( $need > 0 ) {
+			$tip = self::cached_tip(
+				'rune',
+				static function () use ( $base ) {
+					$health = self::http_get( $base . '/health' );
+					return ( is_array( $health ) && isset( $health['lastCommitted']['height'] ) ) ? (int) $health['lastCommitted']['height'] : 0;
+				}
+			);
+			if ( $tip <= 0 ) {
+				return false;
+			}
+		}
+
+		foreach ( $response['actions'] as $action ) {
+			if ( empty( $action['status'] ) || 'success' !== $action['status'] ) {
+				continue;
+			}
+			// `date` is nanoseconds since epoch.
+			$time = isset( $action['date'] ) ? (int) ( (float) $action['date'] / 1e9 ) : 0;
+			if ( ! $time || $time < $since ) {
+				continue;
+			}
+			if ( $need > 0 ) {
+				$block = isset( $action['height'] ) ? (int) $action['height'] : 0;
+				if ( ! self::block_depth_ok( $block, $tip ) ) {
+					continue;
+				}
+			}
+			if ( empty( $action['out'] ) || ! is_array( $action['out'] ) ) {
+				continue;
+			}
+			foreach ( $action['out'] as $out ) {
+				$out_addr = isset( $out['address'] ) ? (string) $out['address'] : '';
+				if ( '' === $out_addr || ! hash_equals( $address, $out_addr ) ) {
+					continue;
+				}
+				if ( empty( $out['coins'] ) || ! is_array( $out['coins'] ) ) {
+					continue;
+				}
+				foreach ( $out['coins'] as $coin ) {
+					if ( empty( $coin['asset'] ) || 'THOR.RUNE' !== $coin['asset'] ) {
+						continue;
+					}
+					$raw = isset( $coin['amount'] ) ? (string) $coin['amount'] : '0';
+					if ( self::raw_amount_in_band( $raw, 8, $min, $max ) ) {
+						return isset( $out['txID'] ) ? (string) $out['txID'] : false;
+					}
+				}
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Convert a hex string (with or without 0x prefix) to a decimal string
+	 * via bcmath — needed for ICON's wei-style hex amounts, which can
+	 * exceed PHP's native int/float precision.
+	 *
+	 * @param string $hex Hex string.
+	 * @return string Decimal string.
+	 */
+	private static function hex_to_decimal_string( $hex ) {
+		$hex = (string) $hex;
+		if ( 0 === stripos( $hex, '0x' ) ) {
+			$hex = substr( $hex, 2 );
+		}
+		$hex = ltrim( $hex, '0' );
+		if ( '' === $hex ) {
+			return '0';
+		}
+		if ( ! function_exists( 'bcadd' ) || ! function_exists( 'bcmul' ) ) {
+			return (string) hexdec( $hex );
+		}
+		$dec = '0';
+		$len = strlen( $hex );
+		for ( $i = 0; $i < $len; $i++ ) {
+			$dec = bcadd( bcmul( $dec, '16' ), (string) hexdec( $hex[ $i ] ) );
+		}
+		return $dec;
 	}
 
 	/**

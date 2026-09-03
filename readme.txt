@@ -4,7 +4,7 @@ Tags: woocommerce, cryptocurrency, bitcoin, ethereum, payments, usdt, crypto che
 Requires at least: 6.9
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.5.30
+Stable tag: 1.5.31
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -254,6 +254,18 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 * QR Code generator (`assets/js/qrcode.min.js`) — MIT-licensed library by davidshimjs (https://github.com/davidshimjs/qrcodejs). Source is publicly available; the bundled file is minified for production use.
 
 == Changelog ==
+
+= 1.5.31 =
+* New: 17 more coins across 13 new chain integrations, every one live-verified against real API responses (real addresses, real transactions, real field shapes) before writing any code
+  * DigiByte (DGB), Komodo (KMD), and Verge (XVG) — three UTXO chains that turned out to run three genuinely different explorer APIs despite superficially similar addresses: DGB uses an Esplora/electrs-style API (`check_esplora()`), KMD uses a classic Insight API (`check_insight()`), and XVG runs a fully bespoke explorer (`check_verge_explorer()`) — none of them Blockbook, so none could reuse the existing `check_blockbook()` helper
+  * Qtum (QTUM) — a UTXO+EVM hybrid verified via its own Insight-derived API (`check_qtum()`); close to KMD's shape but with different field names (`outputs` vs `vout`, bare `address` vs an `addresses[]` array), so it gets its own function rather than a forced shared abstraction
+  * Ark (ARK), Aeternity (AE), ICON (ICX), Ontology (ONT), Klever (KLV), Tectum (TET), NEM (XEM), Symbol (XYM), and THORChain (RUNE) — nine standalone chains, each verified via its own free keyless public API. Several had real gotchas caught by live-testing rather than trusting docs: ICON's amounts are wei-style hex parsed via bcmath (never trusting the API's own convenience float, which can silently lose precision at 18 decimals); Ontology's amounts are already human-decimal strings that sometimes omit the decimal point entirely on whole numbers (must `floatval()` directly, never re-divide by decimals); NEM's `timeStamp` is relative to the network's own 2015 epoch, not Unix time, and a transaction carrying a `mosaics` key is a mosaic transfer where `amount` is not a plain-XEM value; THORChain's officially-documented API host (`midgard.ninerealms.com`) has no DNS record at all today (confirmed dead, not just unreachable) — routed through a public gateway mirror instead
+  * LGCY Network — its own "Supernova" mainnet and explorer are dead (DNS gone, confirmed from two independent network paths); the coin as actually held and traded today is its leftover Ethereum ERC-20 token, added as such with zero new verifier code
+  * IoTeX (IOTX) and Casper (CSPR) added as payable with manual confirmation only (like Monero) — IoTeX's only Etherscan/Blockscout-clone explorer API is dead in production (confirmed live: every call errors or 502s) with no free address-history alternative; Casper's only "list address transactions" API (CSPR.cloud) requires a registered key on every request (confirmed live via 401), and the public node RPC has no address-history index at all
+  * Decred (DCR) investigated but not added — its only real explorer (dcrdata.decred.org) timed out on every attempt from two independent networks (this audit's research sandbox and this project's own dev machine), on both IPv4 and IPv6 — likely anti-scraping IP blocking. Revisit once reachability is confirmed from the actual production host
+* Dual address validation (server-side `Xdwp_Wallets::is_plausible_address()` and the client-side `assets/js/wallets.js` pattern map) added for all 17 new coins, plus BIP-21 URIs for DGB/KMD/XVG
+* Real CC0 icons added for DGB, KMD, XVG, QTUM, ARK, ICX, ONT, XEM, IOTX, and AE; KLV, XYM, RUNE, CSPR, LGCY, and TET ship with original monogram placeholders pending real brand assets
+* Registry now covers 235 coins/tokens
 
 = 1.5.30 =
 * New: 9 more coins across 3 new chain integrations, all live-verified against real API responses before writing any code (a prior research pass's simplified description of Theta's API shape was caught and corrected this way — see below)
