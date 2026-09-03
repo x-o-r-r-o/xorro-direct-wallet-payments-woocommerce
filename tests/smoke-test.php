@@ -29,7 +29,10 @@ foreach ( $iterator as $file ) {
 	if ( 'php' !== $file->getExtension() ) {
 		continue;
 	}
-	$path = $file->getPathname();
+	// Normalize to forward slashes — RecursiveDirectoryIterator yields
+	// backslash-separated paths on Windows, which would otherwise never
+	// match this exclusion there.
+	$path = str_replace( '\\', '/', $file->getPathname() );
 	if ( false !== strpos( $path, '/tests/' ) ) {
 		continue;
 	}
@@ -90,6 +93,29 @@ xdwp_assert( Xdwp_Coins::supports_auto_verify( 'NEAR' ), 'NEAR auto-verify' );
 xdwp_assert( Xdwp_Coins::supports_auto_verify( 'ATOM' ), 'ATOM auto-verify' );
 xdwp_assert( Xdwp_Coins::supports_auto_verify( 'DOT' ), 'DOT auto-verify' );
 
+// Coins added across the three most recent batches (219 -> 238 coins) — a
+// representative sample per new verifier family, not an exhaustive list.
+$recent_required = array(
+	'BTG', 'FIRO', 'XZC', 'RVN', 'PIVX', 'NEO', 'GAS', 'THETA', 'TFUEL',
+	'DGB', 'KMD', 'XVG', 'QTUM', 'ARK', 'AE', 'ICX', 'ONT', 'KLV', 'TET', 'XEM', 'XYM', 'RUNE', 'LGCY', 'IOTX', 'CSPR',
+	'LSK', 'STRAX', 'IOTA',
+);
+foreach ( $recent_required as $id ) {
+	xdwp_assert( isset( $all[ $id ] ), "recently-added coin present: {$id}" );
+}
+xdwp_assert( count( $all ) >= 238, 'coin catalog size >= 238 (got ' . count( $all ) . ')' );
+
+// One coin per newly-added auto-verified verifier group should report true;
+// the deliberately manual-only groups (no free/keyless verification API)
+// must report false, or a merchant would see "auto-verify: yes" for a coin
+// that silently never gets marked paid automatically.
+foreach ( array( 'BTG', 'NEO', 'THETA', 'DGB', 'KMD', 'XVG', 'QTUM', 'ARK', 'AE', 'ICX', 'ONT', 'KLV', 'TET', 'XEM', 'XYM', 'RUNE', 'LGCY', 'LSK', 'STRAX', 'IOTA' ) as $id ) {
+	xdwp_assert( Xdwp_Coins::supports_auto_verify( $id ), "{$id} auto-verify" );
+}
+foreach ( array( 'XMR', 'STRK', 'KAIA', 'IOTX', 'CSPR' ) as $id ) {
+	xdwp_assert( ! Xdwp_Coins::supports_auto_verify( $id ), "{$id} is manual (no viable keyless auto-verify API)" );
+}
+
 $base = Xdwp_Coins::to_base_units( '1.5', 6 );
 xdwp_assert( '1500000' === $base, "EIP-681 base units 1.5@6 => {$base}" );
 
@@ -148,6 +174,25 @@ xdwp_assert( false !== strpos( $verifier, 'option_value = %s WHERE option_name =
 xdwp_assert( false !== strpos( $verifier, 'function release_txid' ), 'release_txid helper' );
 xdwp_assert( false !== strpos( $verifier, 'function claim_txid' ) && false !== strpos( $verifier, 'strtolower( trim( (string) $txid ) )' ), 'strtolower in claim_txid path' );
 xdwp_assert( false !== strpos( $verifier, 'contractAddress' ), 'EVM token matcher checks contractAddress' );
+
+// Verifier functions added across the three most recent batches — confirms
+// the source still contains each dedicated helper rather than a coin
+// silently falling through to a stub/default case.
+$recent_verifier_functions = array(
+	'check_blockbook', 'check_neo', 'check_theta',
+	'check_esplora', 'check_insight', 'check_verge_explorer', 'check_qtum',
+	'check_ark', 'check_aeternity', 'check_icon', 'check_ontology', 'check_klever',
+	'check_tectum', 'check_nem', 'check_symbol', 'check_thorchain',
+	'check_blockscout_v2_token', 'check_iota', 'hex_to_decimal_string',
+);
+foreach ( $recent_verifier_functions as $fn ) {
+	xdwp_assert( false !== strpos( $verifier, "function {$fn}(" ), "verifier defines {$fn}()" );
+}
+// Manual-only coins from recent batches must each have an explicit case
+// (with a reason) rather than silently relying on the switch's default.
+foreach ( array( 'iotx', 'cspr' ) as $manual_case ) {
+	xdwp_assert( false !== strpos( $verifier, "case '{$manual_case}':" ), "find_payment has an explicit case for manual-only '{$manual_case}'" );
+}
 xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-prices.php' ), '$slots      = 499' ), 'unique dust has 499 slots' );
 
 $order_php = file_get_contents( $root . '/includes/class-xdwp-order.php' );
@@ -221,8 +266,8 @@ xdwp_assert( false !== strpos( file_get_contents( $root . '/uninstall.php' ), 'x
 
 // --- Headers ---
 $main = file_get_contents( $root . '/xorro-direct-wallet-payments-woocommerce.php' );
-xdwp_assert( false !== strpos( $main, 'Version:           1.5.16' ), 'plugin version 1.5.16' );
-xdwp_assert( false !== strpos( $main, "XDWP_VERSION', '1.5.16'" ), 'XDWP_VERSION 1.5.16' );
+xdwp_assert( false !== strpos( $main, 'Version:           1.5.33' ), 'plugin version 1.5.33' );
+xdwp_assert( false !== strpos( $main, "XDWP_VERSION', '1.5.33'" ), 'XDWP_VERSION 1.5.33' );
 xdwp_assert( false !== strpos( $main, 'Author:            xorro' ), 'author is xorro' );
 xdwp_assert( false !== strpos( $main, 'Author URI:        https://github.com/x-o-r-r-o' ), 'author URI is GitHub profile' );
 xdwp_assert( false === strpos( $main, 'Author URI:        https://github.com/x-o-r-r-o/xorro-direct-wallet-payments-woocommerce' ), 'author URI not the plugin repo' );
@@ -265,6 +310,9 @@ xdwp_assert( is_file( $root . '/assets/svg/coins/base.svg' ), 'Base icon present
 xdwp_assert( is_file( $root . '/assets/svg/coins/dai.svg' ), 'DAI icon present' );
 xdwp_assert( is_file( $root . '/assets/svg/coins/wbtc.svg' ), 'WBTC icon present' );
 xdwp_assert( is_file( $root . '/assets/svg/coins/aave.svg' ), 'AAVE icon present' );
+foreach ( array( 'btg', 'neo', 'theta', 'dgb', 'kmd', 'xvg', 'qtum', 'ark', 'icx', 'xem', 'lsk', 'iota', 'strax', 'tfuel' ) as $ticker ) {
+	xdwp_assert( is_file( $root . "/assets/svg/coins/{$ticker}.svg" ), strtoupper( $ticker ) . ' icon present' );
+}
 xdwp_assert( false !== strpos( $verifier, "case 'bch'" ), 'verifier BCH case' );
 xdwp_assert( false !== strpos( $verifier, "case 'base'" ), 'verifier Base case' );
 xdwp_assert( false !== strpos( $verifier, 'bitcoin-cash' ), 'Blockchair bitcoin-cash' );
@@ -282,7 +330,7 @@ xdwp_assert( false !== strpos( $readme_md, 'Checkout branding' ), 'README.md bra
 
 $readme = file_get_contents( $root . '/readme.txt' );
 xdwp_assert( false !== strpos( $readme, 'Tested up to: 7.0' ), 'readme Tested up to WP 7.0' );
-xdwp_assert( false !== strpos( $readme, 'Stable tag: 1.5.16' ), 'readme stable 1.5.16' );
+xdwp_assert( false !== strpos( $readme, 'Stable tag: 1.5.33' ), 'readme stable 1.5.33' );
 
 $readme = file_get_contents( $root . '/readme.txt' );
 xdwp_assert( false !== strpos( $readme, '== External services ==' ), 'readme external services section' );
@@ -337,7 +385,12 @@ foreach ( $scan as $file ) {
 	if ( ! $file->isFile() ) {
 		continue;
 	}
-	$path = $file->getPathname();
+	// Normalize to forward slashes so this scan behaves the same on Windows
+	// (RecursiveDirectoryIterator yields backslash-separated paths there) as
+	// on Unix — a prior version of this check silently never matched on
+	// Windows and flagged this very file's own intentional needle-building
+	// as a false positive.
+	$path = str_replace( '\\', '/', $file->getPathname() );
 	if ( false !== strpos( $path, '/.git/' ) || false !== strpos( $path, '/releases/' ) ) {
 		continue;
 	}

@@ -4,7 +4,7 @@ Tags: woocommerce, cryptocurrency, bitcoin, ethereum, payments, usdt, crypto che
 Requires at least: 6.9
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.5.32
+Stable tag: 1.5.33
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -80,7 +80,7 @@ Yes. This plugin registers a Blocks payment method and declares cart/checkout bl
 
 = Will it work with my theme? =
 
-Yes. It uses the WooCommerce payment gateway API and scoped CSS classes.
+Yes. It uses the WooCommerce payment gateway API and scoped CSS classes (every selector is prefixed `.xdwp-`, so it won't leak style onto your theme or other plugins). The customer-facing payment box template can also be overridden from your theme, the same way WooCommerce's own templates can: copy `templates/payment.php` to `yourtheme/xorro-direct-wallet-payments-woocommerce/payment.php`.
 
 = What third-party services does this plugin use? =
 
@@ -247,6 +247,76 @@ This plugin does **not** phone home to the plugin author. It may contact the fol
 * Terms: https://viewblock.io/terms
 * Privacy: https://viewblock.io/privacy
 
+= toncenter.com (TON, native + Jetton tokens) =
+
+* Purpose: Detect TON and Jetton-token payments.
+* Data: Addresses / transactions for matching.
+* When: Automatic verification for TON and its Jetton tokens (Notcoin and others).
+* Site: https://toncenter.com/
+
+= Koios (Cardano) =
+
+* Purpose: Detect ADA payments.
+* Data: Addresses / transactions for matching.
+* When: Automatic verification for ADA.
+* Site: https://www.koios.rest/
+
+= Aptos Indexer GraphQL (Aptos) =
+
+* Purpose: Detect APT payments.
+* Data: Addresses / transactions; requires a free API key you configure under Prices & APIs.
+* When: Automatic verification for APT.
+* Site: https://aptoslabs.com/
+
+= api.kaspa.org (Kaspa) =
+
+* Purpose: Detect KAS payments on Kaspa's BlockDAG.
+* Data: Addresses / transactions for matching.
+* When: Automatic verification for KAS.
+* Site: https://kaspa.org/
+
+= TzKT (Tezos) =
+
+* Purpose: Detect XTZ payments.
+* Data: Addresses / transactions for matching.
+* When: Automatic verification for XTZ.
+* Site: https://tzkt.io/
+
+= Nano RPC proxy and Waves nodes =
+
+* Purpose: Detect Nano (XNO) and Waves payments.
+* Data: Addresses / transactions for matching.
+* When: Automatic verification for XNO and Waves.
+* Sites: https://nano.org/ , https://waves.tech/
+
+= Blockbook-family UTXO explorers (BTG, Firo/Zcoin, Ravencoin, PIVX) =
+
+* Purpose: Detect payments on independently-hosted Trezor Blockbook explorer instances.
+* Data: Addresses / transactions for matching.
+* When: Automatic verification for BTG, FIRO, XZC, RVN, and PIVX.
+* Software: https://github.com/trezor/blockbook
+
+= api.coz.io (NEO, GAS) and explorer-api.thetatoken.org (Theta, TFuel) =
+
+* Purpose: Detect NEP-17 transfers on NEO N3 and native transfers on Theta Network.
+* Data: Addresses / transactions for matching.
+* When: Automatic verification for NEO, GAS, THETA, and TFUEL.
+* Sites: https://coz.io/ , https://www.thetatoken.org/
+
+= Additional UTXO and standalone-chain explorers (Batch 2/3 coins) =
+
+* Purpose: Detect payments for DigiByte, Komodo, Verge, Qtum, Ark, Aeternity, ICON, Ontology, Klever, Tectum, NEM, Symbol, THORChain, Lisk, Stratis (StratisEVM/"Xertra"), and IOTA.
+* Data: Addresses / transactions for matching; each chain uses its own free, keyless public explorer or node API (or, for THORChain/NEM/Symbol, a community-run mirror node, since the officially-documented endpoints for those networks are not reliably available).
+* When: Automatic verification for DGB, KMD, XVG, QTUM, ARK, AE, ICX, ONT, KLV, TET, XEM, XYM, RUNE, LSK, STRAX, and IOTA.
+* Sites: https://digibyte.org/ , https://komodoplatform.com/ , https://vergecurrency.com/ , https://qtum.org/ , https://ark.io/ , https://aeternity.com/ , https://icon.foundation/ , https://ont.io/ , https://klever.org/ , https://tectum.io/ , https://nem.io/ , https://symbol.io/ , https://thorchain.org/ , https://lisk.com/ , https://stratisplatform.com/ , https://iota.org/
+
+= Blockscout-family EVM explorers (small/legacy EVM chains) =
+
+* Purpose: Detect native and token payments on EVM-compatible chains not covered by Etherscan API V2 (Harmony, PulseChain, Syscoin NEVM, Boba, Bitgert, Lisk L2, StratisEVM/"Xertra").
+* Data: Addresses / transactions for matching.
+* When: Automatic verification for ONE, PLS, SYSEVM, BOBA, BRISEMAINNET, LSK, and STRAX.
+* Software: https://github.com/blockscout/blockscout
+
 Suggested privacy policy text is also added under **Settings → Privacy** when the plugin is active.
 
 == Third-party libraries ==
@@ -254,6 +324,15 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 * QR Code generator (`assets/js/qrcode.min.js`) — MIT-licensed library by davidshimjs (https://github.com/davidshimjs/qrcodejs). Source is publicly available; the bundled file is minified for production use.
 
 == Changelog ==
+
+= 1.5.33 =
+* Full security/correctness/compatibility re-audit against a rewritten, comprehensive audit checklist covering the entire 238-coin plugin (financial-correctness logic, admin fields, theme/plugin compatibility, dead code, and automated test coverage — see `AUDIT_PROMPT.md`, updated as part of this pass to reflect the plugin's current scale after the last three coin-addition batches). Fixes:
+  * **Theme compatibility**: the customer-facing payment box (`templates/payment.php`) was loaded via a raw PHP `include`, which meant no theme or child theme could override it — the standard WooCommerce extension convention (used by WooCommerce itself and most other WooCommerce extensions) lets a theme copy the template to `yourtheme/xorro-direct-wallet-payments-woocommerce/payment.php` to customize it. Switched to `wc_get_template()`. Verified both that existing rendering is unchanged and that a theme override is now correctly picked up
+  * **Test suite drift**: `tests/smoke-test.php` had three assertions hardcoding a stale plugin version (last updated many releases ago) that were failing on every run, and a Windows path-separator bug that made its own "no legacy identifiers in source" self-exclusion never match on Windows (backslash-separated paths), causing a false-positive failure on that platform. Both fixed; the suite now passes cleanly cross-platform
+  * **Test coverage gap**: the smoke test predated the ~58 coins added across the three most recent batches and exercised none of them — added coin-catalog presence, `supports_auto_verify()` correctness (including the 5 deliberately manual-only coins), verifier-function-existence, and icon-file assertions for representative coins from every newly-added chain family, growing the suite from roughly 250 to over 410 passing assertions
+  * **Documentation drift**: `readme.txt`'s `== External services ==` disclosure section hadn't been updated since well before the last three coin batches and was missing roughly 20 third-party API hosts now actually contacted (every Blockbook/Insight/Esplora-family UTXO explorer, api.coz.io, Theta's explorer, the Ark/Aeternity/ICON/Ontology/Klever/Tectum/NEM/Symbol/THORChain/Lisk/Stratis/IOTA endpoints, TON/Cardano/Aptos/Kaspa/Tezos/Nano/Waves, and the Blockscout-family small-EVM-chain explorers). Brought current; also documented the new template-override capability in the FAQ
+* Verified via automated cross-checks (no drift found, confirming prior batches' work held): `Xdwp_Wallets::is_plausible_address()` and `assets/js/wallets.js`'s pattern map cover the same verifier groups with no gaps; `Xdwp_Coins::supports_auto_verify()`'s allowlist exactly matches `find_payment()`'s switch cases with no silent no-ops (every coin the UI marks "auto-verify: yes" actually has a working code path, and every deliberately-manual coin is correctly excluded); every one of the 238 coins resolves to a real, well-formed icon file with zero orphaned SVGs; no dead/unreachable functions; every newly-added verifier function properly `rawurlencode()`s addresses/txids before URL interpolation (no SSRF-adjacent gaps); every chain-specific timestamp-scaling constant (NEM's network epoch, Symbol's epoch, ICON's microseconds, THORChain's nanoseconds, Aeternity's milliseconds) is correct
+* No functional payment-verification logic changes in this release — this was a re-audit and hygiene pass, not a new-coin batch
 
 = 1.5.32 =
 * New: Lisk (LSK), Stratis (STRAX), and IOTA — the three chains flagged in earlier research as "bigger jobs" needing architecture investigation rather than a routine integration. All three turned out to have undergone major migrations since general knowledge of them was formed, verified live rather than assumed:

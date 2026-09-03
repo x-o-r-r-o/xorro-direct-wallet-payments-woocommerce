@@ -439,7 +439,21 @@ class Xdwp_Order {
 			)
 		);
 
-		include XDWP_PATH . 'templates/payment.php';
+		wc_get_template(
+			'payment.php',
+			array(
+				'order'   => $order,
+				'coin'    => $coin,
+				'address' => $address,
+				'amount'  => $amount,
+				'expires' => $expires,
+				'status'  => $status,
+				'uri'     => $uri,
+				'coin_id' => $coin_id,
+			),
+			'xorro-direct-wallet-payments-woocommerce/',
+			XDWP_PATH . 'templates/'
+		);
 	}
 
 	/**
