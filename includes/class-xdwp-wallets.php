@@ -234,6 +234,11 @@ class Xdwp_Wallets {
 			case 'cspr':
 				return (bool) preg_match( '/^01[0-9a-fA-F]{64}$/', $address )
 					|| (bool) preg_match( '/^02[0-9a-fA-F]{66}$/', $address );
+			case 'lsk':
+			case 'strax':
+				return (bool) preg_match( '/^0x[a-fA-F0-9]{40}$/', $address );
+			case 'iota':
+				return (bool) preg_match( '/^0x[a-fA-F0-9]{64}$/', $address );
 			case 'strk':
 				// Starknet account addresses are felt252 values — like Aptos,
 				// commonly rendered with leading zero bytes trimmed.

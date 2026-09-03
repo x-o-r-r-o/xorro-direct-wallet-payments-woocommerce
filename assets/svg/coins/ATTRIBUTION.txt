@@ -7,7 +7,7 @@ bnb, btc, btt, cake, chz, comp, crv, cro, cvc, dai, dash, doge, dot, egld, enj, 
 eth, fil, ftm, ftt, fun, grt, gusd, hbar, hex, hot, knc, ldo, link, ltc, mana, matic, mkr,
 near, omg, op, pepe, rep, sand, shib, sol, trx, tusd, uni, usdc, usdp, usdt-round, wbtc,
 xlm, xmr, xrp, xtz, xno (as nano.svg, ticker rebrand), waves, yfi, zec, zil,
-dgb, kmd, xvg, qtum, ark, icx, ont, xem, iotx, ae.
+dgb, kmd, xvg, qtum, ark, icx, ont, xem, iotx, ae, lsk, iota (as miota.svg, ticker rebrand).
 
 Additional icons (hbar, cro, ftm, near, axs, cake, ftt, ata, egld) are simple
 original geometric marks bundled with Xorro Wallet Payments for catalog coverage.

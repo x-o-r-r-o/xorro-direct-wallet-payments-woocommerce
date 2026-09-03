@@ -877,6 +877,12 @@ class Xdwp_Verifier {
 				// address-history primitive — kept manual rather than build a bespoke
 				// block-scanner for one chain.
 				return false;
+			case 'lsk':
+				return self::check_blockscout_v2_token( 'https://blockscout.lisk.com', $address, '0xac485391eb2d7d88253a7f1ef18c37f4242d1a24', $min, $max, $since, 18 );
+			case 'strax':
+				return self::check_blockscout_v2_native( 'https://explorer.xertra.com', $address, $min, $max, $since );
+			case 'iota':
+				return self::check_iota( $address, $min, $max, $since );
 			case 'cspr':
 				// No free/keyless "list address transactions" API exists for Casper —
 				// CSPR.cloud (the one that has it) requires a registered API key on
@@ -1389,6 +1395,134 @@ class Xdwp_Verifier {
 			}
 		}
 
+		return false;
+	}
+
+	/**
+	 * Blockscout v2 ERC-20 token transfers. Unlike the legacy Etherscan-clone
+	 * shape (check_evm_clone_token()), Blockscout's modern `/api/v2/*` API
+	 * doesn't carry `status`/`confirmations` on the token-transfer list rows
+	 * themselves — a separate per-tx detail call is needed for those.
+	 * Live-verified before coding.
+	 *
+	 * @param string $base_url API base URL.
+	 * @param string $address  Address.
+	 * @param string $contract Token contract.
+	 * @param float  $min      Min.
+	 * @param float  $max      Max.
+	 * @param int    $since    Since.
+	 * @param int    $decimals Decimals.
+	 * @return string|false
+	 */
+	private static function check_blockscout_v2_token( $base_url, $address, $contract, $min, $max, $since, $decimals ) {
+		if ( ! $contract ) {
+			return false;
+		}
+		$base = rtrim( $base_url, '/' );
+		$url  = $base . '/api/v2/addresses/' . rawurlencode( $address ) . '/token-transfers?token=' . rawurlencode( $contract );
+		$list = self::http_get( $url );
+		if ( ! is_array( $list ) || empty( $list['items'] ) || ! is_array( $list['items'] ) ) {
+			return false;
+		}
+
+		foreach ( array_slice( $list['items'], 0, 20 ) as $item ) {
+			$to = isset( $item['to']['hash'] ) ? (string) $item['to']['hash'] : '';
+			if ( '' === $to || 0 !== strcasecmp( $to, $address ) ) {
+				continue;
+			}
+			$time = isset( $item['timestamp'] ) ? strtotime( (string) $item['timestamp'] ) : 0;
+			if ( ! $time || $time < $since ) {
+				continue;
+			}
+			$hash = isset( $item['transaction_hash'] ) ? (string) $item['transaction_hash'] : '';
+			if ( '' === $hash ) {
+				continue;
+			}
+			$tx = self::http_get( $base . '/api/v2/transactions/' . rawurlencode( $hash ) );
+			if ( ! is_array( $tx ) || empty( $tx['status'] ) || 'ok' !== $tx['status'] ) {
+				continue;
+			}
+			if ( ! self::confirmations_ok( isset( $tx['confirmations'] ) ? $tx['confirmations'] : null ) ) {
+				continue;
+			}
+			$raw = isset( $item['total']['value'] ) ? (string) $item['total']['value'] : '0';
+			if ( self::raw_amount_in_band( $raw, $decimals, $min, $max ) ) {
+				return $hash;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * IOTA (post-"Rebased" migration, May 2025) — the official public Move-VM
+	 * JSON-RPC (api.mainnet.iota.cafe), keyless. Structurally unlike every
+	 * other chain here: addresses are 32-byte object-model addresses (not
+	 * EVM's 20-byte, despite the shared "0x" prefix), and there is no block-
+	 * depth confirmation model — a transaction is binary success/fail and
+	 * final once assigned a checkpoint. `iotax_queryTransactionBlocks`
+	 * filtered by ToAddress returns `balanceChanges[]`; a positive amount
+	 * entry owned by the target address is an incoming payment (negative
+	 * entries are the sender's outgoing debit/fee). Live-verified before
+	 * coding.
+	 *
+	 * @param string $address Address (0x + 64 hex).
+	 * @param float  $min     Min.
+	 * @param float  $max     Max.
+	 * @param int    $since   Since.
+	 * @return string|false
+	 */
+	private static function check_iota( $address, $min, $max, $since ) {
+		$body = array(
+			'jsonrpc' => '2.0',
+			'id'      => 1,
+			'method'  => 'iotax_queryTransactionBlocks',
+			'params'  => array(
+				array(
+					'filter'  => array( 'ToAddress' => $address ),
+					'options' => array(
+						'showBalanceChanges' => true,
+						'showEffects'        => true,
+					),
+				),
+				null,
+				20,
+				true,
+			),
+		);
+		$response = self::http_post_json( 'https://api.mainnet.iota.cafe', $body );
+		if ( ! is_array( $response ) || empty( $response['result']['data'] ) || ! is_array( $response['result']['data'] ) ) {
+			return false;
+		}
+
+		foreach ( $response['result']['data'] as $tx ) {
+			$validated = isset( $tx['effects']['status']['status'] ) && 'success' === $tx['effects']['status']['status'];
+			if ( ! self::soft_finality_ok( $validated ) ) {
+				continue;
+			}
+			$time = isset( $tx['timestampMs'] ) ? (int) ( (float) $tx['timestampMs'] / 1000 ) : 0;
+			if ( ! $time || $time < $since ) {
+				continue;
+			}
+			if ( empty( $tx['balanceChanges'] ) || ! is_array( $tx['balanceChanges'] ) ) {
+				continue;
+			}
+			foreach ( $tx['balanceChanges'] as $change ) {
+				$owner = isset( $change['owner']['AddressOwner'] ) ? (string) $change['owner']['AddressOwner'] : '';
+				if ( '' === $owner || 0 !== strcasecmp( $owner, $address ) ) {
+					continue;
+				}
+				if ( empty( $change['coinType'] ) || '0x2::iota::IOTA' !== $change['coinType'] ) {
+					continue;
+				}
+				$amount = isset( $change['amount'] ) ? (string) $change['amount'] : '0';
+				if ( 0 === strpos( $amount, '-' ) ) {
+					continue; // Negative = this address's own outgoing debit, not a receipt.
+				}
+				if ( self::raw_amount_in_band( $amount, 9, $min, $max ) ) {
+					return isset( $tx['digest'] ) ? (string) $tx['digest'] : false;
+				}
+			}
+		}
 		return false;
 	}
 

@@ -4,7 +4,7 @@ Tags: woocommerce, cryptocurrency, bitcoin, ethereum, payments, usdt, crypto che
 Requires at least: 6.9
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.5.31
+Stable tag: 1.5.32
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -254,6 +254,13 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 * QR Code generator (`assets/js/qrcode.min.js`) — MIT-licensed library by davidshimjs (https://github.com/davidshimjs/qrcodejs). Source is publicly available; the bundled file is minified for production use.
 
 == Changelog ==
+
+= 1.5.32 =
+* New: Lisk (LSK), Stratis (STRAX), and IOTA — the three chains flagged in earlier research as "bigger jobs" needing architecture investigation rather than a routine integration. All three turned out to have undergone major migrations since general knowledge of them was formed, verified live rather than assumed:
+  * Lisk moved off its own standalone SDK chain onto an OP Stack Ethereum L2 (chain id 1135) — LSK today is an ERC-20 there (ETH is the L2's actual gas currency), verified via Lisk's own Blockscout instance. Needed a new `check_blockscout_v2_token()` verifier since Blockscout's modern `/api/v2/*` token-transfer list doesn't carry confirmation depth on the list rows themselves — a per-transaction detail call fills that in
+  * Stratis's original C#/.NET chain and Cirrus sidechain are being retired; CoinGecko's own "stratis" listing (renamed "Xertra" there) now tracks a brand-new standalone StratisEVM chain (chain id 105105) with STRAX as its native gas currency, verified via its Blockscout instance — reuses the existing `check_blockscout_v2_native()` verifier with zero new code
+  * IOTA fully migrated off the old Tangle/coordinator model onto "IOTA Rebased" (May 2025), a Move-VM DPoS ledger forked from Sui's architecture — no longer fits any UTXO/account/DAG pattern already in the plugin. The old "MIOTA" unit and Trinity's 81-char/Bech32 address format are both retired; addresses are now Sui-style 32-byte object addresses. New `check_iota()` verifier queries the official public Move-VM JSON-RPC and reads `balanceChanges[]` for a positive-amount entry owned by the merchant's address
+* Registry now covers 238 coins/tokens
 
 = 1.5.31 =
 * New: 17 more coins across 13 new chain integrations, every one live-verified against real API responses (real addresses, real transactions, real field shapes) before writing any code

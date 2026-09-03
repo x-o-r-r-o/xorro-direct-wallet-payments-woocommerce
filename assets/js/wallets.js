@@ -82,7 +82,10 @@
 				xym: /^N[A-Z2-7]{38}$/,
 				rune: /^thor1[ac-hj-np-z02-9]{38}$/,
 				iotx: /^(io1[ac-hj-np-z02-9]{38,40}|0x[a-fA-F0-9]{40})$/,
-				cspr: /^(01[0-9a-fA-F]{64}|02[0-9a-fA-F]{66})$/
+				cspr: /^(01[0-9a-fA-F]{64}|02[0-9a-fA-F]{66})$/,
+				lsk: /^0x[a-fA-F0-9]{40}$/,
+				strax: /^0x[a-fA-F0-9]{40}$/,
+				iota: /^0x[a-fA-F0-9]{64}$/
 			};
 
 			function el(tag, attrs, html) {

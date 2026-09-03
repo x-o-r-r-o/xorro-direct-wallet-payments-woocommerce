@@ -324,6 +324,24 @@ class Xdwp_Coins {
 			// block-scanner for one chain.
 			'IOTX' => self::def( 'IOTX', 'IoTeX', 'iotex', 'iotex', 'native', 18, 'iotx' ),
 
+			// Lisk — migrated off its own SDK chain onto an OP Stack Ethereum L2
+			// (chain id 1135, live-verified); LSK itself is now an ERC-20 there,
+			// not the L2's native gas currency (ETH is). See check_blockscout_v2_token().
+			'LSK' => self::def( 'LSK', 'Lisk', 'lisk', 'lisk', 'erc20', 18, 'eth', '0xac485391eb2d7d88253a7f1ef18c37f4242d1a24', 'lsk' ),
+
+			// Stratis — the historical C#/.NET chain and Cirrus sidechain are being
+			// retired; CoinGecko's own "stratis" listing (renamed "Xertra" there)
+			// now tracks the new native StratisEVM chain instead (chain id 105105,
+			// live-verified). See check_blockscout_v2_native().
+			'STRAX' => self::def( 'STRAX', 'Stratis', 'stratisevm', 'stratis', 'native', 18, 'eth', '', 'strax' ),
+
+			// IOTA — fully migrated off the old Tangle/coordinator model onto
+			// "IOTA Rebased" (May 2025), a Move-VM DPoS ledger. The old MIOTA unit
+			// and Trinity's 81-char/Bech32 "iota1..." address format are both
+			// retired; addresses are now Sui-style 32-byte object addresses. See
+			// check_iota().
+			'IOTA' => self::def( 'IOTA', 'IOTA', 'iota', 'iota', 'native', 9, 'iota' ),
+
 			// Casper — manual confirmation only (like XMR). No free/keyless
 			// "list address transactions" API exists: CSPR.cloud (which has one)
 			// requires a registered API key on every request (confirmed live via
@@ -855,6 +873,8 @@ class Xdwp_Coins {
 			'base'                => 8453,
 			'arbitrum-one'        => 42161,
 			'avalanche'           => 43114,
+			'lisk'                => 1135,
+			'stratisevm'          => 105105,
 		);
 
 		$platform = isset( $coin['platform'] ) ? $coin['platform'] : '';
@@ -939,6 +959,7 @@ class Xdwp_Coins {
 			'xtz', 'xno', 'waves',
 			'btg', 'firo', 'xzc', 'rvn', 'pivx', 'neo', 'gas', 'theta', 'tfuel',
 			'dgb', 'kmd', 'xvg', 'qtum', 'ark', 'ae', 'icx', 'ont', 'klv', 'tet', 'xem', 'xym', 'rune',
+			'lsk', 'strax', 'iota',
 		);
 		return in_array( $coin['verifier'], $supported, true );
 	}
