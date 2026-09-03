@@ -2,6 +2,7 @@ Coin icons
 ==========
 Many color SVGs are from cryptocurrency-icons (https://github.com/spothq/cryptocurrency-icons),
 licensed CC0 1.0 Universal: 1inch, aave, ada, ape, arb, ata, atom, avax, axs, base, bat, bch, one,
+btg, xzc (also used as firo.svg — same project, legacy ticker), rvn, pivx, neo, gas, theta,
 bnb, btc, btt, cake, chz, comp, crv, cro, cvc, dai, dash, doge, dot, egld, enj, eos, etc,
 eth, fil, ftm, ftt, fun, grt, gusd, hbar, hex, hot, knc, ldo, link, ltc, mana, matic, mkr,
 near, omg, op, pepe, rep, sand, shib, sol, trx, tusd, uni, usdc, usdp, usdt-round, wbtc,

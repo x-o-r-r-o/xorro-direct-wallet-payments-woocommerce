@@ -4,7 +4,7 @@ Tags: woocommerce, cryptocurrency, bitcoin, ethereum, payments, usdt, crypto che
 Requires at least: 6.9
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.5.29
+Stable tag: 1.5.30
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -254,6 +254,16 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 * QR Code generator (`assets/js/qrcode.min.js`) — MIT-licensed library by davidshimjs (https://github.com/davidshimjs/qrcodejs). Source is publicly available; the bundled file is minified for production use.
 
 == Changelog ==
+
+= 1.5.30 =
+* New: 9 more coins across 3 new chain integrations, all live-verified against real API responses before writing any code (a prior research pass's simplified description of Theta's API shape was caught and corrected this way — see below)
+  * Bitcoin Gold (BTG), Firo (FIRO) and its legacy Zcoin ticker (XZC), Ravencoin (RVN), and PIVX — five independently-hosted UTXO chains that all run Trezor's Blockbook explorer software, so this ships one generalized `check_blockbook()` verifier rather than five near-duplicate ones
+  * NEO and GAS — two native assets on the same NEO N3 chain, told apart purely by NEP-17 contract scripthash, verified via the community-hosted, keyless api.coz.io explorer
+  * Theta Network (THETA) and Theta Fuel (TFUEL) — two native assets on the same chain, verified via Theta's own official explorer API. A single transaction can carry both a `thetawei` and a `tfuelwei` amount on the same output, so one `check_theta()` function serves both, parameterized only by which denom key to read. Verified the real JSON nesting directly against a live response (`data.outputs[].address` / `data.outputs[].coins.{denom}`) after an earlier research pass reported a simplified, incorrect flat shape
+* Dual address validation (server-side `Xdwp_Wallets::is_plausible_address()` and the client-side `assets/js/wallets.js` pattern map) added for all 9 new coins, plus BIP-21 URIs for the 4 new UTXO chains
+* Real CC0 icons added for BTG, FIRO/XZC, RVN, PIVX, NEO, GAS, and THETA; TFUEL ships with an original monogram placeholder pending a real brand asset
+* ZEN (discontinued, migrated to an ERC-20 on Base), DIVI (no viable verification API found), and FTN (its Blockscout explorer is currently down) investigated and confirmed not viable — not added
+* Registry now covers 219 coins/tokens
 
 = 1.5.29 =
 * Security/correctness: re-audited the full payment-verification engine against the project's security audit checklist, focused on every chain integration added since the last full pass (TON, Cardano, Aptos, Kaspa, Starknet, Kaia, the small-EVM-chain family, Tezos, Nano, Waves). Found and fixed a real destination-matching bug: `check_ton_native()`/`check_ton_jetton()` compared the transaction's destination against a client-side-normalized form of the merchant's address, but if that normalization ever failed to produce a value, the check silently degraded to "any non-empty destination passes" instead of rejecting — since toncenter's account-scoped transaction list includes both incoming and outgoing transfers, this could in principle let an outgoing send from the merchant's own wallet be misidentified as an incoming customer payment. Now fails closed (never matches) when normalization doesn't produce a comparable value

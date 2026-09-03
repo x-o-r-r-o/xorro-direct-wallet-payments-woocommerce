@@ -269,6 +269,26 @@ class Xdwp_Coins {
 			// Kaspa — official public REST API (no key required); see check_kaspa().
 			'KAS' => self::def( 'KAS', 'Kaspa', 'kaspa', 'kaspa', 'native', 8, 'kaspa' ),
 
+			// Trezor-Blockbook-family UTXO chains — see check_blockbook().
+			'BTG'  => self::def( 'BTG', 'Bitcoin Gold', 'bitcoin-gold', 'bitcoin-gold', 'native', 8, 'bitcoingold' ),
+			// Firo (formerly Zcoin) — CoinGecko kept the legacy id "zcoin" through the
+			// rebrand. XZC is the same chain/project under its old ticker, not a
+			// separate coin — both route through the same Blockbook instance.
+			'FIRO' => self::def( 'FIRO', 'Firo', 'firo', 'zcoin', 'native', 8, 'firo' ),
+			'XZC'  => self::def( 'XZC', 'Zcoin', 'firo', 'zcoin', 'native', 8, 'firo' ),
+			'RVN'  => self::def( 'RVN', 'Ravencoin', 'ravencoin', 'ravencoin', 'native', 8, 'ravencoin' ),
+			'PIVX' => self::def( 'PIVX', 'PIVX', 'pivx', 'pivx', 'native', 8, 'pivx' ),
+
+			// NEO N3 — native NEO and GAS, one verifier distinguished by NEP-17
+			// contract; see check_neo(). NEO is deliberately indivisible (0 decimals).
+			'NEO' => self::def( 'NEO', 'NEO', 'neo', 'neo', 'native', 0, 'neo' ),
+			'GAS' => self::def( 'GAS', 'GAS', 'neo', 'gas', 'native', 8, 'neo' ),
+
+			// Theta Network — native THETA and TFUEL, one verifier distinguished
+			// by denom key; see check_theta().
+			'THETA' => self::def( 'THETA', 'Theta Network', 'theta', 'theta-token', 'native', 18, 'theta' ),
+			'TFUEL' => self::def( 'TFUEL', 'Theta Fuel', 'theta', 'theta-fuel', 'native', 18, 'theta' ),
+
 			// Small EVM chains not covered by Etherscan V2 — verified via a keyless
 			// "legacy Etherscan-clone" API (Blockscout, or Routescan for Boba) that
 			// serves the same field shape; see check_evm_clone().
@@ -657,6 +677,18 @@ class Xdwp_Coins {
 		if ( 'xec' === $verifier || 'xec' === $scheme ) {
 			return self::bip21_uri( 'ecash', $address, $amount );
 		}
+		if ( 'btg' === $verifier || 'btg' === $scheme ) {
+			return self::bip21_uri( 'bitcoingold', $address, $amount );
+		}
+		if ( in_array( $verifier, array( 'firo', 'xzc' ), true ) || 'firo' === $scheme ) {
+			return self::bip21_uri( 'firo', $address, $amount );
+		}
+		if ( 'rvn' === $verifier || 'rvn' === $scheme ) {
+			return self::bip21_uri( 'ravencoin', $address, $amount );
+		}
+		if ( 'pivx' === $verifier || 'pivx' === $scheme ) {
+			return self::bip21_uri( 'pivx', $address, $amount );
+		}
 		if ( 'bch' === $verifier || 'bch' === $scheme ) {
 			// CashAddr often includes bitcoincash: already — avoid double scheme.
 			if ( 0 === stripos( $address, 'bitcoincash:' ) ) {
@@ -855,6 +887,7 @@ class Xdwp_Coins {
 			'algo', 'hbar', 'near', 'atom', 'scrt', 'sei', 'inj_native', 'egld', 'fil', 'eos', 'dot', 'zil',
 			'ton', 'ada', 'apt', 'kas', 'one', 'pls', 'sysevm', 'boba', 'brise', 'xdc',
 			'xtz', 'xno', 'waves',
+			'btg', 'firo', 'xzc', 'rvn', 'pivx', 'neo', 'gas', 'theta', 'tfuel',
 		);
 		return in_array( $coin['verifier'], $supported, true );
 	}

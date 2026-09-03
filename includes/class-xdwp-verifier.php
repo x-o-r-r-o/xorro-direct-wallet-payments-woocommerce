@@ -781,6 +781,23 @@ class Xdwp_Verifier {
 				return self::check_aptos( $address, $min, $max, $since );
 			case 'kas':
 				return self::check_kaspa( $address, $min, $max, $since );
+			case 'btg':
+				return self::check_blockbook( 'https://btgexplorer.com', $address, $min, $max, $since );
+			case 'firo':
+			case 'xzc':
+				return self::check_blockbook( 'https://blockbook.firo.org', $address, $min, $max, $since );
+			case 'rvn':
+				return self::check_blockbook( 'https://blockbook.ravencoin.org', $address, $min, $max, $since );
+			case 'pivx':
+				return self::check_blockbook( 'https://explorer.pivx.org', $address, $min, $max, $since );
+			case 'neo':
+				return self::check_neo( $address, $min, $max, $since, '0xef4073a0f2b305a38ec4050e4d3d28bc40ea63f5', 0 );
+			case 'gas':
+				return self::check_neo( $address, $min, $max, $since, '0xd2a4cff31913016155e38e474a2c06d08be276cf', 8 );
+			case 'theta':
+				return self::check_theta( $address, $min, $max, $since, 'thetawei' );
+			case 'tfuel':
+				return self::check_theta( $address, $min, $max, $since, 'tfuelwei' );
 			case 'one':
 				return self::check_evm_clone( 'https://explorer.harmony.one/api', $address, $min, $max, $since, $coin );
 			case 'pls':
@@ -2907,6 +2924,193 @@ class Xdwp_Verifier {
 			}
 			if ( self::raw_amount_in_band( (string) $tx['amount'], 8, $min, $max ) ) {
 				return ! empty( $tx['id'] ) ? (string) $tx['id'] : false;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Generalized Trezor-Blockbook-style UTXO verifier — one function for any
+	 * chain running a genuine Blockbook v2 API (confirmed live for Bitcoin
+	 * Gold, Firo, Ravencoin, and PIVX): `GET /api/v2/address/{addr}` for a
+	 * txid list, `GET /api/v2/tx/{txid}` for `vout[].addresses[]`/`value`
+	 * (raw base-unit string) plus a `confirmations` int computed server-side
+	 * (no separate tip fetch needed, unlike Blockchair's `context.state`).
+	 *
+	 * @param string $base_api Explorer base (no trailing slash, no "/api/v2").
+	 * @param string $address  Address.
+	 * @param float  $min      Min.
+	 * @param float  $max      Max.
+	 * @param int    $since    Since.
+	 * @param int    $decimals Decimals (all four chains this currently serves use 8).
+	 * @return string|false
+	 */
+	private static function check_blockbook( $base_api, $address, $min, $max, $since, $decimals = 8 ) {
+		$base_api = rtrim( $base_api, '/' );
+		$list_url = $base_api . '/api/v2/address/' . rawurlencode( $address ) . '?details=txids';
+		$list     = self::http_get( $list_url );
+		if ( ! is_array( $list ) || empty( $list['txids'] ) || ! is_array( $list['txids'] ) ) {
+			return false;
+		}
+
+		foreach ( array_slice( $list['txids'], 0, 20 ) as $txid ) {
+			$tx_url = $base_api . '/api/v2/tx/' . rawurlencode( (string) $txid );
+			$tx     = self::http_get( $tx_url );
+			if ( ! is_array( $tx ) ) {
+				continue;
+			}
+			$time = isset( $tx['blockTime'] ) ? (int) $tx['blockTime'] : 0;
+			if ( ! $time || $time < $since ) {
+				continue;
+			}
+			if ( ! self::confirmations_ok( isset( $tx['confirmations'] ) ? $tx['confirmations'] : null ) ) {
+				continue;
+			}
+			if ( empty( $tx['vout'] ) || ! is_array( $tx['vout'] ) ) {
+				continue;
+			}
+			$sum = 0.0;
+			foreach ( $tx['vout'] as $vout ) {
+				$addrs   = ( ! empty( $vout['addresses'] ) && is_array( $vout['addresses'] ) ) ? $vout['addresses'] : array();
+				$matched = false;
+				foreach ( $addrs as $a ) {
+					if ( hash_equals( $address, (string) $a ) ) {
+						$matched = true;
+						break;
+					}
+				}
+				if ( ! $matched ) {
+					continue;
+				}
+				$sum += ( (float) ( isset( $vout['value'] ) ? $vout['value'] : 0 ) ) / pow( 10, $decimals );
+			}
+			if ( self::amount_in_band( $sum, $min, $max ) ) {
+				return isset( $tx['txid'] ) ? (string) $tx['txid'] : (string) $txid;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * NEO N3 native NEO and GAS — api.coz.io's public NEP-17 transfer API,
+	 * no key required. One function serves both assets, distinguished by
+	 * the NEP-17 contract scripthash (NEO = indivisible, 0 decimals; GAS =
+	 * 8 decimals).
+	 *
+	 * @param string $address  Address.
+	 * @param float  $min      Min.
+	 * @param float  $max      Max.
+	 * @param int    $since    Since.
+	 * @param string $contract NEP-17 contract scripthash (0x-prefixed) to match.
+	 * @param int    $decimals Decimals for this asset.
+	 * @return string|false
+	 */
+	private static function check_neo( $address, $min, $max, $since, $contract, $decimals ) {
+		$url      = 'https://api.coz.io/api/v2/neo3/mainnet/address_txfull/' . rawurlencode( $address ) . '/1';
+		$response = self::http_get( $url );
+		if ( ! is_array( $response ) || empty( $response['items'] ) || ! is_array( $response['items'] ) ) {
+			return false;
+		}
+
+		$need = self::min_confirmations();
+		$tip  = 0;
+		if ( $need > 0 ) {
+			$tip = self::cached_tip(
+				'neo3',
+				static function () {
+					$res = self::http_get( 'https://api.coz.io/api/v2/neo3/mainnet/height' );
+					return ( is_array( $res ) && isset( $res['height'] ) ) ? (int) $res['height'] : 0;
+				}
+			);
+			if ( $tip <= 0 ) {
+				return false;
+			}
+		}
+
+		foreach ( $response['items'] as $item ) {
+			if ( empty( $item['vmstate'] ) || 'HALT' !== $item['vmstate'] ) {
+				continue;
+			}
+			$time = isset( $item['time'] ) ? (int) ( (float) $item['time'] ) : 0;
+			if ( ! $time || $time < $since ) {
+				continue;
+			}
+			if ( $need > 0 ) {
+				$block = isset( $item['block'] ) ? (int) $item['block'] : 0;
+				if ( ! self::block_depth_ok( $block, $tip ) ) {
+					continue;
+				}
+			}
+			if ( empty( $item['transfers'] ) || ! is_array( $item['transfers'] ) ) {
+				continue;
+			}
+			foreach ( $item['transfers'] as $transfer ) {
+				$to        = isset( $transfer['to'] ) ? (string) $transfer['to'] : '';
+				$scripthash = isset( $transfer['scripthash'] ) ? (string) $transfer['scripthash'] : '';
+				if ( '' === $to || ! hash_equals( $address, $to ) ) {
+					continue;
+				}
+				if ( 0 !== strcasecmp( $scripthash, $contract ) ) {
+					continue;
+				}
+				$value = isset( $transfer['amount'] ) ? (string) $transfer['amount'] : '0';
+				if ( self::raw_amount_in_band( $value, $decimals, $min, $max ) ) {
+					$txid = isset( $transfer['txid'] ) ? (string) $transfer['txid'] : ( isset( $item['hash'] ) ? (string) $item['hash'] : false );
+					return $txid;
+				}
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Theta native THETA and TFUEL — Theta's official explorer API, no key
+	 * required. One function serves both assets: every tx carries both a
+	 * `thetawei` and `tfuelwei` amount on each output (zero on the leg not
+	 * actually being sent), distinguished by which denom key is checked.
+	 *
+	 * Recipient/amount live at `data.outputs[].address`/`.coins.{denom}`,
+	 * NOT top-level fields — verified directly against a live response
+	 * rather than assumed, since an earlier research pass reported a
+	 * simplified (incorrect) flat shape.
+	 *
+	 * @param string $address Address.
+	 * @param float  $min     Min.
+	 * @param float  $max     Max.
+	 * @param int    $since   Since.
+	 * @param string $denom   'thetawei' or 'tfuelwei'.
+	 * @return string|false
+	 */
+	private static function check_theta( $address, $min, $max, $since, $denom ) {
+		$url      = 'https://explorer-api.thetatoken.org/api/accounttx/' . rawurlencode( $address ) . '?type=2&pageNumber=1&limitNumber=20';
+		$response = self::http_get( $url );
+		if ( ! is_array( $response ) || empty( $response['body'] ) || ! is_array( $response['body'] ) ) {
+			return false;
+		}
+
+		foreach ( $response['body'] as $tx ) {
+			// Theta has fast BFT finality — "finalized" is the only real signal,
+			// no separate block-depth mechanism is exposed for this endpoint.
+			if ( empty( $tx['status'] ) || 'finalized' !== $tx['status'] ) {
+				continue;
+			}
+			if ( ! self::soft_finality_ok( true ) ) {
+				return false;
+			}
+			$time = isset( $tx['timestamp'] ) ? (int) $tx['timestamp'] : 0;
+			if ( ! $time || $time < $since ) {
+				continue;
+			}
+			$outputs = isset( $tx['data']['outputs'] ) && is_array( $tx['data']['outputs'] ) ? $tx['data']['outputs'] : array();
+			foreach ( $outputs as $out ) {
+				$addr = isset( $out['address'] ) ? (string) $out['address'] : '';
+				if ( '' === $addr || 0 !== strcasecmp( $addr, $address ) ) {
+					continue;
+				}
+				$value = isset( $out['coins'][ $denom ] ) ? (string) $out['coins'][ $denom ] : '0';
+				if ( self::raw_amount_in_band( $value, 18, $min, $max ) ) {
+					return ! empty( $tx['hash'] ) ? (string) $tx['hash'] : false;
+				}
 			}
 		}
 		return false;

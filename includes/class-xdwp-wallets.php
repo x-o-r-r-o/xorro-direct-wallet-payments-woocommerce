@@ -187,6 +187,21 @@ class Xdwp_Wallets {
 				return (bool) preg_match( '/^(nano|xrb)_[13456789abcdefghijkmnopqrstuwxyz]{60}$/', $address );
 			case 'waves':
 				return (bool) preg_match( '/^3P[1-9A-HJ-NP-Za-km-z]{33}$/', $address );
+			case 'btg':
+				return (bool) preg_match( '/^[GA][1-9A-HJ-NP-Za-km-z]{33}$/', $address );
+			case 'firo':
+			case 'xzc':
+				return (bool) preg_match( '/^a[1-9A-HJ-NP-Za-km-z]{33}$/', $address );
+			case 'rvn':
+				return (bool) preg_match( '/^R[1-9A-HJ-NP-Za-km-z]{33}$/', $address );
+			case 'pivx':
+				return (bool) preg_match( '/^[DS][1-9A-HJ-NP-Za-km-z]{33}$/', $address );
+			case 'neo':
+			case 'gas':
+				return (bool) preg_match( '/^N[1-9A-HJ-NP-Za-km-z]{33}$/', $address );
+			case 'theta':
+			case 'tfuel':
+				return (bool) preg_match( '/^0x[a-fA-F0-9]{40}$/', $address );
 			case 'strk':
 				// Starknet account addresses are felt252 values — like Aptos,
 				// commonly rendered with leading zero bytes trimmed.

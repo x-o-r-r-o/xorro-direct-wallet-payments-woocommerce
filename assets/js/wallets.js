@@ -58,6 +58,15 @@
 				xtz: /^tz[1-3][1-9A-HJ-NP-Za-km-z]{33}$/,
 				xno: /^(nano|xrb)_[13456789abcdefghijkmnopqrstuwxyz]{60}$/,
 				waves: /^3P[1-9A-HJ-NP-Za-km-z]{33}$/,
+				btg: /^[GA][1-9A-HJ-NP-Za-km-z]{33}$/,
+				firo: /^a[1-9A-HJ-NP-Za-km-z]{33}$/,
+				xzc: /^a[1-9A-HJ-NP-Za-km-z]{33}$/,
+				rvn: /^R[1-9A-HJ-NP-Za-km-z]{33}$/,
+				pivx: /^[DS][1-9A-HJ-NP-Za-km-z]{33}$/,
+				neo: /^N[1-9A-HJ-NP-Za-km-z]{33}$/,
+				gas: /^N[1-9A-HJ-NP-Za-km-z]{33}$/,
+				theta: /^0x[a-fA-F0-9]{40}$/,
+				tfuel: /^0x[a-fA-F0-9]{40}$/,
 				strk: /^(0x)?[0-9a-fA-F]{1,64}$/
 			};
 
