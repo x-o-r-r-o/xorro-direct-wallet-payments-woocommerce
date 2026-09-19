@@ -284,6 +284,15 @@
 	font-weight: 600;
 }
 
+.xdwp-box__partial {
+	margin: 0 0 1rem;
+	padding: 0.75rem 0.9rem;
+	border-left: 3px solid #dc6803;
+	background: #fffaeb;
+	color: #7a2e0e;
+	font-weight: 500;
+}
+
 .xdwp-box__error {
 	color: #b42318;
 	font-weight: 600;

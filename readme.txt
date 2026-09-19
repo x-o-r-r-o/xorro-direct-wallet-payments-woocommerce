@@ -4,7 +4,7 @@ Tags: woocommerce, cryptocurrency, bitcoin, ethereum, payments, usdt, crypto che
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.5.38
+Stable tag: 1.6.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -27,16 +27,18 @@ This plugin contacts public price and blockchain APIs to quote amounts and (opti
 * Automatic on-chain verification via public explorers/RPCs (can be disabled)
 * Wallet rotation across multiple addresses
 * Unique payment amounts for reliable matching
+* Payment details and a pre-expiry reminder in customer emails
+* Partial payments (customer is asked for the remainder), overpayment notes, and late-payment alerts for the store owner
 * Checkout branding: custom title, upload/replace icon, icon width & height, show icon and/or text
 * WooCommerce Checkout Blocks + HPOS compatible
-* Compatible with WordPress 7.0 and WooCommerce 10.x
+* Compatible with WordPress 7.1 and WooCommerce 11.x
 * Dedicated admin menu: General, Coins, Wallets, Prices & APIs
 
 = Requirements =
 
-* WordPress 6.9+ (tested up to 7.0)
-* WooCommerce 10.0+ (tested up to 10.8)
-* PHP 7.4+ (8.3+ recommended)
+* WordPress 6.9+ (tested up to 7.1)
+* WooCommerce 10.0+ (tested up to 11.1)
+* PHP 7.4+ (8.2+ recommended)
 * HTTPS recommended
 
 == Installation ==
@@ -69,6 +71,14 @@ Go to **Xorro Wallet Payments → General**. You can edit the title (e.g. “Pay
 * **ViewBlock** — optional, for Zilliqa (ZIL) reliability
 
 Bitcoin uses mempool.space (Blockstream fallback) with no key required. ALGO, HBAR, NEAR, ATOM, EGLD, FIL, EOS use free public endpoints. Monero (XMR) stays manual.
+
+= What happens if a customer sends too little, too much, or too late? =
+
+* **Too little (at least half):** the order becomes "partially paid". The customer is emailed and shown the remaining amount, the payment window restarts, and the order completes automatically when the rest arrives. You get an email too.
+* **Up to 10% too much:** the order completes and a note shows the excess so you can refund it.
+* **After the window closed:** orders that expired in the last 7 days are re-checked; if money arrives you are emailed and can complete the order with "Mark payment received" (the transaction ID is filled in) or refund.
+
+These emails can be switched off or edited under WooCommerce → Settings → Emails.
 
 = Are private keys stored? =
 
@@ -324,6 +334,20 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 * QR Code generator (`assets/js/qrcode.min.js`) — MIT-licensed library by davidshimjs (https://github.com/davidshimjs/qrcodejs). Source is publicly available; the bundled file is minified for production use.
 
 == Changelog ==
+
+= 1.6.0 =
+"No lost payments" release.
+* New: crypto payment details in customer emails — the WooCommerce on-hold, pending and invoice emails now include the amount, network, wallet address, deadline and a button back to the payment page (QR code), so a customer who closes the tab can still pay
+* New: payment reminder email to the customer about 15 minutes before the payment window closes (payment windows of 30 minutes or more; sent once)
+* New: partial payments. A transfer of at least 50% of the amount due (typically an exchange deducting its withdrawal fee) marks the order "partially paid" instead of letting it silently expire: the customer is emailed the remaining amount, the payment page shows it with a new QR code, the payment window restarts, and the order completes automatically when the rest arrives. Further partial top-ups are added up. If the window closes first, the order fails with a note and the store owner is alerted to refund or complete it manually
+* New: overpayments of up to 10% complete the order, with an order note and owner alert showing the excess to refund. Larger unexpected transfers are never accepted automatically
+* New: late-payment scan — orders that expired in the last 7 days are re-checked (at most every 6 hours) and the store owner is emailed if a payment arrives; the order is left for the owner to complete with "Mark payment received" (transaction ID pre-filled) or refund. Can be switched off under General → Late payments
+* New: "Crypto payment needs attention" store-owner email (partial, over and late payments), with its own recipient setting. All three new emails are standard WooCommerce emails: enable/disable, edit subject and heading, or override templates in your theme
+* New developer hooks: `xdwp_order_paid`, `xdwp_order_underpaid`, `xdwp_order_overpaid`, `xdwp_order_expired`, `xdwp_late_payment_detected`, `xdwp_send_payment_reminder`
+* Safety: a partial or late transfer is never taken if it could be another open order's exact payment, is never counted twice, and top-ups only count if sent after the partial was detected. Scans are throttled (one extra explorer lookup per order at most every 5 minutes)
+* Fix: lock, claim and amount-reservation checks read straight from the database. They are written with raw SQL, and get_option() could return a stale cached value — with a persistent object cache (Redis/Memcached) across requests — which could make checkouts fail when an amount was already reserved
+* Fix: when an amount is still reserved by an abandoned order, checkout now picks the next free amount instead of retrying the same one
+* Admin order box shows received / still due / overpaid amounts, partial-payment transaction IDs and late-payment warnings
 
 = 1.5.38 =
 * Fix: updated coin icons did not show after updating the plugin. Icon URLs had no version, so browsers, CDNs and cache plugins kept serving the old cached SVG under the same URL (often for weeks). Coin and gateway icon URLs now carry the plugin version, like enqueued CSS/JS, so every update loads fresh icons

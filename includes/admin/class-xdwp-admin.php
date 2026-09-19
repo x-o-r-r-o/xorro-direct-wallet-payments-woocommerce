@@ -257,7 +257,7 @@ class Xdwp_Admin {
 		// controls, otherwise gated at the exact same level as a cosmetic setting.
 		$wallets_before = ( 'wallets' === $tab ) ? Xdwp_Settings::get( 'wallets', array() ) : null;
 		if ( 'general' === $tab ) {
-			foreach ( array( 'unique_amounts', 'wallet_rotation', 'auto_verify' ) as $flag ) {
+			foreach ( array( 'unique_amounts', 'wallet_rotation', 'auto_verify', 'late_payment_scan' ) as $flag ) {
 				if ( ! isset( $raw[ $flag ] ) ) {
 					$raw[ $flag ] = 'no';
 				}

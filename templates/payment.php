@@ -12,6 +12,8 @@
  * @var string   $status
  * @var string   $uri
  * @var string   $coin_id
+ * @var string   $received Amount received so far (partial payments).
+ * @var string   $due      Full amount of the order.
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -27,6 +29,22 @@ defined( 'ABSPATH' ) || exit;
 	<?php elseif ( 'expired' === $status ) : ?>
 		<p class="xdwp-box__error"><?php esc_html_e( 'Payment window expired. Please place a new order.', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
 	<?php else : ?>
+		<?php if ( 'underpaid' === $status ) : ?>
+			<p class="xdwp-box__partial" role="status">
+				<?php
+				echo esc_html(
+					sprintf(
+						/* translators: 1: amount received, 2: symbol, 3: full amount due, 4: remaining amount */
+						__( 'We received %1$s %2$s of %3$s %2$s. Please send the remaining %4$s %2$s to the same address to complete your order.', 'xorro-direct-wallet-payments-woocommerce' ),
+						$received,
+						$coin['symbol'],
+						$due,
+						$amount
+					)
+				);
+				?>
+			</p>
+		<?php endif; ?>
 		<ol class="xdwp-box__steps">
 			<li><?php esc_html_e( 'Send exactly the amount below (network fees are extra).', 'xorro-direct-wallet-payments-woocommerce' ); ?></li>
 			<li><?php esc_html_e( 'Use the matching network shown for this coin.', 'xorro-direct-wallet-payments-woocommerce' ); ?></li>
@@ -35,7 +53,7 @@ defined( 'ABSPATH' ) || exit;
 
 		<div class="xdwp-box__row">
 			<div class="xdwp-box__field">
-				<span class="xdwp-box__label"><?php esc_html_e( 'Amount', 'xorro-direct-wallet-payments-woocommerce' ); ?></span>
+				<span class="xdwp-box__label"><?php echo 'underpaid' === $status ? esc_html__( 'Remaining amount', 'xorro-direct-wallet-payments-woocommerce' ) : esc_html__( 'Amount', 'xorro-direct-wallet-payments-woocommerce' ); ?></span>
 				<span class="xdwp-box__line">
 				<code id="xdwp-amount" class="xdwp-box__value"><?php echo esc_html( $amount ); ?> <?php echo esc_html( $coin['symbol'] ); ?></code>
 				<button

@@ -54,6 +54,7 @@ final class Xdwp {
 		require_once XDWP_PATH . 'includes/class-xdwp-cron.php';
 		require_once XDWP_PATH . 'includes/class-xdwp-ajax.php';
 		require_once XDWP_PATH . 'includes/class-xdwp-compat.php';
+		require_once XDWP_PATH . 'includes/class-xdwp-emails.php';
 		require_once XDWP_PATH . 'includes/class-xdwp-gateway.php';
 
 		if ( is_admin() ) {
@@ -79,6 +80,7 @@ final class Xdwp {
 		Xdwp_Cron::init();
 		Xdwp_Ajax::init();
 		Xdwp_Compat::init();
+		Xdwp_Emails::init();
 		Xdwp_Order::init();
 		Xdwp_Privacy::init();
 

@@ -131,10 +131,17 @@ class Xdwp_Order {
 	 * @return string
 	 */
 	public static function payment_callout( $text, $order ) {
-		if ( ! $order instanceof WC_Order || ! self::is_ours( $order ) || 'awaiting' !== self::meta( $order, 'status' ) ) {
+		$status = $order instanceof WC_Order && self::is_ours( $order ) ? (string) self::meta( $order, 'status' ) : '';
+		if ( ! in_array( $status, array( 'awaiting', 'underpaid' ), true ) ) {
 			return $text;
 		}
-		return $text . ' <span class="xdwp-pay-callout">' . esc_html__( 'Your order is waiting for payment.', 'xorro-direct-wallet-payments-woocommerce' ) . ' <a href="#xdwp-box">' . esc_html__( 'Complete your crypto payment below', 'xorro-direct-wallet-payments-woocommerce' ) . ' &darr;</a></span>';
+		$lead = 'underpaid' === $status
+			? __( 'Part of your payment has arrived.', 'xorro-direct-wallet-payments-woocommerce' )
+			: __( 'Your order is waiting for payment.', 'xorro-direct-wallet-payments-woocommerce' );
+		$link = 'underpaid' === $status
+			? __( 'Send the remaining amount below', 'xorro-direct-wallet-payments-woocommerce' )
+			: __( 'Complete your crypto payment below', 'xorro-direct-wallet-payments-woocommerce' );
+		return $text . ' <span class="xdwp-pay-callout">' . esc_html( $lead ) . ' <a href="#xdwp-box">' . esc_html( $link ) . ' &darr;</a></span>';
 	}
 
 	/**
@@ -225,7 +232,7 @@ class Xdwp_Order {
 
 		// Atomic lock via a real INSERT-only compare-and-set; stale takeover uses compare-and-swap.
 		if ( ! Xdwp_Verifier::atomic_add_option( $lock_key, $now ) ) {
-			$existing = (string) get_option( $lock_key, '' );
+			$existing = Xdwp_Verifier::read_option_raw( $lock_key );
 			// Fresh lock younger than 2 minutes — another worker owns it.
 			if ( $existing && ( time() - (int) $existing ) < 120 ) {
 				return;
@@ -240,6 +247,7 @@ class Xdwp_Order {
 					$existing
 				)
 			);
+			Xdwp_Verifier::forget_option_cache( $lock_key );
 			if ( 1 !== $updated ) {
 				return;
 			}
@@ -255,13 +263,13 @@ class Xdwp_Order {
 			if ( 'paid' === $status ) {
 				return;
 			}
-			if ( ! in_array( $status, array( 'awaiting', 'expired' ), true ) ) {
+			if ( ! in_array( $status, array( 'awaiting', 'underpaid', 'expired' ), true ) ) {
 				return;
 			}
 
-			// Awaiting: only while WC still expects payment. Expired: allow recovery on failed/on-hold/pending.
+			// Awaiting/underpaid: only while WC still expects payment. Expired: allow recovery on failed/on-hold/pending.
 			$wc_status = $order->get_status();
-			if ( 'awaiting' === $status && ! in_array( $wc_status, array( 'pending', 'on-hold' ), true ) ) {
+			if ( in_array( $status, array( 'awaiting', 'underpaid' ), true ) && ! in_array( $wc_status, array( 'pending', 'on-hold' ), true ) ) {
 				return;
 			}
 			if ( 'expired' === $status && ! in_array( $wc_status, array( 'failed', 'pending', 'on-hold' ), true ) ) {
@@ -313,6 +321,23 @@ class Xdwp_Order {
 			} else {
 				$order->add_order_note( __( 'Crypto payment confirmed on-chain.', 'xorro-direct-wallet-payments-woocommerce' ) );
 			}
+
+			$overpaid = (string) self::meta( $order, 'overpaid' );
+			if ( '' !== $overpaid ) {
+				$coin = Xdwp_Coins::get( (string) self::meta( $order, 'coin' ) );
+				$order->add_order_note(
+					sprintf(
+						/* translators: 1: amount received, 2: symbol, 3: amount due, 4: excess */
+						__( 'Overpayment: received %1$s %2$s for %3$s %2$s due (%4$s %2$s extra). Refund the difference if appropriate.', 'xorro-direct-wallet-payments-woocommerce' ),
+						(string) self::meta( $order, 'received' ),
+						$coin ? $coin['symbol'] : '',
+						(string) self::meta( $order, 'amount' ),
+						$overpaid
+					)
+				);
+				do_action( 'xdwp_order_overpaid', $order, $overpaid );
+			}
+			do_action( 'xdwp_order_paid', $order, (string) self::meta( $order, 'txid' ) );
 		} finally {
 			delete_option( $lock_key );
 		}
@@ -333,7 +358,8 @@ class Xdwp_Order {
 		if ( ! in_array( $order->get_status(), array( 'on-hold', 'pending' ), true ) ) {
 			return;
 		}
-		if ( 'awaiting' !== Xdwp_Order::meta( $order, 'status' ) ) {
+		$xdwp_status = (string) Xdwp_Order::meta( $order, 'status' );
+		if ( ! in_array( $xdwp_status, array( 'awaiting', 'underpaid' ), true ) ) {
 			return;
 		}
 		$expires = (int) Xdwp_Order::meta( $order, 'expires' );
@@ -355,10 +381,26 @@ class Xdwp_Order {
 
 		$order->update_meta_data( '_xdwp_status', 'expired' );
 		$order->save();
-		$order->update_status(
-			'failed',
-			__( 'Crypto payment window expired. Contact the store if you already sent funds.', 'xorro-direct-wallet-payments-woocommerce' )
-		);
+		if ( 'underpaid' === $xdwp_status ) {
+			$coin = Xdwp_Coins::get( (string) self::meta( $order, 'coin' ) );
+			$sym  = $coin ? $coin['symbol'] : '';
+			$order->update_status(
+				'failed',
+				sprintf(
+					/* translators: 1: amount received, 2: symbol, 3: amount due */
+					__( 'Crypto payment window expired with a partial payment: received %1$s %2$s of %3$s %2$s. Refund the customer or complete the order manually.', 'xorro-direct-wallet-payments-woocommerce' ),
+					(string) self::meta( $order, 'received' ),
+					$sym,
+					(string) self::meta( $order, 'amount' )
+				)
+			);
+		} else {
+			$order->update_status(
+				'failed',
+				__( 'Crypto payment window expired. Contact the store if you already sent funds.', 'xorro-direct-wallet-payments-woocommerce' )
+			);
+		}
+		do_action( 'xdwp_order_expired', $order, $xdwp_status );
 	}
 
 	/**
@@ -413,6 +455,13 @@ class Xdwp_Order {
 		if ( ! $coin || ! $address || ! $amount ) {
 			echo '<p class="xdwp-error">' . esc_html__( 'Payment details are unavailable for this order.', 'xorro-direct-wallet-payments-woocommerce' ) . '</p>';
 			return;
+		}
+
+		// After a partial payment the box asks for the remaining amount only.
+		$received = (string) Xdwp_Order::meta( $order, 'received' );
+		$due      = $amount;
+		if ( 'underpaid' === $status && '' !== (string) Xdwp_Order::meta( $order, 'remainder' ) ) {
+			$amount = (string) Xdwp_Order::meta( $order, 'remainder' );
 		}
 
 		$uri = Xdwp_Coins::payment_uri( $coin_id, $address, $amount );
@@ -491,14 +540,16 @@ class Xdwp_Order {
 		wc_get_template(
 			'payment.php',
 			array(
-				'order'   => $order,
-				'coin'    => $coin,
-				'address' => $address,
-				'amount'  => $amount,
-				'expires' => $expires,
-				'status'  => $status,
-				'uri'     => $uri,
-				'coin_id' => $coin_id,
+				'order'    => $order,
+				'coin'     => $coin,
+				'address'  => $address,
+				'amount'   => $amount,
+				'expires'  => $expires,
+				'status'   => $status,
+				'uri'      => $uri,
+				'coin_id'  => $coin_id,
+				'received' => $received,
+				'due'      => $due,
 			),
 			'xorro-direct-wallet-payments-woocommerce/',
 			XDWP_PATH . 'templates/'
@@ -549,10 +600,47 @@ class Xdwp_Order {
 		echo '<p><strong>' . esc_html__( 'Coin:', 'xorro-direct-wallet-payments-woocommerce' ) . '</strong> ' . esc_html( $coin ? $coin['name'] : $coin_id ) . '</p>';
 		echo '<p><strong>' . esc_html__( 'Amount:', 'xorro-direct-wallet-payments-woocommerce' ) . '</strong> ' . esc_html( Xdwp_Order::meta( $order, 'amount' ) ) . '</p>';
 		echo '<p><strong>' . esc_html__( 'Address:', 'xorro-direct-wallet-payments-woocommerce' ) . '</strong><br><code style="word-break:break-all;">' . esc_html( Xdwp_Order::meta( $order, 'address' ) ) . '</code></p>';
-		echo '<p><strong>' . esc_html__( 'Status:', 'xorro-direct-wallet-payments-woocommerce' ) . '</strong> ' . esc_html( Xdwp_Order::meta( $order, 'status' ) ) . '</p>';
+		$xdwp_status = (string) Xdwp_Order::meta( $order, 'status' );
+		$labels      = array(
+			'awaiting'  => __( 'Waiting for payment', 'xorro-direct-wallet-payments-woocommerce' ),
+			'underpaid' => __( 'Partially paid', 'xorro-direct-wallet-payments-woocommerce' ),
+			'paid'      => __( 'Paid', 'xorro-direct-wallet-payments-woocommerce' ),
+			'expired'   => __( 'Expired', 'xorro-direct-wallet-payments-woocommerce' ),
+			'cancelled' => __( 'Cancelled', 'xorro-direct-wallet-payments-woocommerce' ),
+		);
+		echo '<p><strong>' . esc_html__( 'Status:', 'xorro-direct-wallet-payments-woocommerce' ) . '</strong> ' . esc_html( isset( $labels[ $xdwp_status ] ) ? $labels[ $xdwp_status ] : $xdwp_status ) . '</p>';
 
-		$xdwp_status = Xdwp_Order::meta( $order, 'status' );
-		$can_mark    = in_array( $xdwp_status, array( 'awaiting', 'expired' ), true )
+		$symbol    = $coin ? $coin['symbol'] : '';
+		$received  = (string) Xdwp_Order::meta( $order, 'received' );
+		$remainder = (string) Xdwp_Order::meta( $order, 'remainder' );
+		$overpaid  = (string) Xdwp_Order::meta( $order, 'overpaid' );
+		if ( '' !== $received ) {
+			echo '<p><strong>' . esc_html__( 'Received:', 'xorro-direct-wallet-payments-woocommerce' ) . '</strong> ' . esc_html( $received . ' ' . $symbol ) . '</p>';
+		}
+		if ( 'underpaid' === $xdwp_status && '' !== $remainder ) {
+			echo '<p><strong>' . esc_html__( 'Still due:', 'xorro-direct-wallet-payments-woocommerce' ) . '</strong> ' . esc_html( $remainder . ' ' . $symbol ) . '</p>';
+		}
+		if ( '' !== $overpaid ) {
+			echo '<p><strong>' . esc_html__( 'Overpaid by:', 'xorro-direct-wallet-payments-woocommerce' ) . '</strong> ' . esc_html( $overpaid . ' ' . $symbol ) . '</p>';
+		}
+		$partials = Xdwp_Verifier::partial_txids( $order );
+		if ( $partials ) {
+			echo '<p><strong>' . esc_html__( 'Partial payment txids:', 'xorro-direct-wallet-payments-woocommerce' ) . '</strong><br><code style="word-break:break-all;">' . esc_html( implode( ', ', $partials ) ) . '</code></p>';
+		}
+		$late_txid = (string) Xdwp_Order::meta( $order, 'late_txid' );
+		if ( '' !== $late_txid && 'paid' !== $xdwp_status ) {
+			echo '<div class="notice notice-warning inline"><p style="overflow-wrap:anywhere;"><strong>' . esc_html__( 'Payment received after the window closed', 'xorro-direct-wallet-payments-woocommerce' ) . '</strong><br>' . esc_html(
+				sprintf(
+					/* translators: 1: amount, 2: symbol, 3: txid */
+					__( '%1$s %2$s arrived in transaction %3$s. Check it, then use "Mark payment received" below (the transaction ID is filled in) or refund the customer.', 'xorro-direct-wallet-payments-woocommerce' ),
+					(string) Xdwp_Order::meta( $order, 'late_amount' ),
+					$symbol,
+					$late_txid
+				)
+			) . '</p></div>';
+		}
+
+		$can_mark    = in_array( $xdwp_status, array( 'awaiting', 'underpaid', 'expired' ), true )
 			&& current_user_can( 'manage_woocommerce' )
 			&& in_array( $order->get_status(), array( 'pending', 'on-hold', 'failed' ), true );
 
@@ -575,7 +663,7 @@ class Xdwp_Order {
 				<?php wp_nonce_field( 'xdwp_mark_paid_' . $order->get_id() ); ?>
 				<p>
 					<label for="xdwp_manual_txid"><strong><?php esc_html_e( 'On-chain transaction ID', 'xorro-direct-wallet-payments-woocommerce' ); ?></strong></label><br />
-					<input type="text" class="widefat" id="xdwp_manual_txid" name="xdwp_txid" required minlength="8" autocomplete="off" />
+					<input type="text" class="widefat" id="xdwp_manual_txid" name="xdwp_txid" required minlength="8" autocomplete="off" value="<?php echo esc_attr( 'paid' !== $xdwp_status ? $late_txid : '' ); ?>" />
 				</p>
 				<p>
 					<label>
@@ -671,8 +759,8 @@ class Xdwp_Order {
 		// Same eligibility as the admin UI — never squat a txid on cancelled/ineligible orders.
 		$xdwp_status = (string) self::meta( $order, 'status' );
 		$wc_status   = $order->get_status();
-		$eligible    = in_array( $xdwp_status, array( 'awaiting', 'expired' ), true );
-		if ( $eligible && 'awaiting' === $xdwp_status ) {
+		$eligible    = in_array( $xdwp_status, array( 'awaiting', 'underpaid', 'expired' ), true );
+		if ( $eligible && in_array( $xdwp_status, array( 'awaiting', 'underpaid' ), true ) ) {
 			$eligible = in_array( $wc_status, array( 'pending', 'on-hold' ), true );
 		}
 		if ( $eligible && 'expired' === $xdwp_status ) {

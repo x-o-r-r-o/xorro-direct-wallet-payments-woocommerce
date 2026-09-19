@@ -64,6 +64,7 @@ class Xdwp_Install {
 			'unique_amounts'       => 'yes',
 			'wallet_rotation'      => 'yes',
 			'auto_verify'          => 'yes',
+			'late_payment_scan'    => 'yes',
 			'coingecko_api_key'    => '',
 			'etherscan_api_key'    => '',
 			'trongrid_api_key'     => '',

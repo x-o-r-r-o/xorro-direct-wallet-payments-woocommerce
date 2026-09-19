@@ -199,7 +199,7 @@ class Xdwp_Prices {
 		if ( is_array( $occupied ) ) {
 			for ( $slot = 1; $slot <= self::DUST_SLOTS; $slot++ ) {
 				$candidate = Xdwp_Coins::format_amount( $amount + ( $slot * self::DUST_STEP * $unit ), $coin_id );
-				$free      = true;
+				$free      = ! Xdwp_Verifier::amount_slot_taken( $coin_id, $candidate );
 				foreach ( $occupied as $taken ) {
 					if ( Xdwp_Verifier::amounts_overlap( $candidate, $taken, $coin ) ) {
 						$free = false;

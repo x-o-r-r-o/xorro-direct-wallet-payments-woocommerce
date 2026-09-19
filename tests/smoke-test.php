@@ -222,6 +222,18 @@ xdwp_assert( false !== strpos( $workflow, 'openssl pkeyutl -sign' ) && false !==
 // The workflow manifest must match Xdwp_Updater::signed_manifest() byte for byte.
 xdwp_assert( false !== strpos( $workflow, "printf 'xdwp-release:1\\nplugin:xorro-direct-wallet-payments-woocommerce\\nversion:%s\\nsha256:%s\\n'" ) && false !== strpos( $updater_src, "const MANIFEST_FORMAT = 'xdwp-release:1'" ), 'signed manifest format matches workflow' );
 xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-coins.php' ), "'.svg?ver=' . rawurlencode( XDWP_VERSION )" ), 'coin icon URLs are versioned (cache busting)' );
+$emails_src = file_get_contents( $root . '/includes/class-xdwp-emails.php' );
+xdwp_assert( false !== strpos( $emails_src, 'woocommerce_email_before_order_table' ), 'payment details added to WooCommerce customer emails' );
+foreach ( array( 'payment-reminder', 'partial-payment', 'payment-alert' ) as $xdwp_mail ) {
+	xdwp_assert( is_file( $root . '/includes/emails/class-xdwp-email-' . $xdwp_mail . '.php' ), "email class $xdwp_mail" );
+	xdwp_assert( is_file( $root . '/templates/emails/xdwp-' . $xdwp_mail . '.php' ) && is_file( $root . '/templates/emails/plain/xdwp-' . $xdwp_mail . '.php' ), "email templates (html + plain) $xdwp_mail" );
+}
+xdwp_assert( false !== strpos( $verifier_src, 'function scan_partial_or_overpayment(' ), 'partial / overpayment detection' );
+xdwp_assert( false !== strpos( $verifier_src, 'is_own_partial( $order, $hit' ), 'a partial transfer is never counted twice' );
+xdwp_assert( false !== strpos( $verifier_src, 'amounts_overlap( $hit[' ), "partials never taken from another order's amount" );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-cron.php' ), 'function scan_late_payments(' ), 'late payment scan' );
+xdwp_assert( false !== strpos( $verifier_src, 'function read_option_raw(' ) && false === strpos( $verifier_src, "get_option( \$key, '' )" ), 'locks/claims read uncached (object-cache safe)' );
+xdwp_assert( false !== strpos( $prices_src, 'amount_slot_taken(' ), 'unique amount skips reserved slots' );
 $settings_view = file_get_contents( $root . '/includes/admin/views/settings-page.php' );
 xdwp_assert( false !== strpos( $settings_view, 'wp-header-end' ), 'admin notices anchored above settings header' );
 

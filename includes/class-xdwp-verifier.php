@@ -13,6 +13,24 @@ defined( 'ABSPATH' ) || exit;
 class Xdwp_Verifier {
 
 	/**
+	 * Amount (1e18 fixed point) of the last transfer a chain checker accepted. Every checker
+	 * accepts a transfer through amount_in_band() / raw_amount_in_band() immediately before
+	 * returning its txid, so this identifies how much the returned transfer carried.
+	 *
+	 * @var string
+	 */
+	private static $last_match_e18 = '';
+
+	/** Transfers down to this percentage of the amount due are treated as partial payments. */
+	const PARTIAL_FLOOR = 50;
+
+	/** Transfers up to this percentage of the amount due (10% over) complete the order as an overpayment. */
+	const OVERPAY_CEILING = 110;
+
+	/** Minimum seconds between wide (partial / overpayment) scans of one order. */
+	const WIDE_SCAN_INTERVAL = 300;
+
+	/**
 	 * Verify whether a payment matching order meta has been received.
 	 * On success, stores confirming txid on the order.
 	 *
@@ -24,7 +42,8 @@ class Xdwp_Verifier {
 			return false;
 		}
 
-		if ( 'awaiting' !== Xdwp_Order::meta( $order, 'status' ) ) {
+		$status = (string) Xdwp_Order::meta( $order, 'status' );
+		if ( ! in_array( $status, array( 'awaiting', 'underpaid' ), true ) ) {
 			return false;
 		}
 
@@ -47,32 +66,344 @@ class Xdwp_Verifier {
 			return false;
 		}
 
-		$band = self::match_band( $amount, $coin );
-		$min  = $band['min'];
-		$max  = $band['max'];
+		// After a partial payment only the remainder is due, and only transfers sent after the
+		// partial was detected count (the partial itself must never be counted twice).
+		$underpaid = ( 'underpaid' === $status );
+		$target    = $underpaid ? (string) Xdwp_Order::meta( $order, 'remainder' ) : (string) $amount;
+		if ( '' === $target || self::e18_cmp( self::to_e18( $target ), '0' ) <= 0 ) {
+			return false;
+		}
+		$since = $underpaid
+			? max( 0, (int) Xdwp_Order::meta( $order, 'partial_since' ) )
+			: max( 0, $started - 30 ); // At most 30s clock skew — wider windows enabled reuse across orders.
 
-		// Shared-wallet safety: require unique target amount among awaiting/recent-expired orders on this address.
-		if ( ! self::can_safely_match_shared_address( $coin, $address, $order->get_id(), $amount ) ) {
+		// Shared-wallet safety: require a unique target amount among open/recent orders on this address.
+		if ( ! self::can_safely_match_shared_address( $coin, $address, $order->get_id(), $target ) ) {
 			return false;
 		}
 
-		// Allow at most 30s clock skew — wide negative windows enabled payment reuse across expired orders.
-		$since = max( 0, $started - 30 );
-		$txid  = self::find_payment( $coin, $address, $min, $max, $since );
-		if ( ! $txid ) {
+		$band = self::match_band( $target, $coin );
+		$hit  = self::find_payment_detailed( $coin, $address, $band['min'], $band['max'], $since );
+		if ( $hit && ! self::is_own_partial( $order, $hit['txid'] ) ) {
+			return self::record_final_payment( $order, $hit['txid'], $underpaid, $hit['amount'] );
+		}
+
+		return self::scan_partial_or_overpayment( $order, $coin, $address, $target, $band, $since );
+	}
+
+	/**
+	 * Look for a transfer that is not the exact amount but clearly belongs to this order:
+	 * at least PARTIAL_FLOOR of what is due (partial payment) or at most OVERPAY_CEILING
+	 * of it (overpayment). Throttled — it costs one more explorer lookup.
+	 *
+	 * @param WC_Order $order   Order.
+	 * @param array    $coin    Coin def.
+	 * @param string   $address Address.
+	 * @param string   $target  Amount due.
+	 * @param array    $band    Exact match band.
+	 * @param int      $since   Earliest transfer time.
+	 * @return bool True when the order is now fully paid.
+	 */
+	private static function scan_partial_or_overpayment( $order, array $coin, $address, $target, array $band, $since ) {
+		$throttle = 'xdwp_wide_scan_' . $order->get_id();
+		if ( get_transient( $throttle ) ) {
+			return false;
+		}
+		set_transient( $throttle, 1, self::WIDE_SCAN_INTERVAL );
+
+		$floor   = self::scale_amount( $target, self::PARTIAL_FLOOR );
+		$ceiling = self::scale_amount( $target, self::OVERPAY_CEILING );
+		$hit     = self::find_payment_detailed( $coin, $address, $floor, $ceiling, $since );
+		if ( ! $hit || '' === $hit['amount'] || self::is_own_partial( $order, $hit['txid'] ) ) {
 			return false;
 		}
 
+		// Never take a transfer that could be another open order's exact payment.
+		$peers = self::peer_amounts( $coin, $address, $order->get_id() );
+		if ( false === $peers ) {
+			return false;
+		}
+		foreach ( $peers as $peer_amount ) {
+			if ( self::amounts_overlap( $hit['amount'], $peer_amount, $coin ) ) {
+				return false;
+			}
+		}
+
+		$underpaid = ( 'underpaid' === (string) Xdwp_Order::meta( $order, 'status' ) );
+		if ( self::e18_cmp( self::to_e18( $hit['amount'] ), self::to_e18( $band['max'] ) ) > 0 ) {
+			return self::record_final_payment( $order, $hit['txid'], $underpaid, $hit['amount'] );
+		}
+		if ( self::e18_cmp( self::to_e18( $hit['amount'] ), self::to_e18( $band['min'] ) ) < 0 ) {
+			self::record_partial_payment( $order, $coin, $hit['txid'], $hit['amount'], $target );
+		}
+		return false;
+	}
+
+	/**
+	 * Claim the transfer that completes the order.
+	 *
+	 * @param WC_Order $order     Order.
+	 * @param string   $txid      Txid.
+	 * @param bool     $underpaid Whether it tops up an earlier partial payment.
+	 * @param string   $received  Amount of this transfer.
+	 * @return bool
+	 */
+	private static function record_final_payment( $order, $txid, $underpaid, $received ) {
 		$txid = strtolower( sanitize_text_field( $txid ) );
 		if ( ! self::claim_txid( $txid, $order->get_id() ) ) {
 			return false;
 		}
-
 		$order->update_meta_data( '_xdwp_txid', $txid );
+		if ( '' !== (string) $received ) {
+			$total = $underpaid
+				? self::amount_add( (string) Xdwp_Order::meta( $order, 'received' ), $received )
+				: (string) $received;
+			$order->update_meta_data( '_xdwp_received', $total );
+			$due  = (string) Xdwp_Order::meta( $order, 'amount' );
+			$over = self::amount_sub( $total, $due );
+			$band = self::match_band( $due, Xdwp_Coins::get( (string) Xdwp_Order::meta( $order, 'coin' ) ) ?: array() );
+			if ( self::e18_cmp( self::to_e18( $total ), self::to_e18( $band['max'] ) ) > 0 && '0' !== self::to_e18( $over ) ) {
+				$order->update_meta_data( '_xdwp_overpaid', $over );
+			}
+		}
 		$order->save();
-
 		return true;
 	}
+
+	/**
+	 * Record a partial payment: remainder becomes due, the window restarts, customer and
+	 * store owner are told.
+	 *
+	 * @param WC_Order $order    Order.
+	 * @param array    $coin     Coin def.
+	 * @param string   $txid     Txid.
+	 * @param string   $received Amount of this transfer.
+	 * @param string   $target   Amount that was due.
+	 */
+	private static function record_partial_payment( $order, array $coin, $txid, $received, $target ) {
+		$txid = strtolower( sanitize_text_field( $txid ) );
+		if ( ! self::claim_txid( $txid, $order->get_id() ) ) {
+			return;
+		}
+		$partials   = self::partial_txids( $order );
+		$partials[] = $txid;
+		$total      = self::amount_add( (string) Xdwp_Order::meta( $order, 'received' ), $received );
+		$remainder  = self::amount_sub_ceil( $target, $received, $coin );
+		$window     = max( 5, (int) Xdwp_Settings::get( 'payment_window', 60 ) ) * MINUTE_IN_SECONDS;
+
+		$order->update_meta_data( '_xdwp_partial_txids', implode( ',', array_unique( $partials ) ) );
+		$order->update_meta_data( '_xdwp_received', $total );
+		$order->update_meta_data( '_xdwp_remainder', $remainder );
+		$order->update_meta_data( '_xdwp_status', 'underpaid' );
+		$order->update_meta_data( '_xdwp_partial_since', time() );
+		$order->update_meta_data( '_xdwp_expires', time() + $window );
+		$order->delete_meta_data( '_xdwp_reminder_sent' );
+		$order->add_order_note(
+			sprintf(
+				/* translators: 1: amount received, 2: symbol, 3: amount due, 4: remaining amount, 5: txid */
+				__( 'Partial crypto payment: received %1$s %2$s of %3$s %2$s. Waiting for the remaining %4$s %2$s (txid: %5$s). The payment window was restarted.', 'xorro-direct-wallet-payments-woocommerce' ),
+				$received,
+				$coin['symbol'],
+				(string) Xdwp_Order::meta( $order, 'amount' ),
+				$remainder,
+				$txid
+			)
+		);
+		$order->save();
+
+		do_action( 'xdwp_order_underpaid', $order, $received, $remainder, $txid );
+	}
+
+	/**
+	 * Txids already counted as partial payments on this order.
+	 *
+	 * @param WC_Order $order Order.
+	 * @return array<int, string>
+	 */
+	public static function partial_txids( $order ) {
+		$raw = (string) Xdwp_Order::meta( $order, 'partial_txids' );
+		return '' === $raw ? array() : array_values( array_filter( explode( ',', $raw ) ) );
+	}
+
+	/**
+	 * @param WC_Order $order Order.
+	 * @param string   $txid  Txid.
+	 * @return bool
+	 */
+	private static function is_own_partial( $order, $txid ) {
+		return in_array( strtolower( (string) $txid ), self::partial_txids( $order ), true );
+	}
+
+	/**
+	 * Run a chain checker and also return the amount of the transfer it accepted.
+	 *
+	 * @param array  $coin    Coin def.
+	 * @param string $address Address.
+	 * @param string $min     Min.
+	 * @param string $max     Max.
+	 * @param int    $since   Since.
+	 * @return array{txid:string,amount:string}|false
+	 */
+	public static function find_payment_detailed( array $coin, $address, $min, $max, $since ) {
+		self::$last_match_e18 = '';
+		$txid = self::find_payment( $coin, $address, $min, $max, $since );
+		if ( ! $txid ) {
+			return false;
+		}
+		$amount = '' === self::$last_match_e18 ? '' : self::trim_decimal( self::e18_to_decimal( self::$last_match_e18 ) );
+		return array(
+			'txid'   => (string) $txid,
+			'amount' => $amount,
+		);
+	}
+
+	/**
+	 * Wide scan for an order whose payment window has closed (late / partial / over payment).
+	 * Never changes the order — the caller alerts the store owner.
+	 *
+	 * @param WC_Order $order Order.
+	 * @return array{txid:string,amount:string}|false
+	 */
+	public static function find_late_payment( $order ) {
+		$coin    = Xdwp_Coins::get( (string) Xdwp_Order::meta( $order, 'coin' ) );
+		$address = (string) Xdwp_Order::meta( $order, 'address' );
+		$amount  = (string) Xdwp_Order::meta( $order, 'amount' );
+		$started = (int) Xdwp_Order::meta( $order, 'started' );
+		if ( ! $coin || '' === $address || '' === $amount || ! $started || ! self::supports_auto_verify_coin( $coin ) ) {
+			return false;
+		}
+		$was_underpaid = '' !== (string) Xdwp_Order::meta( $order, 'remainder' );
+		$target        = $was_underpaid ? (string) Xdwp_Order::meta( $order, 'remainder' ) : $amount;
+		$since         = $was_underpaid ? (int) Xdwp_Order::meta( $order, 'partial_since' ) : max( 0, $started - 30 );
+		$hit           = self::find_payment_detailed(
+			$coin,
+			$address,
+			self::scale_amount( $target, self::PARTIAL_FLOOR ),
+			self::scale_amount( $target, self::OVERPAY_CEILING ),
+			$since
+		);
+		if ( ! $hit || self::is_own_partial( $order, $hit['txid'] ) || self::txid_claimed_by_other( $hit['txid'], $order->get_id() ) ) {
+			return false;
+		}
+		$peers = self::peer_amounts( $coin, $address, $order->get_id() );
+		if ( false === $peers ) {
+			return false;
+		}
+		foreach ( $peers as $peer_amount ) {
+			if ( '' !== $hit['amount'] && self::amounts_overlap( $hit['amount'], $peer_amount, $coin ) ) {
+				return false;
+			}
+		}
+		return $hit;
+	}
+
+	/**
+	 * Whether automatic detection exists for a coin definition.
+	 *
+	 * @param array $coin Coin def.
+	 * @return bool
+	 */
+	private static function supports_auto_verify_coin( array $coin ) {
+		return isset( $coin['id'] ) && Xdwp_Coins::supports_auto_verify( $coin['id'] );
+	}
+
+	/**
+	 * Whether another order already holds this txid (claim or stored txid).
+	 *
+	 * @param string $txid     Txid.
+	 * @param int    $order_id This order.
+	 * @return bool
+	 */
+	private static function txid_claimed_by_other( $txid, $order_id ) {
+		$txid     = strtolower( trim( (string) $txid ) );
+		$existing = self::read_option_raw( 'xdwp_txid_claim_' . md5( $txid ) );
+		if ( '' !== $existing ) {
+			$parts = explode( '|', $existing, 2 );
+			if ( (int) $parts[0] !== absint( $order_id ) ) {
+				return true;
+			}
+		}
+		return self::txid_already_used( $txid, $order_id );
+	}
+
+	/**
+	 * a + b for decimal amount strings (exact).
+	 *
+	 * @param string $a A.
+	 * @param string $b B.
+	 * @return string
+	 */
+	public static function amount_add( $a, $b ) {
+		return self::trim_decimal( self::e18_to_decimal( self::e18_add( self::to_e18( '' === (string) $a ? '0' : $a ), self::to_e18( $b ) ) ) );
+	}
+
+	/**
+	 * a - b (clamped at zero) for decimal amount strings (exact).
+	 *
+	 * @param string $a A.
+	 * @param string $b B.
+	 * @return string
+	 */
+	public static function amount_sub( $a, $b ) {
+		return self::trim_decimal( self::e18_to_decimal( self::e18_sub( self::to_e18( $a ), self::to_e18( $b ) ) ) );
+	}
+
+	/**
+	 * a - b rounded UP to the coin's display precision, so a customer who sends the shown
+	 * remainder never ends up a fraction short.
+	 *
+	 * @param string $a    A.
+	 * @param string $b    B.
+	 * @param array  $coin Coin def.
+	 * @return string
+	 */
+	public static function amount_sub_ceil( $a, $b, array $coin ) {
+		$diff     = self::e18_sub( self::to_e18( $a ), self::to_e18( $b ) );
+		$decimals = min( isset( $coin['decimals'] ) ? (int) $coin['decimals'] : 8, 8 );
+		$step     = '1' . str_repeat( '0', 18 - $decimals );
+		$padded   = str_pad( $diff, 19, '0', STR_PAD_LEFT );
+		$tail     = ltrim( substr( $padded, -( 18 - $decimals ) ), '0' );
+		$floor    = self::e18_sub( $diff, '' === $tail ? '0' : $tail );
+		$rounded  = ( '' === $tail ) ? $diff : self::e18_add( $floor, $step );
+		return self::trim_decimal( self::e18_to_decimal( $rounded ) );
+	}
+
+	/**
+	 * Amount × percent / 100, exact (so a transfer of exactly 50% is inside the 50% floor).
+	 *
+	 * @param string $amount  Amount.
+	 * @param int    $percent Percentage.
+	 * @return string
+	 */
+	private static function scale_amount( $amount, $percent ) {
+		$product  = self::e18_mul_small( self::to_e18( $amount ), (int) $percent );
+		$quotient = '';
+		$rest     = 0;
+		$len      = strlen( $product );
+		for ( $i = 0; $i < $len; $i++ ) {
+			$rest      = $rest * 10 + (int) $product[ $i ];
+			$quotient .= (string) intdiv( $rest, 100 );
+			$rest      = $rest % 100;
+		}
+		$quotient = ltrim( $quotient, '0' );
+		return self::e18_to_decimal( '' === $quotient ? '0' : $quotient );
+	}
+
+
+	/**
+	 * Strip trailing zeros from a decimal string.
+	 *
+	 * @param string $value Value.
+	 * @return string
+	 */
+	private static function trim_decimal( $value ) {
+		$value = (string) $value;
+		if ( false !== strpos( $value, '.' ) ) {
+			$value = rtrim( rtrim( $value, '0' ), '.' );
+		}
+		return '' === $value ? '0' : $value;
+	}
+
 
 	/**
 	 * Atomically create an option only if it does not already exist.
@@ -99,7 +430,40 @@ class Xdwp_Verifier {
 				$value
 			)
 		);
+		self::forget_option_cache( $key );
 		return 1 === (int) $inserted;
+	}
+
+	/**
+	 * Read a lock/claim/reservation option straight from the database.
+	 *
+	 * These rows are written with raw SQL (INSERT IGNORE / compare-and-swap UPDATE), which
+	 * bypasses WordPress's option cache. get_option() can then return a stale value — or ''
+	 * from the cached "option does not exist" list — and with a persistent object cache
+	 * (Redis, Memcached) that stale answer outlives the request.
+	 *
+	 * @param string $key Option name.
+	 * @return string '' when absent.
+	 */
+	public static function read_option_raw( $key ) {
+		global $wpdb;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$value = $wpdb->get_var( $wpdb->prepare( "SELECT option_value FROM {$wpdb->options} WHERE option_name = %s LIMIT 1", $key ) );
+		return null === $value ? '' : (string) $value;
+	}
+
+	/**
+	 * Drop cached copies of an option written with raw SQL (value and "does not exist" entry).
+	 *
+	 * @param string $key Option name.
+	 */
+	public static function forget_option_cache( $key ) {
+		wp_cache_delete( $key, 'options' );
+		$notoptions = wp_cache_get( 'notoptions', 'options' );
+		if ( is_array( $notoptions ) && isset( $notoptions[ $key ] ) ) {
+			unset( $notoptions[ $key ] );
+			wp_cache_set( 'notoptions', $notoptions, 'options' );
+		}
 	}
 
 	/**
@@ -385,7 +749,7 @@ class Xdwp_Verifier {
 			'relation' => 'AND',
 			array(
 				'key'     => '_xdwp_status',
-				'value'   => array( 'awaiting', 'expired', 'cancelled' ),
+				'value'   => array( 'awaiting', 'underpaid', 'expired', 'cancelled' ),
 				'compare' => 'IN',
 			),
 			// Other coins on the same address (ETH vs USDT_ETH) are told apart by the
@@ -434,11 +798,42 @@ class Xdwp_Verifier {
 				if ( '' !== $peer_amount ) {
 					$amounts[] = $peer_amount;
 				}
+				$peer_remainder = (string) Xdwp_Order::meta( $peer, 'remainder' );
+				if ( '' !== $peer_remainder ) {
+					$amounts[] = $peer_remainder;
+				}
 			}
 			++$page;
 		} while ( count( $batch ) === $per_page );
 
 		return $amounts;
+	}
+
+	/**
+	 * Whether an exact amount is currently reserved for another order on any of the coin's
+	 * addresses (reservations outlive abandoned orders by a day, so open-order amounts alone
+	 * do not show every taken slot).
+	 *
+	 * @param string $coin_id Coin ID.
+	 * @param string $amount  Amount.
+	 * @return bool
+	 */
+	public static function amount_slot_taken( $coin_id, $amount ) {
+		$window = (int) Xdwp_Settings::get( 'payment_window', 60 );
+		$grace  = (int) Xdwp_Settings::get( 'expiry_grace_minutes', 30 );
+		$ttl    = max( HOUR_IN_SECONDS, ( ( $window + $grace ) * MINUTE_IN_SECONDS ) + DAY_IN_SECONDS );
+		foreach ( Xdwp_Wallets::get_addresses( $coin_id ) as $address ) {
+			$existing = self::read_option_raw( 'xdwp_amt_' . md5( strtolower( trim( (string) $address ) ) . '|' . (string) $amount ) );
+			if ( '' === $existing ) {
+				continue;
+			}
+			$parts   = explode( '|', $existing, 2 );
+			$claimed = isset( $parts[1] ) ? (int) $parts[1] : 0;
+			if ( $claimed && ( time() - $claimed ) <= $ttl ) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/**
@@ -503,7 +898,7 @@ class Xdwp_Verifier {
 		$ttl     = max( HOUR_IN_SECONDS, ( ( $window + $grace ) * MINUTE_IN_SECONDS ) + DAY_IN_SECONDS );
 
 		if ( ! self::atomic_add_option( $key, $payload ) ) {
-			$existing = (string) get_option( $key, '' );
+			$existing = self::read_option_raw( $key );
 			$parts    = explode( '|', $existing, 2 );
 			$owner    = isset( $parts[0] ) ? (int) $parts[0] : 0;
 			$claimed  = isset( $parts[1] ) ? (int) $parts[1] : 0;
@@ -522,6 +917,7 @@ class Xdwp_Verifier {
 						$existing
 					)
 				);
+				self::forget_option_cache( $key );
 				return 1 === $updated;
 			}
 			return false;
@@ -546,7 +942,7 @@ class Xdwp_Verifier {
 			return;
 		}
 		$key      = 'xdwp_amt_' . md5( $address . '|' . $amount );
-		$existing = (string) get_option( $key, '' );
+		$existing = self::read_option_raw( $key );
 		if ( '' === $existing ) {
 			return;
 		}
@@ -583,7 +979,7 @@ class Xdwp_Verifier {
 			return;
 		}
 		$key      = 'xdwp_txid_claim_' . md5( $txid );
-		$existing = (string) get_option( $key, '' );
+		$existing = self::read_option_raw( $key );
 		if ( '' === $existing ) {
 			return;
 		}
@@ -617,7 +1013,7 @@ class Xdwp_Verifier {
 		$payload   = absint( $order_id ) . '|' . time();
 
 		if ( ! self::atomic_add_option( $claim_key, $payload ) ) {
-			$existing = (string) get_option( $claim_key, '' );
+			$existing = self::read_option_raw( $claim_key );
 			$parts    = explode( '|', $existing, 2 );
 			$owner    = isset( $parts[0] ) ? (int) $parts[0] : 0;
 			$claimed  = isset( $parts[1] ) ? (int) $parts[1] : 0;
@@ -638,6 +1034,7 @@ class Xdwp_Verifier {
 						$existing
 					)
 				);
+				self::forget_option_cache( $claim_key );
 				if ( 1 !== $updated ) {
 					return false;
 				}
@@ -773,8 +1170,12 @@ class Xdwp_Verifier {
 	 * @return bool
 	 */
 	private static function amount_in_band( $value, $min, $max ) {
-		$v = self::to_e18( $value );
-		return self::e18_cmp( $v, self::to_e18( $min ) ) >= 0 && self::e18_cmp( $v, self::to_e18( $max ) ) <= 0;
+		$v  = self::to_e18( $value );
+		$ok = self::e18_cmp( $v, self::to_e18( $min ) ) >= 0 && self::e18_cmp( $v, self::to_e18( $max ) ) <= 0;
+		if ( $ok ) {
+			self::$last_match_e18 = $v;
+		}
+		return $ok;
 	}
 
 	/**
@@ -882,7 +1283,11 @@ class Xdwp_Verifier {
 		} else {
 			$e18 = strlen( $raw ) > $decimals - 18 ? substr( $raw, 0, strlen( $raw ) - ( $decimals - 18 ) ) : '0';
 		}
-		return self::e18_cmp( $e18, self::to_e18( $min ) ) >= 0 && self::e18_cmp( $e18, self::to_e18( $max ) ) <= 0;
+		$ok = self::e18_cmp( $e18, self::to_e18( $min ) ) >= 0 && self::e18_cmp( $e18, self::to_e18( $max ) ) <= 0;
+		if ( $ok ) {
+			self::$last_match_e18 = $e18;
+		}
+		return $ok;
 	}
 
 

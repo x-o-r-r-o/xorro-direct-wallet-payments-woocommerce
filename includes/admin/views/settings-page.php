@@ -157,6 +157,17 @@ $active  = isset( $tabs[ $tab ] ) ? $tabs[ $tab ] : $tabs['general'];
 												<input type="checkbox" name="xdwp[auto_verify]" value="yes" <?php checked( ( $settings['auto_verify'] ?? 'yes' ), 'yes' ); ?> />
 												<span><?php esc_html_e( 'Poll public block explorers / RPCs and mark orders paid when payment is detected.', 'xorro-direct-wallet-payments-woocommerce' ); ?></span>
 											</label>
+											<p class="description"><?php esc_html_e( 'Also detects partial payments (the customer is asked for the rest) and overpayments of up to 10%.', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
+										</td>
+									</tr>
+									<tr>
+										<th scope="row"><?php esc_html_e( 'Late payments', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
+										<td>
+											<label class="cc-check">
+												<input type="checkbox" name="xdwp[late_payment_scan]" value="yes" <?php checked( ( $settings['late_payment_scan'] ?? 'yes' ), 'yes' ); ?> />
+												<span><?php esc_html_e( 'Check orders that expired in the last 7 days and email me if a payment arrives late.', 'xorro-direct-wallet-payments-woocommerce' ); ?></span>
+											</label>
+											<p class="description"><?php esc_html_e( 'The order is not changed automatically — you decide whether to complete it or refund.', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
 										</td>
 									</tr>
 									<tr>

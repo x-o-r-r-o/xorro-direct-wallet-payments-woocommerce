@@ -29,6 +29,7 @@ Each order gets a slightly unique amount (usually a few base units, e.g. 10 sato
 - Optional crypto price next to product prices
 - Checkout branding: title, description, custom icon and size, icon/text/both
 - Manual **"Mark payment received"** on the order screen, with transaction-ID reuse protection
+- **No lost payments:** payment details in customer emails, a reminder before the window closes, partial-payment handling (customer is asked for the rest), overpayment notes, and a late-payment scan that alerts you when money arrives after an order expired
 - Admin alerts when an explorer API rejects requests (e.g. a missing or limited API key), so verification never fails silently
 - Automatic updates from GitHub Releases — every package must carry the maintainer's Ed25519 signature
 
@@ -114,6 +115,21 @@ Known issues outside this plugin: LiteSpeed's **"JS Combine"** option, and Autop
 
 Found a vulnerability? Please open a private [security advisory](https://github.com/x-o-r-r-o/xorro-direct-wallet-payments-woocommerce/security/advisories/new) rather than a public issue.
 
+## Developer hooks
+
+| Hook | Type | Fires when |
+|---|---|---|
+| `xdwp_order_paid` ( `$order, $txid` ) | action | An order is confirmed paid |
+| `xdwp_order_underpaid` ( `$order, $received, $remainder, $txid` ) | action | A partial payment arrives |
+| `xdwp_order_overpaid` ( `$order, $excess` ) | action | An order is paid with more than was due |
+| `xdwp_order_expired` ( `$order, $previous_status` ) | action | The payment window closes unpaid |
+| `xdwp_late_payment_detected` ( `$order, $txid, $amount` ) | action | Money arrives for an expired order |
+| `xdwp_send_payment_reminder` ( `$order` ) | action | The pre-expiry reminder is due |
+| `xdwp_coins` | filter | The coin list is built |
+| `xdwp_rate_limit_client_ip` | filter | Rate limiting identifies the client IP |
+
+Email templates can be overridden in your theme under `woocommerce/emails/` (`xdwp-payment-details.php`, `xdwp-payment-reminder.php`, `xdwp-partial-payment.php`, `xdwp-payment-alert.php`, plus `plain/` versions).
+
 ## External services
 
 The plugin never contacts the author's servers. It calls public price and blockchain APIs (CoinGecko, Etherscan, mempool.space, Blockchair, TronGrid, toncenter and others) only when a checkout quote is shown or a payment is being verified. The full list — purpose, data sent, terms and privacy links — is in [`readme.txt`](readme.txt) under **External services**. Suggested privacy-policy text is added under **Settings → Privacy**.
@@ -149,6 +165,13 @@ Pushing a `vX.Y.Z` tag runs the Release workflow, which builds the ZIP, its SHA-
 ## Changelog
 
 Full details for every release are in [`readme.txt`](readme.txt).
+
+### 1.6.0 — no lost payments
+- Payment details (amount, address, network, deadline, payment-page button) in the customer on-hold / invoice emails, plus a reminder email before the window closes.
+- Partial payments (≥ 50%): the order becomes "partially paid", the customer is emailed and shown the remaining amount, and it completes automatically when the rest arrives.
+- Overpayments up to 10% complete the order and are noted for refund; late payments after expiry are detected and emailed to you.
+- New WooCommerce emails you can switch on/off and customise: Crypto payment reminder, Crypto partial payment, Crypto payment needs attention (to you).
+- Fixes: lock and reservation checks are now safe with Redis/Memcached object caches; checkout no longer retries an amount that is still reserved.
 
 ### 1.5.38
 - Fix: new coin icons now appear right after an update. Icon URLs are versioned, so browsers and CDNs stop serving old cached icons.

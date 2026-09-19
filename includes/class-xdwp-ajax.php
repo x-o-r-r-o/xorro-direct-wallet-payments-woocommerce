@@ -184,7 +184,7 @@ class Xdwp_Ajax {
 		// Throttle live chain checks from the browser poll (cron remains primary).
 		// Only while WooCommerce still expects payment (blocks cancelled/refunded resurrection).
 		if (
-			'awaiting' === $status
+			in_array( $status, array( 'awaiting', 'underpaid' ), true )
 			&& in_array( $order->get_status(), array( 'pending', 'on-hold' ), true )
 			&& 'yes' === Xdwp_Settings::get( 'auto_verify', 'yes' )
 		) {

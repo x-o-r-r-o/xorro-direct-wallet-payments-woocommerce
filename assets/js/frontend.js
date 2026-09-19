@@ -266,6 +266,11 @@
 					}
 					return;
 				}
+				if (res.data.status === 'underpaid' && data.status !== 'underpaid') {
+					// A partial payment arrived: reload to show the remaining amount and new QR.
+					window.location.reload();
+					return;
+				}
 				data.status = res.data.status;
 				if (box) {
 					box.setAttribute('data-status', data.status);
@@ -306,7 +311,7 @@
 	updateTimer();
 	window.setInterval(updateTimer, 1000);
 
-	if (data.status === 'awaiting') {
+	if (data.status === 'awaiting' || data.status === 'underpaid') {
 		if (statusEl) {
 			statusEl.textContent = data.i18n.waiting || 'Waiting for payment…';
 		}
