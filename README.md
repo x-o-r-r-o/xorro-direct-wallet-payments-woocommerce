@@ -124,6 +124,7 @@ Found a vulnerability? Please open a private [security advisory](https://github.
 | `xdwp_order_overpaid` ( `$order, $excess` ) | action | An order is paid with more than was due |
 | `xdwp_order_expired` ( `$order, $previous_status` ) | action | The payment window closes unpaid |
 | `xdwp_late_payment_detected` ( `$order, $txid, $amount` ) | action | Money arrives for an expired order |
+| `xdwp_ambiguous_payment` ( `$order, $txid, $amount` ) | action | A non-exact transfer could belong to more than one order |
 | `xdwp_send_payment_reminder` ( `$order` ) | action | The pre-expiry reminder is due |
 | `xdwp_coins` | filter | The coin list is built |
 | `xdwp_rate_limit_client_ip` | filter | Rate limiting identifies the client IP |
@@ -172,6 +173,7 @@ Full details for every release are in [`readme.txt`](readme.txt).
 - Overpayments up to 10% complete the order and are noted for refund; late payments after expiry are detected and emailed to you.
 - New WooCommerce emails you can switch on/off and customise: Crypto payment reminder, Crypto partial payment, Crypto payment needs attention (to you).
 - Fixes: lock and reservation checks are now safe with Redis/Memcached object caches; checkout no longer retries an amount that is still reserved.
+- Security: partial, over and late transfers are only credited when they can belong to a single order; otherwise you get an "unassigned payment" email (prevents another customer's fee-short payment being credited to the wrong order on a shared address). Plus fixes from an independent audit of the release (double counting, expiry races, early/large top-ups, re-paying partially paid orders).
 
 ### 1.5.38
 - Fix: new coin icons now appear right after an update. Icon URLs are versioned, so browsers and CDNs stop serving old cached icons.

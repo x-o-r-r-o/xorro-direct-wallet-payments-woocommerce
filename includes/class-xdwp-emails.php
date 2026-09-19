@@ -31,6 +31,7 @@ class Xdwp_Emails {
 		add_action( 'xdwp_order_overpaid', array( __CLASS__, 'on_overpaid' ), 10, 2 );
 		add_action( 'xdwp_late_payment_detected', array( __CLASS__, 'on_late_payment' ), 10, 3 );
 		add_action( 'xdwp_order_expired', array( __CLASS__, 'on_expired' ), 10, 2 );
+		add_action( 'xdwp_ambiguous_payment', array( __CLASS__, 'on_ambiguous' ), 10, 3 );
 	}
 
 	/**
@@ -164,6 +165,15 @@ class Xdwp_Emails {
 	 */
 	public static function on_late_payment( $order, $txid, $amount ) {
 		self::alert( $order, 'late', $amount, $txid );
+	}
+
+	/**
+	 * @param WC_Order $order  Order it was found for.
+	 * @param string   $txid   Txid.
+	 * @param string   $amount Amount.
+	 */
+	public static function on_ambiguous( $order, $txid, $amount ) {
+		self::alert( $order, 'ambiguous', $amount, $txid );
 	}
 
 	/**

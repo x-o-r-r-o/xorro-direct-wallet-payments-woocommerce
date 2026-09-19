@@ -67,7 +67,7 @@ class Xdwp_Order {
 			return;
 		}
 		$status = (string) self::meta( $order, 'status' );
-		if ( ! in_array( $status, array( 'awaiting', 'expired' ), true ) ) {
+		if ( ! in_array( $status, array( 'awaiting', 'underpaid', 'expired' ), true ) ) {
 			return;
 		}
 		$order->update_meta_data( '_xdwp_status', 'cancelled' );
@@ -162,6 +162,11 @@ class Xdwp_Order {
 		$amount   = '';
 		$reserved = false;
 
+		// A new payment attempt (e.g. paying a failed order again) starts clean.
+		foreach ( array( 'txid', 'received', 'partial_received', 'remainder', 'partial_txids', 'partial_since', 'overpaid', 'late_txid', 'late_amount', 'late_checked', 'reminder_sent' ) as $stale ) {
+			$order->delete_meta_data( '_xdwp_' . $stale );
+		}
+
 		// A collision with another open order on the same address (overlapping match bands)
 		// is retried with the next rotated address and a freshly minted unique amount rather
 		// than failing the checkout. The first attempt uses the quote the customer saw.
@@ -228,7 +233,7 @@ class Xdwp_Order {
 
 		$order_id = $order->get_id();
 		$lock_key = 'xdwp_paying_' . $order_id;
-		$now      = (string) time();
+		$now      = time() . ':' . wp_generate_password( 8, false ); // (int) still reads the age; token proves ownership.
 
 		// Atomic lock via a real INSERT-only compare-and-set; stale takeover uses compare-and-swap.
 		if ( ! Xdwp_Verifier::atomic_add_option( $lock_key, $now ) ) {
@@ -339,7 +344,12 @@ class Xdwp_Order {
 			}
 			do_action( 'xdwp_order_paid', $order, (string) self::meta( $order, 'txid' ) );
 		} finally {
-			delete_option( $lock_key );
+			// Release only our own lock: after a stale takeover, a slow earlier worker must not
+			// delete the newer worker's lock.
+			global $wpdb;
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->options} WHERE option_name = %s AND option_value = %s", $lock_key, $now ) );
+			Xdwp_Verifier::forget_option_cache( $lock_key );
 		}
 	}
 
@@ -378,6 +388,17 @@ class Xdwp_Order {
 			self::mark_paid( $order );
 			return;
 		}
+
+		// The last-chance check may have just recorded a partial payment (which restarts the
+		// window), or another request may have changed the order: never expire a stale copy.
+		$fresh = wc_get_order( $order->get_id() );
+		if ( ! $fresh
+			|| (string) self::meta( $fresh, 'status' ) !== $xdwp_status
+			|| (int) self::meta( $fresh, 'expires' ) !== $expires
+			|| ! in_array( $fresh->get_status(), array( 'on-hold', 'pending' ), true ) ) {
+			return;
+		}
+		$order = $fresh;
 
 		$order->update_meta_data( '_xdwp_status', 'expired' );
 		$order->save();
@@ -426,7 +447,7 @@ class Xdwp_Order {
 		if ( ! $order || ! Xdwp_Order::is_ours( $order ) ) {
 			return;
 		}
-		if ( 'awaiting' !== Xdwp_Order::meta( $order, 'status' ) ) {
+		if ( ! in_array( (string) Xdwp_Order::meta( $order, 'status' ), array( 'awaiting', 'underpaid' ), true ) ) {
 			return;
 		}
 		self::load_template( $order );
@@ -744,7 +765,9 @@ class Xdwp_Order {
 
 		$txid = isset( $_POST['xdwp_txid'] ) ? sanitize_text_field( wp_unslash( $_POST['xdwp_txid'] ) ) : '';
 		$txid = strtolower( preg_replace( '/\s+/', '', (string) $txid ) );
-		if ( strlen( $txid ) < 8 || strlen( $txid ) > 128 || ! preg_match( '/^[a-z0-9x]+$/', $txid ) ) {
+		// Letters/digits plus the separators real txids use: Hedera 0.0.x-sec-nanos, TON base64 (+/=),
+		// Aptos version ids, and the pre-filled late-payment IDs.
+		if ( strlen( $txid ) < 8 || strlen( $txid ) > 160 || ! preg_match( '#^[a-z0-9.\-_@+/=:]+$#', $txid ) ) {
 			wp_die( esc_html__( 'A valid on-chain transaction ID is required.', 'xorro-direct-wallet-payments-woocommerce' ), '', array( 'back_link' => true, 'response' => 400 ) );
 		}
 		if ( empty( $_POST['xdwp_confirm_manual'] ) ) {

@@ -14,6 +14,9 @@ delete_option( 'xdwp_amount_seq' );
 delete_option( 'woocommerce_xdwp_settings' );
 delete_option( 'xdwp_cron_running' );
 delete_option( 'xdwp_explorer_errors' );
+delete_option( 'woocommerce_xdwp_payment_reminder_settings' );
+delete_option( 'woocommerce_xdwp_partial_payment_settings' );
+delete_option( 'woocommerce_xdwp_payment_alert_settings' );
 
 wp_clear_scheduled_hook( 'xdwp_check_payments' );
 wp_clear_scheduled_hook( 'xdwp_refresh_prices' );
@@ -27,6 +30,7 @@ $patterns = array(
 	'xdwp_paying_',
 	'xdwp_txid_claim_',
 	'xdwp_amt_',
+	'xdwp_ambiguous_',
 );
 
 foreach ( $patterns as $prefix ) {

@@ -36,6 +36,12 @@ class Xdwp_Privacy {
 			'_xdwp_started'      => __( 'Payment window started', 'xorro-direct-wallet-payments-woocommerce' ),
 			'_xdwp_expires'      => __( 'Payment window expires', 'xorro-direct-wallet-payments-woocommerce' ),
 			'_xdwp_confirmed_at' => __( 'Confirmed at', 'xorro-direct-wallet-payments-woocommerce' ),
+			'_xdwp_received'      => __( 'Amount received', 'xorro-direct-wallet-payments-woocommerce' ),
+			'_xdwp_remainder'     => __( 'Amount still due', 'xorro-direct-wallet-payments-woocommerce' ),
+			'_xdwp_partial_txids' => __( 'Partial payment transaction IDs', 'xorro-direct-wallet-payments-woocommerce' ),
+			'_xdwp_overpaid'      => __( 'Overpaid amount', 'xorro-direct-wallet-payments-woocommerce' ),
+			'_xdwp_late_txid'     => __( 'Late payment transaction ID', 'xorro-direct-wallet-payments-woocommerce' ),
+			'_xdwp_late_amount'   => __( 'Late payment amount', 'xorro-direct-wallet-payments-woocommerce' ),
 		);
 	}
 

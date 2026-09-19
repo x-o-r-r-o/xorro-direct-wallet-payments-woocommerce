@@ -389,6 +389,13 @@ class Xdwp_Gateway extends WC_Payment_Gateway {
 			return array( 'result' => 'failure' );
 		}
 
+		// A failed order that already received a partial or late crypto payment must not be
+		// charged the full amount again — the store owner completes or refunds it instead.
+		if ( '' !== (string) Xdwp_Order::meta( $order, 'received' ) || '' !== (string) Xdwp_Order::meta( $order, 'late_txid' ) ) {
+			wc_add_notice( __( 'We already received a crypto payment for this order. Please contact us to complete it — do not send the full amount again.', 'xorro-direct-wallet-payments-woocommerce' ), 'error' );
+			return array( 'result' => 'failure' );
+		}
+
 		$coin_id = $this->get_selected_coin();
 		$payable = Xdwp_Coins::get_payable();
 

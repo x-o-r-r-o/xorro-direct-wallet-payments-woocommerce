@@ -66,6 +66,7 @@ class Xdwp_Email_Payment_Alert extends WC_Email {
 			'underpaid_expired' => __( 'partial payment, window expired', 'xorro-direct-wallet-payments-woocommerce' ),
 			'overpaid'          => __( 'overpayment received', 'xorro-direct-wallet-payments-woocommerce' ),
 			'late'              => __( 'payment arrived after expiry', 'xorro-direct-wallet-payments-woocommerce' ),
+			'ambiguous'         => __( 'unassigned payment to check', 'xorro-direct-wallet-payments-woocommerce' ),
 		);
 		return isset( $labels[ $reason ] ) ? $labels[ $reason ] : __( 'crypto payment issue', 'xorro-direct-wallet-payments-woocommerce' );
 	}
@@ -95,6 +96,9 @@ class Xdwp_Email_Payment_Alert extends WC_Email {
 			case 'late':
 				/* translators: 1: amount, 2: symbol, 3: due */
 				return sprintf( __( '%1$s %2$s arrived for this order after its payment window had closed (%3$s %2$s was due). The order was not changed. Check the payment, then complete it with "Mark payment received" (the transaction ID is filled in) or refund the customer.', 'xorro-direct-wallet-payments-woocommerce' ), '' !== $amount ? $amount : '?', $symbol, $due );
+			case 'ambiguous':
+				/* translators: 1: amount, 2: symbol */
+				return sprintf( __( 'A transfer of %1$s %2$s arrived on this order\'s address, but it does not match any order exactly and could belong to more than one open order (for example a customer whose exchange deducted a fee). It was not credited automatically. Check which customer sent it, then use "Mark payment received" on that order.', 'xorro-direct-wallet-payments-woocommerce' ), $amount, $symbol );
 		}
 		return '';
 	}

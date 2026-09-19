@@ -24,7 +24,9 @@ class Xdwp_Install {
 			static function ( $schedules ) {
 				$schedules['xdwp_every_minute'] = array(
 					'interval' => 60,
-					'display'  => __( 'Every Minute (Xorro Wallet Payments)', 'xorro-direct-wallet-payments-woocommerce' ),
+					'display'  => did_action( 'init' )
+						? __( 'Every Minute (Xorro Wallet Payments)', 'xorro-direct-wallet-payments-woocommerce' )
+						: 'Every Minute (Xorro Wallet Payments)',
 				);
 				return $schedules;
 			}

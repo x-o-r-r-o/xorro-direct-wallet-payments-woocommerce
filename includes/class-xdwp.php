@@ -96,9 +96,13 @@ final class Xdwp {
 	 * @return array
 	 */
 	public function add_cron_schedules( $schedules ) {
+		// Themes/plugins may schedule events (and so build this list) before `init`; translating
+		// then triggers WordPress's "translation loaded too early" notice (seen with The7).
 		$schedules['xdwp_every_minute'] = array(
 			'interval' => 60,
-			'display'  => __( 'Every Minute (Xorro Wallet Payments)', 'xorro-direct-wallet-payments-woocommerce' ),
+			'display'  => did_action( 'init' )
+				? __( 'Every Minute (Xorro Wallet Payments)', 'xorro-direct-wallet-payments-woocommerce' )
+				: 'Every Minute (Xorro Wallet Payments)',
 		);
 		return $schedules;
 	}

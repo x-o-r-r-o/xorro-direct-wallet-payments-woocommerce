@@ -230,7 +230,12 @@ foreach ( array( 'payment-reminder', 'partial-payment', 'payment-alert' ) as $xd
 }
 xdwp_assert( false !== strpos( $verifier_src, 'function scan_partial_or_overpayment(' ), 'partial / overpayment detection' );
 xdwp_assert( false !== strpos( $verifier_src, 'is_own_partial( $order, $hit' ), 'a partial transfer is never counted twice' );
-xdwp_assert( false !== strpos( $verifier_src, 'amounts_overlap( $hit[' ), "partials never taken from another order's amount" );
+xdwp_assert( false !== strpos( $verifier_src, 'transfer_is_ambiguous( $coin, $address, $order->get_id(), $hit[' ), 'non-exact transfers credited only when unambiguous (shared-address safety)' );
+xdwp_assert( false !== strpos( $verifier_src, 'function flag_ambiguous_transfer(' ), 'ambiguous transfers alert the store owner once' );
+xdwp_assert( false !== strpos( $verifier_src, "=== strtolower( (string) Xdwp_Order::meta( \$order, 'txid' ) )" ), 'final payment recorded idempotently' );
+$gateway_src = file_get_contents( $root . '/includes/class-xdwp-gateway.php' );
+xdwp_assert( strpos( $gateway_src, 'already received a crypto payment' ) > strpos( $gateway_src, 'public function process_payment' ), 're-pay guard lives in process_payment' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp.php' ), "did_action( 'init' )" ), 'cron label not translated before init' );
 xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-cron.php' ), 'function scan_late_payments(' ), 'late payment scan' );
 xdwp_assert( false !== strpos( $verifier_src, 'function read_option_raw(' ) && false === strpos( $verifier_src, "get_option( \$key, '' )" ), 'locks/claims read uncached (object-cache safe)' );
 xdwp_assert( false !== strpos( $prices_src, 'amount_slot_taken(' ), 'unique amount skips reserved slots' );

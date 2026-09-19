@@ -26,6 +26,8 @@ defined( 'ABSPATH' ) || exit;
 
 	<?php if ( 'paid' === $status ) : ?>
 		<p class="xdwp-box__success"><?php esc_html_e( 'Payment confirmed. Thank you!', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
+	<?php elseif ( 'expired' === $status && '' !== (string) $received ) : ?>
+		<p class="xdwp-box__error"><?php esc_html_e( 'The payment window closed before the full amount arrived. We have received part of your payment — please contact us and we will complete or refund your order. Do not send more.', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
 	<?php elseif ( 'expired' === $status ) : ?>
 		<p class="xdwp-box__error"><?php esc_html_e( 'Payment window expired. Please place a new order.', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
 	<?php else : ?>

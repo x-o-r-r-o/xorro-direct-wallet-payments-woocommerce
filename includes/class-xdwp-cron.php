@@ -155,8 +155,8 @@ class Xdwp_Cron {
 	/** Re-check an expired order for a late payment at most this often. */
 	const LATE_RECHECK = 6 * HOUR_IN_SECONDS;
 
-	/** Expired orders checked per run (each check is one explorer lookup). */
-	const LATE_BATCH = 10;
+	/** Expired orders checked per run (one explorer lookup each; some explorers need several calls). */
+	const LATE_BATCH = 5;
 
 	/**
 	 * Send the "payment window closing" email once per order (and again after a partial
@@ -208,6 +208,21 @@ class Xdwp_Cron {
 					array(
 						'key'     => '_xdwp_late_txid',
 						'compare' => 'NOT EXISTS',
+					),
+					// Only orders not checked in the last LATE_RECHECK, so older expired orders are
+					// reached too instead of the newest 30 being re-selected every run.
+					array(
+						'relation' => 'OR',
+						array(
+							'key'     => '_xdwp_late_checked',
+							'compare' => 'NOT EXISTS',
+						),
+						array(
+							'key'     => '_xdwp_late_checked',
+							'value'   => time() - self::LATE_RECHECK,
+							'compare' => '<',
+							'type'    => 'NUMERIC',
+						),
 					),
 				),
 				'orderby'        => 'date',

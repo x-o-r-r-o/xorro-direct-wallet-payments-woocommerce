@@ -83,7 +83,14 @@ class Xdwp_Verifier {
 		}
 
 		$band = self::match_band( $target, $coin );
-		$hit  = self::find_payment_detailed( $coin, $address, $band['min'], $band['max'], $since );
+		// Exact remainder: search from the order start so a top-up sent before the partial was
+		// detected still counts; if that finds the partial itself (remainder == partial), look
+		// again from detection time only.
+		$exact_since = $underpaid ? max( 0, $started - 30 ) : $since;
+		$hit         = self::find_payment_detailed( $coin, $address, $band['min'], $band['max'], $exact_since );
+		if ( $hit && $underpaid && self::is_own_partial( $order, $hit['txid'] ) ) {
+			$hit = self::find_payment_detailed( $coin, $address, $band['min'], $band['max'], $since );
+		}
 		if ( $hit && ! self::is_own_partial( $order, $hit['txid'] ) ) {
 			return self::record_final_payment( $order, $hit['txid'], $underpaid, $hit['amount'] );
 		}
@@ -111,25 +118,26 @@ class Xdwp_Verifier {
 		}
 		set_transient( $throttle, 1, self::WIDE_SCAN_INTERVAL );
 
-		$floor   = self::scale_amount( $target, self::PARTIAL_FLOOR );
-		$ceiling = self::scale_amount( $target, self::OVERPAY_CEILING );
+		$underpaid = ( 'underpaid' === (string) Xdwp_Order::meta( $order, 'status' ) );
+		$floor     = self::scale_amount( $target, self::PARTIAL_FLOOR );
+		// A top-up often has to be larger than the (small) remainder — exchange minimums, or the
+		// fee added on top — so allow up to 10% of the whole order over the remainder.
+		$ceiling = $underpaid
+			? self::amount_add( $target, self::scale_amount( (string) Xdwp_Order::meta( $order, 'amount' ), self::OVERPAY_CEILING - 100 ) )
+			: self::scale_amount( $target, self::OVERPAY_CEILING );
 		$hit     = self::find_payment_detailed( $coin, $address, $floor, $ceiling, $since );
 		if ( ! $hit || '' === $hit['amount'] || self::is_own_partial( $order, $hit['txid'] ) ) {
 			return false;
 		}
 
-		// Never take a transfer that could be another open order's exact payment.
-		$peers = self::peer_amounts( $coin, $address, $order->get_id() );
-		if ( false === $peers ) {
+		// Only credit a non-exact transfer when it can belong to this order alone. On a shared
+		// address a fee-short payment from another customer (or unrelated wallet income) could
+		// otherwise be credited to whichever open order is scanned first.
+		if ( self::transfer_is_ambiguous( $coin, $address, $order->get_id(), $hit['amount'] ) ) {
+			self::flag_ambiguous_transfer( $order, $hit['txid'], $hit['amount'] );
 			return false;
 		}
-		foreach ( $peers as $peer_amount ) {
-			if ( self::amounts_overlap( $hit['amount'], $peer_amount, $coin ) ) {
-				return false;
-			}
-		}
 
-		$underpaid = ( 'underpaid' === (string) Xdwp_Order::meta( $order, 'status' ) );
 		if ( self::e18_cmp( self::to_e18( $hit['amount'] ), self::to_e18( $band['max'] ) ) > 0 ) {
 			return self::record_final_payment( $order, $hit['txid'], $underpaid, $hit['amount'] );
 		}
@@ -153,10 +161,13 @@ class Xdwp_Verifier {
 		if ( ! self::claim_txid( $txid, $order->get_id() ) ) {
 			return false;
 		}
+		if ( $txid === strtolower( (string) Xdwp_Order::meta( $order, 'txid' ) ) ) {
+			return true; // Already recorded (e.g. by a concurrent cron/AJAX pass) — never add it twice.
+		}
 		$order->update_meta_data( '_xdwp_txid', $txid );
 		if ( '' !== (string) $received ) {
 			$total = $underpaid
-				? self::amount_add( (string) Xdwp_Order::meta( $order, 'received' ), $received )
+				? self::amount_add( (string) Xdwp_Order::meta( $order, 'partial_received' ), $received )
 				: (string) $received;
 			$order->update_meta_data( '_xdwp_received', $total );
 			$due  = (string) Xdwp_Order::meta( $order, 'amount' );
@@ -182,17 +193,30 @@ class Xdwp_Verifier {
 	 */
 	private static function record_partial_payment( $order, array $coin, $txid, $received, $target ) {
 		$txid = strtolower( sanitize_text_field( $txid ) );
+		// Work on a fresh copy: cron, the payment-page poll and manual actions can overlap, and
+		// the order may have been expired, paid or already credited with this transfer meanwhile.
+		$order = wc_get_order( $order->get_id() );
+		if ( ! $order
+			|| ! in_array( (string) Xdwp_Order::meta( $order, 'status' ), array( 'awaiting', 'underpaid' ), true )
+			|| ! in_array( $order->get_status(), array( 'pending', 'on-hold' ), true )
+			|| self::is_own_partial( $order, $txid ) ) {
+			return;
+		}
 		if ( ! self::claim_txid( $txid, $order->get_id() ) ) {
 			return;
 		}
+		$target     = 'underpaid' === (string) Xdwp_Order::meta( $order, 'status' )
+			? (string) Xdwp_Order::meta( $order, 'remainder' )
+			: (string) Xdwp_Order::meta( $order, 'amount' );
 		$partials   = self::partial_txids( $order );
 		$partials[] = $txid;
-		$total      = self::amount_add( (string) Xdwp_Order::meta( $order, 'received' ), $received );
+		$total      = self::amount_add( (string) Xdwp_Order::meta( $order, 'partial_received' ), $received );
 		$remainder  = self::amount_sub_ceil( $target, $received, $coin );
 		$window     = max( 5, (int) Xdwp_Settings::get( 'payment_window', 60 ) ) * MINUTE_IN_SECONDS;
 
 		$order->update_meta_data( '_xdwp_partial_txids', implode( ',', array_unique( $partials ) ) );
 		$order->update_meta_data( '_xdwp_received', $total );
+		$order->update_meta_data( '_xdwp_partial_received', $total );
 		$order->update_meta_data( '_xdwp_remainder', $remainder );
 		$order->update_meta_data( '_xdwp_status', 'underpaid' );
 		$order->update_meta_data( '_xdwp_partial_since', time() );
@@ -232,6 +256,68 @@ class Xdwp_Verifier {
 	 */
 	private static function is_own_partial( $order, $txid ) {
 		return in_array( strtolower( (string) $txid ), self::partial_txids( $order ), true );
+	}
+
+	/**
+	 * Whether a non-exact transfer could also belong to another open/recent order on the same
+	 * address: it overlaps that order's exact band or falls inside its partial/overpayment window.
+	 *
+	 * @param array  $coin     Coin def.
+	 * @param string $address  Address.
+	 * @param int    $order_id This order.
+	 * @param string $amount   Transfer amount.
+	 * @return bool True when it cannot be attributed safely (also when peers can't be listed).
+	 */
+	private static function transfer_is_ambiguous( array $coin, $address, $order_id, $amount ) {
+		// Open orders, plus ones that expired within about a day: a fee-short or late transfer
+		// belongs to a live checkout, not to an order abandoned days ago or one that was
+		// cancelled. (Exact matching keeps the full retention window and cancelled orders.)
+		$window = ( (int) Xdwp_Settings::get( 'payment_window', 60 ) + (int) Xdwp_Settings::get( 'expiry_grace_minutes', 30 ) ) * MINUTE_IN_SECONDS;
+		$peers  = self::peer_amounts( $coin, $address, $order_id, $window + DAY_IN_SECONDS, false );
+		if ( false === $peers ) {
+			return true;
+		}
+		$value = self::to_e18( $amount );
+		foreach ( $peers as $peer_amount ) {
+			if ( self::amounts_overlap( $amount, $peer_amount, $coin ) ) {
+				return true;
+			}
+			$low  = self::to_e18( self::scale_amount( $peer_amount, self::PARTIAL_FLOOR ) );
+			$high = self::to_e18( self::scale_amount( $peer_amount, self::OVERPAY_CEILING ) );
+			if ( self::e18_cmp( $value, $low ) >= 0 && self::e18_cmp( $value, $high ) <= 0 ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Tell the store owner (once per transfer) that money arrived which could belong to more
+	 * than one order, so it was not credited automatically.
+	 *
+	 * @param WC_Order $order  Order being checked.
+	 * @param string   $txid   Txid.
+	 * @param string   $amount Amount.
+	 */
+	private static function flag_ambiguous_transfer( $order, $txid, $amount ) {
+		$txid = strtolower( (string) $txid );
+		if ( '' === $txid || self::txid_claimed_by_other( $txid, 0 ) ) {
+			return;
+		}
+		if ( ! self::atomic_add_option( 'xdwp_ambiguous_' . md5( $txid ), (string) time() ) ) {
+			return;
+		}
+		$coin = Xdwp_Coins::get( (string) Xdwp_Order::meta( $order, 'coin' ) );
+		$order->add_order_note(
+			sprintf(
+				/* translators: 1: amount, 2: symbol, 3: txid */
+				__( 'A transfer of %1$s %2$s (txid: %3$s) arrived that could belong to this order or another open order on the same address, so it was not credited automatically. Check which customer sent it and use "Mark payment received" on the right order.', 'xorro-direct-wallet-payments-woocommerce' ),
+				$amount,
+				$coin ? $coin['symbol'] : '',
+				$txid
+			)
+		);
+		do_action( 'xdwp_ambiguous_payment', $order, $txid, $amount );
 	}
 
 	/**
@@ -285,14 +371,11 @@ class Xdwp_Verifier {
 		if ( ! $hit || self::is_own_partial( $order, $hit['txid'] ) || self::txid_claimed_by_other( $hit['txid'], $order->get_id() ) ) {
 			return false;
 		}
-		$peers = self::peer_amounts( $coin, $address, $order->get_id() );
-		if ( false === $peers ) {
-			return false;
-		}
-		foreach ( $peers as $peer_amount ) {
-			if ( '' !== $hit['amount'] && self::amounts_overlap( $hit['amount'], $peer_amount, $coin ) ) {
-				return false;
+		if ( '' === $hit['amount'] || self::transfer_is_ambiguous( $coin, $address, $order->get_id(), $hit['amount'] ) ) {
+			if ( '' !== $hit['amount'] ) {
+				self::flag_ambiguous_transfer( $order, $hit['txid'], $hit['amount'] );
 			}
+			return false;
 		}
 		return $hit;
 	}
@@ -732,10 +815,12 @@ class Xdwp_Verifier {
 	 *
 	 * @param array  $coin     Coin def.
 	 * @param string $address  Address, or '' for every address of the coin.
-	 * @param int    $order_id Order to exclude.
+	 * @param int    $order_id   Order to exclude.
+	 * @param int    $closed_ttl Optional: ignore expired/cancelled orders that started longer ago than this.
+	 * @param bool   $include_cancelled Whether cancelled orders count.
 	 * @return array<int, string>|false False when the peer set is too large (fail closed).
 	 */
-	private static function peer_amounts( array $coin, $address, $order_id ) {
+	private static function peer_amounts( array $coin, $address, $order_id, $closed_ttl = null, $include_cancelled = true ) {
 		$amounts    = array();
 		$count      = 0;
 		$page       = 1;
@@ -788,9 +873,12 @@ class Xdwp_Verifier {
 					return false;
 				}
 				$status = (string) Xdwp_Order::meta( $peer, 'status' );
+				if ( ! $include_cancelled && 'cancelled' === $status ) {
+					continue;
+				}
 				if ( in_array( $status, array( 'expired', 'cancelled' ), true ) ) {
 					$started = (int) Xdwp_Order::meta( $peer, 'started' );
-					if ( ! $started || ( time() - $started ) > $retain_ttl ) {
+					if ( ! $started || ( time() - $started ) > ( null === $closed_ttl ? $retain_ttl : (int) $closed_ttl ) ) {
 						continue;
 					}
 				}
