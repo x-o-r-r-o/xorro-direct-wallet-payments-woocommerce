@@ -485,6 +485,128 @@ class Xdwp_Coins {
 	}
 
 	/**
+	 * Where a transaction can be looked at on each chain's public explorer.
+	 *
+	 * Keyed by verifier, because that is what identifies the chain a payment was made on.
+	 * A chain with no entry simply shows the id without a link.
+	 *
+	 * @return array<string, string> Verifier => URL with a single %s for the transaction id.
+	 */
+	public static function explorers() {
+		return array(
+			'btc'        => 'https://mempool.space/tx/%s',
+			'bch'        => 'https://blockchair.com/bitcoin-cash/transaction/%s',
+			'ltc'        => 'https://blockchair.com/litecoin/transaction/%s',
+			'doge'       => 'https://blockchair.com/dogecoin/transaction/%s',
+			'dash'       => 'https://blockchair.com/dash/transaction/%s',
+			'zec'        => 'https://blockchair.com/zcash/transaction/%s',
+			'xec'        => 'https://blockchair.com/ecash/transaction/%s',
+			'btg'        => 'https://explorer.bitcoingold.org/insight/tx/%s',
+			'firo'       => 'https://explorer.firo.org/tx/%s',
+			'xzc'        => 'https://explorer.firo.org/tx/%s',
+			'rvn'        => 'https://rvn.cryptoscope.io/tx/?txid=%s',
+			'pivx'       => 'https://explorer.pivx.link/tx/%s',
+			'dgb'        => 'https://chainz.cryptoid.info/dgb/tx.dws?%s',
+			'kmd'        => 'https://kmdexplorer.io/tx/%s',
+			'xvg'        => 'https://verge-blockchain.info/tx/%s',
+			'qtum'       => 'https://qtum.info/tx/%s',
+			'strax'      => 'https://chainz.cryptoid.info/strax/tx.dws?%s',
+			'lsk'        => 'https://liskscan.com/transaction/%s',
+			'eth'        => 'https://etherscan.io/tx/%s',
+			'ethereum'   => 'https://etherscan.io/tx/%s',
+			'etc'        => 'https://etc.blockscout.com/tx/%s',
+			'arbitrum'   => 'https://arbiscan.io/tx/%s',
+			'optimism'   => 'https://optimistic.etherscan.io/tx/%s',
+			'base'       => 'https://basescan.org/tx/%s',
+			'bsc'        => 'https://bscscan.com/tx/%s',
+			'matic'      => 'https://polygonscan.com/tx/%s',
+			'avax'       => 'https://snowtrace.io/tx/%s',
+			'ftm'        => 'https://ftmscan.com/tx/%s',
+			'cro'        => 'https://cronoscan.com/tx/%s',
+			'one'        => 'https://explorer.harmony.one/tx/%s',
+			'pls'        => 'https://scan.pulsechain.com/tx/%s',
+			'sysevm'     => 'https://explorer.syscoin.org/tx/%s',
+			'boba'       => 'https://bobascan.com/tx/%s',
+			'brise'      => 'https://brisescan.com/tx/%s',
+			'xdc'        => 'https://xdcscan.io/tx/%s',
+			'kaia'       => 'https://kaiascope.com/tx/%s',
+			'iotx'       => 'https://iotexscan.io/tx/%s',
+			'sol'        => 'https://solscan.io/tx/%s',
+			'solana'     => 'https://solscan.io/tx/%s',
+			'trx'        => 'https://tronscan.org/#/transaction/%s',
+			'tron'       => 'https://tronscan.org/#/transaction/%s',
+			'xrp'        => 'https://xrpscan.com/tx/%s',
+			'xlm'        => 'https://stellar.expert/explorer/public/tx/%s',
+			'algo'       => 'https://allo.info/tx/%s',
+			'hbar'       => 'https://hashscan.io/mainnet/transaction/%s',
+			'near'       => 'https://nearblocks.io/txns/%s',
+			'atom'       => 'https://www.mintscan.io/cosmos/tx/%s',
+			'scrt'       => 'https://www.mintscan.io/secret/tx/%s',
+			'sei'        => 'https://www.mintscan.io/sei/tx/%s',
+			'inj_native' => 'https://explorer.injective.network/transaction/%s',
+			'rune'       => 'https://runescan.io/tx/%s',
+			'ton'        => 'https://tonviewer.com/transaction/%s',
+			'ada'        => 'https://cardanoscan.io/transaction/%s',
+			'apt'        => 'https://explorer.aptoslabs.com/txn/%s',
+			'kas'        => 'https://explorer.kaspa.org/txs/%s',
+			'neo'        => 'https://explorer.onegate.space/transactionInfo/%s',
+			'gas'        => 'https://explorer.onegate.space/transactionInfo/%s',
+			'theta'      => 'https://explorer.thetatoken.org/txs/%s',
+			'tfuel'      => 'https://explorer.thetatoken.org/txs/%s',
+			'xtz'        => 'https://tzkt.io/%s',
+			'xno'        => 'https://nanolooker.com/block/%s',
+			'waves'      => 'https://wavesexplorer.com/transactions/%s',
+			'egld'       => 'https://explorer.multiversx.com/transactions/%s',
+			'fil'        => 'https://filfox.info/en/message/%s',
+			'eos'        => 'https://bloks.io/transaction/%s',
+			'dot'        => 'https://polkadot.subscan.io/extrinsic/%s',
+			'zil'        => 'https://viewblock.io/zilliqa/tx/%s',
+			'iota'       => 'https://explorer.iota.org/mainnet/search/%s',
+			'icx'        => 'https://tracker.icon.community/transaction/%s',
+			'ont'        => 'https://explorer.ont.io/transaction/%s',
+			'klv'        => 'https://kleverscan.org/transaction/%s',
+			'xem'        => 'https://explorer.nemtool.com/#/s_tx?hash=%s',
+			'xym'        => 'https://symbol.fyi/transactions/%s',
+			'cspr'        => 'https://cspr.live/deploy/%s',
+			'ae'         => 'https://aescan.io/transactions/%s',
+			'ark'        => 'https://explorer.ark.io/transaction/%s',
+			'strk'       => 'https://starkscan.co/tx/%s',
+		);
+	}
+
+	/**
+	 * Public explorer link for one transaction, or '' when that chain has none here.
+	 *
+	 * @param array|string $coin Coin definition or ID.
+	 * @param string       $txid Transaction id.
+	 * @return string
+	 */
+	public static function explorer_tx_url( $coin, $txid ) {
+		if ( ! is_array( $coin ) ) {
+			$coin = self::get( (string) $coin );
+		}
+		$txid = trim( (string) $txid );
+		$url  = '';
+		// Explorer paths take ids, not arbitrary text — anything else is not linked.
+		if ( is_array( $coin ) && '' !== $txid && preg_match( '#^[A-Za-z0-9._@:-]{6,128}$#', $txid ) ) {
+			$map = self::explorers();
+			$key = isset( $coin['verifier'] ) ? (string) $coin['verifier'] : '';
+			if ( isset( $map[ $key ] ) ) {
+				$url = sprintf( $map[ $key ], rawurlencode( $txid ) );
+			}
+		}
+
+		/**
+		 * Where a transaction is looked up.
+		 *
+		 * @param string $url  Explorer URL, '' when this chain has none.
+		 * @param array  $coin Coin definition.
+		 * @param string $txid Transaction id.
+		 */
+		return (string) apply_filters( 'xdwp_explorer_tx_url', $url, $coin, $txid );
+	}
+
+	/**
 	 * Chains where a payment can carry a reference the payer types in — a destination tag on
 	 * XRP, a memo elsewhere — and where this plugin can read it back off the chain.
 	 *

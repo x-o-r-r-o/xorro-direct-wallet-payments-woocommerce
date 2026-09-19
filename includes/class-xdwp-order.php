@@ -725,6 +725,16 @@ class Xdwp_Order {
 		if ( '' !== $overpaid ) {
 			echo '<p><strong>' . esc_html__( 'Overpaid by:', 'xorro-direct-wallet-payments-woocommerce' ) . '</strong> ' . esc_html( $overpaid . ' ' . $symbol ) . '</p>';
 		}
+		$paid_txid = (string) Xdwp_Order::meta( $order, 'txid' );
+		if ( '' !== $paid_txid ) {
+			$explorer = $coin ? Xdwp_Coins::explorer_tx_url( $coin, $paid_txid ) : '';
+			echo '<p><strong>' . esc_html__( 'Transaction:', 'xorro-direct-wallet-payments-woocommerce' ) . '</strong><br><code style="word-break:break-all;">' . esc_html( $paid_txid ) . '</code>';
+			if ( '' !== $explorer ) {
+				echo '<br><a href="' . esc_url( $explorer ) . '" target="_blank" rel="noopener noreferrer">' . esc_html__( 'View on explorer', 'xorro-direct-wallet-payments-woocommerce' ) . '</a>';
+			}
+			echo '</p>';
+		}
+
 		$partials = Xdwp_Verifier::partial_txids( $order );
 		if ( $partials ) {
 			echo '<p><strong>' . esc_html__( 'Partial payment txids:', 'xorro-direct-wallet-payments-woocommerce' ) . '</strong><br><code style="word-break:break-all;">' . esc_html( implode( ', ', $partials ) ) . '</code></p>';

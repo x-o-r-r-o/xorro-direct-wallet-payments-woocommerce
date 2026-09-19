@@ -70,5 +70,47 @@
 			admin.classList.add('xdwp-admin--ready');
 		}
 		initIconPicker();
+		initTxidCopy();
 	});
+
+	/**
+	 * Copy a transaction id from the payments overview.
+	 */
+	function initTxidCopy() {
+		document.addEventListener('click', function (event) {
+			var button = event.target.closest ? event.target.closest('.xdwp-copy-txid') : null;
+			if (!button) {
+				return;
+			}
+			event.preventDefault();
+			var txid = button.getAttribute('data-txid') || '';
+			var done = function () {
+				var original = button.getAttribute('data-original') || button.textContent;
+				button.setAttribute('data-original', original);
+				button.textContent = button.getAttribute('data-copied') || 'Copied';
+				window.setTimeout(function () {
+					button.textContent = original;
+				}, 1500);
+			};
+			if (navigator.clipboard && navigator.clipboard.writeText) {
+				navigator.clipboard.writeText(txid).then(done, fallback);
+			} else {
+				fallback();
+			}
+			function fallback() {
+				var field = document.createElement('textarea');
+				field.value = txid;
+				field.setAttribute('readonly', 'readonly');
+				field.style.position = 'fixed';
+				field.style.opacity = '0';
+				document.body.appendChild(field);
+				field.select();
+				try {
+					document.execCommand('copy');
+					done();
+				} catch (e) {}
+				document.body.removeChild(field);
+			}
+		});
+	}
 })();

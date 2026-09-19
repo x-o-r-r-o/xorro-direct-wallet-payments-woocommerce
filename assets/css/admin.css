@@ -1236,13 +1236,116 @@ body.xdwp-admin-page #wpbody-content > .wrap > h1.wp-heading-inline {
 	font-size: 12px;
 }
 
-.xdwp-payments-table__txid code {
-	display: inline-block;
-	max-width: 220px;
-	overflow: hidden;
-	text-overflow: ellipsis;
+/* The panel can be narrower than this table wants to be; scroll it instead of
+   cutting columns off. */
+.xdwp-table-wrap {
+	overflow-x: auto;
+	margin: 0 0 0.25rem;
+}
+
+.xdwp-payments-table {
+	table-layout: auto;
+	min-width: 880px;
+}
+
+.xdwp-payments-table__date {
 	white-space: nowrap;
-	vertical-align: bottom;
+}
+
+.xdwp-payments-table td,
+.xdwp-payments-table th {
+	vertical-align: top;
+}
+
+/* Transaction ids are long; wrap them rather than cutting them off. */
+.xdwp-payments-table__txid {
+	min-width: 220px;
+}
+
+.xdwp-txid {
+	display: block;
+	max-width: 34ch;
+	font-size: 11.5px;
+	line-height: 1.45;
+	word-break: break-all;
+}
+
+.xdwp-txid-actions {
+	display: inline-flex;
+	gap: 0.75rem;
+	margin-top: 2px;
+	font-size: 11.5px;
+}
+
+.xdwp-txid-actions .button-link {
+	color: #2271b1;
+	text-decoration: underline;
+	cursor: pointer;
+}
+
+.xdwp-muted {
+	color: #8c8f94;
+}
+
+/* The panel sets its own type scale, so core's tablenav needs its spacing back. */
+.xdwp-admin .tablenav {
+	display: flex;
+	justify-content: flex-end;
+	align-items: center;
+	height: auto;
+	margin: 0.75rem 0 0;
+	padding: 0.5rem 0;
+}
+
+.xdwp-admin .tablenav-pages {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+	align-items: center;
+	float: none;
+	margin: 0;
+	font-size: 13px;
+}
+
+.xdwp-admin .tablenav-pages .displaying-num {
+	margin: 0;
+	color: #646970;
+}
+
+.xdwp-admin .pagination-links {
+	display: inline-flex;
+	gap: 0.25rem;
+	align-items: center;
+}
+
+.xdwp-admin .pagination-links .page-numbers {
+	display: inline-block;
+	min-width: 28px;
+	padding: 3px 8px;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+	background: #fff;
+	color: #2c3338;
+	text-align: center;
+	text-decoration: none;
+	line-height: 1.6;
+}
+
+.xdwp-admin .pagination-links .page-numbers:hover {
+	border-color: #2271b1;
+	color: #2271b1;
+}
+
+.xdwp-admin .pagination-links .page-numbers.current {
+	border-color: #1d2733;
+	background: #1d2733;
+	color: #fff;
+	font-weight: 600;
+}
+
+.xdwp-admin .pagination-links .page-numbers.dots {
+	border-color: transparent;
+	background: none;
 }
 
 .xdwp-pill--wait { background: #f0f6fc; color: #0a4b78; }

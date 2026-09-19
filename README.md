@@ -183,6 +183,11 @@ Pushing a `vX.Y.Z` tag runs the Release workflow, which builds the ZIP, its SHA-
 
 Full details for every release are in [`readme.txt`](readme.txt).
 
+### 1.9.1 — explorer links and a tidier Payments table
+
+- Transaction ids link to the chain's public explorer (Payments screen and order screen), with a Copy button
+- Full transaction ids, a table that scrolls instead of clipping, and pagination that says how many orders there are
+
 ### 1.9.0 — every crypto payment in one place
 
 - **Payments screen**: every crypto order with the amount expected, the amount received, the coin, the state and the transaction, filtered by state or coin
