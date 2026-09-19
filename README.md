@@ -85,12 +85,14 @@ The plugin checks this repository's [Releases](https://github.com/x-o-r-r-o/xorr
 
 ## Compatibility
 
-Version 1.5.36 was tested end to end — guest checkout on both classic and block checkout, live quote, order, payment page and status polling — on WordPress 7.1 and WooCommerce 11.1 with:
+Version 1.6.0 was tested end to end — guest checkout on both classic and block checkout, live quote, order, payment page, status polling and a PHP error-log check — on WordPress 7.1 and WooCommerce 11.1 with:
 
-- **Themes:** Twenty Twenty-One, Twenty Twenty-Four, Twenty Twenty-Five, Storefront, Astra, OceanWP, GeneratePress, Kadence, Blocksy, Hello Elementor, Neve, Flatsome, Porto and Martfury.
-- **Cache and speed:** W3 Total Cache (page cache + minify), WP Super Cache, LiteSpeed Cache (including "delay JS"), WP Fastest Cache, Autoptimize, WP-Optimize, Breeze, Cache Enabler, Hummingbird, Jetpack Boost, SiteGround Optimizer, RabbitLoader.
+- **Themes (20):** Divi, Woodmart, Betheme, The7, Flatsome, Porto, Martfury, Dokan, Astra, OceanWP, GeneratePress, Kadence, Blocksy, Hello Elementor, Neve, Storefront, Twenty Twenty-One / Three / Four / Five.
+- **Cache and speed:** WP Rocket, Perfmatters, W3 Total Cache (page cache + minify), WP Super Cache, LiteSpeed Cache (including "delay JS"), WP Fastest Cache, Autoptimize, WP-Optimize, Breeze, Cache Enabler, Hummingbird, Jetpack Boost, SiteGround Optimizer, RabbitLoader.
 - **Security:** Wordfence (firewall and rate limiting), Solid Security / iThemes Security Pro, All-In-One Security (6G firewall), Sucuri, Shield, Defender, Limit Login Attempts Reloaded, WPS Hide Login.
-- **Other:** Elementor and Elementor Pro, WPBakery, Yoast SEO (Premium and WooCommerce SEO), WooCommerce Subscriptions, Product Add-ons, AutomateWoo, Stripe, PayPal Payments, CartFlows, Checkout Field Editor, Flexible Checkout Fields, CURCY and FOX currency switchers, TranslatePress, Polylang, YITH Wishlist, Variation Swatches, Gravity Forms, Contact Form 7, Revolution Slider, Redirection, WP Mail SMTP, UpdraftPlus, Query Monitor.
+- **Store and site:** WooCommerce Subscriptions, WooCommerce Bookings, Product Add-ons, AutomateWoo, Stripe, PayPal Payments, CartFlows, Dokan (Lite + Pro), Checkout Field Editor, Flexible Checkout Fields, CURCY and FOX currency switchers, YITH Wishlist, Variation Swatches, Elementor + Pro, Element Pack, WPBakery, Revolution Slider, LayerSlider, ACF Pro, Yoast SEO (Premium + WooCommerce SEO), Rank Math Pro, TranslatePress, Polylang, Gravity Forms, Contact Form 7, ARMember, Indeed Membership Pro, Ultimate Affiliate, Real Estate Manager Pro, Ajax Search Pro, Redirection, WP Mail SMTP, UpdraftPlus, Duplicator Pro, All-in-One WP Migration, Query Monitor — each alone, plus a 30-plugin stack on Woodmart, Divi, Betheme and Flatsome.
+
+Known issues found in other products while testing: Dokan Pro's Booking module crashes WordPress on its own (missing class in the package); Ultimate Affiliate needs its installer to create its tables; a 30-plugin stack on Woodmart needs more than 256 MB of PHP memory (with or without this plugin).
 
 Built-in compatibility handling:
 

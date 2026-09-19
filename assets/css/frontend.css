@@ -236,6 +236,37 @@
 	font-size: 0.95rem;
 }
 
+/* Themes (e.g. Divi) restyle <code> in light grey or a different font: the amount and address are
+   the most important text on the page, so keep them dark and monospaced whatever the theme does. */
+.xdwp-box code.xdwp-box__value,
+.xdwp-box span.xdwp-box__value {
+	color: #101828 !important;
+	background: #fff !important;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace !important;
+	font-weight: 600;
+	letter-spacing: 0;
+	text-shadow: none;
+}
+
+.xdwp-box span.xdwp-box__value {
+	font-family: inherit !important;
+	font-weight: 400;
+}
+
+.xdwp-box .xdwp-copy.button-link {
+	margin: 0;
+	padding: 0;
+	border: 0 !important;
+	background: none !important;
+	box-shadow: none !important;
+	color: inherit;
+	font: inherit;
+	font-size: 0.9rem;
+	text-decoration: underline;
+	text-underline-offset: 2px;
+	cursor: pointer;
+}
+
 .xdwp-box__address {
 	font-size: 0.85rem;
 }

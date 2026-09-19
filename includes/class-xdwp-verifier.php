@@ -216,11 +216,28 @@ class Xdwp_Verifier {
 		if ( self::e18_cmp( self::to_e18( $received ), self::to_e18( $fresh_band['min'] ) ) >= 0 ) {
 			return self::record_final_payment( $order, $txid, $fresh_underpaid, $received );
 		}
-		// Record each partial transfer exactly once, even if two passes get here together.
-		if ( ! self::atomic_add_option( 'xdwp_partial_' . md5( $txid ), (string) $order->get_id() ) ) {
-			return false;
+		// Record each partial transfer exactly once, even if two passes get here together. The
+		// marker is "order|time": a marker left by a request that died before saving (the txid is
+		// still missing from partial_txids) may be taken over by the same order after 2 minutes.
+		$marker_key = 'xdwp_partial_' . md5( $txid );
+		$marker     = $order->get_id() . '|' . time();
+		if ( ! self::atomic_add_option( $marker_key, $marker ) ) {
+			$existing = self::read_option_raw( $marker_key );
+			$parts    = explode( '|', $existing, 2 );
+			$stale    = (int) $parts[0] === (int) $order->get_id() && isset( $parts[1] ) && ( time() - (int) $parts[1] ) > 120;
+			if ( ! $stale ) {
+				return false;
+			}
+			global $wpdb;
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$taken = (int) $wpdb->query( $wpdb->prepare( "UPDATE {$wpdb->options} SET option_value = %s WHERE option_name = %s AND option_value = %s", $marker, $marker_key, $existing ) );
+			self::forget_option_cache( $marker_key );
+			if ( 1 !== $taken ) {
+				return false;
+			}
 		}
 		if ( ! self::claim_txid( $txid, $order->get_id() ) ) {
+			delete_option( $marker_key );
 			return false;
 		}
 		$partials   = self::partial_txids( $order );
