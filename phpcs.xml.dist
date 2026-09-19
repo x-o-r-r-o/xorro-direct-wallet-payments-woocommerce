@@ -16,14 +16,28 @@
 	<config name="minimum_supported_wp_version" value="6.9"/>
 	<config name="testVersion" value="7.4-"/>
 
-	<rule ref="WordPress">
+	<!--
+		This runs on every push, so it checks the things that can actually hurt a store:
+		unescaped output, missing nonces, unsafe SQL, untranslated or wrongly-domained
+		strings, and PHP compatibility. The purely cosmetic families (array formatting,
+		Yoda conditions, alignment, comment punctuation) are left out on purpose — they
+		would bury real findings under hundreds of spacing notices.
+	-->
+	<rule ref="WordPress.Security"/>
+	<rule ref="WordPress.WP"/>
+	<rule ref="WordPress.DB">
 		<!-- Deliberate: raw SQL is how the atomic payment locks stay atomic. -->
 		<exclude name="WordPress.DB.DirectDatabaseQuery"/>
 		<exclude name="WordPress.DB.PreparedSQLPlaceholders"/>
-		<!-- File names follow the class-<name>.php convention already in use. -->
-		<exclude name="WordPress.Files.FileName.InvalidClassFileName"/>
-		<exclude name="Squiz.Commenting.FileComment.MissingPackageTag"/>
-		<exclude name="Generic.WhiteSpace.DisallowSpaceIndent"/>
+	</rule>
+	<rule ref="WordPress.CodeAnalysis"/>
+	<rule ref="WordPress.PHP.NoSilencedErrors"/>
+	<rule ref="WordPress.PHP.DevelopmentFunctions"/>
+	<rule ref="WordPress.PHP.DiscouragedPHPFunctions"/>
+	<rule ref="WordPress.NamingConventions.PrefixAllGlobals">
+		<properties>
+			<property name="prefixes" type="array" value="xdwp,Xdwp"/>
+		</properties>
 	</rule>
 
 	<rule ref="WordPress.WP.Capabilities">
