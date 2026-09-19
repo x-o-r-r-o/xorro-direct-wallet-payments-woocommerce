@@ -15,7 +15,7 @@
  * Text Domain:       xorro-direct-wallet-payments-woocommerce
  * Domain Path:       /languages
  * WC requires at least: 10.0
- * WC tested up to:   10.8
+ * WC tested up to:   11.1
  *
  * @package Xdwp
  */

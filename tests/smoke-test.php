@@ -296,7 +296,7 @@ xdwp_assert( false === strpos( $main, 'Author URI:        https://github.com/x-o
 xdwp_assert( false === strpos( $main, 'Author URI:        https://wordpress.org/plugins/xdwp' ), 'author URI not same as old plugin URI' );
 xdwp_assert( false !== strpos( $main, 'Requires at least: 6.9' ), 'Requires WP 6.9+' );
 xdwp_assert( false !== strpos( $main, 'WC requires at least: 10.0' ), 'Requires WC 10.0+' );
-xdwp_assert( false !== strpos( $main, 'WC tested up to:   10.8' ), 'WC tested up to 10.8' );
+xdwp_assert( false !== strpos( $main, 'WC tested up to:   11.1' ), 'WC tested up to 11.1' );
 xdwp_assert( false !== strpos( $main, 'custom_order_tables' ), 'HPOS compatibility declared' );
 xdwp_assert( false !== strpos( $main, 'cart_checkout_blocks' ), 'Blocks compatibility declared' );
 
@@ -351,7 +351,7 @@ $readme_md = file_get_contents( $root . '/README.md' );
 xdwp_assert( false !== strpos( $readme_md, 'Checkout branding' ), 'README.md branding section' );
 
 $readme = file_get_contents( $root . '/readme.txt' );
-xdwp_assert( false !== strpos( $readme, 'Tested up to: 7.0' ), 'readme Tested up to WP 7.0' );
+xdwp_assert( false !== strpos( $readme, 'Tested up to: 7.1' ), 'readme Tested up to WP 7.1' );
 xdwp_assert( ! empty( $const_ver ) && false !== strpos( $readme, 'Stable tag: ' . $const_ver[1] ), 'readme stable tag matches XDWP_VERSION' );
 
 $readme = file_get_contents( $root . '/readme.txt' );

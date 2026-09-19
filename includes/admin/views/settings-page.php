@@ -236,7 +236,7 @@ $active  = isset( $tabs[ $tab ] ) ? $tabs[ $tab ] : $tabs['general'];
 								</table>
 
 							<?php elseif ( 'coins' === $tab ) : ?>
-								<p class="cc-lead"><?php esc_html_e( 'Auto-verify uses public blockchain APIs. Monero (XMR) remains Manual — use “Mark payment received” on the order.', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
+								<p class="cc-lead"><?php esc_html_e( 'Auto-verify uses public blockchain APIs. Coins marked Manual (such as Monero) have no free way to detect payments — confirm those with “Mark payment received” on the order.', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
 								<?php
 								$sections = array(
 									'coins'  => __( 'Coins', 'xorro-direct-wallet-payments-woocommerce' ),
