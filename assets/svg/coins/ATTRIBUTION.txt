@@ -12,11 +12,34 @@ dgb, kmd, xvg, qtum, ark, icx, ont, xem, iotx, ae, lsk, iota (as miota.svg, tick
 Additional icons (hbar, cro, ftm, near, axs, cake, ftt, ata, egld) are simple
 original geometric marks bundled with Xorro Wallet Payments for catalog coverage.
 
-Additional icons (dai, wbtc, aave, mkr, ldo, crv, comp, ape, shib, pepe, base) are simple
-original geometric marks bundled with Xorro Wallet Payments for catalog coverage.
+Additional icons (dai, wbtc, base) are simple original geometric marks bundled with
+Xorro Wallet Payments for catalog coverage.
 
-Monogram placeholders (everything else — roughly 83 tickers as of the 187-coin
-registry, e.g. scrt, sei, zro, rjv, tlos, usde, ...) are auto-generated,
+Also from cryptocurrency-icons (CC0 1.0), reused for network variants / renamed tickers:
+1inchbsc (1inch), bttbsc (btt), ethbsc (eth), maticusdce (usdc), sysevm (sys),
+tomoerc20 (tomo).
+
+From web3icons (https://github.com/0xa3k5/web3icons, @web3icons/core 4.0.56),
+MIT License, Copyright (c) 0xa3k5 — "background" variant, clipped to a circle:
+aitech, apt, arpa, ava, avabsc, bel, boba, brgbsc, brise, brisebsc, c98, cgpt, chr,
+coti, cspr, ctsi, cudos, cult, dao, eurt, feg, fitfi, front, g, gala, gari, gt, id,
+ilv, inj, jasmy, jst, kaia, kas, klv, ldo, leash, lgcy, mx, ocean, pepe, pls, poolx,
+pyusd, rjv, rune, scrt, sei, sfund, shib, shibbsc, srk, strax, strk, sun, sxp, tet,
+tfuel, tko, tlos, ton, trvl, usdd, usde, verse, win, xaut, xcad, xdc, xec, xyo, zbc,
+zk.
+
+From Trust Wallet Assets (https://github.com/trustwallet/assets), MIT License,
+Copyright (c) Trust Wallet — token logo.png looked up by contract address, resized
+to 64px and embedded in a circle-clipped SVG: babydoge, banana, bone, brett, cati,
+dogs, floki, flokibsc, hex, hoge, jetton, mew, not, okb, ponke, raca, sidus, sundog,
+usdj, x, zro.
+
+All coin logos are trademarks of their respective projects and are used only to
+identify the coin being paid with.
+
+Monogram placeholders (everything else — as of 1.5.34 only cats, cns, hmstr,
+hotcross, mrsoon, myro, now, ntvrk, plx, quack, super, xym, none of which have a
+logo in any of the openly-licensed sources above) are auto-generated,
 deterministically-colored circle + ticker-initials SVGs, wholly original and
 not derived from any brand's actual logo. They exist so every coin renders as
 a real icon tile instead of a plain text tile in the checkout/admin coin
