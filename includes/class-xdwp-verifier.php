@@ -30,6 +30,16 @@ class Xdwp_Verifier {
 	/** Minimum seconds between wide (partial / overpayment) scans of one order. */
 	const WIDE_SCAN_INTERVAL = 300;
 
+	/** Minimum seconds between "has anything arrived yet?" checks of one order. */
+	const DETECT_INTERVAL = 60;
+
+	/**
+	 * Temporarily lowers the required confirmations (display-only detection).
+	 *
+	 * @var int|null
+	 */
+	private static $confirmations_override = null;
+
 	/**
 	 * Verify whether a payment matching order meta has been received.
 	 * On success, stores confirming txid on the order.
@@ -359,6 +369,70 @@ class Xdwp_Verifier {
 			)
 		);
 		do_action( 'xdwp_ambiguous_payment', $order, $txid, $amount );
+	}
+
+	/**
+	 * Has the expected payment arrived but not yet reached the required confirmations?
+	 *
+	 * Display only: it tells the customer "payment detected, waiting for confirmations" so they
+	 * do not pay twice. It never claims the transfer or marks anything paid — the normal check
+	 * does that once the confirmations are there.
+	 *
+	 * @param WC_Order $order Order.
+	 * @return bool True when something matching is already visible on-chain.
+	 */
+	public static function detect_incoming( $order ) {
+		if ( ! $order instanceof WC_Order ) {
+			return false;
+		}
+		if ( '' !== (string) Xdwp_Order::meta( $order, 'seen_txid' ) ) {
+			return true;
+		}
+		$status = (string) Xdwp_Order::meta( $order, 'status' );
+		if ( ! in_array( $status, array( 'awaiting', 'underpaid' ), true ) ) {
+			return false;
+		}
+		// Only useful when confirmations are actually required; otherwise a match is already paid.
+		if ( self::min_confirmations() < 1 ) {
+			return false;
+		}
+		$throttle = 'xdwp_detect_' . $order->get_id();
+		if ( get_transient( $throttle ) ) {
+			return false;
+		}
+		set_transient( $throttle, 1, self::DETECT_INTERVAL );
+
+		$coin    = Xdwp_Coins::get( (string) Xdwp_Order::meta( $order, 'coin' ) );
+		$address = (string) Xdwp_Order::meta( $order, 'address' );
+		$started = (int) Xdwp_Order::meta( $order, 'started' );
+		if ( ! $coin || '' === $address || ! $started ) {
+			return false;
+		}
+		$target = 'underpaid' === $status
+			? (string) Xdwp_Order::meta( $order, 'remainder' )
+			: (string) Xdwp_Order::meta( $order, 'amount' );
+		if ( '' === $target ) {
+			return false;
+		}
+		$band  = self::match_band( $target, $coin );
+		$since = 'underpaid' === $status
+			? max( 0, (int) Xdwp_Order::meta( $order, 'partial_since' ) )
+			: max( 0, $started - 30 );
+
+		self::$confirmations_override = 0;
+		try {
+			$hit = self::find_payment_detailed( $coin, $address, $band['min'], $band['max'], $since );
+		} finally {
+			self::$confirmations_override = null;
+		}
+		if ( ! $hit || self::is_own_partial( $order, $hit['txid'] ) || self::txid_claimed_by_other( $hit['txid'], $order->get_id() ) ) {
+			return false;
+		}
+		$order->update_meta_data( '_xdwp_seen_txid', strtolower( (string) $hit['txid'] ) );
+		$order->update_meta_data( '_xdwp_seen_at', time() );
+		$order->save();
+		do_action( 'xdwp_payment_detected', $order, $hit['txid'], $hit['amount'] );
+		return true;
 	}
 
 	/**
@@ -1197,6 +1271,9 @@ class Xdwp_Verifier {
 	 * @return int
 	 */
 	private static function min_confirmations() {
+		if ( null !== self::$confirmations_override ) {
+			return (int) self::$confirmations_override;
+		}
 		return max( 0, min( 64, (int) Xdwp_Settings::get( 'min_confirmations', 1 ) ) );
 	}
 

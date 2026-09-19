@@ -84,6 +84,9 @@
 					) {
 						var prefix = res.data.approx ? '≈ ' : '';
 						var label = prefix + res.data.amount + ' ' + res.data.symbol;
+					if (res.data.name) {
+						label += ' (' + res.data.name + ')';
+					}
 						if (res.data.message) {
 							label += ' — ' + res.data.message;
 						}
@@ -133,6 +136,32 @@
 			}
 			startQuoteRequest(coin, ++quoteSeq, 0);
 		}
+
+		function bindSearch() {
+			var input = document.getElementById('xdwp-coin-search');
+			if (!input || input.dataset.xdwpBound) {
+				return;
+			}
+			input.dataset.xdwpBound = '1';
+			input.addEventListener('input', function () {
+				var term = input.value.trim().toLowerCase();
+				var shown = 0;
+				var labels = document.querySelectorAll('#xdwp-coins .xdwp-coin-option');
+				Array.prototype.forEach.call(labels, function (label) {
+					var hit = !term || (label.getAttribute('data-search') || '').indexOf(term) !== -1;
+					label.hidden = !hit;
+					if (hit) {
+						shown++;
+					}
+				});
+				var none = document.getElementById('xdwp-coin-none');
+				if (none) {
+					none.hidden = shown !== 0;
+				}
+			});
+		}
+		bindSearch();
+		$(document.body).on('updated_checkout', bindSearch);
 
 		$(document.body).on('change', 'input[name="xdwp_coin"]', function () {
 			lastUserCoin = selectedCoin();

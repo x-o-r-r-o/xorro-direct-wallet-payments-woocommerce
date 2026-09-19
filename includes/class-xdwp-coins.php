@@ -485,6 +485,74 @@ class Xdwp_Coins {
 	}
 
 	/**
+	 * Order-total limits a merchant set for a coin, in store currency.
+	 *
+	 * @param string $coin_id Coin ID.
+	 * @return array{min:float,max:float} 0 means "no limit".
+	 */
+	public static function limits( $coin_id ) {
+		$limits = Xdwp_Settings::get( 'coin_limits', array() );
+		$row    = ( is_array( $limits ) && isset( $limits[ $coin_id ] ) && is_array( $limits[ $coin_id ] ) ) ? $limits[ $coin_id ] : array();
+		return array(
+			'min' => isset( $row['min'] ) ? max( 0, (float) $row['min'] ) : 0.0,
+			'max' => isset( $row['max'] ) ? max( 0, (float) $row['max'] ) : 0.0,
+		);
+	}
+
+	/**
+	 * Whether a coin may be used for an order of this fiat total.
+	 *
+	 * @param string $coin_id Coin ID.
+	 * @param float  $total   Order/cart total in store currency.
+	 * @return bool
+	 */
+	public static function allowed_for_total( $coin_id, $total ) {
+		$total = (float) $total;
+		if ( $total <= 0 ) {
+			return true; // Empty cart / unknown total: don't hide anything yet.
+		}
+		$limits = self::limits( $coin_id );
+		if ( $limits['min'] > 0 && $total < $limits['min'] ) {
+			return false;
+		}
+		if ( $limits['max'] > 0 && $total > $limits['max'] ) {
+			return false;
+		}
+		return true;
+	}
+
+	/**
+	 * Payable coins allowed for a given order/cart total.
+	 *
+	 * @param float $total Total in store currency.
+	 * @return array<string, array<string, mixed>>
+	 */
+	public static function payable_for_total( $total ) {
+		$coins = self::get_payable();
+		if ( (float) $total <= 0 ) {
+			return $coins;
+		}
+		foreach ( array_keys( $coins ) as $coin_id ) {
+			if ( ! self::allowed_for_total( $coin_id, $total ) ) {
+				unset( $coins[ $coin_id ] );
+			}
+		}
+		return $coins;
+	}
+
+	/**
+	 * Cart total in store currency (0 when there is no cart).
+	 *
+	 * @return float
+	 */
+	public static function cart_total() {
+		if ( ! function_exists( 'WC' ) || ! WC()->cart ) {
+			return 0.0;
+		}
+		return (float) WC()->cart->get_total( 'edit' );
+	}
+
+	/**
 	 * Public URL for a bundled coin SVG (Cryptoniq-style icons).
 	 *
 	 * @param string $slug Icon file slug without extension (btc, eth, usdt-round, …).

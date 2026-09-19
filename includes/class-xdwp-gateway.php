@@ -252,7 +252,7 @@ class Xdwp_Gateway extends WC_Payment_Gateway {
 		if ( 'yes' !== $this->enabled ) {
 			return false;
 		}
-		return parent::is_available() && ! empty( Xdwp_Coins::get_payable() );
+		return parent::is_available() && ! empty( Xdwp_Coins::payable_for_total( Xdwp_Coins::cart_total() ) );
 	}
 
 	/**
@@ -303,9 +303,10 @@ class Xdwp_Gateway extends WC_Payment_Gateway {
 			echo '<p class="xdwp-desc">' . wp_kses_post( wpautop( $this->description ) ) . '</p>';
 		}
 
-		$coins = Xdwp_Coins::get_payable();
+		$cart_total = Xdwp_Coins::cart_total();
+		$coins      = Xdwp_Coins::payable_for_total( $cart_total );
 		if ( empty( $coins ) ) {
-			echo '<p>' . esc_html__( 'No cryptocurrencies are configured.', 'xorro-direct-wallet-payments-woocommerce' ) . '</p>';
+			echo '<p>' . esc_html__( 'No cryptocurrency is available for this order total.', 'xorro-direct-wallet-payments-woocommerce' ) . '</p>';
 			return;
 		}
 
@@ -317,6 +318,13 @@ class Xdwp_Gateway extends WC_Payment_Gateway {
 
 		echo '<fieldset class="xdwp-coins" id="xdwp-coins">';
 		echo '<legend>' . esc_html__( 'Select cryptocurrency', 'xorro-direct-wallet-payments-woocommerce' ) . '</legend>';
+		// A search box only earns its place once the grid is long enough to scan.
+		if ( count( $coins ) > 8 ) {
+			printf(
+				'<input type="search" class="xdwp-coin-search" id="xdwp-coin-search" autocomplete="off" placeholder="%1$s" aria-label="%1$s" />',
+				esc_attr__( 'Search coin or network…', 'xorro-direct-wallet-payments-woocommerce' )
+			);
+		}
 		echo '<div class="xdwp-coin-grid">';
 
 		$first = true;
@@ -345,16 +353,19 @@ class Xdwp_Gateway extends WC_Payment_Gateway {
 			}
 
 			printf(
-				'<label class="%1$s" title="%2$s"><input type="radio" name="xdwp_coin" value="%3$s" %4$s />%5$s</label>',
+				'<label class="%1$s" title="%2$s" data-search="%6$s"><input type="radio" name="xdwp_coin" value="%3$s" %4$s />%5$s<span class="xdwp-coin-option__label" aria-hidden="true">%7$s</span></label>',
 				esc_attr( implode( ' ', $classes ) ),
 				esc_attr( $coin['name'] ),
 				esc_attr( $id ),
 				checked( $checked, true, false ),
-				$inner // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped above.
+				$inner, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped above.
+				esc_attr( strtolower( $coin['name'] . ' ' . $coin['symbol'] . ' ' . $id . ' ' . $coin['network'] . ' ' . $coin['type'] ) ),
+				esc_html( $coin['symbol'] )
 			);
 		}
 
 		echo '</div>';
+		echo '<p class="xdwp-coin-none" id="xdwp-coin-none" hidden>' . esc_html__( 'No coins match your search.', 'xorro-direct-wallet-payments-woocommerce' ) . '</p>';
 		echo '<p class="xdwp-quote" id="xdwp-quote" aria-live="polite"></p>';
 		echo '</fieldset>';
 	}
@@ -397,10 +408,10 @@ class Xdwp_Gateway extends WC_Payment_Gateway {
 		}
 
 		$coin_id = $this->get_selected_coin();
-		$payable = Xdwp_Coins::get_payable();
+		$payable = Xdwp_Coins::payable_for_total( (float) $order->get_total() );
 
 		if ( ! $coin_id || ! isset( $payable[ $coin_id ] ) ) {
-			wc_add_notice( __( 'Selected cryptocurrency is not available.', 'xorro-direct-wallet-payments-woocommerce' ), 'error' );
+			wc_add_notice( __( 'Selected cryptocurrency is not available for this order total.', 'xorro-direct-wallet-payments-woocommerce' ), 'error' );
 			return array( 'result' => 'failure' );
 		}
 

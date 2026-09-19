@@ -4,7 +4,7 @@ Tags: woocommerce, cryptocurrency, bitcoin, ethereum, payments, usdt, crypto che
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.6.1
+Stable tag: 1.7.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -22,7 +22,9 @@ This plugin contacts public price and blockchain APIs to quote amounts and (opti
 * BTC, BCH, ETH (incl. Arbitrum/Optimism/Base), LTC, DOGE, SOL, TRX, XMR, XRP, BNB, MATIC/POL, AVAX, ARB, OP, and more
 * USDT, USDC & DAI on multiple networks with separate wallet fields
 * Token support (WBTC, LINK, UNI, AAVE, MKR, LDO, CRV, COMP, APE, SHIB, PEPE, CAKE, and others) including multi-chain variants
-* Coin picker at checkout + payment page with amount, address, and QR code
+* Coin picker at checkout with search and coin names + payment page with amount, address, QR code and an "Open in wallet app" button
+* Optional minimum and maximum order value per coin
+* "Payment spotted" notice while the network confirms, and a one-click re-quote for expired orders
 * 60-minute payment window (configurable)
 * Automatic on-chain verification via public explorers/RPCs (can be disabled)
 * Wallet rotation across multiple addresses
@@ -334,6 +336,15 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 * QR Code generator (`assets/js/qrcode.min.js`) — MIT-licensed library by davidshimjs (https://github.com/davidshimjs/qrcodejs). Source is publicly available; the bundled file is minified for production use.
 
 == Changelog ==
+
+= 1.7.0 =
+A clearer wait, and coins that fit the order.
+* New: the payment page says "Payment spotted, waiting for confirmations" as soon as the transfer appears on chain, so customers are not left staring at an unchanged page while the network confirms
+* New: expired orders can be re-quoted by the customer with one button — the order is kept and a new amount at today's rate is issued, instead of the order being lost
+* New: search box in the coin picker (by coin name, symbol or network) and coin names under each icon, so picking from 238 coins is no longer guesswork
+* New: optional minimum and maximum order value per coin (Coins tab), for coins whose network fees make small orders impractical
+* New: "Open in wallet app" button on the payment page for customers paying on the same device
+* Orders that already received a partial or late payment cannot be re-quoted, so amounts already sent are never orphaned
 
 = 1.6.1 =
 Price reliability.

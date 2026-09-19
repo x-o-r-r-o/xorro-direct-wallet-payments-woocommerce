@@ -212,6 +212,30 @@ class Xdwp_Settings {
 			);
 		}
 
+		if ( isset( $input['coin_limits'] ) && is_array( $input['coin_limits'] ) ) {
+			$valid_coins = array_keys( Xdwp_Coins::all() );
+			$limits      = array();
+			foreach ( $input['coin_limits'] as $coin_id => $row ) {
+				$coin_id = sanitize_text_field( $coin_id );
+				if ( ! in_array( $coin_id, $valid_coins, true ) || ! is_array( $row ) ) {
+					continue;
+				}
+				$min = isset( $row['min'] ) ? max( 0, (float) $row['min'] ) : 0;
+				$max = isset( $row['max'] ) ? max( 0, (float) $row['max'] ) : 0;
+				// A max below the min would hide the coin everywhere; treat it as "no maximum".
+				if ( $max > 0 && $min > 0 && $max < $min ) {
+					$max = 0;
+				}
+				if ( $min > 0 || $max > 0 ) {
+					$limits[ $coin_id ] = array(
+						'min' => $min,
+						'max' => $max,
+					);
+				}
+			}
+			$clean['coin_limits'] = $limits;
+		}
+
 		if ( isset( $input['wallets'] ) && is_array( $input['wallets'] ) ) {
 			$submitted = Xdwp_Wallets::sanitize_wallets( $input['wallets'] );
 			$existing  = isset( $clean['wallets'] ) && is_array( $clean['wallets'] ) ? $clean['wallets'] : array();

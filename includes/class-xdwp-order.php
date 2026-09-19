@@ -103,6 +103,53 @@ class Xdwp_Order {
 	}
 
 	/**
+	 * Whether an expired order may be re-quoted by the customer (nothing was received yet).
+	 *
+	 * @param WC_Order $order Order.
+	 * @return bool
+	 */
+	public static function can_renew( $order ) {
+		if ( ! $order instanceof WC_Order || ! self::is_ours( $order ) ) {
+			return false;
+		}
+		if ( 'expired' !== (string) self::meta( $order, 'status' ) ) {
+			return false;
+		}
+		if ( '' !== (string) self::meta( $order, 'received' ) || '' !== (string) self::meta( $order, 'late_txid' ) ) {
+			return false;
+		}
+		if ( ! in_array( $order->get_status(), array( 'failed', 'pending', 'on-hold' ), true ) ) {
+			return false;
+		}
+		return (bool) Xdwp_Coins::get( (string) self::meta( $order, 'coin' ) );
+	}
+
+	/**
+	 * Quote the same order again at today's rate (customer clicked "get a new amount").
+	 *
+	 * @param WC_Order $order Order.
+	 * @return bool
+	 */
+	public static function renew_payment( $order ) {
+		if ( ! self::can_renew( $order ) ) {
+			return false;
+		}
+		$coin_id = (string) self::meta( $order, 'coin' );
+		if ( ! self::assign_payment( $order, $coin_id ) ) {
+			return false;
+		}
+		$order = wc_get_order( $order->get_id() );
+		if ( ! $order ) {
+			return false;
+		}
+		if ( 'on-hold' !== $order->get_status() ) {
+			$order->update_status( 'on-hold', __( 'Customer requested a new crypto payment quote.', 'xorro-direct-wallet-payments-woocommerce' ) );
+		}
+		do_action( 'xdwp_payment_renewed', $order );
+		return true;
+	}
+
+	/**
 	 * Record on the order why crypto payment setup failed (the customer only sees a generic retry message).
 	 *
 	 * @param WC_Order $order   Order.
@@ -447,7 +494,7 @@ class Xdwp_Order {
 		if ( ! $order || ! Xdwp_Order::is_ours( $order ) ) {
 			return;
 		}
-		if ( ! in_array( (string) Xdwp_Order::meta( $order, 'status' ), array( 'awaiting', 'underpaid' ), true ) ) {
+		if ( ! in_array( (string) Xdwp_Order::meta( $order, 'status' ), array( 'awaiting', 'underpaid', 'expired' ), true ) ) {
 			return;
 		}
 		self::load_template( $order );
@@ -547,7 +594,11 @@ class Xdwp_Order {
 				'address'   => $address,
 				'amount'    => $amount,
 				'status'    => $status,
+				'renewUrl'  => Xdwp_Ajax::endpoint( 'xdwp_renew' ),
 				'i18n'      => array(
+					'detected' => __( 'Payment detected — waiting for network confirmations…', 'xorro-direct-wallet-payments-woocommerce' ),
+					'renewing' => __( 'Getting a new amount…', 'xorro-direct-wallet-payments-woocommerce' ),
+					'renewFail' => __( 'Could not get a new amount. Please contact us.', 'xorro-direct-wallet-payments-woocommerce' ),
 					'copied'   => __( 'Copied!', 'xorro-direct-wallet-payments-woocommerce' ),
 					'expired'  => __( 'Payment window expired.', 'xorro-direct-wallet-payments-woocommerce' ),
 					'paid'     => __( 'Payment confirmed! Thank you.', 'xorro-direct-wallet-payments-woocommerce' ),
@@ -569,8 +620,9 @@ class Xdwp_Order {
 				'status'   => $status,
 				'uri'      => $uri,
 				'coin_id'  => $coin_id,
-				'received' => $received,
-				'due'      => $due,
+				'received'  => $received,
+				'due'       => $due,
+				'can_renew' => self::can_renew( $order ),
 			),
 			'xorro-direct-wallet-payments-woocommerce/',
 			XDWP_PATH . 'templates/'

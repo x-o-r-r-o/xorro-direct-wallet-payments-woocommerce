@@ -27,6 +27,9 @@ class Xdwp_Ajax {
 		// The admin-ajax hooks above stay for pages cached before this change.
 		add_action( 'wc_ajax_xdwp_status', array( __CLASS__, 'payment_status' ) );
 		add_action( 'wc_ajax_xdwp_quote', array( __CLASS__, 'quote' ) );
+		add_action( 'wp_ajax_xdwp_renew', array( __CLASS__, 'renew' ) );
+		add_action( 'wp_ajax_nopriv_xdwp_renew', array( __CLASS__, 'renew' ) );
+		add_action( 'wc_ajax_xdwp_renew', array( __CLASS__, 'renew' ) );
 		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'register_assets' ) );
 	}
 
@@ -207,14 +210,58 @@ class Xdwp_Ajax {
 			}
 		}
 
+		// Tell a waiting customer as soon as their transfer is visible on-chain, even before it
+		// has the confirmations needed to mark the order paid, so they don't send it twice.
+		$detected = false;
+		if ( in_array( $status, array( 'awaiting', 'underpaid' ), true ) && 'yes' === Xdwp_Settings::get( 'auto_verify', 'yes' ) ) {
+			$detected = Xdwp_Verifier::detect_incoming( $order );
+		}
+
 		wp_send_json_success(
 			array(
+				'detected' => $detected,
 				'status'  => $status,
 				'expires' => (int) Xdwp_Order::meta( $order, 'expires' ),
 				'paid'    => ( 'paid' === $status ),
 				'expired' => ( 'expired' === $status ),
 			)
 		);
+	}
+
+	/**
+	 * Re-quote an expired order at today's rate, on the customer's request.
+	 */
+	public static function renew() {
+		$order_id = isset( $_POST['order_id'] ) ? absint( $_POST['order_id'] ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$deny     = static function () {
+			wp_send_json_error( array( 'message' => __( 'Forbidden.', 'xorro-direct-wallet-payments-woocommerce' ) ), 403 );
+		};
+		if ( ! $order_id || ! check_ajax_referer( 'xdwp_status_' . $order_id, 'nonce', false ) ) {
+			$deny();
+		}
+		if ( self::rate_limited( 'xdwp_renew_', $order_id, 10 ) ) {
+			wp_send_json_error( array( 'message' => __( 'Too many requests. Please wait a moment.', 'xorro-direct-wallet-payments-woocommerce' ) ), 429 );
+		}
+
+		$order = wc_get_order( $order_id );
+		if ( ! $order || ! Xdwp_Order::is_ours( $order ) ) {
+			$deny();
+		}
+		$order_key = isset( $_POST['order_key'] ) ? sanitize_text_field( wp_unslash( $_POST['order_key'] ) ) : '';
+		$allowed   = ( is_user_logged_in() && (int) $order->get_user_id() === get_current_user_id() )
+			|| ( $order_key && hash_equals( $order->get_order_key(), $order_key ) )
+			|| current_user_can( 'manage_woocommerce' );
+		if ( ! $allowed ) {
+			$deny();
+		}
+
+		if ( ! Xdwp_Order::renew_payment( $order ) ) {
+			wp_send_json_error(
+				array( 'message' => __( 'This order cannot be re-quoted. Please contact us.', 'xorro-direct-wallet-payments-woocommerce' ) ),
+				400
+			);
+		}
+		wp_send_json_success( array( 'renewed' => true ) );
 	}
 
 	/**
@@ -229,17 +276,18 @@ class Xdwp_Ajax {
 
 		$coin_id = isset( $_POST['coin'] ) ? sanitize_text_field( wp_unslash( $_POST['coin'] ) ) : '';
 		$coin    = Xdwp_Coins::get( $coin_id );
-		$payable = Xdwp_Coins::get_payable();
-
-		if ( ! $coin || ! isset( $payable[ $coin_id ] ) ) {
-			wp_send_json_error( array( 'message' => __( 'Coin not available.', 'xorro-direct-wallet-payments-woocommerce' ) ), 400 );
-		}
 
 		if ( ! WC()->cart ) {
 			wp_send_json_error( array( 'message' => __( 'Cart unavailable.', 'xorro-direct-wallet-payments-woocommerce' ) ), 400 );
 		}
 
-		$total  = (float) WC()->cart->get_total( 'edit' );
+		$total   = (float) WC()->cart->get_total( 'edit' );
+		$payable = Xdwp_Coins::payable_for_total( $total );
+
+		if ( ! $coin || ! isset( $payable[ $coin_id ] ) ) {
+			wp_send_json_error( array( 'message' => __( 'Coin not available for this order total.', 'xorro-direct-wallet-payments-woocommerce' ) ), 400 );
+		}
+
 		$amount = Xdwp_Prices::checkout_quote( $total, $coin_id );
 
 		if ( '' === $amount ) {

@@ -31,6 +31,8 @@ Each order gets a slightly unique amount (usually a few base units, e.g. 10 sato
 - Optional crypto price next to product prices
 - Checkout branding: title, description, custom icon and size, icon/text/both
 - Manual **"Mark payment received"** on the order screen, with transaction-ID reuse protection
+- **Coin search and per-coin order limits** at checkout, with coin names under each icon
+- **Re-quote an expired order** — the customer gets a fresh amount, you keep the order
 - **No lost payments:** payment details in customer emails, a reminder before the window closes, partial-payment handling (customer is asked for the rest), overpayment notes, and a late-payment scan that alerts you when money arrives after an order expired
 - Admin alerts when an explorer API rejects requests (e.g. a missing or limited API key), so verification never fails silently
 - Automatic updates from GitHub Releases — every package must carry the maintainer's Ed25519 signature
@@ -170,6 +172,14 @@ Pushing a `vX.Y.Z` tag runs the Release workflow, which builds the ZIP, its SHA-
 ## Changelog
 
 Full details for every release are in [`readme.txt`](readme.txt).
+
+### 1.7.0 — a clearer wait, and coins that fit the order
+
+- Payment page reports **"payment spotted, waiting for confirmations"** as soon as the transfer appears on chain (display only — an order is still only paid once it has the confirmations you require)
+- Customers can **re-quote an expired order** with one button; the order is kept and a fresh amount is issued at today's rate. Orders with a partial or late payment already received cannot be re-quoted
+- **Coin search** in the picker (name, symbol or network) and coin names under each icon
+- Optional **minimum / maximum order value per coin** (Coins tab) — hide coins whose network fees make small orders impractical
+- **"Open in wallet app"** button on the payment page
 
 ### 1.6.1 — price reliability
 - Backup rate sources (Coinbase, Kraken, Binance) when CoinGecko fails; two sources must agree within 5% or no rate is used.

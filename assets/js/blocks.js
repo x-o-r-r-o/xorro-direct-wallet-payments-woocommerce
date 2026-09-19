@@ -199,6 +199,9 @@
 								if (res.data.message) {
 									label += ' — ' + res.data.message;
 								}
+								if (res.data.name) {
+									label = label.replace(res.data.symbol, res.data.symbol + ' (' + res.data.name + ')');
+								}
 								setQuote(label);
 								return;
 							}
@@ -241,16 +244,48 @@
 			return createElement('p', null, __('No cryptocurrencies are configured.', 'xorro-direct-wallet-payments-woocommerce'));
 		}
 
+		var termState = useState('');
+		var term = termState[0];
+		var setTerm = termState[1];
+		var needle = term.trim().toLowerCase();
+		var shownCoins = needle
+			? coins.filter(function (c) {
+					return (
+						[c.name, c.symbol, c.id, c.network, c.type]
+							.join(' ')
+							.toLowerCase()
+							.indexOf(needle) !== -1
+					);
+			  })
+			: coins;
+
 		return createElement(
 			'div',
 			{ className: 'xdwp-blocks' },
 			settings.description
 				? createElement('p', { className: 'xdwp-desc' }, decodeEntities(settings.description))
 				: null,
+			// A search box only earns its place once the grid is long enough to scan.
+			coins.length > 8
+				? createElement('input', {
+						type: 'search',
+						className: 'xdwp-coin-search',
+						value: term,
+						autoComplete: 'off',
+						placeholder: __('Search coin or network…', 'xorro-direct-wallet-payments-woocommerce'),
+						'aria-label': __('Search coin or network…', 'xorro-direct-wallet-payments-woocommerce'),
+						onChange: function (e) {
+							setTerm(e.target.value);
+						}
+				  })
+				: null,
+			!shownCoins.length
+				? createElement('p', { className: 'xdwp-coin-none' }, __('No coins match your search.', 'xorro-direct-wallet-payments-woocommerce'))
+				: null,
 			createElement(
 				'div',
 				{ className: 'xdwp-coin-grid' },
-				coins.map(function (c) {
+				shownCoins.map(function (c) {
 					var classes = 'xdwp-coin-option';
 					if (coin === c.id) {
 						classes += ' is-selected';
@@ -332,6 +367,14 @@
 							)
 						);
 					}
+
+					children.push(
+						createElement(
+							'span',
+							{ className: 'xdwp-coin-option__label', 'aria-hidden': 'true', key: 'lbl' },
+							c.symbol || c.name
+						)
+					);
 
 					return createElement(
 						'label',

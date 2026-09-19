@@ -110,7 +110,7 @@ final class Xdwp_Blocks extends AbstractPaymentMethodType {
 	 */
 	public function get_payment_method_data() {
 		$coins = array();
-		foreach ( Xdwp_Coins::get_payable() as $id => $coin ) {
+		foreach ( Xdwp_Coins::payable_for_total( Xdwp_Coins::cart_total() ) as $id => $coin ) {
 			$icons   = Xdwp_Coins::icon_meta( $id );
 			$coins[] = array(
 				'id'     => $id,

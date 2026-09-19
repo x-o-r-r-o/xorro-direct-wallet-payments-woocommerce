@@ -297,7 +297,9 @@
 					return;
 				}
 				if (statusEl) {
-					statusEl.textContent = data.i18n.waiting || 'Waiting for payment…';
+					statusEl.textContent = res.data.detected
+						? (data.i18n.detected || 'Payment detected — waiting for network confirmations…')
+						: (data.i18n.waiting || 'Waiting for payment…');
 				}
 			})
 			.catch(function () {
@@ -305,6 +307,40 @@
 					statusEl.textContent = data.i18n.waiting || 'Waiting for payment…';
 				}
 			});
+	}
+
+	var renewBtn = document.getElementById('xdwp-renew');
+	if (renewBtn && data.renewUrl) {
+		renewBtn.addEventListener('click', function () {
+			var note = document.getElementById('xdwp-renew-status');
+			renewBtn.disabled = true;
+			if (note) {
+				note.textContent = data.i18n.renewing || 'Getting a new amount…';
+			}
+			var body = new FormData();
+			body.append('action', 'xdwp_renew');
+			body.append('nonce', data.nonce);
+			body.append('order_id', String(data.orderId));
+			body.append('order_key', String(data.orderKey || ''));
+			fetch(data.renewUrl, { method: 'POST', credentials: 'same-origin', body: body })
+				.then(function (r) { return r.json(); })
+				.then(function (res) {
+					if (res && res.success) {
+						window.location.reload();
+						return;
+					}
+					renewBtn.disabled = false;
+					if (note) {
+						note.textContent = (res && res.data && res.data.message) || data.i18n.renewFail || '';
+					}
+				})
+				.catch(function () {
+					renewBtn.disabled = false;
+					if (note) {
+						note.textContent = data.i18n.renewFail || '';
+					}
+				});
+		});
 	}
 
 	renderQr();

@@ -473,6 +473,18 @@ xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-
 xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-prices.php' ), 'take_checkout_quote' ), 'order consumes checkout quote' );
 xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-ajax.php' ), 'checkout_quote' ), 'ajax uses reserved checkout quote' );
 xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-order.php' ), 'take_checkout_quote' ), 'assign_payment reuses checkout quote' );
+// Release 1.7.0 features.
+xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-verifier.php' ), 'detect_incoming' ), 'unconfirmed payment detection' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-verifier.php' ), '$confirmations_override' ), 'detection uses a confirmations override, not the live setting' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-ajax.php' ), "'detected'" ), 'status endpoint reports detection' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-order.php' ), 'function renew_payment' ), 'expired order can be re-quoted' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-order.php' ), 'function can_renew' ), 're-quote is gated' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-ajax.php' ), 'wc_ajax_xdwp_renew' ), 're-quote reachable when admin-ajax is cached' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-coins.php' ), 'function payable_for_total' ), 'per-coin order limits' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-settings.php' ), 'coin_limits' ), 'coin limits are sanitized' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/assets/js/checkout.js' ), 'bindSearch' ), 'classic checkout coin search' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/assets/js/blocks.js' ), 'shownCoins' ), 'block checkout coin search' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/templates/payment.php' ), 'xdwp-open-wallet' ), 'open in wallet app button' );
 xdwp_assert( false !== strpos( $readme, '== External services ==' ), 'readme external services section present' );
 xdwp_assert( false !== strpos( $readme, 'XRPSCan' ), 'readme documents XRPSCan' );
 xdwp_assert( false !== strpos( $readme, 'Subscan' ), 'readme documents Subscan' );

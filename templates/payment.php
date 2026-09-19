@@ -14,6 +14,7 @@
  * @var string   $coin_id
  * @var string   $received Amount received so far (partial payments).
  * @var string   $due      Full amount of the order.
+ * @var bool     $can_renew Whether the customer may request a new quote.
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -29,7 +30,15 @@ defined( 'ABSPATH' ) || exit;
 	<?php elseif ( 'expired' === $status && '' !== (string) $received ) : ?>
 		<p class="xdwp-box__error"><?php esc_html_e( 'The payment window closed before the full amount arrived. We have received part of your payment — please contact us and we will complete or refund your order. Do not send more.', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
 	<?php elseif ( 'expired' === $status ) : ?>
-		<p class="xdwp-box__error"><?php esc_html_e( 'Payment window expired. Please place a new order.', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
+		<?php if ( $can_renew ) : ?>
+			<p class="xdwp-box__error"><?php esc_html_e( 'The payment window closed, so the amount shown is out of date. You can get a new amount at today\'s rate — your order is kept.', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
+			<p>
+				<button type="button" class="button xdwp-renew" id="xdwp-renew"><?php esc_html_e( 'Get a new amount', 'xorro-direct-wallet-payments-woocommerce' ); ?></button>
+				<span class="xdwp-box__hint" id="xdwp-renew-status" role="status"></span>
+			</p>
+		<?php else : ?>
+			<p class="xdwp-box__error"><?php esc_html_e( 'Payment window expired. Please place a new order.', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
+		<?php endif; ?>
 	<?php else : ?>
 		<?php if ( 'underpaid' === $status ) : ?>
 			<p class="xdwp-box__partial" role="status">
@@ -91,6 +100,12 @@ defined( 'ABSPATH' ) || exit;
 				<span class="xdwp-box__value"><?php echo esc_html( $coin['network'] . ' · ' . $coin['type'] ); ?></span>
 			</div>
 		</div>
+
+		<?php if ( ! empty( $uri ) ) : ?>
+			<p class="xdwp-box__wallet">
+				<a class="xdwp-open-wallet" href="<?php echo esc_url( $uri ); ?>"><?php esc_html_e( 'Open in wallet app', 'xorro-direct-wallet-payments-woocommerce' ); ?></a>
+			</p>
+		<?php endif; ?>
 
 		<div class="xdwp-box__qr">
 			<div id="xdwp-qrcode" aria-hidden="true"></div>

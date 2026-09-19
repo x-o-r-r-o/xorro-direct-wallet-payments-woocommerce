@@ -505,6 +505,11 @@ body.xdwp-admin-page #wpbody-content > .wrap > h1.wp-heading-inline {
 	gap: 10px;
 }
 
+.xdwp-options-wrap .cc-coin-limits input {
+	width: 72px;
+	margin-right: 4px;
+}
+
 .xdwp-options-wrap .cc-coin-cell__icon {
 	width: 22px;
 	height: 22px;
