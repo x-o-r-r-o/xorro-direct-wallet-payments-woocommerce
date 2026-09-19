@@ -246,9 +246,16 @@ class Xdwp_Order {
 		$started = time();
 		$expires = $started + ( $window * MINUTE_IN_SECONDS );
 
+		$memo = Xdwp_Coins::make_memo( $coin );
+
 		$order->update_meta_data( '_xdwp_coin', $coin_id );
 		$order->update_meta_data( '_xdwp_address', $address );
 		$order->update_meta_data( '_xdwp_amount', $amount );
+		if ( '' !== $memo ) {
+			$order->update_meta_data( '_xdwp_memo', $memo );
+		} else {
+			$order->delete_meta_data( '_xdwp_memo' );
+		}
 		$order->update_meta_data( '_xdwp_started', $started );
 		$order->update_meta_data( '_xdwp_expires', $expires );
 		$order->update_meta_data( '_xdwp_status', 'awaiting' );
@@ -532,7 +539,7 @@ class Xdwp_Order {
 			$amount = (string) Xdwp_Order::meta( $order, 'remainder' );
 		}
 
-		$uri = Xdwp_Coins::payment_uri( $coin_id, $address, $amount );
+		$uri = Xdwp_Coins::payment_uri( $coin_id, $address, $amount, (string) self::meta( $order, 'memo' ) );
 
 		// Ensure handles exist even if wp_enqueue_scripts already ran.
 		if ( ! wp_style_is( 'xdwp-frontend', 'registered' ) ) {
@@ -623,6 +630,8 @@ class Xdwp_Order {
 				'received'  => $received,
 				'due'       => $due,
 				'can_renew' => self::can_renew( $order ),
+				'memo'      => (string) self::meta( $order, 'memo' ),
+				'memo_kind' => Xdwp_Coins::memo_kind( $coin ),
 			),
 			'xorro-direct-wallet-payments-woocommerce/',
 			XDWP_PATH . 'templates/'
@@ -673,6 +682,11 @@ class Xdwp_Order {
 		echo '<p><strong>' . esc_html__( 'Coin:', 'xorro-direct-wallet-payments-woocommerce' ) . '</strong> ' . esc_html( $coin ? $coin['name'] : $coin_id ) . '</p>';
 		echo '<p><strong>' . esc_html__( 'Amount:', 'xorro-direct-wallet-payments-woocommerce' ) . '</strong> ' . esc_html( Xdwp_Order::meta( $order, 'amount' ) ) . '</p>';
 		echo '<p><strong>' . esc_html__( 'Address:', 'xorro-direct-wallet-payments-woocommerce' ) . '</strong><br><code style="word-break:break-all;">' . esc_html( Xdwp_Order::meta( $order, 'address' ) ) . '</code></p>';
+		$memo_kind = Xdwp_Coins::memo_kind( (string) Xdwp_Order::meta( $order, 'coin' ) );
+		$memo      = (string) Xdwp_Order::meta( $order, 'memo' );
+		if ( '' !== $memo && '' !== $memo_kind ) {
+			echo '<p><strong>' . esc_html( 'tag' === $memo_kind ? __( 'Destination tag:', 'xorro-direct-wallet-payments-woocommerce' ) : __( 'Memo:', 'xorro-direct-wallet-payments-woocommerce' ) ) . '</strong> <code>' . esc_html( $memo ) . '</code></p>';
+		}
 		$xdwp_status = (string) Xdwp_Order::meta( $order, 'status' );
 		$labels      = array(
 			'awaiting'  => __( 'Waiting for payment', 'xorro-direct-wallet-payments-woocommerce' ),

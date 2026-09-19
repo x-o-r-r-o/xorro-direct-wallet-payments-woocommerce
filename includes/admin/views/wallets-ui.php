@@ -221,9 +221,15 @@ $render_row = static function ( $id, $addr = '' ) {
 									</div>
 								</div>
 
-								<?php if ( in_array( (string) $coin['verifier'], array( 'xrp', 'eos', 'xlm', 'hbar', 'atom', 'scrt', 'sei', 'inj_native', 'ton', 'waves' ), true ) ) : ?>
+								<?php if ( in_array( (string) $coin['verifier'], array( 'waves' ), true ) ) : ?>
 									<p class="xdwp-wallet-card__warning">
-										<?php esc_html_e( 'This network is matched by address + amount only — a destination tag/memo is not supported. Use an address only this store controls, never a shared or exchange-hosted address, or unrelated payments to the same address could be misattributed.', 'xorro-direct-wallet-payments-woocommerce' ); ?>
+										<?php esc_html_e( 'This network is matched by address + amount only — a destination tag/memo is not read here. Use an address only this store controls, never a shared or exchange-hosted address, or unrelated payments to the same address could be misattributed.', 'xorro-direct-wallet-payments-woocommerce' ); ?>
+									</p>
+								<?php endif; ?>
+
+								<?php if ( '' !== Xdwp_Coins::memo_kind( $coin ) ) : ?>
+									<p class="xdwp-wallet-card__note">
+										<?php esc_html_e( 'Each order also gets its own destination tag / memo, shown to the customer and checked against the payment — so an address shared with other orders still tells payments apart.', 'xorro-direct-wallet-payments-woocommerce' ); ?>
 									</p>
 								<?php endif; ?>
 

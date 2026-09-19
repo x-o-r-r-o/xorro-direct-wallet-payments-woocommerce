@@ -161,7 +161,7 @@ class Xdwp_Settings {
 			$clean['expiry_grace_minutes'] = max( 0, min( 1440, absint( $input['expiry_grace_minutes'] ) ) );
 		}
 
-		foreach ( array( 'unique_amounts', 'wallet_rotation', 'auto_verify', 'late_payment_scan', 'auto_partial_payments', 'stablecoin_peg', 'price_coin_show' ) as $flag ) {
+		foreach ( array( 'unique_amounts', 'wallet_rotation', 'auto_verify', 'late_payment_scan', 'auto_partial_payments', 'stablecoin_peg', 'price_coin_show', 'recommended_confirmations' ) as $flag ) {
 			if ( isset( $input[ $flag ] ) ) {
 				$clean[ $flag ] = ( 'yes' === $input[ $flag ] || 1 === (int) $input[ $flag ] || true === $input[ $flag ] ) ? 'yes' : 'no';
 			}
@@ -234,6 +234,23 @@ class Xdwp_Settings {
 				}
 			}
 			$clean['coin_limits'] = $limits;
+		}
+
+		if ( isset( $input['coin_confirmations'] ) && is_array( $input['coin_confirmations'] ) ) {
+			$valid_coins   = array_keys( Xdwp_Coins::all() );
+			$confirmations = array();
+			foreach ( $input['coin_confirmations'] as $coin_id => $value ) {
+				$coin_id = sanitize_text_field( $coin_id );
+				if ( ! in_array( $coin_id, $valid_coins, true ) ) {
+					continue;
+				}
+				$value = max( 0, min( 64, (int) $value ) );
+				// 0 means "no number of my own" — fall back to the chain's recommendation.
+				if ( $value > 0 ) {
+					$confirmations[ $coin_id ] = $value;
+				}
+			}
+			$clean['coin_confirmations'] = $confirmations;
 		}
 
 		if ( isset( $input['wallets'] ) && is_array( $input['wallets'] ) ) {

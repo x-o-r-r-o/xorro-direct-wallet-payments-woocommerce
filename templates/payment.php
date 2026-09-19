@@ -15,6 +15,8 @@
  * @var string   $received Amount received so far (partial payments).
  * @var string   $due      Full amount of the order.
  * @var bool     $can_renew Whether the customer may request a new quote.
+ * @var string   $memo      Destination tag / memo the payment must carry, '' when the chain has none.
+ * @var string   $memo_kind 'tag' | 'text' | ''.
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -95,6 +97,22 @@ defined( 'ABSPATH' ) || exit;
 				><?php esc_html_e( 'Copy', 'xorro-direct-wallet-payments-woocommerce' ); ?></button>
 				</span>
 			</div>
+			<?php if ( '' !== $memo ) : ?>
+				<div class="xdwp-box__field">
+					<span class="xdwp-box__label"><?php echo 'tag' === $memo_kind ? esc_html__( 'Destination tag', 'xorro-direct-wallet-payments-woocommerce' ) : esc_html__( 'Memo', 'xorro-direct-wallet-payments-woocommerce' ); ?></span>
+					<span class="xdwp-box__line">
+					<code id="xdwp-memo" class="xdwp-box__value"><?php echo esc_html( $memo ); ?></code>
+					<button
+						type="button"
+						class="xdwp-copy button"
+						id="xdwp-copy-memo"
+						data-copy-text="<?php echo esc_attr( $memo ); ?>"
+						data-copy-target="xdwp-memo"
+					><?php esc_html_e( 'Copy', 'xorro-direct-wallet-payments-woocommerce' ); ?></button>
+					</span>
+					<span class="xdwp-box__hint"><?php esc_html_e( 'Paste this into your wallet with the payment. It tells us the payment is yours.', 'xorro-direct-wallet-payments-woocommerce' ); ?></span>
+				</div>
+			<?php endif; ?>
 			<div class="xdwp-box__field">
 				<span class="xdwp-box__label"><?php esc_html_e( 'Network', 'xorro-direct-wallet-payments-woocommerce' ); ?></span>
 				<span class="xdwp-box__value"><?php echo esc_html( $coin['network'] . ' · ' . $coin['type'] ); ?></span>

@@ -126,6 +126,16 @@ $active  = isset( $tabs[ $tab ] ) ? $tabs[ $tab ] : $tabs['general'];
 										</td>
 									</tr>
 									<tr>
+										<th scope="row"><?php esc_html_e( 'Confirmations per chain', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
+										<td>
+											<label>
+												<input type="checkbox" name="xdwp[recommended_confirmations]" value="yes" <?php checked( ( $settings['recommended_confirmations'] ?? 'yes' ), 'yes' ); ?> />
+												<?php esc_html_e( 'Wait for the confirmations that suit each chain', 'xorro-direct-wallet-payments-woocommerce' ); ?>
+											</label>
+											<p class="description"><?php esc_html_e( 'One confirmation does not mean the same thing on every chain. With this on, each coin waits for a number suited to its own chain (Bitcoin 2, Ethereum 12, TRON 20 and so on) and never less than the number above. Set your own per coin on the Coins tab.', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
+										</td>
+									</tr>
+									<tr>
 										<th scope="row"><?php esc_html_e( 'Expiry grace (minutes)', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
 										<td>
 											<input type="number" min="0" max="1440" name="xdwp[expiry_grace_minutes]" value="<?php echo esc_attr( (string) ( $settings['expiry_grace_minutes'] ?? 30 ) ); ?>" class="small-text cc-input" />
@@ -257,6 +267,7 @@ $active  = isset( $tabs[ $tab ] ) ? $tabs[ $tab ] : $tabs['general'];
 
 							<?php elseif ( 'coins' === $tab ) : ?>
 								<p class="cc-lead"><?php esc_html_e( 'Leave min / max empty for no limit. Coins outside the limits are hidden at checkout — useful where network fees make small orders impractical.', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
+												<p class="cc-lead"><?php esc_html_e( 'Confirmations shown in grey are what this coin waits for now. Type a number to require your own instead — higher is safer and slower.', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
 								<p class="cc-lead"><?php esc_html_e( 'Auto-verify uses public blockchain APIs. Coins marked Manual (such as Monero) have no free way to detect payments — confirm those with “Mark payment received” on the order.', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
 								<?php
 								$sections = array(
@@ -292,6 +303,7 @@ $active  = isset( $tabs[ $tab ] ) ? $tabs[ $tab ] : $tabs['general'];
 														);
 														?>
 													</th>
+													<th><?php esc_html_e( 'Confirmations', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
 												</tr>
 											</thead>
 											<tbody>
@@ -299,6 +311,9 @@ $active  = isset( $tabs[ $tab ] ) ? $tabs[ $tab ] : $tabs['general'];
 													<?php
 													$icons       = Xdwp_Coins::icon_meta( $id );
 													$coin_limits = Xdwp_Coins::limits( $id );
+													$coin_confs  = Xdwp_Settings::get( 'coin_confirmations', array() );
+													$coin_conf   = ( is_array( $coin_confs ) && ! empty( $coin_confs[ $id ] ) ) ? (int) $coin_confs[ $id ] : 0;
+													$conf_now    = Xdwp_Coins::confirmations_for( $coin );
 													?>
 													<tr>
 														<td>
@@ -329,6 +344,9 @@ $active  = isset( $tabs[ $tab ] ) ? $tabs[ $tab ] : $tabs['general'];
 														<td class="cc-coin-limits">
 															<input type="number" min="0" step="0.01" class="small-text" name="xdwp[coin_limits][<?php echo esc_attr( $id ); ?>][min]" value="<?php echo esc_attr( $coin_limits['min'] > 0 ? (string) $coin_limits['min'] : '' ); ?>" placeholder="<?php esc_attr_e( 'min', 'xorro-direct-wallet-payments-woocommerce' ); ?>" aria-label="<?php echo esc_attr( sprintf( /* translators: %s: coin name */ __( 'Minimum order total for %s', 'xorro-direct-wallet-payments-woocommerce' ), $coin['name'] ) ); ?>" />
 															<input type="number" min="0" step="0.01" class="small-text" name="xdwp[coin_limits][<?php echo esc_attr( $id ); ?>][max]" value="<?php echo esc_attr( $coin_limits['max'] > 0 ? (string) $coin_limits['max'] : '' ); ?>" placeholder="<?php esc_attr_e( 'max', 'xorro-direct-wallet-payments-woocommerce' ); ?>" aria-label="<?php echo esc_attr( sprintf( /* translators: %s: coin name */ __( 'Maximum order total for %s', 'xorro-direct-wallet-payments-woocommerce' ), $coin['name'] ) ); ?>" />
+														</td>
+														<td class="cc-coin-confs">
+															<input type="number" min="0" max="64" step="1" class="small-text" name="xdwp[coin_confirmations][<?php echo esc_attr( $id ); ?>]" value="<?php echo esc_attr( $coin_conf > 0 ? (string) $coin_conf : '' ); ?>" placeholder="<?php echo esc_attr( (string) $conf_now ); ?>" aria-label="<?php echo esc_attr( sprintf( /* translators: %s: coin name */ __( 'Confirmations required for %s', 'xorro-direct-wallet-payments-woocommerce' ), $coin['name'] ) ); ?>" />
 														</td>
 													</tr>
 												<?php endforeach; ?>

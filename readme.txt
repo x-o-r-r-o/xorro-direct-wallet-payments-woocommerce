@@ -4,7 +4,7 @@ Tags: woocommerce, cryptocurrency, bitcoin, ethereum, payments, usdt, crypto che
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.7.0
+Stable tag: 1.8.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -23,7 +23,7 @@ This plugin contacts public price and blockchain APIs to quote amounts and (opti
 * USDT, USDC & DAI on multiple networks with separate wallet fields
 * Token support (WBTC, LINK, UNI, AAVE, MKR, LDO, CRV, COMP, APE, SHIB, PEPE, CAKE, and others) including multi-chain variants
 * Coin picker at checkout with search and coin names + payment page with amount, address, QR code and an "Open in wallet app" button
-* Optional minimum and maximum order value per coin
+* Optional minimum and maximum order value per coin, and confirmations per coin
 * "Payment spotted" notice while the network confirms, and a one-click re-quote for expired orders
 * 60-minute payment window (configurable)
 * Automatic on-chain verification via public explorers/RPCs (can be disabled)
@@ -336,6 +336,14 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 * QR Code generator (`assets/js/qrcode.min.js`) — MIT-licensed library by davidshimjs (https://github.com/davidshimjs/qrcodejs). Source is publicly available; the bundled file is minified for production use.
 
 == Changelog ==
+
+= 1.8.0 =
+Confirmations that fit the chain, and payments that identify themselves.
+* New: each coin waits for the confirmations its own chain deserves — Bitcoin 2, Ethereum 12, TRON 20 and so on — instead of one number for all 238 coins (General → Confirmations per chain, on by default). Your store-wide number is still the floor, so this only ever makes verification stricter
+* New: set your own confirmations per coin on the Coins tab; the grey number shows what the coin waits for now
+* New: orders on XRP, Stellar, Cosmos, Secret, Sei, Injective, EOS, Hedera and TON get their own destination tag / memo, shown on the payment page, in emails and in the wallet link
+* A payment carrying another order's tag or memo is never credited to this one; a payment with no tag still matches on its amount as before
+* A payment that carries this order's own tag is treated as certain, so it is no longer held back as "could belong to another order" on a shared address
 
 = 1.7.0 =
 A clearer wait, and coins that fit the order.

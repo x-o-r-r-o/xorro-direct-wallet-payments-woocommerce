@@ -32,6 +32,8 @@ Each order gets a slightly unique amount (usually a few base units, e.g. 10 sato
 - Checkout branding: title, description, custom icon and size, icon/text/both
 - Manual **"Mark payment received"** on the order screen, with transaction-ID reuse protection
 - **Coin search and per-coin order limits** at checkout, with coin names under each icon
+- **Confirmations suited to each chain**, overridable per coin
+- **Destination tag / memo per order** on the chains that carry one
 - **Re-quote an expired order** — the customer gets a fresh amount, you keep the order
 - **No lost payments:** payment details in customer emails, a reminder before the window closes, partial-payment handling (customer is asked for the rest), overpayment notes, and a late-payment scan that alerts you when money arrives after an order expired
 - Admin alerts when an explorer API rejects requests (e.g. a missing or limited API key), so verification never fails silently
@@ -172,6 +174,13 @@ Pushing a `vX.Y.Z` tag runs the Release workflow, which builds the ZIP, its SHA-
 ## Changelog
 
 Full details for every release are in [`readme.txt`](readme.txt).
+
+### 1.8.0 — confirmations that fit the chain, payments that identify themselves
+
+- **Confirmations per chain**: each coin waits for a number suited to its own chain (Bitcoin 2, Ethereum 12, TRON 20…) instead of one number for all 238 coins. Your store-wide number stays the floor, so this can only make verification stricter; chains that finalise outright (XRP, Stellar, Cosmos, TON…) still verify at one confirmation
+- **Confirmations per coin** on the Coins tab, with the number currently in force shown in grey
+- **Destination tag / memo per order** on XRP, Stellar, Cosmos, Secret, Sei, Injective, EOS, Hedera and TON — shown on the payment page, in customer emails, in the wallet link and on the order screen
+- A transfer carrying **another order's** reference is never credited here; one with **no** reference still matches on its amount; one with **this order's** reference is credited even on a shared address
 
 ### 1.7.0 — a clearer wait, and coins that fit the order
 

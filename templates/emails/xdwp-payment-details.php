@@ -47,6 +47,12 @@ $xdwp_cell   = 'padding:8px 12px;border:1px solid #e5e5e5;text-align:left;vertic
 		<th scope="row" style="<?php echo esc_attr( $xdwp_cell ); ?>"><?php esc_html_e( 'Address', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
 		<td style="<?php echo esc_attr( $xdwp_cell ); ?>font-family:monospace;word-break:break-all;"><?php echo esc_html( $details['address'] ); ?></td>
 	</tr>
+	<?php if ( '' !== $details['memo'] ) : ?>
+		<tr>
+			<th scope="row" style="<?php echo esc_attr( $xdwp_cell ); ?>"><?php echo esc_html( 'tag' === $details['memo_kind'] ? __( 'Destination tag', 'xorro-direct-wallet-payments-woocommerce' ) : __( 'Memo', 'xorro-direct-wallet-payments-woocommerce' ) ); ?></th>
+			<td style="<?php echo esc_attr( $xdwp_cell ); ?>font-family:monospace;"><strong><?php echo esc_html( $details['memo'] ); ?></strong><br /><span style="font-size:12px;color:#666666;"><?php esc_html_e( 'Include this with the payment so we know it is yours.', 'xorro-direct-wallet-payments-woocommerce' ); ?></span></td>
+		</tr>
+	<?php endif; ?>
 	<?php if ( '' !== $details['expires'] ) : ?>
 		<tr>
 			<th scope="row" style="<?php echo esc_attr( $xdwp_cell ); ?>"><?php esc_html_e( 'Pay before', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>

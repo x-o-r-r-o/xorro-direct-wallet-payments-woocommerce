@@ -31,6 +31,10 @@ if ( $details['underpaid'] ) {
 echo esc_html( ( $details['underpaid'] ? __( 'Remaining amount', 'xorro-direct-wallet-payments-woocommerce' ) : __( 'Amount', 'xorro-direct-wallet-payments-woocommerce' ) ) . ': ' . $details['amount'] . ' ' . $xdwp_symbol ) . "\n";
 echo esc_html( __( 'Network', 'xorro-direct-wallet-payments-woocommerce' ) . ': ' . $details['coin']['name'] . ' — ' . $details['network'] ) . "\n";
 echo esc_html( __( 'Address', 'xorro-direct-wallet-payments-woocommerce' ) . ': ' . $details['address'] ) . "\n";
+if ( '' !== $details['memo'] ) {
+	echo esc_html( ( 'tag' === $details['memo_kind'] ? __( 'Destination tag', 'xorro-direct-wallet-payments-woocommerce' ) : __( 'Memo', 'xorro-direct-wallet-payments-woocommerce' ) ) . ': ' . $details['memo'] ) . "\n";
+	echo esc_html__( 'Include this with the payment so we know it is yours.', 'xorro-direct-wallet-payments-woocommerce' ) . "\n";
+}
 if ( '' !== $details['expires'] ) {
 	echo esc_html( __( 'Pay before', 'xorro-direct-wallet-payments-woocommerce' ) . ': ' . $details['expires'] ) . "\n";
 }

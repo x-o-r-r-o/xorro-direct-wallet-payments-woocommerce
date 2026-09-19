@@ -72,8 +72,11 @@ class Xdwp_Emails {
 		}
 		$remainder = (string) Xdwp_Order::meta( $order, 'remainder' );
 		$expires   = (int) Xdwp_Order::meta( $order, 'expires' );
+		$memo_kind = Xdwp_Coins::memo_kind( $coin );
 		return array(
 			'coin'      => $coin,
+			'memo'      => ( '' === $memo_kind ) ? '' : (string) Xdwp_Order::meta( $order, 'memo' ),
+			'memo_kind' => $memo_kind,
 			'address'   => $address,
 			'amount'    => ( 'underpaid' === $status && '' !== $remainder ) ? $remainder : $amount,
 			'due'       => $amount,

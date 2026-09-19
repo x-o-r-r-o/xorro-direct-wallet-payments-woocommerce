@@ -485,6 +485,186 @@ class Xdwp_Coins {
 	}
 
 	/**
+	 * Chains where a payment can carry a reference the payer types in — a destination tag on
+	 * XRP, a memo elsewhere — and where this plugin can read it back off the chain.
+	 *
+	 * Only listed here when both halves work: asking a customer for a reference nobody checks
+	 * would be noise.
+	 *
+	 * @return array<string, string> Verifier => 'tag' (digits) | 'text'.
+	 */
+	public static function memo_chains() {
+		return array(
+			'xrp'        => 'tag',
+			'xlm'        => 'text',
+			'eos'        => 'text',
+			'hbar'       => 'text',
+			'atom'       => 'text',
+			'scrt'       => 'text',
+			'sei'        => 'text',
+			'inj_native' => 'text',
+			'ton'        => 'text',
+		);
+	}
+
+	/**
+	 * What kind of reference this coin's payments can carry, or '' for none.
+	 *
+	 * @param array|string $coin Coin definition or ID.
+	 * @return string 'tag' | 'text' | ''
+	 */
+	public static function memo_kind( $coin ) {
+		if ( ! is_array( $coin ) ) {
+			$coin = self::get( (string) $coin );
+		}
+		if ( ! is_array( $coin ) || empty( $coin['verifier'] ) ) {
+			return '';
+		}
+		// Jettons carry their comment inside the token transfer, which is not read back here.
+		if ( 'ton' === $coin['verifier'] && 'native' !== $coin['type'] ) {
+			return '';
+		}
+		$map = self::memo_chains();
+		$key = (string) $coin['verifier'];
+		return isset( $map[ $key ] ) ? $map[ $key ] : '';
+	}
+
+	/**
+	 * A reference for one order: digits for chains that take a destination tag, a short
+	 * readable code elsewhere. Random rather than sequential, so one customer's reference says
+	 * nothing about how many orders the store has taken.
+	 *
+	 * @param array|string $coin Coin definition or ID.
+	 * @return string Empty when the coin takes no reference.
+	 */
+	public static function make_memo( $coin ) {
+		$kind = self::memo_kind( $coin );
+		if ( 'tag' === $kind ) {
+			// A 32-bit unsigned integer, which is what a destination tag is.
+			return (string) wp_rand( 1, 4294967294 );
+		}
+		if ( 'text' === $kind ) {
+			return 'XDWP-' . strtoupper( wp_generate_password( 8, false, false ) );
+		}
+		return '';
+	}
+
+	/**
+	 * Confirmations that suit each chain, for stores that would otherwise use one number
+	 * everywhere. Keyed by the coin's verifier, because that is what decides how a payment is
+	 * read on chain.
+	 *
+	 * Chains that finalise a transaction outright (XRP, Stellar, Cosmos, TON, Algorand…) are
+	 * deliberately absent: one validated transaction is final there, and asking for depth the
+	 * explorers do not report would only stop automatic verification.
+	 *
+	 * These are aimed at a normal shop order — roughly ten minutes of blocks on proof-of-work
+	 * chains. Large orders deserve more; set your own number per coin on the Coins tab.
+	 *
+	 * @return array<string, int> Verifier => confirmations.
+	 */
+	public static function chain_confirmations() {
+		return array(
+			// Proof-of-work chains: about ten minutes of blocks.
+			'btc'   => 2,
+			'bch'   => 2,
+			'btg'   => 6,
+			'ltc'   => 4,
+			'doge'  => 10,
+			'dash'  => 3,
+			'zec'   => 5,
+			'xec'   => 2,
+			'firo'  => 6,
+			'xzc'   => 6,
+			'dgb'   => 15,
+			'kmd'   => 5,
+			'rvn'   => 10,
+			'pivx'  => 6,
+			'xvg'   => 10,
+			'qtum'  => 10,
+			// Ethereum and its clones: a minute or two of blocks.
+			'eth'      => 12,
+			'ethereum' => 12,
+			'etc'   => 30,
+			'matic' => 30,
+			'bsc'   => 15,
+			'arbitrum' => 20,
+			'optimism' => 20,
+			'base'  => 20,
+			'sysevm' => 6,
+			'boba'  => 20,
+			'xdc'   => 10,
+			'pls'   => 10,
+			'brise' => 10,
+			'one'   => 5,
+			'cro'   => 5,
+			// Chains that settle quickly but still report depth.
+			'avax'  => 3,
+			'ftm'   => 3,
+			'sol'   => 1,
+			'solana' => 1,
+			'trx'   => 20,
+			'tron'  => 20,
+			'ada'   => 15,
+			'kas'   => 30,
+			'neo'   => 1,
+			'gas'   => 1,
+			'xtz'   => 3,
+			'xem'   => 6,
+			'xym'   => 6,
+		);
+	}
+
+	/**
+	 * Confirmations suited to this coin's chain, or 0 when there is no specific recommendation.
+	 *
+	 * @param array|string $coin Coin definition or ID.
+	 * @return int
+	 */
+	public static function recommended_confirmations( $coin ) {
+		if ( ! is_array( $coin ) ) {
+			$coin = self::get( (string) $coin );
+		}
+		if ( ! is_array( $coin ) || empty( $coin['verifier'] ) ) {
+			return 0;
+		}
+		$map = self::chain_confirmations();
+		$key = (string) $coin['verifier'];
+		return isset( $map[ $key ] ) ? (int) $map[ $key ] : 0;
+	}
+
+	/**
+	 * Confirmations a coin's payments must reach before an order is marked paid.
+	 *
+	 * The merchant's own number per coin wins. Otherwise the store-wide number is used, raised
+	 * to the chain's recommendation when that is higher — never lowered, so turning this on can
+	 * only make verification stricter than what the merchant already asked for.
+	 *
+	 * @param array|string $coin Coin definition or ID.
+	 * @return int
+	 */
+	public static function confirmations_for( $coin ) {
+		if ( ! is_array( $coin ) ) {
+			$coin = self::get( (string) $coin );
+		}
+		$store = max( 0, min( 64, (int) Xdwp_Settings::get( 'min_confirmations', 1 ) ) );
+		if ( ! is_array( $coin ) ) {
+			return $store;
+		}
+
+		$per_coin = Xdwp_Settings::get( 'coin_confirmations', array() );
+		$id       = isset( $coin['id'] ) ? (string) $coin['id'] : '';
+		if ( is_array( $per_coin ) && '' !== $id && ! empty( $per_coin[ $id ] ) ) {
+			return max( 0, min( 64, (int) $per_coin[ $id ] ) );
+		}
+
+		if ( 'yes' !== Xdwp_Settings::get( 'recommended_confirmations', 'yes' ) ) {
+			return $store;
+		}
+		return min( 64, max( $store, self::recommended_confirmations( $coin ) ) );
+	}
+
+	/**
 	 * Order-total limits a merchant set for a coin, in store currency.
 	 *
 	 * @param string $coin_id Coin ID.
@@ -749,9 +929,10 @@ class Xdwp_Coins {
 	 * @param string $coin_id Coin ID.
 	 * @param string $address Wallet address.
 	 * @param string $amount  Crypto amount (human / UI units).
+	 * @param string $memo    Destination tag / memo the payment must carry, if any.
 	 * @return string
 	 */
-	public static function payment_uri( $coin_id, $address, $amount ) {
+	public static function payment_uri( $coin_id, $address, $amount, $memo = '' ) {
 		$coin    = self::get( $coin_id );
 		$address = trim( (string) $address );
 		$amount  = trim( (string) $amount );
@@ -760,6 +941,7 @@ class Xdwp_Coins {
 			return $address;
 		}
 
+		$memo     = trim( (string) $memo );
 		$type     = $coin['type'];
 		$scheme   = $coin['uri_scheme'];
 		$verifier = $coin['verifier'];
@@ -862,18 +1044,26 @@ class Xdwp_Coins {
 			return sprintf( 'tron:%s?amount=%s', $address, rawurlencode( self::normalize_decimal_amount( $amount ) ) );
 		}
 
-		// XRP.
+		// XRP — the destination tag travels in the link so wallets fill it in themselves.
 		if ( 'xrp' === $verifier || 'xrp' === $scheme ) {
-			return sprintf( 'ripple:%s?amount=%s', $address, rawurlencode( self::normalize_decimal_amount( $amount ) ) );
+			$uri = sprintf( 'ripple:%s?amount=%s', $address, rawurlencode( self::normalize_decimal_amount( $amount ) ) );
+			if ( '' !== $memo && preg_match( '/^\d+$/', $memo ) ) {
+				$uri .= '&dt=' . rawurlencode( $memo );
+			}
+			return $uri;
 		}
 
 		// Stellar.
 		if ( 'xlm' === $verifier || 'xlm' === $scheme ) {
-			return sprintf(
+			$uri = sprintf(
 				'web+stellar:pay?destination=%s&amount=%s',
 				rawurlencode( $address ),
 				rawurlencode( self::normalize_decimal_amount( $amount ) )
 			);
+			if ( '' !== $memo ) {
+				$uri .= '&memo=' . rawurlencode( $memo ) . '&memo_type=MEMO_TEXT';
+			}
+			return $uri;
 		}
 
 		// Monero.
@@ -883,7 +1073,11 @@ class Xdwp_Coins {
 
 		// Cosmos.
 		if ( 'atom' === $verifier || 'atom' === $scheme ) {
-			return sprintf( 'cosmos:%s?amount=%s', $address, rawurlencode( self::normalize_decimal_amount( $amount ) ) );
+			$uri = sprintf( 'cosmos:%s?amount=%s', $address, rawurlencode( self::normalize_decimal_amount( $amount ) ) );
+			if ( '' !== $memo ) {
+				$uri .= '&memo=' . rawurlencode( $memo );
+			}
+			return $uri;
 		}
 
 		// Kaspa — its own address format already textually embeds "kaspa:" as a
@@ -899,11 +1093,15 @@ class Xdwp_Coins {
 		// a correct ton:// Jetton-transfer link needs the recipient's derived
 		// per-owner jetton-wallet address, not the owner's own address).
 		if ( 'ton' === $verifier && 'native' === $type ) {
-			return sprintf(
+			$uri = sprintf(
 				'ton://transfer/%s?amount=%s',
 				rawurlencode( $address ),
 				rawurlencode( self::to_base_units( $amount, 9 ) )
 			);
+			if ( '' !== $memo ) {
+				$uri .= '&text=' . rawurlencode( $memo );
+			}
+			return $uri;
 		}
 
 		// Bare address for remaining chains (ADA, ALGO, NEAR, DOT, FIL, HBAR, EGLD, ZIL, EOS, …).

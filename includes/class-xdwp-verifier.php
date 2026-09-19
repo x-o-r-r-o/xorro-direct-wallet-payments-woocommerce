@@ -41,6 +41,34 @@ class Xdwp_Verifier {
 	private static $confirmations_override = null;
 
 	/**
+	 * Coin whose payment is being looked for, so the confirmations suited to its chain are used.
+	 *
+	 * @var array|null
+	 */
+	private static $current_coin = null;
+
+	/**
+	 * Reference (destination tag / memo) the order asked the customer to include, if any.
+	 *
+	 * @var string
+	 */
+	private static $expected_memo = '';
+
+	/**
+	 * Reference carried by the transfer currently being examined.
+	 *
+	 * @var string
+	 */
+	private static $candidate_memo = '';
+
+	/**
+	 * Whether the transfer that matched carried this order's own reference.
+	 *
+	 * @var bool
+	 */
+	private static $last_match_memo = false;
+
+	/**
 	 * Verify whether a payment matching order meta has been received.
 	 * On success, stores confirming txid on the order.
 	 *
@@ -97,9 +125,10 @@ class Xdwp_Verifier {
 		// detected still counts; if that finds the partial itself (remainder == partial), look
 		// again from detection time only.
 		$exact_since = $underpaid ? max( 0, $started - 30 ) : $since;
-		$hit         = self::find_payment_detailed( $coin, $address, $band['min'], $band['max'], $exact_since );
+		$memo        = (string) Xdwp_Order::meta( $order, 'memo' );
+		$hit         = self::find_payment_detailed( $coin, $address, $band['min'], $band['max'], $exact_since, $memo );
 		if ( $hit && $underpaid && self::is_own_partial( $order, $hit['txid'] ) ) {
-			$hit = self::find_payment_detailed( $coin, $address, $band['min'], $band['max'], $since );
+			$hit = self::find_payment_detailed( $coin, $address, $band['min'], $band['max'], $since, $memo );
 		}
 		if ( $hit && ! self::is_own_partial( $order, $hit['txid'] ) ) {
 			return self::record_final_payment( $order, $hit['txid'], $underpaid, $hit['amount'] );
@@ -138,7 +167,7 @@ class Xdwp_Verifier {
 		$ceiling = $underpaid
 			? self::amount_add( $target, self::scale_amount( (string) Xdwp_Order::meta( $order, 'amount' ), self::OVERPAY_CEILING - 100 ) )
 			: self::scale_amount( $target, self::OVERPAY_CEILING );
-		$hit     = self::find_payment_detailed( $coin, $address, $floor, $ceiling, $since );
+		$hit     = self::find_payment_detailed( $coin, $address, $floor, $ceiling, $since, (string) Xdwp_Order::meta( $order, 'memo' ) );
 		if ( ! $hit || '' === $hit['amount'] || self::is_own_partial( $order, $hit['txid'] ) ) {
 			return false;
 		}
@@ -146,7 +175,7 @@ class Xdwp_Verifier {
 		// Only credit a non-exact transfer when it can belong to this order alone. On a shared
 		// address a fee-short payment from another customer (or unrelated wallet income) could
 		// otherwise be credited to whichever open order is scanned first.
-		if ( self::transfer_is_ambiguous( $coin, $address, $order->get_id(), $hit['amount'] ) ) {
+		if ( empty( $hit['referenced'] ) && self::transfer_is_ambiguous( $coin, $address, $order->get_id(), $hit['amount'] ) ) {
 			self::flag_ambiguous_transfer( $order, $hit['txid'], $hit['amount'] );
 			return false;
 		}
@@ -392,8 +421,15 @@ class Xdwp_Verifier {
 		if ( ! in_array( $status, array( 'awaiting', 'underpaid' ), true ) ) {
 			return false;
 		}
-		// Only useful when confirmations are actually required; otherwise a match is already paid.
-		if ( self::min_confirmations() < 1 ) {
+		$coin    = Xdwp_Coins::get( (string) Xdwp_Order::meta( $order, 'coin' ) );
+		$address = (string) Xdwp_Order::meta( $order, 'address' );
+		$started = (int) Xdwp_Order::meta( $order, 'started' );
+		if ( ! $coin || '' === $address || ! $started ) {
+			return false;
+		}
+		// Only useful when this coin actually waits for confirmations; otherwise a match is
+		// already paid by the time it is visible.
+		if ( Xdwp_Coins::confirmations_for( $coin ) < 1 ) {
 			return false;
 		}
 		$throttle = 'xdwp_detect_' . $order->get_id();
@@ -401,13 +437,6 @@ class Xdwp_Verifier {
 			return false;
 		}
 		set_transient( $throttle, 1, self::DETECT_INTERVAL );
-
-		$coin    = Xdwp_Coins::get( (string) Xdwp_Order::meta( $order, 'coin' ) );
-		$address = (string) Xdwp_Order::meta( $order, 'address' );
-		$started = (int) Xdwp_Order::meta( $order, 'started' );
-		if ( ! $coin || '' === $address || ! $started ) {
-			return false;
-		}
 		$target = 'underpaid' === $status
 			? (string) Xdwp_Order::meta( $order, 'remainder' )
 			: (string) Xdwp_Order::meta( $order, 'amount' );
@@ -421,7 +450,7 @@ class Xdwp_Verifier {
 
 		self::$confirmations_override = 0;
 		try {
-			$hit = self::find_payment_detailed( $coin, $address, $band['min'], $band['max'], $since );
+			$hit = self::find_payment_detailed( $coin, $address, $band['min'], $band['max'], $since, (string) Xdwp_Order::meta( $order, 'memo' ) );
 		} finally {
 			self::$confirmations_override = null;
 		}
@@ -445,16 +474,19 @@ class Xdwp_Verifier {
 	 * @param int    $since   Since.
 	 * @return array{txid:string,amount:string}|false
 	 */
-	public static function find_payment_detailed( array $coin, $address, $min, $max, $since ) {
-		self::$last_match_e18 = '';
-		$txid = self::find_payment( $coin, $address, $min, $max, $since );
+	public static function find_payment_detailed( array $coin, $address, $min, $max, $since, $memo = '' ) {
+		self::$last_match_e18  = '';
+		self::$last_match_memo = false;
+		self::$candidate_memo  = '';
+		$txid = self::find_payment( $coin, $address, $min, $max, $since, $memo );
 		if ( ! $txid ) {
 			return false;
 		}
 		$amount = '' === self::$last_match_e18 ? '' : self::trim_decimal( self::e18_to_decimal( self::$last_match_e18 ) );
 		return array(
-			'txid'   => (string) $txid,
-			'amount' => $amount,
+			'txid'      => (string) $txid,
+			'amount'    => $amount,
+			'referenced' => self::$last_match_memo,
 		);
 	}
 
@@ -484,12 +516,13 @@ class Xdwp_Verifier {
 			$address,
 			self::scale_amount( $target, self::PARTIAL_FLOOR ),
 			$ceiling,
-			$since
+			$since,
+			(string) Xdwp_Order::meta( $order, 'memo' )
 		);
 		if ( ! $hit || self::is_own_partial( $order, $hit['txid'] ) || self::txid_claimed_by_other( $hit['txid'], $order->get_id() ) ) {
 			return false;
 		}
-		if ( '' === $hit['amount'] || self::transfer_is_ambiguous( $coin, $address, $order->get_id(), $hit['amount'] ) ) {
+		if ( '' === $hit['amount'] || ( empty( $hit['referenced'] ) && self::transfer_is_ambiguous( $coin, $address, $order->get_id(), $hit['amount'] ) ) ) {
 			if ( '' !== $hit['amount'] ) {
 				self::flag_ambiguous_transfer( $order, $hit['txid'], $hit['amount'] );
 			}
@@ -1270,9 +1303,64 @@ class Xdwp_Verifier {
 	 *
 	 * @return int
 	 */
+	/**
+	 * Does this transfer carry a reference that rules it out for the order being checked?
+	 *
+	 * A transfer with no reference is judged on its amount as before — customers forget, and
+	 * plenty of wallets do not send one. A transfer carrying someone else's reference, though,
+	 * belongs to another order and must never be credited here.
+	 *
+	 * @param string $tx_memo Reference read from the transfer (destination tag, memo, comment).
+	 * @return bool True when the transfer may still be considered.
+	 */
+	/**
+	 * Text comment attached to an incoming TON message, if any.
+	 *
+	 * @param array $in_msg toncenter in_msg.
+	 * @return string
+	 */
+	private static function ton_comment( $in_msg ) {
+		if ( ! is_array( $in_msg ) ) {
+			return '';
+		}
+		if ( isset( $in_msg['message_content']['decoded']['comment'] ) ) {
+			return (string) $in_msg['message_content']['decoded']['comment'];
+		}
+		if ( isset( $in_msg['decoded_body']['text'] ) ) {
+			return (string) $in_msg['decoded_body']['text'];
+		}
+		if ( isset( $in_msg['comment'] ) ) {
+			return (string) $in_msg['comment'];
+		}
+		return '';
+	}
+
+	private static function memo_ok( $tx_memo ) {
+		$actual               = trim( (string) $tx_memo );
+		self::$candidate_memo = $actual;
+		$expected             = trim( (string) self::$expected_memo );
+		if ( '' === $expected || '' === $actual ) {
+			return true;
+		}
+		return 0 === strcasecmp( $expected, $actual );
+	}
+
+	/**
+	 * Record whether the transfer just accepted carried this order's own reference.
+	 */
+	private static function note_memo_match() {
+		$expected              = trim( (string) self::$expected_memo );
+		$actual                = trim( (string) self::$candidate_memo );
+		self::$last_match_memo = ( '' !== $expected && '' !== $actual && 0 === strcasecmp( $expected, $actual ) );
+		self::$candidate_memo  = '';
+	}
+
 	private static function min_confirmations() {
 		if ( null !== self::$confirmations_override ) {
 			return (int) self::$confirmations_override;
+		}
+		if ( is_array( self::$current_coin ) ) {
+			return Xdwp_Coins::confirmations_for( self::$current_coin );
 		}
 		return max( 0, min( 64, (int) Xdwp_Settings::get( 'min_confirmations', 1 ) ) );
 	}
@@ -1383,6 +1471,7 @@ class Xdwp_Verifier {
 		$ok = self::e18_cmp( $v, self::to_e18( $min ) ) >= 0 && self::e18_cmp( $v, self::to_e18( $max ) ) <= 0;
 		if ( $ok ) {
 			self::$last_match_e18 = $v;
+			self::note_memo_match();
 		}
 		return $ok;
 	}
@@ -1495,6 +1584,7 @@ class Xdwp_Verifier {
 		$ok = self::e18_cmp( $e18, self::to_e18( $min ) ) >= 0 && self::e18_cmp( $e18, self::to_e18( $max ) ) <= 0;
 		if ( $ok ) {
 			self::$last_match_e18 = $e18;
+			self::note_memo_match();
 		}
 		return $ok;
 	}
@@ -1534,7 +1624,33 @@ class Xdwp_Verifier {
 	 * @param int    $since   Unix timestamp (payments after this).
 	 * @return string|false Txid on match, false otherwise.
 	 */
-	public static function find_payment( array $coin, $address, $min, $max, $since ) {
+	public static function find_payment( array $coin, $address, $min, $max, $since, $memo = '' ) {
+		// Remember which coin is being looked for so the confirmations suited to its chain are
+		// applied, and which reference the customer was asked to include, then put the previous
+		// ones back afterwards (a late scan can nest).
+		$previous_coin       = self::$current_coin;
+		$previous_memo       = self::$expected_memo;
+		self::$current_coin  = $coin;
+		self::$expected_memo = (string) $memo;
+		try {
+			return self::find_payment_on_chain( $coin, $address, $min, $max, $since );
+		} finally {
+			self::$current_coin  = $previous_coin;
+			self::$expected_memo = $previous_memo;
+		}
+	}
+
+	/**
+	 * Ask this coin's chain for a matching payment.
+	 *
+	 * @param array  $coin    Coin definition.
+	 * @param string $address Receiving address.
+	 * @param float  $min     Minimum amount.
+	 * @param float  $max     Maximum amount.
+	 * @param int    $since   Unix timestamp (payments after this).
+	 * @return string|false Txid on match, false otherwise.
+	 */
+	private static function find_payment_on_chain( array $coin, $address, $min, $max, $since ) {
 		$verifier = $coin['verifier'];
 
 		switch ( $verifier ) {
@@ -2958,6 +3074,15 @@ class Xdwp_Verifier {
 			if ( ! $dest ) {
 				continue;
 			}
+			$tag = '';
+			if ( isset( $tx['DestinationTag'] ) ) {
+				$tag = (string) $tx['DestinationTag'];
+			} elseif ( isset( $tx['tx']['DestinationTag'] ) ) {
+				$tag = (string) $tx['tx']['DestinationTag'];
+			}
+			if ( ! self::memo_ok( $tag ) ) {
+				continue;
+			}
 			// Credited amount only — never Amount/DeliverMax (partial-payment underpay).
 			$amount = self::xrp_delivered_xrp( $tx );
 			if ( null === $amount && isset( $tx['tx'] ) && is_array( $tx['tx'] ) ) {
@@ -2986,7 +3111,7 @@ class Xdwp_Verifier {
 	 * @return bool
 	 */
 	private static function check_stellar( $address, $min, $max, $since ) {
-		$url      = sprintf( 'https://horizon.stellar.org/accounts/%s/payments?order=desc&limit=50', rawurlencode( $address ) );
+		$url      = sprintf( 'https://horizon.stellar.org/accounts/%s/payments?order=desc&limit=50&join=transactions', rawurlencode( $address ) );
 		$response = self::http_get( $url );
 		if ( empty( $response['_embedded']['records'] ) || ! is_array( $response['_embedded']['records'] ) ) {
 			return false;
@@ -3009,6 +3134,13 @@ class Xdwp_Verifier {
 			}
 			// Horizon always sets asset_type on payments; a missing value is not "native XLM".
 			if ( ! isset( $tx['asset_type'] ) || 'native' !== $tx['asset_type'] ) {
+				continue;
+			}
+			$memo = '';
+			if ( isset( $tx['transaction']['memo'] ) && 'hash' !== ( $tx['transaction']['memo_type'] ?? '' ) ) {
+				$memo = (string) $tx['transaction']['memo'];
+			}
+			if ( ! self::memo_ok( $memo ) ) {
 				continue;
 			}
 			$amount = isset( $tx['amount'] ) ? (float) $tx['amount'] : 0;
@@ -3216,6 +3348,16 @@ class Xdwp_Verifier {
 				&& isset( $tx['result'] )
 				&& 'SUCCESS' === strtoupper( (string) $tx['result'] );
 			if ( ! self::soft_finality_ok( $validated ) ) {
+				continue;
+			}
+			$memo = '';
+			if ( ! empty( $tx['memo_base64'] ) ) {
+				$decoded = base64_decode( (string) $tx['memo_base64'], true );
+				$memo    = ( false === $decoded ) ? '' : $decoded;
+			} elseif ( ! empty( $tx['memo'] ) ) {
+				$memo = (string) $tx['memo'];
+			}
+			if ( ! self::memo_ok( $memo ) ) {
 				continue;
 			}
 			if ( empty( $tx['transfers'] ) || ! is_array( $tx['transfers'] ) ) {
@@ -3446,6 +3588,9 @@ class Xdwp_Verifier {
 			if ( ! self::soft_finality_ok( $validated ) ) {
 				continue;
 			}
+			if ( ! self::memo_ok( isset( $tx['tx']['body']['memo'] ) ? $tx['tx']['body']['memo'] : '' ) ) {
+				continue;
+			}
 			$events      = isset( $tx['events'] ) ? $tx['events'] : array();
 			$amount_raw  = '0';
 			foreach ( $events as $event ) {
@@ -3561,6 +3706,9 @@ class Xdwp_Verifier {
 			$aborted    = ! empty( $desc['aborted'] );
 			$validated  = $compute_ok && $action_ok && ! $aborted;
 			if ( ! self::soft_finality_ok( $validated ) ) {
+				continue;
+			}
+			if ( ! self::memo_ok( self::ton_comment( $in ) ) ) {
 				continue;
 			}
 			$value = isset( $in['value'] ) ? (string) $in['value'] : '0';
@@ -4490,6 +4638,9 @@ class Xdwp_Verifier {
 			$validated = isset( $row['irreversible'] ) && $row['irreversible']
 				&& ( ! empty( $row['trx_id'] ) || ! empty( $row['trxid'] ) );
 			if ( ! self::soft_finality_ok( $validated ) ) {
+				continue;
+			}
+			if ( ! self::memo_ok( isset( $data['memo'] ) ? $data['memo'] : '' ) ) {
 				continue;
 			}
 			$qty = isset( $data['quantity'] ) ? $data['quantity'] : '';

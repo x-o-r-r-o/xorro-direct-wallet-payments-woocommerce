@@ -485,6 +485,15 @@ xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-
 xdwp_assert( false !== strpos( file_get_contents( $root . '/assets/js/checkout.js' ), 'bindSearch' ), 'classic checkout coin search' );
 xdwp_assert( false !== strpos( file_get_contents( $root . '/assets/js/blocks.js' ), 'shownCoins' ), 'block checkout coin search' );
 xdwp_assert( false !== strpos( file_get_contents( $root . '/templates/payment.php' ), 'xdwp-open-wallet' ), 'open in wallet app button' );
+// Release 1.8.0 features.
+xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-coins.php' ), 'function confirmations_for' ), 'confirmations resolved per coin' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-coins.php' ), 'function chain_confirmations' ), 'per-chain confirmation table' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-verifier.php' ), 'Xdwp_Coins::confirmations_for' ), 'verifier uses the coin confirmations' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-coins.php' ), 'function memo_kind' ), 'memo chains known' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-order.php' ), "_xdwp_memo" ), 'orders carry a reference' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-verifier.php' ), 'function memo_ok' ), 'transfers are checked against the reference' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/templates/payment.php' ), 'xdwp-memo' ), 'payment page shows the reference' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/templates/emails/xdwp-payment-details.php' ), "details['memo']" ), 'emails show the reference' );
 xdwp_assert( false !== strpos( $readme, '== External services ==' ), 'readme external services section present' );
 xdwp_assert( false !== strpos( $readme, 'XRPSCan' ), 'readme documents XRPSCan' );
 xdwp_assert( false !== strpos( $readme, 'Subscan' ), 'readme documents Subscan' );
