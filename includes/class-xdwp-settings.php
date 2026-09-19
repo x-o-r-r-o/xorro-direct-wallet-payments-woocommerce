@@ -161,7 +161,7 @@ class Xdwp_Settings {
 			$clean['expiry_grace_minutes'] = max( 0, min( 1440, absint( $input['expiry_grace_minutes'] ) ) );
 		}
 
-		foreach ( array( 'unique_amounts', 'wallet_rotation', 'auto_verify', 'late_payment_scan', 'price_coin_show' ) as $flag ) {
+		foreach ( array( 'unique_amounts', 'wallet_rotation', 'auto_verify', 'late_payment_scan', 'auto_partial_payments', 'price_coin_show' ) as $flag ) {
 			if ( isset( $input[ $flag ] ) ) {
 				$clean[ $flag ] = ( 'yes' === $input[ $flag ] || 1 === (int) $input[ $flag ] || true === $input[ $flag ] ) ? 'yes' : 'no';
 			}

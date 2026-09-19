@@ -112,6 +112,9 @@ class Xdwp_Verifier {
 	 * @return bool True when the order is now fully paid.
 	 */
 	private static function scan_partial_or_overpayment( $order, array $coin, $address, $target, array $band, $since ) {
+		if ( 'yes' !== Xdwp_Settings::get( 'auto_partial_payments', 'yes' ) ) {
+			return false;
+		}
 		$throttle = 'xdwp_wide_scan_' . $order->get_id();
 		if ( get_transient( $throttle ) ) {
 			return false;
@@ -142,7 +145,7 @@ class Xdwp_Verifier {
 			return self::record_final_payment( $order, $hit['txid'], $underpaid, $hit['amount'] );
 		}
 		if ( self::e18_cmp( self::to_e18( $hit['amount'] ), self::to_e18( $band['min'] ) ) < 0 ) {
-			self::record_partial_payment( $order, $coin, $hit['txid'], $hit['amount'], $target );
+			return self::record_partial_payment( $order, $coin, $hit['txid'], $hit['amount'], $target );
 		}
 		return false;
 	}
@@ -190,6 +193,7 @@ class Xdwp_Verifier {
 	 * @param string   $txid     Txid.
 	 * @param string   $received Amount of this transfer.
 	 * @param string   $target   Amount that was due.
+	 * @return bool True when this transfer turned out to complete the order.
 	 */
 	private static function record_partial_payment( $order, array $coin, $txid, $received, $target ) {
 		$txid = strtolower( sanitize_text_field( $txid ) );
@@ -200,14 +204,25 @@ class Xdwp_Verifier {
 			|| ! in_array( (string) Xdwp_Order::meta( $order, 'status' ), array( 'awaiting', 'underpaid' ), true )
 			|| ! in_array( $order->get_status(), array( 'pending', 'on-hold' ), true )
 			|| self::is_own_partial( $order, $txid ) ) {
-			return;
+			return false;
 		}
-		if ( ! self::claim_txid( $txid, $order->get_id() ) ) {
-			return;
-		}
-		$target     = 'underpaid' === (string) Xdwp_Order::meta( $order, 'status' )
+		$fresh_underpaid = 'underpaid' === (string) Xdwp_Order::meta( $order, 'status' );
+		$target          = $fresh_underpaid
 			? (string) Xdwp_Order::meta( $order, 'remainder' )
 			: (string) Xdwp_Order::meta( $order, 'amount' );
+		// A concurrent pass may already have recorded another partial: if this transfer now
+		// covers what is left, it completes the order instead.
+		$fresh_band = self::match_band( $target, $coin );
+		if ( self::e18_cmp( self::to_e18( $received ), self::to_e18( $fresh_band['min'] ) ) >= 0 ) {
+			return self::record_final_payment( $order, $txid, $fresh_underpaid, $received );
+		}
+		// Record each partial transfer exactly once, even if two passes get here together.
+		if ( ! self::atomic_add_option( 'xdwp_partial_' . md5( $txid ), (string) $order->get_id() ) ) {
+			return false;
+		}
+		if ( ! self::claim_txid( $txid, $order->get_id() ) ) {
+			return false;
+		}
 		$partials   = self::partial_txids( $order );
 		$partials[] = $txid;
 		$total      = self::amount_add( (string) Xdwp_Order::meta( $order, 'partial_received' ), $received );
@@ -236,6 +251,7 @@ class Xdwp_Verifier {
 		$order->save();
 
 		do_action( 'xdwp_order_underpaid', $order, $received, $remainder, $txid );
+		return false;
 	}
 
 	/**
@@ -269,19 +285,26 @@ class Xdwp_Verifier {
 	 * @return bool True when it cannot be attributed safely (also when peers can't be listed).
 	 */
 	private static function transfer_is_ambiguous( array $coin, $address, $order_id, $amount ) {
-		// Open orders, plus ones that expired within about a day: a fee-short or late transfer
-		// belongs to a live checkout, not to an order abandoned days ago or one that was
-		// cancelled. (Exact matching keeps the full retention window and cancelled orders.)
-		$window = ( (int) Xdwp_Settings::get( 'payment_window', 60 ) + (int) Xdwp_Settings::get( 'expiry_grace_minutes', 30 ) ) * MINUTE_IN_SECONDS;
-		$peers  = self::peer_amounts( $coin, $address, $order_id, $window + DAY_IN_SECONDS, false );
-		if ( false === $peers ) {
+		// 1) Exact payment of any order in the full retention set (open, expired or cancelled
+		// within about a week) — e.g. a late payment for an expired order must stay with it.
+		$all = self::peer_amounts( $coin, $address, $order_id );
+		if ( false === $all ) {
 			return true;
 		}
-		$value = self::to_e18( $amount );
-		foreach ( $peers as $peer_amount ) {
+		foreach ( $all as $peer_amount ) {
 			if ( self::amounts_overlap( $amount, $peer_amount, $coin ) ) {
 				return true;
 			}
+		}
+		// 2) Plausible partial/over payment for another live checkout: open orders plus ones that
+		// expired within about a day (not orders abandoned days ago, nor cancelled ones).
+		$window = ( (int) Xdwp_Settings::get( 'payment_window', 60 ) + (int) Xdwp_Settings::get( 'expiry_grace_minutes', 30 ) ) * MINUTE_IN_SECONDS;
+		$live   = self::peer_amounts( $coin, $address, $order_id, $window + DAY_IN_SECONDS, false );
+		if ( false === $live ) {
+			return true;
+		}
+		$value = self::to_e18( $amount );
+		foreach ( $live as $peer_amount ) {
 			$low  = self::to_e18( self::scale_amount( $peer_amount, self::PARTIAL_FLOOR ) );
 			$high = self::to_e18( self::scale_amount( $peer_amount, self::OVERPAY_CEILING ) );
 			if ( self::e18_cmp( $value, $low ) >= 0 && self::e18_cmp( $value, $high ) <= 0 ) {
@@ -290,6 +313,7 @@ class Xdwp_Verifier {
 		}
 		return false;
 	}
+
 
 	/**
 	 * Tell the store owner (once per transfer) that money arrived which could belong to more
@@ -361,11 +385,14 @@ class Xdwp_Verifier {
 		$was_underpaid = '' !== (string) Xdwp_Order::meta( $order, 'remainder' );
 		$target        = $was_underpaid ? (string) Xdwp_Order::meta( $order, 'remainder' ) : $amount;
 		$since         = $was_underpaid ? (int) Xdwp_Order::meta( $order, 'partial_since' ) : max( 0, $started - 30 );
+		$ceiling       = $was_underpaid
+			? self::amount_add( $target, self::scale_amount( $amount, self::OVERPAY_CEILING - 100 ) )
+			: self::scale_amount( $target, self::OVERPAY_CEILING );
 		$hit           = self::find_payment_detailed(
 			$coin,
 			$address,
 			self::scale_amount( $target, self::PARTIAL_FLOOR ),
-			self::scale_amount( $target, self::OVERPAY_CEILING ),
+			$ceiling,
 			$since
 		);
 		if ( ! $hit || self::is_own_partial( $order, $hit['txid'] ) || self::txid_claimed_by_other( $hit['txid'], $order->get_id() ) ) {

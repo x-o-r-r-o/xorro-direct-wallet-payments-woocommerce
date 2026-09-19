@@ -31,6 +31,7 @@ $patterns = array(
 	'xdwp_txid_claim_',
 	'xdwp_amt_',
 	'xdwp_ambiguous_',
+	'xdwp_partial_',
 );
 
 foreach ( $patterns as $prefix ) {

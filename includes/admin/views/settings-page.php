@@ -157,7 +157,16 @@ $active  = isset( $tabs[ $tab ] ) ? $tabs[ $tab ] : $tabs['general'];
 												<input type="checkbox" name="xdwp[auto_verify]" value="yes" <?php checked( ( $settings['auto_verify'] ?? 'yes' ), 'yes' ); ?> />
 												<span><?php esc_html_e( 'Poll public block explorers / RPCs and mark orders paid when payment is detected.', 'xorro-direct-wallet-payments-woocommerce' ); ?></span>
 											</label>
-											<p class="description"><?php esc_html_e( 'Also detects partial payments (the customer is asked for the rest) and overpayments of up to 10%.', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
+										</td>
+									</tr>
+									<tr>
+										<th scope="row"><?php esc_html_e( 'Partial and over payments', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
+										<td>
+											<label class="cc-check">
+												<input type="checkbox" name="xdwp[auto_partial_payments]" value="yes" <?php checked( ( $settings['auto_partial_payments'] ?? 'yes' ), 'yes' ); ?> />
+												<span><?php esc_html_e( 'Handle them automatically: at least 50% received → the customer is asked for the rest; up to 10% too much → the order completes and the excess is noted.', 'xorro-direct-wallet-payments-woocommerce' ); ?></span>
+											</label>
+											<p class="description"><?php esc_html_e( 'A transfer that could belong to more than one open order is never credited automatically — you get an email instead. Turn this off if your payment addresses also receive other money (e.g. exchange withdrawals), since such a transfer could otherwise be taken for an order payment.', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
 										</td>
 									</tr>
 									<tr>
