@@ -202,6 +202,15 @@ $render_row = static function ( $id, $addr = '' ) {
 							>
 								<div class="xdwp-wallet-card__head">
 									<div class="xdwp-wallet-card__title">
+										<?php $card_icons = Xdwp_Coins::icon_meta( $id ); ?>
+										<?php if ( ! empty( $card_icons['icon'] ) ) : ?>
+											<span class="xdwp-wallet-card__icon" aria-hidden="true">
+												<img src="<?php echo esc_url( $card_icons['icon'] ); ?>" alt="" width="24" height="24" loading="lazy" decoding="async" />
+												<?php if ( ! empty( $card_icons['badge'] ) ) : ?>
+													<img class="xdwp-wallet-card__badge" src="<?php echo esc_url( $card_icons['badge'] ); ?>" alt="" width="12" height="12" loading="lazy" decoding="async" />
+												<?php endif; ?>
+											</span>
+										<?php endif; ?>
 										<span class="xdwp-wallet-card__symbol"><?php echo esc_html( $coin['symbol'] ); ?></span>
 										<span class="xdwp-wallet-card__name"><?php echo esc_html( $coin['name'] ); ?></span>
 									</div>

@@ -152,6 +152,7 @@ Full details for every release are in [`readme.txt`](readme.txt).
 
 ### 1.5.38
 - Fix: new coin icons now appear right after an update. Icon URLs are versioned, so browsers and CDNs stop serving old cached icons.
+- Admin: the Wallets tab shows each coin's icon and network badge.
 
 ### 1.5.37
 - Security: updates must be signed with the maintainer's Ed25519 release key. The signature binds the plugin, version and ZIP hash, so a compromised GitHub account or release can't push a modified package or roll sites back to an older one. Unsigned releases are never offered.
