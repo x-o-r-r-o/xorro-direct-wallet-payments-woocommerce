@@ -27,6 +27,127 @@ class Xdwp_Payments_Admin {
 		add_filter( 'manage_woocommerce_page_wc-orders_columns', array( __CLASS__, 'add_column' ), 20 );
 		add_action( 'manage_shop_order_posts_custom_column', array( __CLASS__, 'render_column' ), 20, 2 );
 		add_action( 'manage_woocommerce_page_wc-orders_custom_column', array( __CLASS__, 'render_column' ), 20, 2 );
+
+		add_action( 'admin_post_xdwp_export_payments', array( __CLASS__, 'export_csv' ) );
+		// The count on the menu is recalculated when an order's payment state changes.
+		add_action( 'xdwp_order_paid', array( __CLASS__, 'forget_attention_count' ) );
+		add_action( 'xdwp_order_underpaid', array( __CLASS__, 'forget_attention_count' ) );
+		add_action( 'xdwp_order_overpaid', array( __CLASS__, 'forget_attention_count' ) );
+		add_action( 'xdwp_order_expired', array( __CLASS__, 'forget_attention_count' ) );
+		add_action( 'xdwp_late_payment_detected', array( __CLASS__, 'forget_attention_count' ) );
+	}
+
+	/**
+	 * How many orders are waiting on the store owner, cached — this is read on every admin
+	 * page load, and the underlying query is not free.
+	 *
+	 * @return int
+	 */
+	public static function attention_count() {
+		$cached = get_transient( 'xdwp_attention_count' );
+		if ( false !== $cached ) {
+			return (int) $cached;
+		}
+		$result = self::query( array( 'filter' => 'attention' ) );
+		$count  = (int) $result['total'];
+		set_transient( 'xdwp_attention_count', $count, 5 * MINUTE_IN_SECONDS );
+		return $count;
+	}
+
+	/**
+	 * Drop the cached count after anything that could change it.
+	 */
+	public static function forget_attention_count() {
+		delete_transient( 'xdwp_attention_count' );
+	}
+
+	/**
+	 * Download the current view as a spreadsheet.
+	 */
+	public static function export_csv() {
+		if ( ! current_user_can( 'manage_woocommerce' ) ) {
+			wp_die( esc_html__( 'You are not allowed to export payments.', 'xorro-direct-wallet-payments-woocommerce' ), 403 );
+		}
+		check_admin_referer( 'xdwp_export_payments' );
+
+		$filter = isset( $_GET['xdwp_filter'] ) ? sanitize_key( wp_unslash( $_GET['xdwp_filter'] ) ) : 'all';
+		$coin   = isset( $_GET['xdwp_coin'] ) ? sanitize_text_field( wp_unslash( $_GET['xdwp_coin'] ) ) : '';
+		if ( ! in_array( $filter, array( 'all', 'awaiting', 'underpaid', 'paid', 'expired', 'attention' ), true ) ) {
+			$filter = 'all';
+		}
+		if ( '' !== $coin && ! Xdwp_Coins::get( $coin ) ) {
+			$coin = '';
+		}
+
+		nocache_headers();
+		header( 'Content-Type: text/csv; charset=utf-8' );
+		header( 'Content-Disposition: attachment; filename=xorro-wallet-payments-' . gmdate( 'Y-m-d' ) . '.csv' );
+
+		$out = fopen( 'php://output', 'w' );
+		fputcsv(
+			$out,
+			array(
+				__( 'Order', 'xorro-direct-wallet-payments-woocommerce' ),
+				__( 'Date', 'xorro-direct-wallet-payments-woocommerce' ),
+				__( 'Order status', 'xorro-direct-wallet-payments-woocommerce' ),
+				__( 'Customer', 'xorro-direct-wallet-payments-woocommerce' ),
+				__( 'Email', 'xorro-direct-wallet-payments-woocommerce' ),
+				__( 'Order total', 'xorro-direct-wallet-payments-woocommerce' ),
+				__( 'Currency', 'xorro-direct-wallet-payments-woocommerce' ),
+				__( 'Coin', 'xorro-direct-wallet-payments-woocommerce' ),
+				__( 'Network', 'xorro-direct-wallet-payments-woocommerce' ),
+				__( 'Expected', 'xorro-direct-wallet-payments-woocommerce' ),
+				__( 'Received', 'xorro-direct-wallet-payments-woocommerce' ),
+				__( 'Payment state', 'xorro-direct-wallet-payments-woocommerce' ),
+				__( 'Needs attention', 'xorro-direct-wallet-payments-woocommerce' ),
+				__( 'Address', 'xorro-direct-wallet-payments-woocommerce' ),
+				__( 'Destination tag / memo', 'xorro-direct-wallet-payments-woocommerce' ),
+				__( 'Transaction', 'xorro-direct-wallet-payments-woocommerce' ),
+			)
+		);
+
+		// Paged so a store with thousands of crypto orders does not load them all at once.
+		for ( $page = 1; $page <= 250; $page++ ) {
+			$result = self::query(
+				array(
+					'filter' => $filter,
+					'coin'   => $coin,
+					'paged'  => $page,
+				)
+			);
+			if ( empty( $result['orders'] ) ) {
+				break;
+			}
+			foreach ( $result['orders'] as $order ) {
+				$coin_def = Xdwp_Coins::get( (string) Xdwp_Order::meta( $order, 'coin' ) );
+				fputcsv(
+					$out,
+					array(
+						$order->get_order_number(),
+						$order->get_date_created() ? $order->get_date_created()->date( 'Y-m-d H:i:s' ) : '',
+						$order->get_status(),
+						trim( $order->get_formatted_billing_full_name() ),
+						$order->get_billing_email(),
+						$order->get_total(),
+						$order->get_currency(),
+						$coin_def ? $coin_def['symbol'] : '',
+						$coin_def ? $coin_def['network'] : '',
+						(string) Xdwp_Order::meta( $order, 'amount' ),
+						(string) Xdwp_Order::meta( $order, 'received' ),
+						(string) Xdwp_Order::meta( $order, 'status' ),
+						self::needs_attention( $order ) ? 'yes' : 'no',
+						(string) Xdwp_Order::meta( $order, 'address' ),
+						(string) Xdwp_Order::meta( $order, 'memo' ),
+						(string) Xdwp_Order::meta( $order, 'txid' ),
+					)
+				);
+			}
+			if ( $page >= (int) $result['pages'] ) {
+				break;
+			}
+		}
+		fclose( $out );
+		exit;
 	}
 
 	/**

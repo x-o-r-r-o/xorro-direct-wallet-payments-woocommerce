@@ -503,6 +503,21 @@ xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp.
 foreach ( array( 'xdwp_payment_window_minutes', 'xdwp_confirmations_required', 'xdwp_coin_allowed_for_total', 'xdwp_order_memo', 'xdwp_payment_uri' ) as $xdwp_hook ) {
 	xdwp_assert( false !== strpos( $readme_md, $xdwp_hook ), 'readme documents ' . $xdwp_hook );
 }
+// Release 6: translations, tests, CI.
+xdwp_assert( file_exists( $root . '/languages/xorro-direct-wallet-payments-woocommerce.pot' ), 'translation template shipped' );
+// WordPress loads the bundled .mo files by itself from /languages (verified on 6.9), so
+// calling load_plugin_textdomain would be redundant — an assertion below checks it is absent.
+xdwp_assert( count( glob( $root . '/languages/*.mo' ) ) > 0, 'compiled translations shipped' );
+xdwp_assert( file_exists( $root . '/tests/matching-tests.php' ), 'payment-matching tests present' );
+xdwp_assert( file_exists( $root . '/.github/workflows/ci.yml' ), 'CI workflow present' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-coins.php' ), 'function explorer_tx_url' ), 'explorer links available' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-privacy.php' ), '_xdwp_memo' ), 'privacy tools cover the reference' );
+// Release 1.10.0 features.
+xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-ajax.php' ), 'wc_ajax_xdwp_sent' ), '"I have sent it" reachable when admin-ajax is cached' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/templates/payment.php' ), 'xdwp-sent' ), 'payment page offers to check now' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/assets/js/frontend.js' ), 'watchClosely' ), 'page watches closely after the customer says they paid' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/admin/class-xdwp-payments-admin.php' ), 'function export_csv' ), 'payments can be exported' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/admin/class-xdwp-payments-admin.php' ), 'function attention_count' ), 'menu count available' );
 xdwp_assert( false !== strpos( $readme, '== External services ==' ), 'readme external services section present' );
 xdwp_assert( false !== strpos( $readme, 'XRPSCan' ), 'readme documents XRPSCan' );
 xdwp_assert( false !== strpos( $readme, 'Subscan' ), 'readme documents Subscan' );

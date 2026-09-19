@@ -480,3 +480,50 @@
 .xdwp-pay-callout a {
 	font-weight: 600;
 }
+
+.xdwp-box__actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.6rem;
+	align-items: center;
+	margin-top: 1.1rem;
+}
+
+.xdwp-box .xdwp-sent {
+	display: inline-block;
+	margin: 0;
+	padding: 0.55rem 1rem;
+	min-height: 0;
+	border: 1px solid #1d2733;
+	border-radius: 4px;
+	background: #fff;
+	color: #1d2733 !important;
+	font: inherit;
+	font-weight: 600;
+	font-size: 0.95rem;
+	line-height: 1.2;
+	cursor: pointer;
+}
+
+.xdwp-box .xdwp-sent:hover,
+.xdwp-box .xdwp-sent:focus-visible {
+	background: #f3f5f7;
+}
+
+.xdwp-box .xdwp-sent[disabled] {
+	opacity: 0.6;
+	cursor: default;
+}
+
+@media (max-width: 480px) {
+	.xdwp-box__actions {
+		display: grid;
+		grid-template-columns: 1fr;
+	}
+
+	.xdwp-box .xdwp-open-wallet,
+	.xdwp-box .xdwp-sent {
+		width: 100%;
+		text-align: center;
+	}
+}

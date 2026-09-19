@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<ruleset name="Xorro Direct Wallet Payments">
+	<description>WordPress coding standards for this plugin.</description>
+
+	<file>.</file>
+	<exclude-pattern>/releases/*</exclude-pattern>
+	<exclude-pattern>/node_modules/*</exclude-pattern>
+	<exclude-pattern>/vendor/*</exclude-pattern>
+	<exclude-pattern>*/assets/js/qrcode.min.js</exclude-pattern>
+
+	<arg name="extensions" value="php"/>
+	<arg name="colors"/>
+	<arg value="ps"/>
+
+	<!-- Errors only: warnings here are mostly style opinions this plugin does not follow. -->
+	<config name="minimum_supported_wp_version" value="6.9"/>
+	<config name="testVersion" value="7.4-"/>
+
+	<rule ref="WordPress">
+		<!-- Deliberate: raw SQL is how the atomic payment locks stay atomic. -->
+		<exclude name="WordPress.DB.DirectDatabaseQuery"/>
+		<exclude name="WordPress.DB.PreparedSQLPlaceholders"/>
+		<!-- File names follow the class-<name>.php convention already in use. -->
+		<exclude name="WordPress.Files.FileName.InvalidClassFileName"/>
+		<exclude name="Squiz.Commenting.FileComment.MissingPackageTag"/>
+		<exclude name="Generic.WhiteSpace.DisallowSpaceIndent"/>
+	</rule>
+
+	<rule ref="WordPress.WP.I18n">
+		<properties>
+			<property name="text_domain" type="array" value="xorro-direct-wallet-payments-woocommerce"/>
+		</properties>
+	</rule>
+</ruleset>

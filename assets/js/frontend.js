@@ -298,7 +298,7 @@
 				}
 				if (statusEl) {
 					statusEl.textContent = res.data.detected
-						? (data.i18n.detected || 'Payment detected — waiting for network confirmations…')
+						? detectedMessage()
 						: (data.i18n.waiting || 'Waiting for payment…');
 				}
 			})
@@ -307,6 +307,69 @@
 					statusEl.textContent = data.i18n.waiting || 'Waiting for payment…';
 				}
 			});
+	}
+
+	/**
+	 * What to say once the transfer is visible but not yet confirmed.
+	 */
+	function detectedMessage() {
+		var needed = parseInt(data.confirmations, 10);
+		if (needed > 1 && data.i18n.detectedWith) {
+			return data.i18n.detectedWith.replace('%d', String(needed));
+		}
+		return data.i18n.detected || 'Payment detected — waiting for network confirmations…';
+	}
+
+	/**
+	 * "I have sent the payment": ask for a check now, then watch more closely for a while.
+	 */
+	var sentBtn = document.getElementById('xdwp-sent');
+	if (sentBtn && data.sentUrl) {
+		sentBtn.addEventListener('click', function () {
+			var note = document.getElementById('xdwp-sent-status');
+			sentBtn.disabled = true;
+			var body = new FormData();
+			body.append('action', 'xdwp_sent');
+			body.append('nonce', data.nonce);
+			body.append('order_id', String(data.orderId));
+			body.append('order_key', String(data.orderKey || ''));
+			fetch(data.sentUrl, { method: 'POST', credentials: 'same-origin', body: body })
+				.then(function (r) { return r.json(); })
+				.then(function (res) {
+					if (note) {
+						note.textContent = (res && res.success)
+							? (data.i18n.checkingNow || '')
+							: ((res && res.data && res.data.message) || data.i18n.checkFail || '');
+					}
+					watchClosely();
+				})
+				.catch(function () {
+					if (note) {
+						note.textContent = data.i18n.checkFail || '';
+					}
+					sentBtn.disabled = false;
+				});
+		});
+	}
+
+	/**
+	 * Check every 10 seconds for the next five minutes, then go back to the normal pace.
+	 */
+	function watchClosely() {
+		if (pollTimer) {
+			clearInterval(pollTimer);
+		}
+		pollStatus();
+		pollTimer = window.setInterval(pollStatus, 10000);
+		window.setTimeout(function () {
+			if (pollTimer) {
+				clearInterval(pollTimer);
+			}
+			pollTimer = window.setInterval(pollStatus, 20000);
+			if (sentBtn) {
+				sentBtn.disabled = false;
+			}
+		}, 300000);
 	}
 
 	var renewBtn = document.getElementById('xdwp-renew');

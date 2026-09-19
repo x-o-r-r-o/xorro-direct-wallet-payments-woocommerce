@@ -30,6 +30,9 @@ class Xdwp_Ajax {
 		add_action( 'wp_ajax_xdwp_renew', array( __CLASS__, 'renew' ) );
 		add_action( 'wp_ajax_nopriv_xdwp_renew', array( __CLASS__, 'renew' ) );
 		add_action( 'wc_ajax_xdwp_renew', array( __CLASS__, 'renew' ) );
+		add_action( 'wp_ajax_xdwp_sent', array( __CLASS__, 'sent' ) );
+		add_action( 'wp_ajax_nopriv_xdwp_sent', array( __CLASS__, 'sent' ) );
+		add_action( 'wc_ajax_xdwp_sent', array( __CLASS__, 'sent' ) );
 		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'register_assets' ) );
 	}
 
@@ -231,6 +234,56 @@ class Xdwp_Ajax {
 	/**
 	 * Re-quote an expired order at today's rate, on the customer's request.
 	 */
+	/**
+	 * "I've sent the payment": look now instead of waiting for the next scheduled check.
+	 *
+	 * This only clears this order's own throttles — the store-wide budget on browser-triggered
+	 * chain lookups still applies, so an impatient customer (or a script) cannot turn the
+	 * payment page into a way to hammer the explorers.
+	 */
+	public static function sent() {
+		$order_id = isset( $_POST['order_id'] ) ? absint( $_POST['order_id'] ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$deny     = static function () {
+			wp_send_json_error( array( 'message' => __( 'Forbidden.', 'xorro-direct-wallet-payments-woocommerce' ) ), 403 );
+		};
+		if ( ! $order_id || ! check_ajax_referer( 'xdwp_status_' . $order_id, 'nonce', false ) ) {
+			$deny();
+		}
+		if ( self::rate_limited( 'xdwp_sent_', $order_id, 3 ) ) {
+			wp_send_json_error( array( 'message' => __( 'Thanks — we are already looking. Please give it a moment.', 'xorro-direct-wallet-payments-woocommerce' ) ), 429 );
+		}
+
+		$order = wc_get_order( $order_id );
+		if ( ! $order || ! Xdwp_Order::is_ours( $order ) ) {
+			$deny();
+		}
+		$order_key = isset( $_POST['order_key'] ) ? sanitize_text_field( wp_unslash( $_POST['order_key'] ) ) : '';
+		$allowed   = ( is_user_logged_in() && (int) $order->get_user_id() === get_current_user_id() )
+			|| ( $order_key && hash_equals( $order->get_order_key(), $order_key ) )
+			|| current_user_can( 'manage_woocommerce' );
+		if ( ! $allowed ) {
+			$deny();
+		}
+
+		$status = (string) Xdwp_Order::meta( $order, 'status' );
+		if ( ! in_array( $status, array( 'awaiting', 'underpaid' ), true ) ) {
+			wp_send_json_success( array( 'checking' => false ) );
+		}
+
+		// Worth recording: if anything goes wrong later, the store owner can see the customer
+		// said they had paid, and when.
+		if ( '' === (string) Xdwp_Order::meta( $order, 'sent_at' ) ) {
+			$order->update_meta_data( '_xdwp_sent_at', time() );
+			$order->save();
+		}
+
+		delete_transient( 'xdwp_ajax_verify_' . $order_id );
+		delete_transient( 'xdwp_detect_' . $order_id );
+		delete_transient( 'xdwp_wide_scan_' . $order_id );
+
+		wp_send_json_success( array( 'checking' => true ) );
+	}
+
 	public static function renew() {
 		$order_id = isset( $_POST['order_id'] ) ? absint( $_POST['order_id'] ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Missing
 		$deny     = static function () {

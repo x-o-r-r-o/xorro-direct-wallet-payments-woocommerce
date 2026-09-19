@@ -1236,16 +1236,51 @@ body.xdwp-admin-page #wpbody-content > .wrap > h1.wp-heading-inline {
 	font-size: 12px;
 }
 
-/* The panel can be narrower than this table wants to be; scroll it instead of
-   cutting columns off. */
+/* The panel can be narrower than this table wants to be; scroll the table inside the
+   panel instead of letting it stretch the whole page (a flex item will happily grow past
+   the window unless it is told it may shrink). */
+.xdwp-options-wrap .cc-panel,
+.xdwp-options-wrap .cc-panel-content {
+	min-width: 0;
+}
+
 .xdwp-table-wrap {
+	max-width: 100%;
 	overflow-x: auto;
 	margin: 0 0 0.25rem;
+	border: 1px solid #dcdcde;
+	border-radius: 6px;
 }
 
 .xdwp-payments-table {
-	table-layout: auto;
-	min-width: 880px;
+	table-layout: fixed;
+	min-width: 480px;
+	border: 0;
+	box-shadow: none;
+	font-size: 12.5px;
+}
+
+.xdwp-payments-table td,
+.xdwp-payments-table th {
+	padding-left: 10px;
+	padding-right: 10px;
+}
+
+.xdwp-payments-table thead th {
+	position: sticky;
+	top: 0;
+	z-index: 1;
+	background: #f6f7f7;
+	font-size: 11px;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	color: #50575e;
+	white-space: nowrap;
+}
+
+.xdwp-payments-table td {
+	padding-top: 10px;
+	padding-bottom: 10px;
 }
 
 .xdwp-payments-table__date {
@@ -1264,10 +1299,19 @@ body.xdwp-admin-page #wpbody-content > .wrap > h1.wp-heading-inline {
 
 .xdwp-txid {
 	display: block;
-	max-width: 34ch;
-	font-size: 11.5px;
-	line-height: 1.45;
+	max-width: 100%;
+	font-size: 11px;
+	line-height: 1.4;
 	word-break: break-all;
+	color: #50575e;
+}
+
+.xdwp-payments-table__txid {
+	min-width: 150px;
+}
+
+.xdwp-txid-actions {
+	flex-wrap: wrap;
 }
 
 .xdwp-txid-actions {
@@ -1290,19 +1334,22 @@ body.xdwp-admin-page #wpbody-content > .wrap > h1.wp-heading-inline {
 /* The panel sets its own type scale, so core's tablenav needs its spacing back. */
 .xdwp-admin .tablenav {
 	display: flex;
-	justify-content: flex-end;
+	justify-content: flex-start;
 	align-items: center;
 	height: auto;
-	margin: 0.75rem 0 0;
-	padding: 0.5rem 0;
+	margin: 0.9rem 0 0;
+	padding: 0.75rem 0 0;
+	border-top: 1px solid #e0e3e7;
 }
 
 .xdwp-admin .tablenav-pages {
 	display: flex;
 	flex-wrap: wrap;
-	gap: 0.5rem;
+	gap: 0.5rem 0.75rem;
 	align-items: center;
+	justify-content: space-between;
 	float: none;
+	width: 100%;
 	margin: 0;
 	font-size: 13px;
 }
@@ -1356,5 +1403,22 @@ body.xdwp-admin-page #wpbody-content > .wrap > h1.wp-heading-inline {
 
 .xdwp-order-col__amount {
 	font-family: monospace;
+	font-size: 12px;
+}
+
+/* Five columns, so the whole row fits a normal admin panel without sideways scrolling. */
+.xdwp-col-order { width: 20%; }
+.xdwp-col-customer { width: 22%; }
+.xdwp-col-amount { width: 20%; }
+.xdwp-col-state { width: 13%; }
+.xdwp-col-tx { width: 26%; }
+
+.xdwp-payments-table .cc-coin-cell {
+	display: inline-flex;
+	gap: 0.35rem;
+	align-items: center;
+}
+
+.xdwp-payments-table .cc-coin-cell code {
 	font-size: 12px;
 }

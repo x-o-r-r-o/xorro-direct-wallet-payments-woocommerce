@@ -1,0 +1,17 @@
+{
+  "_embedded": {
+    "records": [
+      {
+        "type": "payment",
+        "id": "123456789012345",
+        "transaction_hash": "9f8e7d6c5b4a39281706f5e4d3c2b1a09182736450e9d8c7b6a5948372615040",
+        "transaction_successful": true,
+        "created_at": "@ISO_RECENT@",
+        "asset_type": "native",
+        "to": "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN",
+        "amount": "42.1234567",
+        "transaction": { "memo": "XDWP-AB12CD34", "memo_type": "text" }
+      }
+    ]
+  }
+}

@@ -66,11 +66,13 @@ $cards = array(
 				<?php endforeach; ?>
 			</nav>
 
-			<div class="cc-panel">
-				<div class="cc-panel-head">
-					<h2><?php echo esc_html( $active['title'] ); ?></h2>
-					<p class="cc-lead"><?php echo esc_html( $active['desc'] ); ?></p>
-				</div>
+			<div class="cc-panels">
+				<div class="cc-panel is-active">
+					<div class="cc-panel-head">
+						<h2><?php echo esc_html( $active['title'] ); ?></h2>
+						<p class="cc-panel-desc"><?php echo esc_html( $active['desc'] ); ?></p>
+					</div>
+					<div class="cc-panel-content">
 
 				<div class="xdwp-cards">
 					<?php foreach ( $cards as $key => $card ) : ?>
@@ -102,6 +104,22 @@ $cards = array(
 					</select>
 
 					<button type="submit" class="cc-btn cc-btn-secondary"><?php esc_html_e( 'Filter', 'xorro-direct-wallet-payments-woocommerce' ); ?></button>
+
+					<a class="cc-btn cc-btn-secondary" href="<?php
+						echo esc_url(
+							wp_nonce_url(
+								add_query_arg(
+									array(
+										'action'      => 'xdwp_export_payments',
+										'xdwp_filter' => $filter,
+										'xdwp_coin'   => $coin,
+									),
+									admin_url( 'admin-post.php' )
+								),
+								'xdwp_export_payments'
+							)
+						);
+					?>"><?php esc_html_e( 'Download CSV', 'xorro-direct-wallet-payments-woocommerce' ); ?></a>
 				</form>
 
 				<?php if ( empty( $results['orders'] ) ) : ?>
@@ -111,14 +129,11 @@ $cards = array(
 					<table class="widefat striped xdwp-payments-table">
 						<thead>
 							<tr>
-								<th><?php esc_html_e( 'Order', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
-								<th><?php esc_html_e( 'Placed', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
-								<th><?php esc_html_e( 'Customer', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
-								<th><?php esc_html_e( 'Coin', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
-								<th><?php esc_html_e( 'Expected', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
-								<th><?php esc_html_e( 'Received', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
-								<th><?php esc_html_e( 'State', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
-								<th><?php esc_html_e( 'Transaction', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
+								<th class="xdwp-col-order"><?php esc_html_e( 'Order', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
+								<th class="xdwp-col-customer"><?php esc_html_e( 'Customer', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
+								<th class="xdwp-col-amount"><?php esc_html_e( 'Amount', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
+								<th class="xdwp-col-state"><?php esc_html_e( 'State', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
+								<th class="xdwp-col-tx"><?php esc_html_e( 'Transaction', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
 							</tr>
 						</thead>
 						<tbody>
@@ -135,43 +150,46 @@ $cards = array(
 								$icons = $row_coin ? Xdwp_Coins::icon_meta( $row_coin['id'] ) : array();
 								?>
 								<tr>
-									<td>
+									<td class="xdwp-col-order">
 										<a href="<?php echo esc_url( $order->get_edit_order_url() ); ?>"><strong>#<?php echo esc_html( $order->get_order_number() ); ?></strong></a>
 										<div class="xdwp-payments-table__sub"><?php echo wp_kses_post( $order->get_formatted_order_total() ); ?></div>
-									</td>
-									<td class="xdwp-payments-table__date">
 										<?php if ( $order->get_date_created() ) : ?>
-											<div><?php echo esc_html( $order->get_date_created()->date_i18n( get_option( 'date_format' ) ) ); ?></div>
-											<span class="xdwp-payments-table__sub"><?php echo esc_html( $order->get_date_created()->date_i18n( get_option( 'time_format' ) ) ); ?></span>
+											<div class="xdwp-payments-table__sub xdwp-payments-table__date"><?php echo esc_html( $order->get_date_created()->date_i18n( get_option( 'date_format' ) ) ); ?><br /><?php echo esc_html( $order->get_date_created()->date_i18n( get_option( 'time_format' ) ) ); ?></div>
 										<?php endif; ?>
 									</td>
-									<td>
+									<td class="xdwp-col-customer">
 										<?php $row_name = trim( $order->get_formatted_billing_full_name() ); ?>
 										<?php if ( '' !== $row_name ) : ?>
 											<div><?php echo esc_html( $row_name ); ?></div>
 										<?php endif; ?>
 										<span class="xdwp-payments-table__sub"><?php echo esc_html( $order->get_billing_email() ); ?></span>
 									</td>
-									<td>
+									<td class="xdwp-col-amount">
 										<span class="cc-coin-cell">
 											<?php if ( ! empty( $icons['icon'] ) ) : ?>
 												<span class="cc-coin-cell__icon" aria-hidden="true">
-													<img src="<?php echo esc_url( $icons['icon'] ); ?>" alt="" width="20" height="20" decoding="async" style="width:20px;height:20px;object-fit:contain;display:block;" />
+													<img src="<?php echo esc_url( $icons['icon'] ); ?>" alt="" width="18" height="18" decoding="async" style="width:18px;height:18px;object-fit:contain;display:block;" />
 												</span>
 											<?php endif; ?>
-											<span><?php echo esc_html( $row_coin ? $row_coin['symbol'] : '—' ); ?></span>
+											<code><?php echo esc_html( '' !== $row_amount ? $row_amount : '—' ); ?></code>
+											<span class="xdwp-payments-table__sub"><?php echo esc_html( $row_coin ? $row_coin['symbol'] : '' ); ?></span>
 										</span>
-									</td>
-									<td><code><?php echo esc_html( '' !== $row_amount ? $row_amount : '—' ); ?></code></td>
-									<td>
-										<?php if ( '' === $row_recv ) : ?>
-											<span class="xdwp-muted">&mdash;</span>
-										<?php else : ?>
-											<code><?php echo esc_html( $row_recv ); ?></code>
+										<?php if ( '' !== $row_recv ) : ?>
+											<div class="xdwp-payments-table__sub">
+												<?php
+												echo esc_html(
+													sprintf(
+														/* translators: %s: amount received on chain */
+														__( 'received %s', 'xorro-direct-wallet-payments-woocommerce' ),
+														$row_recv
+													)
+												);
+												?>
+											</div>
 										<?php endif; ?>
 									</td>
-									<td><?php echo Xdwp_Payments_Admin::status_pill( $order, $row_status ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- built from escaped parts. ?></td>
-									<td class="xdwp-payments-table__txid">
+									<td class="xdwp-col-state"><?php echo Xdwp_Payments_Admin::status_pill( $order, $row_status ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- built from escaped parts. ?></td>
+									<td class="xdwp-col-tx xdwp-payments-table__txid">
 										<?php if ( '' === $row_txid ) : ?>
 											<span class="xdwp-muted">&mdash;</span>
 										<?php else : ?>
@@ -180,7 +198,7 @@ $cards = array(
 											<span class="xdwp-txid-actions">
 												<button type="button" class="button-link xdwp-copy-txid" data-txid="<?php echo esc_attr( $row_txid ); ?>" data-copied="<?php esc_attr_e( 'Copied', 'xorro-direct-wallet-payments-woocommerce' ); ?>"><?php esc_html_e( 'Copy', 'xorro-direct-wallet-payments-woocommerce' ); ?></button>
 												<?php if ( '' !== $row_url ) : ?>
-													<a href="<?php echo esc_url( $row_url ); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'View on explorer', 'xorro-direct-wallet-payments-woocommerce' ); ?><span class="screen-reader-text"><?php esc_html_e( '(opens in a new tab)', 'xorro-direct-wallet-payments-woocommerce' ); ?></span></a>
+													<a href="<?php echo esc_url( $row_url ); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Explorer', 'xorro-direct-wallet-payments-woocommerce' ); ?><span class="screen-reader-text"><?php esc_html_e( '(opens in a new tab)', 'xorro-direct-wallet-payments-woocommerce' ); ?></span></a>
 												<?php endif; ?>
 											</span>
 										<?php endif; ?>
@@ -225,7 +243,9 @@ $cards = array(
 							<?php endif; ?>
 						</div>
 					</div>
-				<?php endif; ?>
+					<?php endif; ?>
+					</div>
+				</div>
 			</div>
 		</div>
 	</div>

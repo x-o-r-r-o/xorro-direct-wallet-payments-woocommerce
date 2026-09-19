@@ -617,8 +617,13 @@ class Xdwp_Order {
 				'amount'    => $amount,
 				'status'    => $status,
 				'renewUrl'  => Xdwp_Ajax::endpoint( 'xdwp_renew' ),
+				'sentUrl'   => Xdwp_Ajax::endpoint( 'xdwp_sent' ),
+				'confirmations' => Xdwp_Coins::confirmations_for( $coin ),
 				'i18n'      => array(
 					'detected' => __( 'Payment detected — waiting for network confirmations…', 'xorro-direct-wallet-payments-woocommerce' ),
+					'detectedWith' => __( 'Payment detected — waiting for %d network confirmations. You do not need to send anything else.', 'xorro-direct-wallet-payments-woocommerce' ),
+					'checkingNow' => __( 'Thanks — we are checking the network now. This page updates itself.', 'xorro-direct-wallet-payments-woocommerce' ),
+					'checkFail' => __( 'We could not check just now. This page keeps looking on its own.', 'xorro-direct-wallet-payments-woocommerce' ),
 					'renewing' => __( 'Getting a new amount…', 'xorro-direct-wallet-payments-woocommerce' ),
 					'renewFail' => __( 'Could not get a new amount. Please contact us.', 'xorro-direct-wallet-payments-woocommerce' ),
 					'copied'   => __( 'Copied!', 'xorro-direct-wallet-payments-woocommerce' ),

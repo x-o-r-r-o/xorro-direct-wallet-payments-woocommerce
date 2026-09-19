@@ -4,7 +4,7 @@ Tags: woocommerce, cryptocurrency, bitcoin, ethereum, payments, usdt, crypto che
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.9.1
+Stable tag: 1.10.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -336,6 +336,14 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 * QR Code generator (`assets/js/qrcode.min.js`) — MIT-licensed library by davidshimjs (https://github.com/davidshimjs/qrcodejs). Source is publicly available; the bundled file is minified for production use.
 
 == Changelog ==
+
+= 1.10.0 =
+Reassurance for the customer, less hunting for the shop owner.
+* New: an "I have sent the payment" button on the payment page — the network is checked straight away and the page then watches more closely for a few minutes, instead of the customer waiting and wondering
+* New: while a payment is visible but not yet confirmed, the page says how many confirmations it is waiting for
+* New: the Payments menu carries a count of the orders that need you, like WordPress does for comments
+* New: Download CSV on the Payments screen, exporting whatever is filtered on screen (coin, amounts, state, address, tag/memo, transaction)
+* Payments table rebuilt to fit the screen: five columns, full transaction ids that wrap instead of being cut off, a sticky header, and pagination that says how many orders there are
 
 = 1.9.1 =
 * New: transaction ids on the Payments screen and the order screen link straight to that chain's public explorer, with a Copy button

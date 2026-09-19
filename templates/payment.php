@@ -119,11 +119,13 @@ defined( 'ABSPATH' ) || exit;
 			</div>
 		</div>
 
-		<?php if ( ! empty( $uri ) ) : ?>
-			<p class="xdwp-box__wallet">
+		<div class="xdwp-box__actions">
+			<?php if ( ! empty( $uri ) ) : ?>
 				<a class="xdwp-open-wallet" href="<?php echo esc_url( $uri ); ?>"><?php esc_html_e( 'Open in wallet app', 'xorro-direct-wallet-payments-woocommerce' ); ?></a>
-			</p>
-		<?php endif; ?>
+			<?php endif; ?>
+			<button type="button" class="button xdwp-sent" id="xdwp-sent"><?php esc_html_e( 'I have sent the payment', 'xorro-direct-wallet-payments-woocommerce' ); ?></button>
+		</div>
+		<p class="xdwp-box__hint" id="xdwp-sent-status" role="status"></p>
 
 		<div class="xdwp-box__qr">
 			<div id="xdwp-qrcode" aria-hidden="true"></div>

@@ -183,6 +183,14 @@ Pushing a `vX.Y.Z` tag runs the Release workflow, which builds the ZIP, its SHA-
 
 Full details for every release are in [`readme.txt`](readme.txt).
 
+### 1.10.0 — reassurance for the customer, less hunting for the shop owner
+
+- **"I have sent the payment"** on the payment page: checks the chain immediately, then watches closely for five minutes
+- The waiting message now names the number of confirmations still needed
+- **Count on the Payments menu** for orders that need you
+- **CSV export** of the Payments screen, following the filters on screen
+- Payments table rebuilt to fit the panel: five columns, full transaction ids, sticky header, and pagination showing the order count
+
 ### 1.9.1 — explorer links and a tidier Payments table
 
 - Transaction ids link to the chain's public explorer (Payments screen and order screen), with a Copy button

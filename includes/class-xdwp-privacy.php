@@ -43,6 +43,8 @@ class Xdwp_Privacy {
 			'_xdwp_overpaid'      => __( 'Overpaid amount', 'xorro-direct-wallet-payments-woocommerce' ),
 			'_xdwp_late_txid'     => __( 'Late payment transaction ID', 'xorro-direct-wallet-payments-woocommerce' ),
 			'_xdwp_late_amount'   => __( 'Late payment amount', 'xorro-direct-wallet-payments-woocommerce' ),
+			'_xdwp_memo'          => __( 'Destination tag / memo', 'xorro-direct-wallet-payments-woocommerce' ),
+			'_xdwp_seen_txid'     => __( 'Transaction seen before confirmation', 'xorro-direct-wallet-payments-woocommerce' ),
 		);
 	}
 

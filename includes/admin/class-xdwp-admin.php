@@ -190,7 +190,7 @@ class Xdwp_Admin {
 		add_submenu_page(
 			'xorro-direct-wallet-payments-woocommerce',
 			__( 'Payments', 'xorro-direct-wallet-payments-woocommerce' ),
-			__( 'Payments', 'xorro-direct-wallet-payments-woocommerce' ),
+			self::payments_menu_title(),
 			'manage_woocommerce',
 			'xorro-direct-wallet-payments-woocommerce-payments',
 			array( __CLASS__, 'render_payments_page' )
@@ -568,6 +568,21 @@ class Xdwp_Admin {
 			)
 		);
 		echo '</p></div>';
+	}
+
+	/**
+	 * "Payments", with a count of the orders waiting on the store owner — the same bubble
+	 * WordPress uses for comments awaiting moderation.
+	 *
+	 * @return string
+	 */
+	private static function payments_menu_title() {
+		$label = __( 'Payments', 'xorro-direct-wallet-payments-woocommerce' );
+		$count = class_exists( 'Xdwp_Payments_Admin' ) ? Xdwp_Payments_Admin::attention_count() : 0;
+		if ( $count < 1 ) {
+			return $label;
+		}
+		return $label . ' <span class="awaiting-mod update-plugins count-' . absint( $count ) . '"><span class="update-count">' . esc_html( number_format_i18n( $count ) ) . '</span></span>';
 	}
 
 	/**
