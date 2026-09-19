@@ -38,6 +38,20 @@
 		<properties>
 			<property name="prefixes" type="array" value="xdwp,Xdwp"/>
 		</properties>
+		<!--
+			Templates are included from inside a method, so their variables are local, not
+			global — the sniff cannot see that. WooCommerce's own email hooks are fired by
+			our email templates on purpose, exactly as WooCommerce's templates do.
+		-->
+		<exclude-pattern>*/templates/*</exclude-pattern>
+		<exclude-pattern>*/includes/admin/views/*</exclude-pattern>
+		<exclude-pattern>*/tests/*</exclude-pattern>
+	</rule>
+
+	<rule ref="WordPress.WP.GlobalVariablesOverride">
+		<exclude-pattern>*/templates/*</exclude-pattern>
+		<exclude-pattern>*/includes/admin/views/*</exclude-pattern>
+		<exclude-pattern>*/tests/*</exclude-pattern>
 	</rule>
 
 	<rule ref="WordPress.WP.Capabilities">
