@@ -26,6 +26,13 @@
 		<exclude name="Generic.WhiteSpace.DisallowSpaceIndent"/>
 	</rule>
 
+	<rule ref="WordPress.WP.Capabilities">
+		<properties>
+			<!-- WooCommerce's own capability; the sniff only knows core ones. -->
+			<property name="custom_capabilities" type="array" value="manage_woocommerce"/>
+		</properties>
+	</rule>
+
 	<rule ref="WordPress.WP.I18n">
 		<properties>
 			<property name="text_domain" type="array" value="xorro-direct-wallet-payments-woocommerce"/>

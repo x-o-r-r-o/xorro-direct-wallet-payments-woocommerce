@@ -284,6 +284,9 @@ class Xdwp_Ajax {
 		wp_send_json_success( array( 'checking' => true ) );
 	}
 
+	/**
+	 * Re-quote an order whose payment window closed with nothing received.
+	 */
 	public static function renew() {
 		$order_id = isset( $_POST['order_id'] ) ? absint( $_POST['order_id'] ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Missing
 		$deny     = static function () {
