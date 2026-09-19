@@ -183,6 +183,11 @@ Pushing a `vX.Y.Z` tag runs the Release workflow, which builds the ZIP, its SHA-
 
 Full details for every release are in [`readme.txt`](readme.txt).
 
+### 1.10.1 — Payments screen on a phone
+
+- Tabs move above the content and each order becomes a labelled card, instead of a table scrolling sideways
+- The table fits the panel at every width, with the order count beside the page links
+
 ### 1.10.0 — reassurance for the customer, less hunting for the shop owner
 
 - **"I have sent the payment"** on the payment page: checks the chain immediately, then watches closely for five minutes

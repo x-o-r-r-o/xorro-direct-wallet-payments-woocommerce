@@ -1422,3 +1422,111 @@ body.xdwp-admin-page #wpbody-content > .wrap > h1.wp-heading-inline {
 .xdwp-payments-table .cc-coin-cell code {
 	font-size: 12px;
 }
+
+/* ---- Phones and narrow admin windows ---------------------------------- */
+
+/*
+ * The desktop layout is pinned with !important further up (it has to win against
+ * WordPress' own admin styles), so the stacked layout has to say !important too.
+ */
+@media (max-width: 782px) {
+	body.xdwp-admin-page #wpbody-content .xdwp-options-wrap .cc-layout,
+	#wpbody-content .xdwp-options-wrap .cc-layout {
+		flex-direction: column !important;
+		min-height: 0 !important;
+	}
+
+	body.xdwp-admin-page #wpbody-content .xdwp-options-wrap .cc-tabs,
+	#wpbody-content .xdwp-options-wrap .cc-tabs {
+		width: 100% !important;
+		flex: none !important;
+		flex-direction: row !important;
+		flex-wrap: wrap !important;
+	}
+
+	.xdwp-options-wrap .cc-header {
+		flex-wrap: wrap;
+		padding: 14px 16px;
+	}
+
+	.xdwp-cards {
+		grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+		gap: 0.5rem;
+	}
+
+	.xdwp-filters {
+		display: grid;
+		grid-template-columns: 1fr;
+	}
+
+	.xdwp-filters select,
+	.xdwp-filters .cc-btn {
+		width: 100%;
+		text-align: center;
+		white-space: normal;
+	}
+
+	/* One card per order instead of a table nobody can read sideways. */
+	.xdwp-table-wrap {
+		overflow-x: visible;
+		border: 0;
+	}
+
+	.xdwp-payments-table,
+	.xdwp-payments-table tbody,
+	.xdwp-payments-table tr,
+	.xdwp-payments-table td {
+		display: block;
+		width: auto;
+		min-width: 0;
+	}
+
+	.xdwp-payments-table thead {
+		display: none;
+	}
+
+	.xdwp-payments-table tr {
+		margin: 0 0 0.6rem;
+		padding: 0.6rem 0.75rem;
+		border: 1px solid #dcdcde;
+		border-radius: 6px;
+		background: #fff;
+	}
+
+	.xdwp-payments-table td {
+		display: grid;
+		grid-template-columns: 6.5rem 1fr;
+		gap: 0.5rem;
+		align-items: start;
+		padding: 0.3rem 0;
+		border: 0;
+	}
+
+	/* Every value in the cell belongs in the second column, under one another. */
+	.xdwp-payments-table td > * {
+		grid-column: 2;
+		min-width: 0;
+		overflow-wrap: anywhere;
+	}
+
+	.xdwp-payments-table td::before {
+		content: attr(data-label);
+		color: #646970;
+		font-size: 11px;
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+		line-height: 1.6;
+	}
+
+	.xdwp-payments-table td:empty {
+		display: none;
+	}
+
+	.xdwp-txid {
+		max-width: 100%;
+	}
+
+	.xdwp-admin .tablenav-pages {
+		justify-content: flex-start;
+	}
+}

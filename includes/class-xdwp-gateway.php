@@ -49,7 +49,7 @@ class Xdwp_Gateway extends WC_Payment_Gateway {
 		 * @param string $id   Gateway ID.
 		 */
 		// WooCommerce's own filter, applied by every gateway — not a hook of ours to prefix.
-		return apply_filters( 'woocommerce_gateway_icon', $icon, $this->id ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHookFound
+		return apply_filters( 'woocommerce_gateway_icon', $icon, $this->id ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 	}
 
 	/**

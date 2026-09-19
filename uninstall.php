@@ -23,7 +23,7 @@ wp_clear_scheduled_hook( 'xdwp_refresh_prices' );
 
 global $wpdb;
 
-$patterns = array(
+$xdwp_patterns = array(
 	'_transient_xdwp_',
 	'_transient_timeout_xdwp_',
 	'xdwp_wallet_idx_',
@@ -34,13 +34,13 @@ $patterns = array(
 	'xdwp_partial_',
 );
 
-foreach ( $patterns as $prefix ) {
-	$like = $wpdb->esc_like( $prefix ) . '%';
+foreach ( $xdwp_patterns as $xdwp_prefix ) {
+	$xdwp_like = $wpdb->esc_like( $xdwp_prefix ) . '%';
 	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 	$wpdb->query(
 		$wpdb->prepare(
 			"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s",
-			$like
+			$xdwp_like
 		)
 	);
 }

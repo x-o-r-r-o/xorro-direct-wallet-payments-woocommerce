@@ -150,21 +150,21 @@ $cards = array(
 								$icons = $row_coin ? Xdwp_Coins::icon_meta( $row_coin['id'] ) : array();
 								?>
 								<tr>
-									<td class="xdwp-col-order">
+									<td class="xdwp-col-order" data-label="<?php esc_attr_e( 'Order', 'xorro-direct-wallet-payments-woocommerce' ); ?>">
 										<a href="<?php echo esc_url( $order->get_edit_order_url() ); ?>"><strong>#<?php echo esc_html( $order->get_order_number() ); ?></strong></a>
 										<div class="xdwp-payments-table__sub"><?php echo wp_kses_post( $order->get_formatted_order_total() ); ?></div>
 										<?php if ( $order->get_date_created() ) : ?>
 											<div class="xdwp-payments-table__sub xdwp-payments-table__date"><?php echo esc_html( $order->get_date_created()->date_i18n( get_option( 'date_format' ) ) ); ?><br /><?php echo esc_html( $order->get_date_created()->date_i18n( get_option( 'time_format' ) ) ); ?></div>
 										<?php endif; ?>
 									</td>
-									<td class="xdwp-col-customer">
+									<td class="xdwp-col-customer" data-label="<?php esc_attr_e( 'Customer', 'xorro-direct-wallet-payments-woocommerce' ); ?>">
 										<?php $row_name = trim( $order->get_formatted_billing_full_name() ); ?>
 										<?php if ( '' !== $row_name ) : ?>
 											<div><?php echo esc_html( $row_name ); ?></div>
 										<?php endif; ?>
 										<span class="xdwp-payments-table__sub"><?php echo esc_html( $order->get_billing_email() ); ?></span>
 									</td>
-									<td class="xdwp-col-amount">
+									<td class="xdwp-col-amount" data-label="<?php esc_attr_e( 'Amount', 'xorro-direct-wallet-payments-woocommerce' ); ?>">
 										<span class="cc-coin-cell">
 											<?php if ( ! empty( $icons['icon'] ) ) : ?>
 												<span class="cc-coin-cell__icon" aria-hidden="true">
@@ -188,8 +188,8 @@ $cards = array(
 											</div>
 										<?php endif; ?>
 									</td>
-									<td class="xdwp-col-state"><?php echo Xdwp_Payments_Admin::status_pill( $order, $row_status ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- built from escaped parts. ?></td>
-									<td class="xdwp-col-tx xdwp-payments-table__txid">
+									<td class="xdwp-col-state" data-label="<?php esc_attr_e( 'State', 'xorro-direct-wallet-payments-woocommerce' ); ?>"><?php echo Xdwp_Payments_Admin::status_pill( $order, $row_status ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- built from escaped parts. ?></td>
+									<td class="xdwp-col-tx xdwp-payments-table__txid" data-label="<?php esc_attr_e( 'Transaction', 'xorro-direct-wallet-payments-woocommerce' ); ?>">
 										<?php if ( '' === $row_txid ) : ?>
 											<span class="xdwp-muted">&mdash;</span>
 										<?php else : ?>

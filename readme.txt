@@ -4,7 +4,7 @@ Tags: woocommerce, cryptocurrency, bitcoin, ethereum, payments, usdt, crypto che
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.10.0
+Stable tag: 1.10.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -336,6 +336,10 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 * QR Code generator (`assets/js/qrcode.min.js`) — MIT-licensed library by davidshimjs (https://github.com/davidshimjs/qrcodejs). Source is publicly available; the bundled file is minified for production use.
 
 == Changelog ==
+
+= 1.10.1 =
+* Fix: the Payments screen is usable on a phone — the tabs move above the content and each order becomes a labelled card instead of a table that scrolls sideways
+* Fix: the table now fits an ordinary admin panel at every width, and its footer says how many orders there are next to the page links
 
 = 1.10.0 =
 Reassurance for the customer, less hunting for the shop owner.
