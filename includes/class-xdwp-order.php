@@ -22,6 +22,7 @@ class Xdwp_Order {
 		add_action( 'add_meta_boxes', array( __CLASS__, 'add_order_metabox' ) );
 		add_action( 'woocommerce_admin_order_data_after_billing_address', array( __CLASS__, 'admin_order_info' ), 10, 1 );
 		add_action( 'admin_post_xdwp_mark_paid', array( __CLASS__, 'handle_mark_paid' ) );
+		add_action( 'admin_notices', array( __CLASS__, 'mark_paid_notice' ) );
 		add_filter( 'woocommerce_get_price_html', array( __CLASS__, 'maybe_append_crypto_price' ), 20, 2 );
 		add_action( 'woocommerce_order_status_changed', array( __CLASS__, 'on_status_changed' ), 10, 4 );
 		add_action( 'woocommerce_trash_order', array( __CLASS__, 'on_order_terminal' ), 10, 1 );
@@ -149,27 +150,36 @@ class Xdwp_Order {
 			return false;
 		}
 
-		$address = Xdwp_Wallets::pick_address( $coin_id );
-		if ( ! $address ) {
-			self::note_setup_failure( $order, $coin_id, __( 'no wallet address is configured for this coin.', 'xorro-direct-wallet-payments-woocommerce' ) );
-			return false;
-		}
-
-		$amount = Xdwp_Prices::take_checkout_quote( (float) $order->get_total(), $coin_id, $order->get_currency() );
-		if ( '' === $amount || (float) $amount <= 0 ) {
-			self::note_setup_failure( $order, $coin_id, __( 'no live exchange rate was available (CoinGecko rate limit or outage — see WooCommerce → Status → Logs, source "xorro-wallet-payments").', 'xorro-direct-wallet-payments-woocommerce' ) );
-			return false;
-		}
-
 		$order_id = $order->get_id();
+		$address  = '';
+		$amount   = '';
+		$reserved = false;
 
-		// Never silently change the reserved checkout quote (customer already saw it). Fail closed on collision.
-		// Atomic (address, amount) reservation closes the concurrent-checkout TOCTOU window.
-		if (
-			! Xdwp_Verifier::amount_safe_for_address( $coin_id, $address, $amount, $order_id )
-			|| ! Xdwp_Verifier::reserve_amount_slot( $address, $amount, $order_id )
-		) {
-			self::note_setup_failure( $order, $coin_id, __( 'another open order on the same address expects an overlapping amount, so payments could not be told apart. Adding more addresses for this coin (with rotation on) avoids this.', 'xorro-direct-wallet-payments-woocommerce' ) );
+		// A collision with another open order on the same address (overlapping match bands)
+		// is retried with the next rotated address and a freshly minted unique amount rather
+		// than failing the checkout. The first attempt uses the quote the customer saw.
+		for ( $attempt = 0; $attempt < 5 && ! $reserved; $attempt++ ) {
+			$address = Xdwp_Wallets::pick_address( $coin_id );
+			if ( ! $address ) {
+				self::note_setup_failure( $order, $coin_id, __( 'no wallet address is configured for this coin.', 'xorro-direct-wallet-payments-woocommerce' ) );
+				return false;
+			}
+
+			$amount = 0 === $attempt
+				? Xdwp_Prices::take_checkout_quote( (float) $order->get_total(), $coin_id, $order->get_currency() )
+				: Xdwp_Prices::fiat_to_crypto( (float) $order->get_total(), $coin_id, $order->get_currency(), true );
+			if ( '' === $amount || (float) $amount <= 0 ) {
+				self::note_setup_failure( $order, $coin_id, __( 'no live exchange rate was available (CoinGecko rate limit or outage — see WooCommerce → Status → Logs, source "xorro-wallet-payments").', 'xorro-direct-wallet-payments-woocommerce' ) );
+				return false;
+			}
+
+			// Atomic (address, amount) reservation closes the concurrent-checkout TOCTOU window.
+			$reserved = Xdwp_Verifier::amount_safe_for_address( $coin_id, $address, $amount, $order_id )
+				&& Xdwp_Verifier::reserve_amount_slot( $address, $amount, $order_id );
+		}
+
+		if ( ! $reserved ) {
+			self::note_setup_failure( $order, $coin_id, __( 'other open orders on the same address expect overlapping amounts, so payments could not be told apart. Adding more addresses for this coin (with rotation on) avoids this.', 'xorro-direct-wallet-payments-woocommerce' ) );
 			return false;
 		}
 
@@ -457,7 +467,7 @@ class Xdwp_Order {
 			'xdwp-frontend',
 			'xdwpData',
 			array(
-				'ajaxUrl'   => admin_url( 'admin-ajax.php' ),
+				'ajaxUrl'   => Xdwp_Ajax::endpoint( 'xdwp_status' ),
 				'nonce'     => wp_create_nonce( 'xdwp_status_' . $order->get_id() ),
 				'orderId'   => $order->get_id(),
 				'orderKey'  => $order->get_order_key(),
@@ -619,6 +629,17 @@ class Xdwp_Order {
 	}
 
 	/**
+	 * Confirmation after "Mark payment received".
+	 */
+	public static function mark_paid_notice() {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- display-only flag.
+		if ( empty( $_GET['xdwp_marked_paid'] ) || ! current_user_can( 'manage_woocommerce' ) ) {
+			return;
+		}
+		echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Payment marked as received. The order status has been updated.', 'xorro-direct-wallet-payments-woocommerce' ) . '</p></div>';
+	}
+
+	/**
 	 * Manual mark-paid handler (POST only).
 	 */
 	public static function handle_mark_paid() {
@@ -636,15 +657,15 @@ class Xdwp_Order {
 		$txid = isset( $_POST['xdwp_txid'] ) ? sanitize_text_field( wp_unslash( $_POST['xdwp_txid'] ) ) : '';
 		$txid = strtolower( preg_replace( '/\s+/', '', (string) $txid ) );
 		if ( strlen( $txid ) < 8 || strlen( $txid ) > 128 || ! preg_match( '/^[a-z0-9x]+$/', $txid ) ) {
-			wp_die( esc_html__( 'A valid on-chain transaction ID is required.', 'xorro-direct-wallet-payments-woocommerce' ) );
+			wp_die( esc_html__( 'A valid on-chain transaction ID is required.', 'xorro-direct-wallet-payments-woocommerce' ), '', array( 'back_link' => true, 'response' => 400 ) );
 		}
 		if ( empty( $_POST['xdwp_confirm_manual'] ) ) {
-			wp_die( esc_html__( 'Manual confirmation checkbox is required.', 'xorro-direct-wallet-payments-woocommerce' ) );
+			wp_die( esc_html__( 'Manual confirmation checkbox is required.', 'xorro-direct-wallet-payments-woocommerce' ), '', array( 'back_link' => true, 'response' => 400 ) );
 		}
 
 		$order = wc_get_order( $order_id );
 		if ( ! $order || ! self::is_ours( $order ) ) {
-			wp_die( esc_html__( 'Order not found.', 'xorro-direct-wallet-payments-woocommerce' ) );
+			wp_die( esc_html__( 'Order not found.', 'xorro-direct-wallet-payments-woocommerce' ), '', array( 'back_link' => true, 'response' => 400 ) );
 		}
 
 		// Same eligibility as the admin UI — never squat a txid on cancelled/ineligible orders.
@@ -658,11 +679,11 @@ class Xdwp_Order {
 			$eligible = in_array( $wc_status, array( 'failed', 'pending', 'on-hold' ), true );
 		}
 		if ( ! $eligible ) {
-			wp_die( esc_html__( 'This order cannot be marked paid (wrong status).', 'xorro-direct-wallet-payments-woocommerce' ) );
+			wp_die( esc_html__( 'This order cannot be marked paid (wrong status).', 'xorro-direct-wallet-payments-woocommerce' ), '', array( 'back_link' => true, 'response' => 400 ) );
 		}
 
 		if ( ! Xdwp_Verifier::reserve_txid( $txid, $order_id ) ) {
-			wp_die( esc_html__( 'That transaction ID is already linked to another order.', 'xorro-direct-wallet-payments-woocommerce' ) );
+			wp_die( esc_html__( 'That transaction ID is already linked to another order.', 'xorro-direct-wallet-payments-woocommerce' ), '', array( 'back_link' => true, 'response' => 400 ) );
 		}
 
 		$order->update_meta_data( '_xdwp_txid', $txid );
@@ -674,7 +695,7 @@ class Xdwp_Order {
 			Xdwp_Verifier::release_txid( $txid, $order_id );
 			$order && $order->delete_meta_data( '_xdwp_txid' );
 			$order && $order->save();
-			wp_die( esc_html__( 'Could not complete payment for this order. The transaction ID was not kept.', 'xorro-direct-wallet-payments-woocommerce' ) );
+			wp_die( esc_html__( 'Could not complete payment for this order. The transaction ID was not kept.', 'xorro-direct-wallet-payments-woocommerce' ), '', array( 'back_link' => true, 'response' => 400 ) );
 		}
 
 		$order->add_order_note(
@@ -687,7 +708,8 @@ class Xdwp_Order {
 			true
 		);
 
-		wp_safe_redirect( wp_get_referer() ? wp_get_referer() : admin_url( 'edit.php?post_type=shop_order' ) );
+		// get_edit_order_url() is correct for both HPOS and legacy post storage.
+		wp_safe_redirect( add_query_arg( 'xdwp_marked_paid', '1', wp_get_referer() ? wp_get_referer() : $order->get_edit_order_url() ) );
 		exit;
 	}
 

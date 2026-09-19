@@ -300,12 +300,19 @@ class Xdwp_Verifier {
 	 * @return string
 	 */
 	private static function e18_mul_small( $a, $k ) {
-		$out = '0';
-		for ( $i = 0; $i < (int) $k; $i++ ) {
-			$out = self::e18_add( $out, $a );
+		$a     = (string) $a;
+		$k     = max( 0, (int) $k );
+		$out   = '';
+		$carry = 0;
+		for ( $i = strlen( $a ) - 1; $i >= 0; $i-- ) {
+			$d     = ( (int) $a[ $i ] ) * $k + $carry;
+			$out   = ( $d % 10 ) . $out;
+			$carry = (int) ( $d / 10 );
 		}
-		return $out;
+		$out = ltrim( ( $carry ? (string) $carry : '' ) . $out, '0' );
+		return '' === $out ? '0' : $out;
 	}
+
 
 	/**
 	 * Public wrapper: whether an amount can safely share an address with other awaiting orders.
@@ -337,98 +344,141 @@ class Xdwp_Verifier {
 	 * @return bool
 	 */
 	private static function can_safely_match_shared_address( array $coin, $address, $order_id, $amount = '' ) {
-		$others     = array();
-		$page       = 1;
-		$per_page   = 100;
-		$max_peers  = 500; // Beyond this, refuse matching (fail closed).
-		// Peers older than the retention window can no longer be confused with this order.
-		// Bounding the query (not just filtering afterwards) stops abandoned orders from
-		// accumulating forever and eventually blocking the address outright.
-		$retain_ttl = WEEK_IN_SECONDS + ( (int) Xdwp_Settings::get( 'payment_window', 60 ) * MINUTE_IN_SECONDS );
-		$base_args  = array(
-			'limit'          => $per_page,
-			'status'         => array( 'on-hold', 'pending', 'failed', 'cancelled', 'refunded' ),
-			'payment_method' => XDWP_GATEWAY_ID,
-			'exclude'        => array( absint( $order_id ) ),
-			'date_created'   => '>' . ( time() - $retain_ttl ),
-			'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
-				'relation' => 'AND',
-				array(
-					'key'     => '_xdwp_status',
-					'value'   => array( 'awaiting', 'expired', 'cancelled' ),
-					'compare' => 'IN',
-				),
-				array(
-					'key'   => '_xdwp_address',
-					'value' => $address,
-				),
-				// Other coins on the same address (ETH vs USDT_ETH) are told apart by the
-				// checker's asset/contract filter, so they are not attribution risks.
-				array(
-					'key'   => '_xdwp_coin',
-					'value' => isset( $coin['id'] ) ? $coin['id'] : '',
-				),
-			),
-			'return'         => 'objects',
-		);
-
-		do {
-			$batch = wc_get_orders(
-				array_merge(
-					$base_args,
-					array( 'page' => $page )
-				)
-			);
-			if ( empty( $batch ) ) {
-				break;
-			}
-			foreach ( $batch as $peer ) {
-				$others[] = $peer;
-			}
-			if ( count( $others ) > $max_peers ) {
-				return false;
-			}
-			++$page;
-		} while ( count( $batch ) === $per_page );
-
-		if ( empty( $others ) ) {
-			return true;
+		$peers = self::peer_amounts( $coin, $address, $order_id );
+		if ( false === $peers ) {
+			return false;
 		}
-
 		// Refuse if another live/recent order on this address could be matched by the same
 		// payment: identical amount or overlapping match bands. Without unique dust (or on
 		// low-decimal assets) amounts still differ whenever totals or rates differ, so the
 		// overlap test — not a blanket "one order per address" rule — is what keeps
 		// attribution safe without letting one abandoned order lock the coin.
 		$amount = (string) $amount;
-		foreach ( $others as $other ) {
-			if ( ! $other instanceof WC_Order ) {
-				continue;
-			}
-			$other_status = (string) Xdwp_Order::meta( $other, 'status' );
-			if ( in_array( $other_status, array( 'expired', 'cancelled' ), true ) ) {
-				$other_started = (int) Xdwp_Order::meta( $other, 'started' );
-				if ( ! $other_started || ( time() - $other_started ) > $retain_ttl ) {
-					continue;
-				}
-			}
-			$other_amount = (string) Xdwp_Order::meta( $other, 'amount' );
-			if ( $amount && hash_equals( $amount, $other_amount ) ) {
-				return false;
-			}
-			// Overlapping bands are unsafe even with different strings after formatting.
-			$band_a = self::match_band( $amount, $coin );
-			$band_b = self::match_band( $other_amount, $coin );
-			if (
-				self::e18_cmp( self::to_e18( $band_a['min'] ), self::to_e18( $band_b['max'] ) ) <= 0
-				&& self::e18_cmp( self::to_e18( $band_b['min'] ), self::to_e18( $band_a['max'] ) ) <= 0
-			) {
+		foreach ( $peers as $other_amount ) {
+			if ( self::amounts_overlap( $amount, $other_amount, $coin ) ) {
 				return false;
 			}
 		}
-
 		return true;
 	}
+
+	/**
+	 * Amounts of open or recently-closed orders for this coin that a payment could be
+	 * confused with (optionally limited to one address).
+	 *
+	 * @param array  $coin     Coin def.
+	 * @param string $address  Address, or '' for every address of the coin.
+	 * @param int    $order_id Order to exclude.
+	 * @return array<int, string>|false False when the peer set is too large (fail closed).
+	 */
+	private static function peer_amounts( array $coin, $address, $order_id ) {
+		$amounts    = array();
+		$count      = 0;
+		$page       = 1;
+		$per_page   = 100;
+		$max_peers  = 1000; // Beyond this, refuse matching (fail closed).
+		// Peers older than the retention window can no longer be confused with this order.
+		// Bounding the query (not just filtering afterwards) stops abandoned orders from
+		// accumulating forever and eventually blocking the address outright.
+		$retain_ttl = WEEK_IN_SECONDS + ( (int) Xdwp_Settings::get( 'payment_window', 60 ) * MINUTE_IN_SECONDS );
+		$meta_query = array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+			'relation' => 'AND',
+			array(
+				'key'     => '_xdwp_status',
+				'value'   => array( 'awaiting', 'expired', 'cancelled' ),
+				'compare' => 'IN',
+			),
+			// Other coins on the same address (ETH vs USDT_ETH) are told apart by the
+			// checker's asset/contract filter, so they are not attribution risks.
+			array(
+				'key'   => '_xdwp_coin',
+				'value' => isset( $coin['id'] ) ? $coin['id'] : '',
+			),
+		);
+		if ( '' !== (string) $address ) {
+			$meta_query[] = array(
+				'key'   => '_xdwp_address',
+				'value' => $address,
+			);
+		}
+		$base_args = array(
+			'limit'          => $per_page,
+			'status'         => array( 'on-hold', 'pending', 'failed', 'cancelled', 'refunded' ),
+			'payment_method' => XDWP_GATEWAY_ID,
+			'exclude'        => array( absint( $order_id ) ),
+			'date_created'   => '>' . ( time() - $retain_ttl ),
+			'meta_query'     => $meta_query, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+			'return'         => 'objects',
+		);
+
+		do {
+			$batch = wc_get_orders( array_merge( $base_args, array( 'page' => $page ) ) );
+			if ( empty( $batch ) ) {
+				break;
+			}
+			foreach ( $batch as $peer ) {
+				if ( ! $peer instanceof WC_Order ) {
+					continue;
+				}
+				if ( ++$count > $max_peers ) {
+					return false;
+				}
+				$status = (string) Xdwp_Order::meta( $peer, 'status' );
+				if ( in_array( $status, array( 'expired', 'cancelled' ), true ) ) {
+					$started = (int) Xdwp_Order::meta( $peer, 'started' );
+					if ( ! $started || ( time() - $started ) > $retain_ttl ) {
+						continue;
+					}
+				}
+				$peer_amount = (string) Xdwp_Order::meta( $peer, 'amount' );
+				if ( '' !== $peer_amount ) {
+					$amounts[] = $peer_amount;
+				}
+			}
+			++$page;
+		} while ( count( $batch ) === $per_page );
+
+		return $amounts;
+	}
+
+	/**
+	 * Amounts reserved by open/recent orders for a coin across all its addresses.
+	 * Used to pick a unique-dust slot that is actually free.
+	 *
+	 * @param string $coin_id Coin ID.
+	 * @return array<int, string>|false
+	 */
+	public static function occupied_amounts( $coin_id ) {
+		$coin = Xdwp_Coins::get( $coin_id );
+		if ( ! $coin ) {
+			return false;
+		}
+		return self::peer_amounts( $coin, '', 0 );
+	}
+
+	/**
+	 * Whether two order amounts could be matched by the same payment.
+	 *
+	 * @param string $a    Amount A.
+	 * @param string $b    Amount B.
+	 * @param array  $coin Coin def.
+	 * @return bool
+	 */
+	public static function amounts_overlap( $a, $b, array $coin ) {
+		$a = (string) $a;
+		$b = (string) $b;
+		if ( '' === $a || '' === $b ) {
+			return false;
+		}
+		if ( hash_equals( $a, $b ) ) {
+			return true;
+		}
+		$band_a = self::match_band( $a, $coin );
+		$band_b = self::match_band( $b, $coin );
+		return self::e18_cmp( self::to_e18( $band_a['min'] ), self::to_e18( $band_b['max'] ) ) <= 0
+			&& self::e18_cmp( self::to_e18( $band_b['min'] ), self::to_e18( $band_a['max'] ) ) <= 0;
+	}
+
 
 	/**
 	 * Atomically reserve an (address, amount) slot so concurrent checkouts cannot publish colliding quotes.
@@ -1265,6 +1315,32 @@ class Xdwp_Verifier {
 	}
 
 	/**
+	 * Remember Etherscan API errors (bad key, chain not in the free tier, rate limit) so the
+	 * admin can see why EVM orders are not auto-confirming instead of failing silently.
+	 *
+	 * @param int   $chain_id Chain ID.
+	 * @param mixed $response Decoded response.
+	 */
+	private static function note_etherscan_error( $chain_id, $response ) {
+		if ( ! is_array( $response ) || ! isset( $response['status'] ) || '0' !== (string) $response['status'] ) {
+			return;
+		}
+		// "No transactions found" is status 0 with an empty result — not an error.
+		if ( ! isset( $response['result'] ) || ! is_string( $response['result'] ) || '' === $response['result'] ) {
+			return;
+		}
+		$errors                       = get_option( 'xdwp_explorer_errors', array() );
+		$errors                       = is_array( $errors ) ? $errors : array();
+		$errors[ 'etherscan_' . (int) $chain_id ] = array(
+			'source'  => 'Etherscan',
+			'chain'   => (int) $chain_id,
+			'message' => substr( sanitize_text_field( $response['result'] ), 0, 200 ),
+			'time'    => time(),
+		);
+		update_option( 'xdwp_explorer_errors', $errors, false );
+	}
+
+	/**
 	 * Etherscan V2 native transfers.
 	 *
 	 * @param int    $chain_id Chain ID.
@@ -1294,6 +1370,7 @@ class Xdwp_Verifier {
 		);
 		$url      = 'https://api.etherscan.io/v2/api?' . http_build_query( $query );
 		$response = self::http_get( $url );
+		self::note_etherscan_error( $chain_id, $response );
 		if ( ! is_array( $response ) || empty( $response['result'] ) || ! is_array( $response['result'] ) ) {
 			return false;
 		}
@@ -1356,6 +1433,7 @@ class Xdwp_Verifier {
 		);
 		$url      = 'https://api.etherscan.io/v2/api?' . http_build_query( $query );
 		$response = self::http_get( $url );
+		self::note_etherscan_error( $chain_id, $response );
 		if ( ! is_array( $response ) || empty( $response['result'] ) || ! is_array( $response['result'] ) ) {
 			return false;
 		}
@@ -2019,6 +2097,10 @@ class Xdwp_Verifier {
 			if ( ! self::tron_tx_confirmed( $tx ) ) {
 				continue;
 			}
+			// A confirmed-but-reverted transaction still appears in the list; require SUCCESS.
+			if ( empty( $tx['ret'][0]['contractRet'] ) || 'SUCCESS' !== $tx['ret'][0]['contractRet'] ) {
+				continue;
+			}
 			$raw = 0;
 			if ( ! empty( $tx['raw_data']['contract'][0]['parameter']['value']['amount'] ) ) {
 				$raw = $tx['raw_data']['contract'][0]['parameter']['value']['amount'];
@@ -2311,7 +2393,8 @@ class Xdwp_Verifier {
 			if ( ! self::soft_finality_ok( $validated ) ) {
 				continue;
 			}
-			if ( ! empty( $tx['asset_type'] ) && 'native' !== $tx['asset_type'] ) {
+			// Horizon always sets asset_type on payments; a missing value is not "native XLM".
+			if ( ! isset( $tx['asset_type'] ) || 'native' !== $tx['asset_type'] ) {
 				continue;
 			}
 			$amount = isset( $tx['amount'] ) ? (float) $tx['amount'] : 0;
@@ -2894,7 +2977,11 @@ class Xdwp_Verifier {
 		if ( ! self::ton_address_looks_valid( $address ) ) {
 			return false;
 		}
-		$target = self::ton_to_raw_address( $address );
+		$target      = self::ton_to_raw_address( $address );
+		$master_raw  = self::ton_to_raw_address( $jetton_master );
+		if ( '' === $master_raw ) {
+			return false;
+		}
 		$url    = add_query_arg(
 			array(
 				'owner_address' => $address,
@@ -2919,6 +3006,12 @@ class Xdwp_Verifier {
 			// Same fail-closed reasoning as check_ton_native() — never fall back
 			// to "any non-empty destination" if normalization produced nothing.
 			if ( '' === $dest || '' === $target || 0 !== strcasecmp( $dest, $target ) ) {
+				continue;
+			}
+			// The query parameter is only a filter; re-check each row's master so an
+			// indexer quirk can never credit a different jetton as this token.
+			$row_master = isset( $tx['jetton_master'] ) ? (string) $tx['jetton_master'] : '';
+			if ( '' === $row_master || 0 !== strcasecmp( $row_master, $master_raw ) ) {
 				continue;
 			}
 			$aborted   = ! empty( $tx['transaction_aborted'] );
@@ -3238,14 +3331,15 @@ class Xdwp_Verifier {
 			if ( empty( $tx['type'] ) || 4 !== (int) $tx['type'] ) {
 				continue;
 			}
-			if ( array_key_exists( 'assetId', $tx ) && null !== $tx['assetId'] ) {
+			// Fail closed: the node always sends assetId (null for WAVES); a missing key is not "native".
+			if ( ! array_key_exists( 'assetId', $tx ) || null !== $tx['assetId'] ) {
 				continue;
 			}
 			$recipient = isset( $tx['recipient'] ) ? (string) $tx['recipient'] : '';
 			if ( '' === $recipient || ! hash_equals( $address, $recipient ) ) {
 				continue;
 			}
-			if ( isset( $tx['applicationStatus'] ) && 'succeeded' !== $tx['applicationStatus'] ) {
+			if ( ! isset( $tx['applicationStatus'] ) || 'succeeded' !== $tx['applicationStatus'] ) {
 				continue;
 			}
 			$time = isset( $tx['timestamp'] ) ? (int) ( (float) $tx['timestamp'] / 1000 ) : 0;
@@ -3761,6 +3855,11 @@ class Xdwp_Verifier {
 		}
 		foreach ( $response['actions'] as $row ) {
 			$act = isset( $row['act'] ) ? $row['act'] : array();
+			// Only the real system token contract issues EOS; anyone can deploy a contract
+			// with an "EOS"-symbol transfer action, so don't rely on the server-side filter alone.
+			if ( empty( $act['account'] ) || 'eosio.token' !== $act['account'] || empty( $act['name'] ) || 'transfer' !== $act['name'] ) {
+				continue;
+			}
 			$data = isset( $act['data'] ) ? $act['data'] : array();
 			$time = 0;
 			if ( ! empty( $row['timestamp'] ) ) {

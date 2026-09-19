@@ -4,7 +4,7 @@ Tags: woocommerce, cryptocurrency, bitcoin, ethereum, payments, usdt, crypto che
 Requires at least: 6.9
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.5.35
+Stable tag: 1.5.36
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -324,6 +324,19 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 * QR Code generator (`assets/js/qrcode.min.js`) — MIT-licensed library by davidshimjs (https://github.com/davidshimjs/qrcodejs). Source is publicly available; the bundled file is minified for production use.
 
 == Changelog ==
+
+= 1.5.36 =
+Full audit on a live WordPress 7.1 / WooCommerce 11.1 test store: 13 themes, 53 plugins (cache, security, SEO, page builders, subscriptions, multi-currency, other gateways), classic and block checkout, plus a line-by-line security review mapped to the OWASP Top 10.
+* Fix (critical): correct payments on 18-decimal assets (BSC USDT, DAI, larger ETH/BNB/MATIC/AVAX orders) were never detected above ~4 units — amount matching used floats that could not represent the match band. Matching now uses exact fixed-point integers.
+* Fix (critical): the unique "dust" added to amounts could reach ~0.005 BTC (hundreds of dollars) on a small order. Each order now gets the smallest free unique amount (usually 10 base units, e.g. 10 sats).
+* Fix: one expired order (unique amounts off, or 4-decimal coins) or 500 abandoned orders could permanently block checkout and detection for an address. Only recent orders on the same coin are considered, and collisions retry with a fresh amount / next address instead of failing checkout.
+* Fix: request rate limits never reset under steady traffic, eventually refusing every visitor on an IP (all customers behind a CDN/proxy). Now fixed one-minute windows.
+* Fix: other plugins' activation redirects could turn the quote/status response into an HTML page. Frontend requests now use WooCommerce's ?wc-ajax= endpoint (admin-ajax.php still accepted).
+* Security: NEM verification switched to HTTPS-only nodes (plain HTTP allowed forged payments on the network path); Symbol checks the recipient; TON jettons re-check the token master per transfer; TRON native requires SUCCESS; Waves/Stellar/EOS fail closed on missing fields; per-coin exchange-rate freshness; pre-order quotes held 15 minutes max; site-wide cap on payment-page-triggered chain checks; cron lock can no longer be released by a stale run.
+* Compatibility: payment-page scripts opt out of "delay JS" / defer / combine (LiteSpeed, WP Rocket, Perfmatters, SiteGround Optimizer, Jetpack Boost, Cloudflare Rocket Loader) so the QR code and countdown appear immediately; checkout script kept out of Autoptimize's combined bundle and waits for jQuery if loaded late; no inline onclick handlers (strict CSP).
+* Checkout UX: exchange rates for all enabled coins fetched in one request with backoff (the free CoinGecko limit was hit after ~9 checkouts); friendly customer error with the real reason logged and noted on the order.
+* Payment page UX: "complete your payment below" link at the top of the thank-you page; styled Copy buttons next to the amount and address; labelled order total.
+* Admin UX: notices no longer render inside the settings header; Etherscan errors (e.g. chain not in the free tier) are shown instead of failing silently; "Mark payment received" shows a success notice and error pages have a back link.
 
 = 1.5.35 =
 * Fix: the last 12 coins still showing a lettered placeholder (CATS, CNS, HMSTR, HOTCROSS, MRSOON, MYRO, NOW, NTVRK, PLX, QUACK, SUPER, XYM) now show their official project logos, taken from each token's own on-chain metadata or the project's listing. Every coin in the registry now has a real icon

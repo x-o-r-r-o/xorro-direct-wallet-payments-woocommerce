@@ -126,7 +126,7 @@ final class Xdwp_Blocks extends AbstractPaymentMethodType {
 				'description' => $this->gateway ? $this->gateway->get_description() : '',
 				'supports'    => $this->gateway ? array_filter( $this->gateway->supports ) : array( 'products' ),
 				'coins'       => $coins,
-				'ajaxUrl'     => admin_url( 'admin-ajax.php' ),
+				'ajaxUrl'     => Xdwp_Ajax::endpoint( 'xdwp_quote' ),
 				'nonce'       => wp_create_nonce( 'xdwp_checkout' ),
 			),
 			Xdwp_Branding::frontend_data()

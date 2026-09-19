@@ -50,7 +50,9 @@ class Xdwp_Cron {
 		// same orders. Reuses the same real INSERT-only compare-and-set as the
 		// payment lock (add_option() alone is not exclusive — see mark_paid()).
 		$lock_key = 'xdwp_cron_running';
-		$now      = (string) time();
+		// "<unix time>:<random>" — (int) still reads the age, and the random part lets this run
+		// release only its own lock (see finally below).
+		$now      = time() . ':' . wp_generate_password( 12, false );
 		if ( ! Xdwp_Verifier::atomic_add_option( $lock_key, $now ) ) {
 			$existing = (string) get_option( $lock_key, '' );
 			if ( $existing && ( time() - (int) $existing ) < self::LOCK_TTL ) {
@@ -124,7 +126,18 @@ class Xdwp_Cron {
 				}
 			}
 		} finally {
-			delete_option( $lock_key );
+			// Compare-and-delete: after a stale takeover, a slow earlier run must not remove the
+			// newer run's lock and let a third run overlap it.
+			global $wpdb;
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$wpdb->query(
+				$wpdb->prepare(
+					"DELETE FROM {$wpdb->options} WHERE option_name = %s AND option_value = %s",
+					$lock_key,
+					$now
+				)
+			);
+			wp_cache_delete( $lock_key, 'options' );
 		}
 	}
 }

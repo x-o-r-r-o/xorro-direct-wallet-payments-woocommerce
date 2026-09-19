@@ -19,8 +19,8 @@ class Xdwp_Prices {
 	const STALE_TTL = 600;
 	/** Unique dust spacing, in base units at min(decimals, 8) decimals. */
 	const DUST_STEP = 10;
-	/** Distinct dust values (DUST_STEP..DUST_STEP*DUST_SLOTS) before the cycle repeats. */
-	const DUST_SLOTS = 100;
+	/** Most dust slots searched (DUST_STEP..DUST_STEP*DUST_SLOTS). The lowest free one is used. */
+	const DUST_SLOTS = 1000;
 	/** Verifier match band half-width in the same units; must stay below DUST_STEP / 2. */
 	const DUST_BAND = 4;
 	/** Longest a pre-order checkout quote is honoured, in minutes. */
@@ -186,18 +186,37 @@ class Xdwp_Prices {
 		$decimals = $coin ? min( (int) $coin['decimals'], 8 ) : 8;
 
 		// Low-decimal assets cannot safely encode unique dust without large overcharge.
-		if ( $decimals <= 4 ) {
+		if ( ! $coin || $decimals <= 4 ) {
 			return $amount;
 		}
 
-		$counter = self::next_amount_seq();
-		// 10..1000 base units (at most 1000 sats ≈ a few cents to ~$1 on BTC). The old
-		// 1000..499000 range could add ~0.005 BTC (hundreds of dollars) to a small order.
-		// Bands (±DUST_BAND) never overlap across steps; assign_payment rejects collisions.
-		$dust_units = self::DUST_STEP + ( ( $counter % self::DUST_SLOTS ) * self::DUST_STEP );
-		$dust       = $dust_units / pow( 10, $decimals );
+		// Use the smallest dust slot not already reserved by an open/recent order for this coin,
+		// so the extra charge stays at a few base units (10 sats on BTC) and only grows with real
+		// concurrency. A fixed rotating cycle either overcharged (the old 1000..499000 units — up
+		// to ~0.005 BTC) or, if kept small, ran out of free slots once enough orders were open.
+		$unit     = pow( 10, -$decimals );
+		$occupied = Xdwp_Verifier::occupied_amounts( $coin_id );
+		if ( is_array( $occupied ) ) {
+			for ( $slot = 1; $slot <= self::DUST_SLOTS; $slot++ ) {
+				$candidate = Xdwp_Coins::format_amount( $amount + ( $slot * self::DUST_STEP * $unit ), $coin_id );
+				$free      = true;
+				foreach ( $occupied as $taken ) {
+					if ( Xdwp_Verifier::amounts_overlap( $candidate, $taken, $coin ) ) {
+						$free = false;
+						break;
+					}
+				}
+				if ( $free ) {
+					return (float) $candidate;
+				}
+			}
+		}
 
-		return $amount + $dust;
+		// Fallback (peer lookup failed / every slot taken): rotate so concurrent orders still
+		// differ; assign_payment() rejects and retries any collision.
+		$counter    = self::next_amount_seq();
+		$dust_units = self::DUST_STEP + ( ( $counter % self::DUST_SLOTS ) * self::DUST_STEP );
+		return $amount + ( $dust_units * $unit );
 	}
 
 	/**

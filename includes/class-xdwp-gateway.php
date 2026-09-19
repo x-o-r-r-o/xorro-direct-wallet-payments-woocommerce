@@ -147,7 +147,7 @@ class Xdwp_Gateway extends WC_Payment_Gateway {
 			'xdwp-checkout',
 			'xdwp',
 			array(
-				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+				'ajaxUrl' => Xdwp_Ajax::endpoint( 'xdwp_quote' ),
 				'nonce'   => wp_create_nonce( 'xdwp_checkout' ),
 				'gateway' => $this->id,
 			)

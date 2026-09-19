@@ -425,6 +425,37 @@ class Xdwp_Admin {
 			echo '</p></div>';
 		}
 
+		$errors = get_option( 'xdwp_explorer_errors', array() );
+		if ( is_array( $errors ) ) {
+			$chains = array(
+				1     => 'Ethereum',
+				10    => 'Optimism',
+				56    => 'BNB Smart Chain',
+				137   => 'Polygon',
+				8453  => 'Base',
+				42161 => 'Arbitrum',
+				43114 => 'Avalanche',
+			);
+			foreach ( $errors as $error ) {
+				if ( empty( $error['time'] ) || ( time() - (int) $error['time'] ) > DAY_IN_SECONDS ) {
+					continue;
+				}
+				$chain = isset( $chains[ (int) $error['chain'] ] ) ? $chains[ (int) $error['chain'] ] : sprintf( 'chain %d', (int) $error['chain'] );
+				echo '<div class="notice notice-error"><p>';
+				echo esc_html(
+					sprintf(
+						/* translators: 1: API name, 2: chain name, 3: error message from the API, 4: time ago */
+						__( 'Automatic verification is failing: %1$s rejected requests for %2$s — "%3$s" (%4$s ago). Orders in coins on this chain will not confirm automatically until this is fixed; use "Mark payment received" on the order meanwhile.', 'xorro-direct-wallet-payments-woocommerce' ),
+						(string) $error['source'],
+						$chain,
+						(string) $error['message'],
+						human_time_diff( (int) $error['time'] )
+					)
+				);
+				echo '</p></div>';
+			}
+		}
+
 		$aptos_key = trim( (string) Xdwp_Settings::get( 'aptos_api_key', '' ) );
 		if ( '' === $aptos_key && isset( $payable['APT'] ) ) {
 			echo '<div class="notice notice-warning"><p>';

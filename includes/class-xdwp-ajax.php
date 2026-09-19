@@ -20,6 +20,13 @@ class Xdwp_Ajax {
 		add_action( 'wp_ajax_nopriv_xdwp_status', array( __CLASS__, 'payment_status' ) );
 		add_action( 'wp_ajax_xdwp_quote', array( __CLASS__, 'quote' ) );
 		add_action( 'wp_ajax_nopriv_xdwp_quote', array( __CLASS__, 'quote' ) );
+		// Frontend calls go through WooCommerce's ?wc-ajax= endpoint: it skips admin_init, so
+		// other plugins' activation/onboarding redirects (which hook admin_init and also fire
+		// on admin-ajax.php) cannot turn a quote/status response into an HTML page, and
+		// security plugins that restrict admin-ajax.php for visitors do not affect checkout.
+		// The admin-ajax hooks above stay for pages cached before this change.
+		add_action( 'wc_ajax_xdwp_status', array( __CLASS__, 'payment_status' ) );
+		add_action( 'wc_ajax_xdwp_quote', array( __CLASS__, 'quote' ) );
 		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'register_assets' ) );
 	}
 
@@ -77,6 +84,50 @@ class Xdwp_Ajax {
 	}
 
 	/**
+	 * Frontend endpoint URL for one of this plugin's AJAX actions.
+	 *
+	 * @param string $action xdwp_quote or xdwp_status.
+	 * @return string
+	 */
+	public static function endpoint( $action ) {
+		if ( class_exists( 'WC_AJAX' ) ) {
+			return WC_AJAX::get_endpoint( $action );
+		}
+		return admin_url( 'admin-ajax.php' );
+	}
+
+	/**
+	 * Fixed one-minute-window request limit per client IP.
+	 *
+	 * The window is part of the key. Re-setting a single transient with a fresh 60s TTL on
+	 * every hit (the previous approach) never let the counter expire under steady traffic,
+	 * so after N requests spread over any length of time every visitor on that IP — all
+	 * customers, behind a CDN or proxy — was refused until traffic stopped for a minute.
+	 *
+	 * @param string     $prefix Key prefix.
+	 * @param string|int $scope  Extra key scope (e.g. order ID).
+	 * @param int        $limit  Requests allowed per minute.
+	 * @return bool True when over the limit.
+	 */
+	private static function rate_limited( $prefix, $scope, $limit ) {
+		$ip = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : 'unknown';
+		/**
+		 * Filter the client identifier used for rate limiting (e.g. to trust a CDN's
+		 * client-IP header on sites behind a proxy).
+		 *
+		 * @param string $ip Client IP (REMOTE_ADDR by default).
+		 */
+		$ip    = (string) apply_filters( 'xdwp_rate_limit_client_ip', $ip );
+		$key   = $prefix . md5( $ip . '|' . $scope . '|' . (int) floor( time() / MINUTE_IN_SECONDS ) );
+		$count = (int) get_transient( $key );
+		if ( $count >= $limit ) {
+			return true;
+		}
+		set_transient( $key, $count + 1, 2 * MINUTE_IN_SECONDS );
+		return false;
+	}
+
+	/**
 	 * Poll payment status for an order.
 	 */
 	public static function payment_status() {
@@ -99,13 +150,9 @@ class Xdwp_Ajax {
 			$deny();
 		}
 
-		$ip = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : 'unknown';
-		$rate_key = 'xdwp_status_' . md5( $ip . '|' . $order_id );
-		$count    = (int) get_transient( $rate_key );
-		if ( $count > 120 ) {
+		if ( self::rate_limited( 'xdwp_status_', $order_id, 120 ) ) {
 			wp_send_json_error( array( 'message' => __( 'Too many requests. Please wait a moment.', 'xorro-direct-wallet-payments-woocommerce' ) ), 429 );
 		}
-		set_transient( $rate_key, $count + 1, MINUTE_IN_SECONDS );
 
 		$order = wc_get_order( $order_id );
 
@@ -142,12 +189,20 @@ class Xdwp_Ajax {
 			&& 'yes' === Xdwp_Settings::get( 'auto_verify', 'yes' )
 		) {
 			$throttle_key = 'xdwp_ajax_verify_' . $order_id;
-			if ( ! get_transient( $throttle_key ) ) {
+			// Site-wide budget for browser-triggered chain checks: each one can make several
+			// outbound explorer calls, and many open payment pages (or scripted guest orders)
+			// would otherwise multiply that without limit. Cron still checks every order.
+			$budget_key  = 'xdwp_ajax_verify_budget';
+			$budget_used = (int) get_transient( $budget_key );
+			if ( ! get_transient( $throttle_key ) && $budget_used < 30 ) {
+				set_transient( $budget_key, $budget_used + 1, MINUTE_IN_SECONDS );
 				set_transient( $throttle_key, 1, 45 );
 				if ( Xdwp_Verifier::verify_order( $order ) ) {
 					Xdwp_Order::mark_paid( $order );
+					// Report what was actually stored: mark_paid() returns early when another
+					// worker (cron / a second tab) holds the payment lock.
 					$order  = wc_get_order( $order_id );
-					$status = 'paid';
+					$status = (string) Xdwp_Order::meta( $order, 'status' );
 				}
 			}
 		}
@@ -168,13 +223,9 @@ class Xdwp_Ajax {
 	public static function quote() {
 		check_ajax_referer( 'xdwp_checkout', 'nonce' );
 
-		$ip = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : 'unknown';
-		$rate_key = 'xdwp_quote_' . md5( $ip );
-		$count    = (int) get_transient( $rate_key );
-		if ( $count > 60 ) {
+		if ( self::rate_limited( 'xdwp_quote_', '', 60 ) ) {
 			wp_send_json_error( array( 'message' => __( 'Too many requests. Please wait a moment.', 'xorro-direct-wallet-payments-woocommerce' ) ), 429 );
 		}
-		set_transient( $rate_key, $count + 1, MINUTE_IN_SECONDS );
 
 		$coin_id = isset( $_POST['coin'] ) ? sanitize_text_field( wp_unslash( $_POST['coin'] ) ) : '';
 		$coin    = Xdwp_Coins::get( $coin_id );
