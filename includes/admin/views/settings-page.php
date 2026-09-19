@@ -492,6 +492,16 @@ $active  = isset( $tabs[ $tab ] ) ? $tabs[ $tab ] : $tabs['general'];
 										</td>
 									</tr>
 									<tr>
+										<th scope="row"><?php esc_html_e( 'Stablecoin pricing', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
+										<td>
+											<label class="cc-check">
+												<input type="checkbox" name="xdwp[stablecoin_peg]" value="yes" <?php checked( ( $settings['stablecoin_peg'] ?? 'yes' ), 'yes' ); ?> />
+												<span><?php esc_html_e( 'Price stablecoins that track your store currency 1:1 (a 17.34 order asks for exactly 17.34 USDT).', 'xorro-direct-wallet-payments-woocommerce' ); ?></span>
+											</label>
+											<p class="description"><?php esc_html_e( 'Off: the live market rate is used, so the amount is slightly different (e.g. 17.3465 USDT). Applies to USDT, USDC, DAI, TUSD, USDP, GUSD, PYUSD, USDD, USDe and USDJ in USD stores, and EURT in EUR stores.', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
+										</td>
+									</tr>
+									<tr>
 										<th scope="row"><?php esc_html_e( 'Show crypto price on products', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
 										<td>
 											<label class="cc-check">

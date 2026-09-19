@@ -266,6 +266,9 @@ class Xdwp_Admin {
 		if ( 'coins' === $tab && ! isset( $raw['enabled_coins'] ) ) {
 			$raw['enabled_coins'] = array();
 		}
+		if ( 'prices' === $tab && ! isset( $raw['stablecoin_peg'] ) ) {
+			$raw['stablecoin_peg'] = 'no';
+		}
 		if ( 'prices' === $tab && ! isset( $raw['price_coin_show'] ) ) {
 			$raw['price_coin_show'] = 'no';
 		}
@@ -454,6 +457,20 @@ class Xdwp_Admin {
 				);
 				echo '</p></div>';
 			}
+		}
+
+		$store_currency = strtoupper( get_woocommerce_currency() );
+		$supported      = class_exists( 'Xdwp_Rates' ) ? Xdwp_Rates::supported_currencies() : array();
+		if ( ! empty( $supported ) && ! in_array( $store_currency, $supported, true ) ) {
+			echo '<div class="notice notice-error"><p>';
+			echo esc_html(
+				sprintf(
+					/* translators: %s: store currency code */
+					__( 'Your store currency (%s) is not supported by the exchange-rate sources, so crypto amounts cannot be calculated and checkout in crypto will fail. Switch the store currency, or use a currency-switcher plugin that charges in a supported currency.', 'xorro-direct-wallet-payments-woocommerce' ),
+					$store_currency
+				)
+			);
+			echo '</p></div>';
 		}
 
 		$aptos_key = trim( (string) Xdwp_Settings::get( 'aptos_api_key', '' ) );

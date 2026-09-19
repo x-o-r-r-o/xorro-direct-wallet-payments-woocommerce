@@ -47,6 +47,7 @@ final class Xdwp {
 		require_once XDWP_PATH . 'includes/class-xdwp-settings.php';
 		require_once XDWP_PATH . 'includes/class-xdwp-branding.php';
 		require_once XDWP_PATH . 'includes/class-xdwp-privacy.php';
+		require_once XDWP_PATH . 'includes/class-xdwp-rates.php';
 		require_once XDWP_PATH . 'includes/class-xdwp-prices.php';
 		require_once XDWP_PATH . 'includes/class-xdwp-wallets.php';
 		require_once XDWP_PATH . 'includes/class-xdwp-verifier.php';

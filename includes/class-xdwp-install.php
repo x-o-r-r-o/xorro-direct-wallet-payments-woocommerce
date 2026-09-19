@@ -68,6 +68,7 @@ class Xdwp_Install {
 			'auto_verify'          => 'yes',
 			'late_payment_scan'    => 'yes',
 			'auto_partial_payments' => 'yes',
+			'stablecoin_peg'       => 'yes',
 			'coingecko_api_key'    => '',
 			'etherscan_api_key'    => '',
 			'trongrid_api_key'     => '',

@@ -4,7 +4,7 @@ Tags: woocommerce, cryptocurrency, bitcoin, ethereum, payments, usdt, crypto che
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.6.0
+Stable tag: 1.6.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -334,6 +334,13 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 * QR Code generator (`assets/js/qrcode.min.js`) — MIT-licensed library by davidshimjs (https://github.com/davidshimjs/qrcodejs). Source is publicly available; the bundled file is minified for production use.
 
 == Changelog ==
+
+= 1.6.1 =
+Price reliability.
+* New: backup exchange-rate sources. If CoinGecko is rate-limited or down, rates come from public exchange tickers (Coinbase, Kraken, Binance) instead of checkout failing. When two sources answer they must agree within 5% or no rate is used — a wrong rate would quote a wrong amount
+* New: stablecoins that track your store currency are priced 1:1, so a 17.34 order asks for exactly 17.34 USDT instead of 17.3465 (Prices & APIs → Stablecoin pricing, on by default; USDT, USDC, DAI, TUSD, USDP, GUSD, PYUSD, USDD, USDe, USDJ in USD stores and EURT in EUR stores)
+* New: warning in the plugin settings when your store currency is not supported by the rate sources, instead of checkouts failing with no explanation
+* Backup lookups are cached for 2 minutes, a failing source is skipped for 5 minutes, and every fallback is recorded in WooCommerce → Status → Logs
 
 = 1.6.0 =
 "No lost payments" release.

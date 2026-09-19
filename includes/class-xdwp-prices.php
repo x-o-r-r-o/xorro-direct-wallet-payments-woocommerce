@@ -47,7 +47,12 @@ class Xdwp_Prices {
 			$currency = get_woocommerce_currency();
 		}
 
-		$rate = self::get_rate( $coin['coingecko_id'], $currency, ! $unique_amount );
+		// Stablecoins tracking the store currency are quoted 1:1 when the merchant asks for it,
+		// so a $17.34 order is exactly 17.34 USDT rather than 17.3465 at the market rate.
+		$rate = Xdwp_Rates::pegged_rate( $coin['symbol'], $currency );
+		if ( $rate <= 0 ) {
+			$rate = self::get_rate( $coin['coingecko_id'], $currency, ! $unique_amount, $coin['symbol'] );
+		}
 		if ( $rate <= 0 ) {
 			return '';
 		}
@@ -255,7 +260,7 @@ class Xdwp_Prices {
 	 * @param bool   $allow_stale  Whether to serve STALE_TTL rates when live refresh fails.
 	 * @return float
 	 */
-	public static function get_rate( $coingecko_id, $currency, $allow_stale = true ) {
+	public static function get_rate( $coingecko_id, $currency, $allow_stale = true, $symbol = '' ) {
 		$currency = strtolower( $currency );
 		$cache    = get_transient( self::TRANSIENT_KEY );
 		if ( ! is_array( $cache ) ) {
@@ -295,6 +300,16 @@ class Xdwp_Prices {
 			return (float) $fetched[ $key ];
 		}
 
+		// CoinGecko did not answer: try the backup sources (exchange tickers) before falling
+		// back to a stale cached rate.
+		if ( '' !== (string) $symbol ) {
+			$fallback = Xdwp_Rates::fallback_rate( $symbol, $currency );
+			if ( $fallback > 0 ) {
+				self::store_rate( $key, $fallback );
+				return $fallback;
+			}
+		}
+
 		$cache = get_transient( self::TRANSIENT_KEY );
 		if ( ! is_array( $cache ) ) {
 			$cache = array();
@@ -306,6 +321,24 @@ class Xdwp_Prices {
 		}
 
 		return 0.0;
+	}
+
+	/**
+	 * Save one rate (and its timestamp) into the shared cache.
+	 *
+	 * @param string $key  "{coingecko_id}_{currency}".
+	 * @param float  $rate Rate.
+	 */
+	private static function store_rate( $key, $rate ) {
+		$cache = get_transient( self::TRANSIENT_KEY );
+		$cache = is_array( $cache ) ? $cache : array();
+		$cache[ $key ] = (float) $rate;
+		set_transient( self::TRANSIENT_KEY, $cache, self::STALE_TTL );
+
+		$stamps = get_transient( self::TRANSIENT_KEY . '_ts' );
+		$stamps = is_array( $stamps ) ? $stamps : array();
+		$stamps[ $key ] = time();
+		set_transient( self::TRANSIENT_KEY . '_ts', $stamps, self::STALE_TTL );
 	}
 
 	/**

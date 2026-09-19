@@ -24,6 +24,8 @@ Each order gets a slightly unique amount (usually a few base units, e.g. 10 sato
 - **Automatic payment detection** on every coin except five manual-only ones (see below), with configurable confirmations
 - **Classic and block checkout** (WooCommerce Checkout Blocks) and **HPOS** compatible
 - Live crypto quote at checkout; payment page with Copy buttons, QR code (BIP-21, EIP-681, Solana Pay and other wallet URI formats) and countdown
+- **Backup exchange-rate sources** (Coinbase, Kraken, Binance) when CoinGecko is unavailable, with a 5% agreement check
+- **Stablecoins priced 1:1** with your store currency (optional)
 - Payment window, expiry grace period, underpayment tolerance and minimum confirmations
 - **Wallet rotation** — several addresses per coin, used in turn
 - Optional crypto price next to product prices
@@ -168,6 +170,11 @@ Pushing a `vX.Y.Z` tag runs the Release workflow, which builds the ZIP, its SHA-
 ## Changelog
 
 Full details for every release are in [`readme.txt`](readme.txt).
+
+### 1.6.1 — price reliability
+- Backup rate sources (Coinbase, Kraken, Binance) when CoinGecko fails; two sources must agree within 5% or no rate is used.
+- Stablecoins tracking your store currency are priced 1:1 (17.34 order = 17.34 USDT), optional.
+- Warning when the store currency isn't supported by the rate sources.
 
 ### 1.6.0 — no lost payments
 - Payment details (amount, address, network, deadline, payment-page button) in the customer on-hold / invoice emails, plus a reminder email before the window closes.

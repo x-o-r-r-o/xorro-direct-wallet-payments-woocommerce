@@ -222,6 +222,9 @@ xdwp_assert( false !== strpos( $workflow, 'openssl pkeyutl -sign' ) && false !==
 // The workflow manifest must match Xdwp_Updater::signed_manifest() byte for byte.
 xdwp_assert( false !== strpos( $workflow, "printf 'xdwp-release:1\\nplugin:xorro-direct-wallet-payments-woocommerce\\nversion:%s\\nsha256:%s\\n'" ) && false !== strpos( $updater_src, "const MANIFEST_FORMAT = 'xdwp-release:1'" ), 'signed manifest format matches workflow' );
 xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-coins.php' ), "'.svg?ver=' . rawurlencode( XDWP_VERSION )" ), 'coin icon URLs are versioned (cache busting)' );
+$rates_src = file_get_contents( $root . '/includes/class-xdwp-rates.php' );
+xdwp_assert( false !== strpos( $rates_src, 'MAX_DISAGREEMENT' ) && false !== strpos( $rates_src, 'api.kraken.com' ) && false !== strpos( $rates_src, 'api.coinbase.com' ), 'backup rate sources with agreement check' );
+xdwp_assert( false !== strpos( $prices_src, 'Xdwp_Rates::pegged_rate(' ) && false !== strpos( $prices_src, 'Xdwp_Rates::fallback_rate(' ), 'prices use peg + fallback sources' );
 $emails_src = file_get_contents( $root . '/includes/class-xdwp-emails.php' );
 xdwp_assert( false !== strpos( $emails_src, 'woocommerce_email_before_order_table' ), 'payment details added to WooCommerce customer emails' );
 foreach ( array( 'payment-reminder', 'partial-payment', 'payment-alert' ) as $xdwp_mail ) {
