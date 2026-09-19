@@ -4,7 +4,11 @@
  *
  * Uses the Update URI header + update_plugins_github.com filter so Dashboard
  * and Enable auto-updates work against published release ZIPs.
- * Downloads are host-allowlisted and verified against the release SHA-256 asset.
+ * Downloads are host-allowlisted, checked against the release SHA-256 asset, and
+ * must carry an Ed25519 signature from the maintainer's release key (see
+ * RELEASE_PUBLIC_KEYS). The checksum alone only proves the ZIP matches what the
+ * GitHub release says; the signature proves the maintainer built it, so a
+ * compromised GitHub account or release cannot push code to sites.
  *
  * @package Xdwp
  */
@@ -21,6 +25,21 @@ class Xdwp_Updater {
 	const CACHE_TTL    = 12 * HOUR_IN_SECONDS;
 	const UPDATE_HOST  = 'github.com';
 	const ASSET_PREFIX = 'xorro-direct-wallet-payments-woocommerce';
+
+	/**
+	 * Ed25519 public keys (base64, raw 32 bytes) allowed to sign releases.
+	 *
+	 * The matching private key lives only in the XDWP_SIGNING_KEY GitHub Actions secret
+	 * and the maintainer's offline backup. To rotate: add the new key here, ship that
+	 * release signed with the OLD key, then sign later releases with the new key and
+	 * drop the old one once sites have updated.
+	 */
+	const RELEASE_PUBLIC_KEYS = array(
+		'oN1/yaX4Zc7+NNY0QElzf62G7gkWFmY0ZotmrqO82wk=',
+	);
+
+	/** Signed-message format version; bump only together with the release workflow. */
+	const MANIFEST_FORMAT = 'xdwp-release:1';
 
 	/**
 	 * Hook into WordPress update APIs.
@@ -235,6 +254,22 @@ class Xdwp_Updater {
 			);
 		}
 
+		// Signature over (plugin, version, hash of the file actually downloaded). Fail closed.
+		$signed = ( $release && ! empty( $release['signature'] ) && hash_equals( (string) $release['package'], (string) $package ) )
+			? array(
+				'version'   => (string) $release['version'],
+				'signature' => (string) $release['signature'],
+			)
+			: get_transient( 'xdwp_pkg_sig_' . md5( (string) $package ) );
+		if ( ! is_array( $signed ) || empty( $signed['version'] ) || empty( $signed['signature'] )
+			|| ! self::signature_valid( $signed['version'], $actual, $signed['signature'] ) ) {
+			@unlink( $tmp ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+			return new WP_Error(
+				'xdwp_bad_signature',
+				__( 'Refused plugin update: the release is not signed with the Xorro Wallet Payments release key.', 'xorro-direct-wallet-payments-woocommerce' )
+			);
+		}
+
 		return $tmp;
 	}
 
@@ -257,11 +292,11 @@ class Xdwp_Updater {
 	/**
 	 * Fetch and cache the latest published GitHub release with an installable ZIP.
 	 *
-	 * @return array{version:string,package:string,sha256:string,html_url:string,body:string,published_at:string}|null
+	 * @return array{version:string,package:string,sha256:string,signature:string,html_url:string,body:string,published_at:string}|null
 	 */
 	private static function get_latest_release() {
 		$cached = get_transient( self::CACHE_KEY );
-		if ( is_array( $cached ) && ! empty( $cached['version'] ) && ! empty( $cached['package'] ) && ! empty( $cached['sha256'] ) ) {
+		if ( is_array( $cached ) && ! empty( $cached['version'] ) && ! empty( $cached['package'] ) && ! empty( $cached['sha256'] ) && ! empty( $cached['signature'] ) ) {
 			return $cached;
 		}
 
@@ -314,10 +349,21 @@ class Xdwp_Updater {
 			return null;
 		}
 
+		// Only offer releases signed with the release key; an unsigned or forged release is
+		// ignored as if it did not exist (no update notice, nothing to auto-install).
+		$signature = '';
+		if ( ! empty( $picked['sig_url'] ) && self::is_allowed_package_url( $picked['sig_url'] ) ) {
+			$signature = self::fetch_signature( $picked['sig_url'] );
+		}
+		if ( '' === $signature || ! self::signature_valid( $version, $sha256, $signature ) ) {
+			return null;
+		}
+
 		$data = array(
 			'version'      => $version,
 			'package'      => $picked['package'],
 			'sha256'       => $sha256,
+			'signature'    => $signature,
 			'html_url'     => isset( $body['html_url'] ) ? (string) $body['html_url'] : ( 'https://github.com/' . self::REPO . '/releases' ),
 			'body'         => isset( $body['body'] ) ? (string) $body['body'] : '',
 			'published_at' => isset( $body['published_at'] ) ? (string) $body['published_at'] : '',
@@ -326,6 +372,14 @@ class Xdwp_Updater {
 		set_transient( self::CACHE_KEY, $data, self::CACHE_TTL );
 		// Longer-lived checksum keyed by package URL so downloads stay verifiable if the release cache expires.
 		set_transient( 'xdwp_pkg_sha_' . md5( $data['package'] ), $data['sha256'], WEEK_IN_SECONDS );
+		set_transient(
+			'xdwp_pkg_sig_' . md5( $data['package'] ),
+			array(
+				'version'   => $version,
+				'signature' => $signature,
+			),
+			WEEK_IN_SECONDS
+		);
 
 		return $data;
 	}
@@ -335,7 +389,7 @@ class Xdwp_Updater {
 	 *
 	 * @param array  $assets  GitHub assets.
 	 * @param string $version Release version.
-	 * @return array{package:string,sha256_url:string}
+	 * @return array{package:string,sha256_url:string,sig_url:string}
 	 */
 	private static function pick_zip_asset( array $assets, $version ) {
 		$preferred = self::ASSET_PREFIX . '-' . $version . '.zip';
@@ -352,7 +406,7 @@ class Xdwp_Updater {
 			if ( '' === $name || '' === $url ) {
 				continue;
 			}
-			if ( '.sha256' === substr( $name, -7 ) ) {
+			if ( '.sha256' === substr( $name, -7 ) || '.sig' === substr( $name, -4 ) ) {
 				$sums[ $name ] = $url;
 				continue;
 			}
@@ -379,10 +433,13 @@ class Xdwp_Updater {
 
 		$sha_name = $preferred . '.sha256';
 		$sha_url  = isset( $sums[ $sha_name ] ) ? $sums[ $sha_name ] : '';
+		$sig_name = $preferred . '.sig';
+		$sig_url  = isset( $sums[ $sig_name ] ) ? $sums[ $sig_name ] : '';
 
 		return array(
 			'package'    => $package,
 			'sha256_url' => $sha_url,
+			'sig_url'    => $sig_url,
 		);
 	}
 
@@ -414,6 +471,83 @@ class Xdwp_Updater {
 			return strtolower( $m[1] );
 		}
 		return '';
+	}
+
+	/**
+	 * Download a release signature asset (base64 of a raw 64-byte Ed25519 signature).
+	 *
+	 * @param string $url Signature asset URL.
+	 * @return string Base64 signature or empty.
+	 */
+	private static function fetch_signature( $url ) {
+		$response = wp_remote_get(
+			$url,
+			array(
+				'timeout' => 15,
+				'headers' => array(
+					'User-Agent' => 'Xdwp/' . XDWP_VERSION . '; WordPress/' . get_bloginfo( 'version' ),
+				),
+			)
+		);
+		if ( is_wp_error( $response ) || 200 !== (int) wp_remote_retrieve_response_code( $response ) ) {
+			return '';
+		}
+		$body = trim( (string) wp_remote_retrieve_body( $response ) );
+		return preg_match( '#^[A-Za-z0-9+/]{86}==$#', $body ) ? $body : '';
+	}
+
+	/**
+	 * Exact bytes the release workflow signs. Binding the plugin slug and version (not just
+	 * the file hash) stops an old, legitimately signed ZIP from being re-published as a
+	 * newer version to roll sites back to a vulnerable release.
+	 *
+	 * @param string $version Release version.
+	 * @param string $sha256  Lowercase hex SHA-256 of the ZIP.
+	 * @return string
+	 */
+	public static function signed_manifest( $version, $sha256 ) {
+		return self::MANIFEST_FORMAT . "\n"
+			. 'plugin:' . self::ASSET_PREFIX . "\n"
+			. 'version:' . $version . "\n"
+			. 'sha256:' . strtolower( $sha256 ) . "\n";
+	}
+
+	/**
+	 * Whether a signature over (version, sha256) verifies against a release key.
+	 *
+	 * Uses libsodium (PHP 7.2+), or the sodium_compat polyfill WordPress core bundles.
+	 *
+	 * @param string $version   Release version.
+	 * @param string $sha256    Hex SHA-256 of the ZIP.
+	 * @param string $signature Base64 signature.
+	 * @return bool
+	 */
+	public static function signature_valid( $version, $sha256, $signature ) {
+		if ( ! function_exists( 'sodium_crypto_sign_verify_detached' ) ) {
+			return false;
+		}
+		if ( ! preg_match( '/^[a-f0-9]{64}$/', strtolower( (string) $sha256 ) ) || '' === (string) $version ) {
+			return false;
+		}
+		$sig = base64_decode( (string) $signature, true ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- decoding a signature, not obfuscated code.
+		if ( false === $sig || 64 !== strlen( $sig ) ) {
+			return false;
+		}
+		$message = self::signed_manifest( $version, $sha256 );
+		foreach ( self::RELEASE_PUBLIC_KEYS as $key_b64 ) {
+			$key = base64_decode( $key_b64, true ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode
+			if ( false === $key || 32 !== strlen( $key ) ) {
+				continue;
+			}
+			try {
+				if ( sodium_crypto_sign_verify_detached( $sig, $message, $key ) ) {
+					return true;
+				}
+			} catch ( \Throwable $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+				// Malformed input — treat as not verified.
+			}
+		}
+		return false;
 	}
 
 	/**

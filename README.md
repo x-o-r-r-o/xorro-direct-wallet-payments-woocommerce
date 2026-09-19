@@ -30,7 +30,7 @@ Each order gets a slightly unique amount (usually a few base units, e.g. 10 sato
 - Checkout branding: title, description, custom icon and size, icon/text/both
 - Manual **"Mark payment received"** on the order screen, with transaction-ID reuse protection
 - Admin alerts when an explorer API rejects requests (e.g. a missing or limited API key), so verification never fails silently
-- Automatic updates from GitHub Releases, with SHA-256 checksum verification
+- Automatic updates from GitHub Releases — every package must carry the maintainer's Ed25519 signature
 
 ### Supported coins
 
@@ -80,7 +80,7 @@ Keys can also be set in `wp-config.php` so they are never stored in the database
 
 ### Updates
 
-The plugin checks this repository's [Releases](https://github.com/x-o-r-r-o/xorro-direct-wallet-payments-woocommerce/releases) and shows updates in the normal WordPress update screen. Turn on **Enable auto-updates** under **Plugins** to install them automatically. Draft and pre-release tags are ignored, and every download is checked against the release's SHA-256 file.
+The plugin checks this repository's [Releases](https://github.com/x-o-r-r-o/xorro-direct-wallet-payments-woocommerce/releases) and shows updates in the normal WordPress update screen. Turn on **Enable auto-updates** under **Plugins** to install them automatically. Draft and pre-release tags are ignored. From 1.5.37, an update is offered only if the release is signed with the maintainer's Ed25519 release key, and the downloaded ZIP is checked against both its SHA-256 and that signature before WordPress installs it. The signature covers the plugin name, version and file hash, so a hijacked GitHub account can't push a modified ZIP or re-label an old release as new.
 
 ## Compatibility
 
@@ -110,6 +110,7 @@ Known issues outside this plugin: LiteSpeed's **"JS Combine"** option, and Autop
 - Admin actions require `manage_woocommerce` plus nonces. Customers can only see their own order (order key or account owner).
 - Frontend endpoints are nonce-protected and rate-limited per IP. Use the `xdwp_rate_limit_client_ip` filter to trust a CDN's client-IP header.
 - Payout-address changes are notified to the site admin.
+- Updates are verified with an Ed25519 signature from a key that never touches GitHub releases (see [Release signing](#release-signing)).
 
 Found a vulnerability? Please open a private [security advisory](https://github.com/x-o-r-r-o/xorro-direct-wallet-payments-woocommerce/security/advisories/new) rather than a public issue.
 
@@ -136,11 +137,21 @@ php tests/smoke-test.php
 bin/build-zip.sh
 ```
 
-Pushing a `vX.Y.Z` tag runs the Release workflow, which builds the ZIP and its SHA-256 file and attaches both to the GitHub release.
+Pushing a `vX.Y.Z` tag runs the Release workflow, which builds the ZIP, its SHA-256 file and an Ed25519 signature (`.sig`) and attaches all three to the GitHub release.
+
+### Release signing
+
+- The workflow signs `xdwp-release:1 / plugin / version / sha256` with the private key in the **`XDWP_SIGNING_KEY`** Actions secret (PKCS#8 PEM), then checks the signature against the public key(s) in `Xdwp_Updater::RELEASE_PUBLIC_KEYS` before publishing. A missing or wrong key fails the release instead of shipping a package sites would refuse.
+- Keep an offline backup of the private key (e.g. a password manager). If it is lost, sites can only move to a new key through a release signed with the old one.
+- **Rotating the key:** add the new public key to `RELEASE_PUBLIC_KEYS` and release that version signed with the old key; then replace the secret with the new key for later releases, and remove the old public key once sites have updated.
+- Generate a key pair with OpenSSL 3: `openssl genpkey -algorithm ed25519 -out release.pem`; the public key for the plugin is `openssl pkey -in release.pem -pubout -outform DER | tail -c 32 | base64`.
 
 ## Changelog
 
 Full details for every release are in [`readme.txt`](readme.txt).
+
+### 1.5.37
+- Security: updates must be signed with the maintainer's Ed25519 release key. The signature binds the plugin, version and ZIP hash, so a compromised GitHub account or release can't push a modified package or roll sites back to an older one. Unsigned releases are never offered.
 
 ### 1.5.36
 - Tested on a live store with 14 themes and 53 plugins, plus a security review against the OWASP Top 10.

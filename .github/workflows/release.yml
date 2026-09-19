@@ -50,6 +50,41 @@ jobs:
           cp "${RUNNER_TEMP}/xorro-direct-wallet-payments-woocommerce.zip" "xorro-direct-wallet-payments-woocommerce-${{ steps.meta.outputs.version }}.zip"
           cp "${RUNNER_TEMP}/xorro-direct-wallet-payments-woocommerce-${{ steps.meta.outputs.version }}.zip.sha256" .
 
+      - name: Sign release (Ed25519)
+        env:
+          XDWP_SIGNING_KEY: ${{ secrets.XDWP_SIGNING_KEY }}
+        run: |
+          set -euo pipefail
+          VERSION="${{ steps.meta.outputs.version }}"
+          ZIP="xorro-direct-wallet-payments-woocommerce-${VERSION}.zip"
+          if [ -z "${XDWP_SIGNING_KEY}" ]; then
+            echo "XDWP_SIGNING_KEY secret is not set; refusing to publish an unsigned release (sites would not install it)." >&2
+            exit 1
+          fi
+          WORK="$(mktemp -d)"
+          trap 'rm -rf "${WORK}"' EXIT
+          umask 077
+          printf '%s\n' "${XDWP_SIGNING_KEY}" > "${WORK}/key.pem"
+          # Must match Xdwp_Updater::signed_manifest() byte for byte.
+          SHA="$(sha256sum "${ZIP}" | cut -d' ' -f1)"
+          printf 'xdwp-release:1\nplugin:xorro-direct-wallet-payments-woocommerce\nversion:%s\nsha256:%s\n' "${VERSION}" "${SHA}" > "${WORK}/manifest.txt"
+          openssl pkeyutl -sign -inkey "${WORK}/key.pem" -rawin -in "${WORK}/manifest.txt" -out "${WORK}/sig.bin"
+          base64 -w0 "${WORK}/sig.bin" > "${ZIP}.sig"
+          # Self-check against the public key(s) shipped in the plugin, so a wrong or rotated
+          # secret fails here instead of producing a release no site will accept.
+          VERIFIED=0
+          for KEY in $(grep -oE "'[A-Za-z0-9+/]{43}='" includes/class-xdwp-updater.php | tr -d "'"); do
+            { printf '\x30\x2a\x30\x05\x06\x03\x2b\x65\x70\x03\x21\x00'; printf '%s' "${KEY}" | base64 -d; } > "${WORK}/pub.der"
+            if openssl pkeyutl -verify -pubin -keyform DER -inkey "${WORK}/pub.der" -rawin -in "${WORK}/manifest.txt" -sigfile "${WORK}/sig.bin" >/dev/null 2>&1; then
+              VERIFIED=1
+            fi
+          done
+          if [ "${VERIFIED}" != 1 ]; then
+            echo "Signature does not verify against RELEASE_PUBLIC_KEYS in includes/class-xdwp-updater.php" >&2
+            exit 1
+          fi
+          echo "Signed ${ZIP} (sha256 ${SHA})"
+
       - name: Attest build provenance
         uses: actions/attest-build-provenance@v2
         with:
@@ -70,10 +105,11 @@ jobs:
             "## ${NAME} ${VERSION}" \
             "${NOTES}" \
             "Install via **Plugins → Add New → Upload** using \`xorro-direct-wallet-payments-woocommerce-${VERSION}.zip\`." \
-            "This release is published with immutable release + build provenance attestations when enabled on the repository.")
+            "The ZIP is signed with the maintainer's Ed25519 release key (\`.sig\`); the plugin's updater refuses unsigned or altered packages.")
           gh release create "${TAG}" \
             --title "${NAME} ${VERSION}" \
             --notes "${BODY}" \
             --target "${{ github.sha }}" \
             "xorro-direct-wallet-payments-woocommerce-${VERSION}.zip#xorro-direct-wallet-payments-woocommerce-${VERSION}.zip (WordPress install package)" \
-            "xorro-direct-wallet-payments-woocommerce-${VERSION}.zip.sha256#SHA-256 checksum"
+            "xorro-direct-wallet-payments-woocommerce-${VERSION}.zip.sha256#SHA-256 checksum" \
+            "xorro-direct-wallet-payments-woocommerce-${VERSION}.zip.sig#Ed25519 release signature"

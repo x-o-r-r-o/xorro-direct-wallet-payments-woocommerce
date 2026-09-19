@@ -213,6 +213,14 @@ xdwp_assert( false !== strpos( $ajax_src, "'wc_ajax_xdwp_quote'" ) && false !== 
 xdwp_assert( false !== strpos( $ajax_src, 'xdwp_ajax_verify_budget' ), 'site-wide budget on poll-triggered chain checks' );
 xdwp_assert( false !== strpos( $ajax_src, 'floor( time() / MINUTE_IN_SECONDS )' ), 'rate limits use fixed windows (no never-expiring counter)' );
 xdwp_assert( false === strpos( file_get_contents( $root . '/templates/payment.php' ), 'onclick=' ), 'payment template has no inline handlers (CSP)' );
+$updater_src = file_get_contents( $root . '/includes/class-xdwp-updater.php' );
+$workflow    = file_get_contents( $root . '/.github/workflows/release.yml' );
+xdwp_assert( 1 === preg_match( "/RELEASE_PUBLIC_KEYS = array\\(\\s*'[A-Za-z0-9+\\/]{43}='/", $updater_src ), 'updater embeds an Ed25519 release public key' );
+xdwp_assert( false !== strpos( $updater_src, 'sodium_crypto_sign_verify_detached' ), 'updater verifies Ed25519 signatures' );
+xdwp_assert( false !== strpos( $updater_src, "'xdwp_bad_signature'" ), 'updater refuses unsigned/invalid packages' );
+xdwp_assert( false !== strpos( $workflow, 'openssl pkeyutl -sign' ) && false !== strpos( $workflow, '.zip.sig#' ), 'release workflow signs and publishes .sig' );
+// The workflow manifest must match Xdwp_Updater::signed_manifest() byte for byte.
+xdwp_assert( false !== strpos( $workflow, "printf 'xdwp-release:1\\nplugin:xorro-direct-wallet-payments-woocommerce\\nversion:%s\\nsha256:%s\\n'" ) && false !== strpos( $updater_src, "const MANIFEST_FORMAT = 'xdwp-release:1'" ), 'signed manifest format matches workflow' );
 $settings_view = file_get_contents( $root . '/includes/admin/views/settings-page.php' );
 xdwp_assert( false !== strpos( $settings_view, 'wp-header-end' ), 'admin notices anchored above settings header' );
 

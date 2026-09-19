@@ -4,7 +4,7 @@ Tags: woocommerce, cryptocurrency, bitcoin, ethereum, payments, usdt, crypto che
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.5.36
+Stable tag: 1.5.37
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -324,6 +324,10 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 * QR Code generator (`assets/js/qrcode.min.js`) — MIT-licensed library by davidshimjs (https://github.com/davidshimjs/qrcodejs). Source is publicly available; the bundled file is minified for production use.
 
 == Changelog ==
+
+= 1.5.37 =
+* Security: signed updates. Every release ZIP is now signed with the maintainer's Ed25519 release key (a `.sig` asset produced by the release workflow from a key that is not stored in the repository), and the built-in GitHub updater only offers and installs releases whose signature verifies against the public key shipped in the plugin. The signed message covers the plugin slug, version and ZIP SHA-256, so a compromised GitHub account or release can neither push a modified package nor re-publish an old release as a newer version to roll sites back. Verification uses libsodium (PHP 7.2+) or WordPress core's bundled sodium_compat, and fails closed
+* The Coins tab lists every manual-only coin (Monero, IoTeX, Casper, Kaia, Starknet) instead of Monero alone; tested-up-to raised to WordPress 7.1 / WooCommerce 11.1
 
 = 1.5.36 =
 Full audit on a live WordPress 7.1 / WooCommerce 11.1 test store: 13 themes, 53 plugins (cache, security, SEO, page builders, subscriptions, multi-currency, other gateways), classic and block checkout, plus a line-by-line security review mapped to the OWASP Top 10.
