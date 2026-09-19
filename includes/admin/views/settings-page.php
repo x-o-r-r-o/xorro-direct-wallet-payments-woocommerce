@@ -47,6 +47,8 @@ $wallets = isset( $settings['wallets'] ) && is_array( $settings['wallets'] ) ? $
 $active  = isset( $tabs[ $tab ] ) ? $tabs[ $tab ] : $tabs['general'];
 ?>
 <div class="wrap xdwp-admin">
+	<?php // Core moves admin notices after .wp-header-end; without it they land inside the header bar next to the h1. ?>
+	<hr class="wp-header-end">
 	<div class="xdwp-options-wrap">
 		<div class="cc-header">
 			<div class="cc-header-title">

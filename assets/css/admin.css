@@ -127,6 +127,12 @@ body.xdwp-admin-page #wpbody-content > .wrap > h1.wp-heading-inline {
 	font-weight: 700;
 }
 
+.xdwp-admin > .notice,
+.xdwp-admin > div.updated,
+.xdwp-admin > div.error {
+	margin: 0 0 12px;
+}
+
 .xdwp-options-wrap .cc-header-title {
 	display: flex;
 	align-items: center;
@@ -170,6 +176,7 @@ body.xdwp-admin-page #wpbody-content > .wrap > h1.wp-heading-inline {
 
 .xdwp-options-wrap .cc-mode-badge {
 	display: inline-flex;
+	white-space: nowrap;
 	align-items: center;
 	height: 28px;
 	padding: 0 12px;
