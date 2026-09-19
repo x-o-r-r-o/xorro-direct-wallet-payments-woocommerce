@@ -659,9 +659,18 @@ class Xdwp_Coins {
 		}
 
 		if ( 'yes' !== Xdwp_Settings::get( 'recommended_confirmations', 'yes' ) ) {
-			return $store;
+			$confirmations = $store;
+		} else {
+			$confirmations = min( 64, max( $store, self::recommended_confirmations( $coin ) ) );
 		}
-		return min( 64, max( $store, self::recommended_confirmations( $coin ) ) );
+
+		/**
+		 * Confirmations a payment in this coin must reach.
+		 *
+		 * @param int   $confirmations Resolved number.
+		 * @param array $coin          Coin definition.
+		 */
+		return max( 0, min( 64, (int) apply_filters( 'xdwp_confirmations_required', $confirmations, $coin ) ) );
 	}
 
 	/**
@@ -691,14 +700,23 @@ class Xdwp_Coins {
 		if ( $total <= 0 ) {
 			return true; // Empty cart / unknown total: don't hide anything yet.
 		}
-		$limits = self::limits( $coin_id );
+		$limits  = self::limits( $coin_id );
+		$allowed = true;
 		if ( $limits['min'] > 0 && $total < $limits['min'] ) {
-			return false;
+			$allowed = false;
 		}
 		if ( $limits['max'] > 0 && $total > $limits['max'] ) {
-			return false;
+			$allowed = false;
 		}
-		return true;
+
+		/**
+		 * Whether this coin may be offered for an order of this size.
+		 *
+		 * @param bool   $allowed Result of the merchant's own limits.
+		 * @param string $coin_id Coin ID.
+		 * @param float  $total   Order total in store currency.
+		 */
+		return (bool) apply_filters( 'xdwp_coin_allowed_for_total', $allowed, $coin_id, $total );
 	}
 
 	/**
@@ -1106,6 +1124,28 @@ class Xdwp_Coins {
 
 		// Bare address for remaining chains (ADA, ALGO, NEAR, DOT, FIL, HBAR, EGLD, ZIL, EOS, …).
 		return $address;
+	}
+
+	/**
+	 * Payment URI, after filtering.
+	 *
+	 * @param string $coin_id Coin ID.
+	 * @param string $address Wallet address.
+	 * @param string $amount  Crypto amount.
+	 * @param string $memo    Destination tag / memo.
+	 * @return string
+	 */
+	public static function filtered_payment_uri( $coin_id, $address, $amount, $memo = '' ) {
+		/**
+		 * The link behind the QR code and the "Open in wallet app" button.
+		 *
+		 * @param string $uri     Built URI (or the bare address where no URI form is reliable).
+		 * @param string $coin_id Coin ID.
+		 * @param string $address Wallet address.
+		 * @param string $amount  Crypto amount.
+		 * @param string $memo    Destination tag / memo.
+		 */
+		return (string) apply_filters( 'xdwp_payment_uri', self::payment_uri( $coin_id, $address, $amount, $memo ), $coin_id, $address, $amount, $memo );
 	}
 
 	/**

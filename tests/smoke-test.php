@@ -494,6 +494,15 @@ xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-
 xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-verifier.php' ), 'function memo_ok' ), 'transfers are checked against the reference' );
 xdwp_assert( false !== strpos( file_get_contents( $root . '/templates/payment.php' ), 'xdwp-memo' ), 'payment page shows the reference' );
 xdwp_assert( false !== strpos( file_get_contents( $root . '/templates/emails/xdwp-payment-details.php' ), "details['memo']" ), 'emails show the reference' );
+// Release 1.9.0 features.
+xdwp_assert( file_exists( $root . '/includes/admin/class-xdwp-payments-admin.php' ), 'payments overview class present' );
+xdwp_assert( file_exists( $root . '/includes/admin/views/payments-page.php' ), 'payments overview view present' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/admin/class-xdwp-payments-admin.php' ), 'manage_woocommerce_page_wc-orders_columns' ), 'orders column works with HPOS' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/admin/class-xdwp-payments-admin.php' ), 'manage_edit-shop_order_columns' ), 'orders column works with the legacy table' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp.php' ), 'Xdwp_Payments_Admin::init' ), 'payments admin is booted' );
+foreach ( array( 'xdwp_payment_window_minutes', 'xdwp_confirmations_required', 'xdwp_coin_allowed_for_total', 'xdwp_order_memo', 'xdwp_payment_uri' ) as $xdwp_hook ) {
+	xdwp_assert( false !== strpos( $readme_md, $xdwp_hook ), 'readme documents ' . $xdwp_hook );
+}
 xdwp_assert( false !== strpos( $readme, '== External services ==' ), 'readme external services section present' );
 xdwp_assert( false !== strpos( $readme, 'XRPSCan' ), 'readme documents XRPSCan' );
 xdwp_assert( false !== strpos( $readme, 'Subscan' ), 'readme documents Subscan' );

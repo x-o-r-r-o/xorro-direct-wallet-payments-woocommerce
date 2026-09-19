@@ -189,6 +189,15 @@ class Xdwp_Admin {
 
 		add_submenu_page(
 			'xorro-direct-wallet-payments-woocommerce',
+			__( 'Payments', 'xorro-direct-wallet-payments-woocommerce' ),
+			__( 'Payments', 'xorro-direct-wallet-payments-woocommerce' ),
+			'manage_woocommerce',
+			'xorro-direct-wallet-payments-woocommerce-payments',
+			array( __CLASS__, 'render_payments_page' )
+		);
+
+		add_submenu_page(
+			'xorro-direct-wallet-payments-woocommerce',
 			__( 'Coins', 'xorro-direct-wallet-payments-woocommerce' ),
 			__( 'Coins', 'xorro-direct-wallet-payments-woocommerce' ),
 			'manage_woocommerce',
@@ -227,6 +236,7 @@ class Xdwp_Admin {
 			'xorro-direct-wallet-payments-woocommerce-coins'   => 'coins',
 			'xorro-direct-wallet-payments-woocommerce-wallets' => 'wallets',
 			'xorro-direct-wallet-payments-woocommerce-prices'  => 'prices',
+			'xorro-direct-wallet-payments-woocommerce-payments' => 'payments',
 		);
 		return isset( $map[ $page ] ) ? $map[ $page ] : 'general';
 	}
@@ -558,6 +568,92 @@ class Xdwp_Admin {
 			)
 		);
 		echo '</p></div>';
+	}
+
+	/**
+	 * The admin tabs, shared by every screen of this plugin.
+	 *
+	 * @return array<string, array<string, string>>
+	 */
+	public static function tabs() {
+		return array(
+			'general' => array(
+				'label' => __( 'General', 'xorro-direct-wallet-payments-woocommerce' ),
+				'url'   => admin_url( 'admin.php?page=xorro-direct-wallet-payments-woocommerce' ),
+				'icon'  => 'dashicons-admin-generic',
+				'title' => __( 'General', 'xorro-direct-wallet-payments-woocommerce' ),
+				'desc'  => __( 'Payment window, order status, checkout branding, and gateway options.', 'xorro-direct-wallet-payments-woocommerce' ),
+			),
+			'payments' => array(
+				'label' => __( 'Payments', 'xorro-direct-wallet-payments-woocommerce' ),
+				'url'   => admin_url( 'admin.php?page=xorro-direct-wallet-payments-woocommerce-payments' ),
+				'icon'  => 'dashicons-list-view',
+				'title' => __( 'Payments', 'xorro-direct-wallet-payments-woocommerce' ),
+				'desc'  => __( 'Every order paid (or waiting to be paid) in crypto, and the ones that still need you.', 'xorro-direct-wallet-payments-woocommerce' ),
+			),
+			'coins'   => array(
+				'label' => __( 'Coins', 'xorro-direct-wallet-payments-woocommerce' ),
+				'url'   => admin_url( 'admin.php?page=xorro-direct-wallet-payments-woocommerce-coins' ),
+				'icon'  => 'dashicons-cart',
+				'title' => __( 'Coins', 'xorro-direct-wallet-payments-woocommerce' ),
+				'desc'  => __( 'Enable the coins and networks you want to accept. Add at least one wallet for each enabled coin.', 'xorro-direct-wallet-payments-woocommerce' ),
+			),
+			'wallets' => array(
+				'label' => __( 'Wallets', 'xorro-direct-wallet-payments-woocommerce' ),
+				'url'   => admin_url( 'admin.php?page=xorro-direct-wallet-payments-woocommerce-wallets' ),
+				'icon'  => 'dashicons-money-alt',
+				'title' => __( 'Wallets', 'xorro-direct-wallet-payments-woocommerce' ),
+				'desc'  => __( 'Receiving addresses for enabled coins. Use multiple addresses for rotation.', 'xorro-direct-wallet-payments-woocommerce' ),
+			),
+			'prices'  => array(
+				'label' => __( 'Prices & APIs', 'xorro-direct-wallet-payments-woocommerce' ),
+				'url'   => admin_url( 'admin.php?page=xorro-direct-wallet-payments-woocommerce-prices' ),
+				'icon'  => 'dashicons-chart-area',
+				'title' => __( 'Prices & APIs', 'xorro-direct-wallet-payments-woocommerce' ),
+				'desc'  => __( 'Exchange rates and blockchain API keys for quotes and auto-verification.', 'xorro-direct-wallet-payments-woocommerce' ),
+			),
+		);
+	}
+
+	/**
+	 * Render the payments overview.
+	 */
+	public static function render_payments_page() {
+		if ( ! current_user_can( 'manage_woocommerce' ) ) {
+			return;
+		}
+		self::enqueue_shell_assets();
+		if ( did_action( 'admin_print_styles' ) && wp_style_is( 'xdwp-admin', 'enqueued' ) ) {
+			wp_print_styles( 'xdwp-admin' );
+		}
+
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- read-only filters.
+		$filter = isset( $_GET['xdwp_filter'] ) ? sanitize_key( wp_unslash( $_GET['xdwp_filter'] ) ) : 'all';
+		$coin   = isset( $_GET['xdwp_coin'] ) ? sanitize_text_field( wp_unslash( $_GET['xdwp_coin'] ) ) : '';
+		$paged  = isset( $_GET['paged'] ) ? max( 1, absint( wp_unslash( $_GET['paged'] ) ) ) : 1;
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended
+
+		if ( ! in_array( $filter, array( 'all', 'awaiting', 'underpaid', 'paid', 'expired', 'attention' ), true ) ) {
+			$filter = 'all';
+		}
+		if ( '' !== $coin && ! Xdwp_Coins::get( $coin ) ) {
+			$coin = '';
+		}
+
+		$tab     = 'payments';
+		$results = Xdwp_Payments_Admin::query(
+			array(
+				'filter' => $filter,
+				'coin'   => $coin,
+				'paged'  => $paged,
+			)
+		);
+		$summary = Xdwp_Payments_Admin::summary();
+		$coins   = Xdwp_Payments_Admin::used_coins();
+
+		settings_errors( 'xdwp' );
+
+		include XDWP_PATH . 'includes/admin/views/payments-page.php';
 	}
 
 	/**

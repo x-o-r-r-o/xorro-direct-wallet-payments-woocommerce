@@ -60,6 +60,7 @@ final class Xdwp {
 
 		if ( is_admin() ) {
 			require_once XDWP_PATH . 'includes/admin/class-xdwp-admin.php';
+			require_once XDWP_PATH . 'includes/admin/class-xdwp-payments-admin.php';
 		}
 	}
 
@@ -87,6 +88,7 @@ final class Xdwp {
 
 		if ( is_admin() ) {
 			Xdwp_Admin::init();
+			Xdwp_Payments_Admin::init();
 		}
 	}
 

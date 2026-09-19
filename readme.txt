@@ -4,7 +4,7 @@ Tags: woocommerce, cryptocurrency, bitcoin, ethereum, payments, usdt, crypto che
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.8.0
+Stable tag: 1.9.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -34,7 +34,7 @@ This plugin contacts public price and blockchain APIs to quote amounts and (opti
 * Checkout branding: custom title, upload/replace icon, icon width & height, show icon and/or text
 * WooCommerce Checkout Blocks + HPOS compatible
 * Compatible with WordPress 7.1 and WooCommerce 11.x
-* Dedicated admin menu: General, Coins, Wallets, Prices & APIs
+* Dedicated admin menu: General, Payments, Coins, Wallets, Prices & APIs
 
 = Requirements =
 
@@ -336,6 +336,13 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 * QR Code generator (`assets/js/qrcode.min.js`) — MIT-licensed library by davidshimjs (https://github.com/davidshimjs/qrcodejs). Source is publicly available; the bundled file is minified for production use.
 
 == Changelog ==
+
+= 1.9.0 =
+See every crypto payment in one place.
+* New: a Payments screen listing every crypto order — what was expected, what arrived, which coin, which transaction — with filters by state and coin
+* New: a "Needs you" list of the orders that will not finish on their own: money that arrived late, more than was due, or a part payment left after the window closed
+* New: a Crypto payment column on WooCommerce → Orders showing the coin amount and payment state at a glance
+* New developer hooks: xdwp_payment_window_minutes, xdwp_confirmations_required, xdwp_coin_allowed_for_total, xdwp_order_memo and xdwp_payment_uri filters, plus the xdwp_payment_detected and xdwp_payment_renewed actions
 
 = 1.8.0 =
 Confirmations that fit the chain, and payments that identify themselves.

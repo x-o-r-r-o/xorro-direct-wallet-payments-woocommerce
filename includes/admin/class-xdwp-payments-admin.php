@@ -1,0 +1,261 @@
+<?php
+/**
+ * Payments overview: every crypto order in one place, and a column on the orders list.
+ *
+ * WooCommerce's own order list shows a status but not which coin was chosen, how much is
+ * owed on chain, or which orders are waiting on the store owner. This adds both.
+ *
+ * @package Xdwp
+ */
+
+defined( 'ABSPATH' ) || exit;
+
+/**
+ * Class Xdwp_Payments_Admin
+ */
+class Xdwp_Payments_Admin {
+
+	/** Orders per page on the overview. */
+	const PER_PAGE = 20;
+
+	/**
+	 * Init hooks.
+	 */
+	public static function init() {
+		// Orders list column, for both the legacy post table and HPOS.
+		add_filter( 'manage_edit-shop_order_columns', array( __CLASS__, 'add_column' ), 20 );
+		add_filter( 'manage_woocommerce_page_wc-orders_columns', array( __CLASS__, 'add_column' ), 20 );
+		add_action( 'manage_shop_order_posts_custom_column', array( __CLASS__, 'render_column' ), 20, 2 );
+		add_action( 'manage_woocommerce_page_wc-orders_custom_column', array( __CLASS__, 'render_column' ), 20, 2 );
+	}
+
+	/**
+	 * Add the crypto payment column after the order status.
+	 *
+	 * @param array $columns Columns.
+	 * @return array
+	 */
+	public static function add_column( $columns ) {
+		if ( ! is_array( $columns ) ) {
+			return $columns;
+		}
+		$new = array();
+		foreach ( $columns as $key => $label ) {
+			$new[ $key ] = $label;
+			if ( 'order_status' === $key ) {
+				$new['xdwp_payment'] = __( 'Crypto payment', 'xorro-direct-wallet-payments-woocommerce' );
+			}
+		}
+		if ( ! isset( $new['xdwp_payment'] ) ) {
+			$new['xdwp_payment'] = __( 'Crypto payment', 'xorro-direct-wallet-payments-woocommerce' );
+		}
+		return $new;
+	}
+
+	/**
+	 * Render the column for one order.
+	 *
+	 * @param string           $column Column key.
+	 * @param int|WC_Order     $order  Order or order ID (HPOS passes the order).
+	 */
+	public static function render_column( $column, $order = null ) {
+		if ( 'xdwp_payment' !== $column ) {
+			return;
+		}
+		$order = ( $order instanceof WC_Order ) ? $order : wc_get_order( $order );
+		if ( ! $order instanceof WC_Order || ! Xdwp_Order::is_ours( $order ) ) {
+			echo '&ndash;';
+			return;
+		}
+		$coin   = Xdwp_Coins::get( (string) Xdwp_Order::meta( $order, 'coin' ) );
+		$status = (string) Xdwp_Order::meta( $order, 'status' );
+		$amount = (string) Xdwp_Order::meta( $order, 'amount' );
+
+		echo '<span class="xdwp-order-col">';
+		if ( $coin && '' !== $amount ) {
+			echo '<span class="xdwp-order-col__amount">' . esc_html( $amount . ' ' . $coin['symbol'] ) . '</span><br />';
+		}
+		echo self::status_pill( $order, $status ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- built from escaped parts.
+		echo '</span>';
+	}
+
+	/**
+	 * Status pill markup for an order.
+	 *
+	 * @param WC_Order $order  Order.
+	 * @param string   $status Plugin status.
+	 * @return string
+	 */
+	public static function status_pill( $order, $status ) {
+		$labels = array(
+			'awaiting'  => __( 'Waiting', 'xorro-direct-wallet-payments-woocommerce' ),
+			'underpaid' => __( 'Part paid', 'xorro-direct-wallet-payments-woocommerce' ),
+			'paid'      => __( 'Paid', 'xorro-direct-wallet-payments-woocommerce' ),
+			'expired'   => __( 'Expired', 'xorro-direct-wallet-payments-woocommerce' ),
+			'cancelled' => __( 'Cancelled', 'xorro-direct-wallet-payments-woocommerce' ),
+		);
+		$classes = array(
+			'awaiting'  => 'xdwp-pill--wait',
+			'underpaid' => 'xdwp-pill--warn',
+			'paid'      => 'xdwp-pill--paid',
+			'expired'   => 'xdwp-pill--dead',
+			'cancelled' => 'xdwp-pill--dead',
+		);
+		$label = isset( $labels[ $status ] ) ? $labels[ $status ] : $status;
+		$class = isset( $classes[ $status ] ) ? $classes[ $status ] : 'xdwp-pill--dead';
+
+		$out = '<span class="xdwp-pill ' . esc_attr( $class ) . '">' . esc_html( $label ) . '</span>';
+		if ( self::needs_attention( $order ) ) {
+			$out .= ' <span class="xdwp-pill xdwp-pill--attn">' . esc_html__( 'Check', 'xorro-direct-wallet-payments-woocommerce' ) . '</span>';
+		}
+		return $out;
+	}
+
+	/**
+	 * Orders the store owner still has to look at: money arrived late, more than was due, or a
+	 * transfer that could belong to more than one order.
+	 *
+	 * @param WC_Order $order Order.
+	 * @return bool
+	 */
+	public static function needs_attention( $order ) {
+		if ( ! $order instanceof WC_Order ) {
+			return false;
+		}
+		if ( '' !== (string) Xdwp_Order::meta( $order, 'late_txid' ) ) {
+			return true;
+		}
+		if ( '' !== (string) Xdwp_Order::meta( $order, 'overpaid' ) ) {
+			return true;
+		}
+		$status = (string) Xdwp_Order::meta( $order, 'status' );
+		// A part-paid order whose window has closed will not complete on its own.
+		return ( 'expired' === $status && '' !== (string) Xdwp_Order::meta( $order, 'received' ) );
+	}
+
+	/**
+	 * Orders for the overview, newest first.
+	 *
+	 * @param array $args filter (all|awaiting|underpaid|paid|expired|attention), coin, paged, search.
+	 * @return array{orders:WC_Order[],total:int,pages:int}
+	 */
+	public static function query( $args = array() ) {
+		$args = wp_parse_args(
+			$args,
+			array(
+				'filter' => 'all',
+				'coin'   => '',
+				'paged'  => 1,
+			)
+		);
+
+		$meta_query = array(
+			array(
+				'key'     => '_xdwp_coin',
+				'compare' => 'EXISTS',
+			),
+		);
+		if ( '' !== $args['coin'] ) {
+			$meta_query[] = array(
+				'key'   => '_xdwp_coin',
+				'value' => $args['coin'],
+			);
+		}
+		if ( in_array( $args['filter'], array( 'awaiting', 'underpaid', 'paid', 'expired' ), true ) ) {
+			$meta_query[] = array(
+				'key'   => '_xdwp_status',
+				'value' => $args['filter'],
+			);
+		}
+
+		// "Needs attention" is three separate marks, so fetch the recent set and sift in PHP —
+		// a meta_query OR across them would not cover the expired-with-part-payment case.
+		$attention = ( 'attention' === $args['filter'] );
+		$paged     = max( 1, (int) $args['paged'] );
+		$query     = array(
+			'limit'      => $attention ? 200 : self::PER_PAGE,
+			'paged'      => $attention ? 1 : $paged,
+			'paginate'   => ! $attention,
+			'orderby'    => 'date',
+			'order'      => 'DESC',
+			'status'     => 'any',
+			'meta_query' => $meta_query, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+		);
+
+		if ( $attention ) {
+			$orders = wc_get_orders( $query );
+			$orders = is_array( $orders ) ? array_values( array_filter( $orders, array( __CLASS__, 'needs_attention' ) ) ) : array();
+			$total  = count( $orders );
+			$offset = ( $paged - 1 ) * self::PER_PAGE;
+			return array(
+				'orders' => array_slice( $orders, $offset, self::PER_PAGE ),
+				'total'  => $total,
+				'pages'  => (int) max( 1, ceil( $total / self::PER_PAGE ) ),
+			);
+		}
+
+		$result = wc_get_orders( $query );
+		return array(
+			'orders' => isset( $result->orders ) ? $result->orders : array(),
+			'total'  => isset( $result->total ) ? (int) $result->total : 0,
+			'pages'  => isset( $result->max_num_pages ) ? (int) $result->max_num_pages : 1,
+		);
+	}
+
+	/**
+	 * Counts for the summary cards.
+	 *
+	 * @return array<string, int>
+	 */
+	public static function summary() {
+		$counts = array();
+		foreach ( array( 'awaiting', 'underpaid', 'paid', 'expired' ) as $status ) {
+			$result            = self::query(
+				array(
+					'filter' => $status,
+					'paged'  => 1,
+				)
+			);
+			$counts[ $status ] = (int) $result['total'];
+		}
+		$attention              = self::query( array( 'filter' => 'attention' ) );
+		$counts['attention']    = (int) $attention['total'];
+		return $counts;
+	}
+
+	/**
+	 * Coins that actually appear on orders, for the filter dropdown.
+	 *
+	 * @return array<string, string> Coin ID => label.
+	 */
+	public static function used_coins() {
+		global $wpdb;
+		$ids = array();
+
+		// HPOS and the legacy post table store the same meta key in different tables; ask both
+		// so the filter is right whichever one this store uses.
+		$tables = array( $wpdb->postmeta => 'meta_key' );
+		$hpos   = $wpdb->prefix . 'wc_orders_meta';
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $hpos ) ) === $hpos ) {
+			$tables[ $hpos ] = 'meta_key';
+		}
+		foreach ( array_keys( $tables ) as $table ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$rows = $wpdb->get_col( "SELECT DISTINCT meta_value FROM {$table} WHERE meta_key = '_xdwp_coin' LIMIT 250" );
+			if ( is_array( $rows ) ) {
+				$ids = array_merge( $ids, $rows );
+			}
+		}
+
+		$out = array();
+		foreach ( array_unique( array_filter( $ids ) ) as $id ) {
+			$coin = Xdwp_Coins::get( (string) $id );
+			if ( $coin ) {
+				$out[ (string) $id ] = $coin['symbol'] . ' — ' . $coin['name'];
+			}
+		}
+		asort( $out );
+		return $out;
+	}
+}

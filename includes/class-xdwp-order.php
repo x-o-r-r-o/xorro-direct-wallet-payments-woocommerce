@@ -242,11 +242,26 @@ class Xdwp_Order {
 			return false;
 		}
 
-		$window  = (int) Xdwp_Settings::get( 'payment_window', 60 );
+		/**
+		 * How long this order has to pay, in minutes.
+		 *
+		 * @param int      $window Minutes from the store settings.
+		 * @param WC_Order $order  Order.
+		 * @param array    $coin   Coin definition.
+		 */
+		$window  = (int) apply_filters( 'xdwp_payment_window_minutes', (int) Xdwp_Settings::get( 'payment_window', 60 ), $order, $coin );
+		$window  = max( 1, min( 1440, $window ) );
 		$started = time();
 		$expires = $started + ( $window * MINUTE_IN_SECONDS );
 
-		$memo = Xdwp_Coins::make_memo( $coin );
+		/**
+		 * The destination tag / memo this order asks the customer to include.
+		 *
+		 * @param string   $memo  Generated reference, '' when the chain has none.
+		 * @param WC_Order $order Order.
+		 * @param array    $coin  Coin definition.
+		 */
+		$memo = (string) apply_filters( 'xdwp_order_memo', Xdwp_Coins::make_memo( $coin ), $order, $coin );
 
 		$order->update_meta_data( '_xdwp_coin', $coin_id );
 		$order->update_meta_data( '_xdwp_address', $address );
@@ -539,7 +554,7 @@ class Xdwp_Order {
 			$amount = (string) Xdwp_Order::meta( $order, 'remainder' );
 		}
 
-		$uri = Xdwp_Coins::payment_uri( $coin_id, $address, $amount, (string) self::meta( $order, 'memo' ) );
+		$uri = Xdwp_Coins::filtered_payment_uri( $coin_id, $address, $amount, (string) self::meta( $order, 'memo' ) );
 
 		// Ensure handles exist even if wp_enqueue_scripts already ran.
 		if ( ! wp_style_is( 'xdwp-frontend', 'registered' ) ) {

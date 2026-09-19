@@ -36,6 +36,7 @@ Each order gets a slightly unique amount (usually a few base units, e.g. 10 sato
 - **Destination tag / memo per order** on the chains that carry one
 - **Re-quote an expired order** — the customer gets a fresh amount, you keep the order
 - **No lost payments:** payment details in customer emails, a reminder before the window closes, partial-payment handling (customer is asked for the rest), overpayment notes, and a late-payment scan that alerts you when money arrives after an order expired
+- **Payments screen** listing every crypto order, with a "needs you" filter, plus a crypto payment column on the orders list
 - Admin alerts when an explorer API rejects requests (e.g. a missing or limited API key), so verification never fails silently
 - Automatic updates from GitHub Releases — every package must carry the maintainer's Ed25519 signature
 
@@ -134,7 +135,14 @@ Found a vulnerability? Please open a private [security advisory](https://github.
 | `xdwp_late_payment_detected` ( `$order, $txid, $amount` ) | action | Money arrives for an expired order |
 | `xdwp_ambiguous_payment` ( `$order, $txid, $amount` ) | action | A non-exact transfer could belong to more than one order |
 | `xdwp_send_payment_reminder` ( `$order` ) | action | The pre-expiry reminder is due |
+| `xdwp_payment_detected` ( `$order, $txid, $amount` ) | action | A matching transfer is seen on chain, before it has the confirmations required |
+| `xdwp_payment_renewed` ( `$order` ) | action | A customer re-quotes an expired order |
 | `xdwp_coins` | filter | The coin list is built |
+| `xdwp_payment_window_minutes` ( `$minutes, $order, $coin` ) | filter | The payment window is set for an order |
+| `xdwp_confirmations_required` ( `$confirmations, $coin` ) | filter | Confirmations for a coin are resolved |
+| `xdwp_coin_allowed_for_total` ( `$allowed, $coin_id, $total` ) | filter | A coin is offered (or hidden) for an order total |
+| `xdwp_order_memo` ( `$memo, $order, $coin` ) | filter | A destination tag / memo is generated |
+| `xdwp_payment_uri` ( `$uri, $coin_id, $address, $amount, $memo` ) | filter | The wallet link / QR code is built |
 | `xdwp_rate_limit_client_ip` | filter | Rate limiting identifies the client IP |
 
 Email templates can be overridden in your theme under `woocommerce/emails/` (`xdwp-payment-details.php`, `xdwp-payment-reminder.php`, `xdwp-partial-payment.php`, `xdwp-payment-alert.php`, plus `plain/` versions).
@@ -174,6 +182,13 @@ Pushing a `vX.Y.Z` tag runs the Release workflow, which builds the ZIP, its SHA-
 ## Changelog
 
 Full details for every release are in [`readme.txt`](readme.txt).
+
+### 1.9.0 — every crypto payment in one place
+
+- **Payments screen**: every crypto order with the amount expected, the amount received, the coin, the state and the transaction, filtered by state or coin
+- **"Needs you"** list for the orders that will not finish by themselves — late money, overpayments, and part payments left after the window closed
+- **Crypto payment column** on WooCommerce → Orders
+- More developer hooks: `xdwp_payment_window_minutes`, `xdwp_confirmations_required`, `xdwp_coin_allowed_for_total`, `xdwp_order_memo`, `xdwp_payment_uri`
 
 ### 1.8.0 — confirmations that fit the chain, payments that identify themselves
 
