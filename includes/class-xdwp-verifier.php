@@ -106,45 +106,205 @@ class Xdwp_Verifier {
 	 * Build an absolute match band that cannot overwhelm unique dust.
 	 *
 	 * Percentage underpayment is capped so concurrent shared-wallet orders remain distinguishable.
+	 * Computed in exact 1e-18 fixed-point integers (never floats): at 18 decimals a float cannot
+	 * resolve a few-hundred-wei band above ~4 units, which collapsed min == max and made exact
+	 * payments unmatchable.
 	 *
 	 * @param string $amount Order crypto amount string.
 	 * @param array  $coin   Coin def.
-	 * @return array{min:float,max:float}
+	 * @return array{min:string,max:string} Plain decimal strings (18 fractional digits).
 	 */
 	private static function match_band( $amount, array $coin ) {
 		$decimals = isset( $coin['decimals'] ) ? min( (int) $coin['decimals'], 18 ) : 8;
-		$target   = (float) $amount;
-		$unit     = pow( 10, -$decimals );
+		$target   = self::to_e18( $amount );
+		$unit     = '1' . str_repeat( '0', 18 - $decimals );
 
-		// Absolute epsilon: 1 base unit for low-decimal assets (GUSD/EOS); dust-oriented floor only when unique dust applies.
-		$abs_eps = ( $decimals <= 4 ) ? $unit : max( $unit * 50, $unit );
+		// Absolute epsilon: 1 base unit for low-decimal assets (GUSD/EOS), 50 otherwise.
+		$abs_eps = ( $decimals <= 4 ) ? $unit : self::e18_mul_small( $unit, 50 );
 
 		$tolerance_pct = max( 0.0, (float) Xdwp_Settings::get( 'underpayment_percent', 1 ) );
-		$pct_under     = $target * ( $tolerance_pct / 100 );
-		$pct_over      = $target * ( max( $tolerance_pct, 0.5 ) / 100 );
+		$pct_under     = self::float_to_e18( (float) $amount * ( $tolerance_pct / 100 ) );
+		$pct_over      = self::float_to_e18( (float) $amount * ( max( $tolerance_pct, 0.5 ) / 100 ) );
 
-		// Never let % tolerance exceed half a unique-dust step when unique amounts are on.
-		$max_band = $abs_eps;
 		if ( 'yes' === Xdwp_Settings::get( 'unique_amounts', 'yes' ) && $decimals > 4 ) {
-			// Dust steps are 1000 units apart; keep band well below that gap.
-			$max_band = max( $abs_eps, $unit * 400 );
+			// Unique dust steps are Xdwp_Prices::DUST_STEP units apart (at min(decimals, 8)
+			// decimals); keep the band under half a step so neighbouring orders never overlap.
+			$dust_unit = '1' . str_repeat( '0', 18 - min( $decimals, 8 ) );
+			$max_band  = self::e18_mul_small( $dust_unit, Xdwp_Prices::DUST_BAND );
 		} else {
-			$max_band = max( $abs_eps, min( $pct_under > 0 ? $pct_under : $abs_eps, $target * 0.02 ) );
+			$two_pct  = self::float_to_e18( (float) $amount * 0.02 );
+			$max_band = self::e18_max( $abs_eps, self::e18_min( '0' !== $pct_under ? $pct_under : $abs_eps, $two_pct ) );
 		}
 
 		// 0% underpayment tolerance must mean exact (no absolute floor bypass for GUSD/etc.).
 		if ( $tolerance_pct <= 0 ) {
-			$under = 0.0;
-			$over  = min( $abs_eps, $max_band );
+			$under = '0';
+			$over  = self::e18_min( $abs_eps, $max_band );
 		} else {
-			$under = min( $pct_under > 0 ? $pct_under : $abs_eps, $max_band );
-			$over  = min( $pct_over > 0 ? $pct_over : $abs_eps, $max_band );
+			$under = self::e18_min( '0' !== $pct_under ? $pct_under : $abs_eps, $max_band );
+			$over  = self::e18_min( '0' !== $pct_over ? $pct_over : $abs_eps, $max_band );
 		}
 
 		return array(
-			'min' => max( 0.0, $target - $under ),
-			'max' => $target + $over,
+			'min' => self::e18_to_decimal( self::e18_sub( $target, $under ) ),
+			'max' => self::e18_to_decimal( self::e18_add( $target, $over ) ),
 		);
+	}
+
+	/**
+	 * Convert a decimal amount to an integer string scaled by 10^18 (truncated).
+	 *
+	 * Plain decimal strings convert exactly. Floats (some explorers only give floats) carry
+	 * ~15 significant digits, so they are rounded there first — 8.12345678 stays 8.12345678
+	 * instead of becoming 8.123456779999999711.
+	 *
+	 * @param mixed $value Amount.
+	 * @return string
+	 */
+	private static function to_e18( $value ) {
+		if ( is_string( $value ) ) {
+			$value = trim( $value );
+		}
+		if ( ! is_string( $value ) || ! preg_match( '/^\d+(\.\d+)?$/', $value ) ) {
+			$f = (float) $value;
+			if ( ! is_finite( $f ) || $f <= 0 ) {
+				return '0';
+			}
+			$int_digits = max( 1, (int) floor( log10( $f ) ) + 1 );
+			$value      = number_format( $f, max( 0, min( 18, 15 - $int_digits ) ), '.', '' );
+		}
+		$parts  = explode( '.', $value, 2 );
+		$frac   = isset( $parts[1] ) ? substr( str_pad( $parts[1], 18, '0' ), 0, 18 ) : str_repeat( '0', 18 );
+		$scaled = ltrim( $parts[0] . $frac, '0' );
+		return '' === $scaled ? '0' : $scaled;
+	}
+
+	/**
+	 * Non-negative float → 1e18-scaled integer string (approximate; for tolerances only).
+	 *
+	 * @param float $f Value.
+	 * @return string
+	 */
+	private static function float_to_e18( $f ) {
+		$f = (float) $f;
+		if ( ! is_finite( $f ) || $f <= 0 ) {
+			return '0';
+		}
+		$scaled = ltrim( number_format( floor( $f * 1e18 ), 0, '', '' ), '0' );
+		return '' === $scaled ? '0' : $scaled;
+	}
+
+	/**
+	 * Format a 1e18-scaled integer string as a plain decimal string.
+	 *
+	 * @param string $e18 Scaled integer.
+	 * @return string
+	 */
+	private static function e18_to_decimal( $e18 ) {
+		$e18 = str_pad( (string) $e18, 19, '0', STR_PAD_LEFT );
+		return substr( $e18, 0, -18 ) . '.' . substr( $e18, -18 );
+	}
+
+	/**
+	 * Compare two non-negative integer strings.
+	 *
+	 * @param string $a A.
+	 * @param string $b B.
+	 * @return int -1, 0 or 1.
+	 */
+	private static function e18_cmp( $a, $b ) {
+		$a = ltrim( (string) $a, '0' );
+		$b = ltrim( (string) $b, '0' );
+		if ( strlen( $a ) !== strlen( $b ) ) {
+			return strlen( $a ) < strlen( $b ) ? -1 : 1;
+		}
+		return max( -1, min( 1, strcmp( $a, $b ) ) );
+	}
+
+	/**
+	 * @param string $a A.
+	 * @param string $b B.
+	 * @return string
+	 */
+	private static function e18_min( $a, $b ) {
+		return self::e18_cmp( $a, $b ) <= 0 ? $a : $b;
+	}
+
+	/**
+	 * @param string $a A.
+	 * @param string $b B.
+	 * @return string
+	 */
+	private static function e18_max( $a, $b ) {
+		return self::e18_cmp( $a, $b ) >= 0 ? $a : $b;
+	}
+
+	/**
+	 * Add two non-negative integer strings.
+	 *
+	 * @param string $a A.
+	 * @param string $b B.
+	 * @return string
+	 */
+	private static function e18_add( $a, $b ) {
+		$a     = (string) $a;
+		$b     = (string) $b;
+		$len   = max( strlen( $a ), strlen( $b ) );
+		$a     = str_pad( $a, $len, '0', STR_PAD_LEFT );
+		$b     = str_pad( $b, $len, '0', STR_PAD_LEFT );
+		$out   = '';
+		$carry = 0;
+		for ( $i = $len - 1; $i >= 0; $i-- ) {
+			$d     = (int) $a[ $i ] + (int) $b[ $i ] + $carry;
+			$out   = ( $d % 10 ) . $out;
+			$carry = (int) ( $d / 10 );
+		}
+		$out = ltrim( ( $carry ? '1' : '' ) . $out, '0' );
+		return '' === $out ? '0' : $out;
+	}
+
+	/**
+	 * Subtract integer strings, clamped at zero.
+	 *
+	 * @param string $a A.
+	 * @param string $b B.
+	 * @return string
+	 */
+	private static function e18_sub( $a, $b ) {
+		if ( self::e18_cmp( $a, $b ) <= 0 ) {
+			return '0';
+		}
+		$a      = ltrim( (string) $a, '0' );
+		$b      = str_pad( ltrim( (string) $b, '0' ), strlen( $a ), '0', STR_PAD_LEFT );
+		$out    = '';
+		$borrow = 0;
+		for ( $i = strlen( $a ) - 1; $i >= 0; $i-- ) {
+			$d = (int) $a[ $i ] - (int) $b[ $i ] - $borrow;
+			if ( $d < 0 ) {
+				$d     += 10;
+				$borrow = 1;
+			} else {
+				$borrow = 0;
+			}
+			$out = $d . $out;
+		}
+		$out = ltrim( $out, '0' );
+		return '' === $out ? '0' : $out;
+	}
+
+	/**
+	 * Multiply an integer string by a small non-negative int.
+	 *
+	 * @param string $a A.
+	 * @param int    $k Multiplier.
+	 * @return string
+	 */
+	private static function e18_mul_small( $a, $k ) {
+		$out = '0';
+		for ( $i = 0; $i < (int) $k; $i++ ) {
+			$out = self::e18_add( $out, $a );
+		}
+		return $out;
 	}
 
 	/**
@@ -181,11 +341,16 @@ class Xdwp_Verifier {
 		$page       = 1;
 		$per_page   = 100;
 		$max_peers  = 500; // Beyond this, refuse matching (fail closed).
+		// Peers older than the retention window can no longer be confused with this order.
+		// Bounding the query (not just filtering afterwards) stops abandoned orders from
+		// accumulating forever and eventually blocking the address outright.
+		$retain_ttl = WEEK_IN_SECONDS + ( (int) Xdwp_Settings::get( 'payment_window', 60 ) * MINUTE_IN_SECONDS );
 		$base_args  = array(
 			'limit'          => $per_page,
 			'status'         => array( 'on-hold', 'pending', 'failed', 'cancelled', 'refunded' ),
 			'payment_method' => XDWP_GATEWAY_ID,
 			'exclude'        => array( absint( $order_id ) ),
+			'date_created'   => '>' . ( time() - $retain_ttl ),
 			'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
 				'relation' => 'AND',
 				array(
@@ -196,6 +361,12 @@ class Xdwp_Verifier {
 				array(
 					'key'   => '_xdwp_address',
 					'value' => $address,
+				),
+				// Other coins on the same address (ETH vs USDT_ETH) are told apart by the
+				// checker's asset/contract filter, so they are not attribution risks.
+				array(
+					'key'   => '_xdwp_coin',
+					'value' => isset( $coin['id'] ) ? $coin['id'] : '',
 				),
 			),
 			'return'         => 'objects',
@@ -224,17 +395,12 @@ class Xdwp_Verifier {
 			return true;
 		}
 
-		$decimals = isset( $coin['decimals'] ) ? (int) $coin['decimals'] : 8;
-		$unique   = ( 'yes' === Xdwp_Settings::get( 'unique_amounts', 'yes' ) );
-
-		// Low-decimal / no unique dust: only one awaiting order may share an address.
-		if ( ! $unique || $decimals <= 4 ) {
-			return false;
-		}
-
-		// High decimals with unique dust: still refuse if another order has the same exact amount.
-		$amount     = (string) $amount;
-		$retain_ttl = WEEK_IN_SECONDS + ( (int) Xdwp_Settings::get( 'payment_window', 60 ) * MINUTE_IN_SECONDS );
+		// Refuse if another live/recent order on this address could be matched by the same
+		// payment: identical amount or overlapping match bands. Without unique dust (or on
+		// low-decimal assets) amounts still differ whenever totals or rates differ, so the
+		// overlap test — not a blanket "one order per address" rule — is what keeps
+		// attribution safe without letting one abandoned order lock the coin.
+		$amount = (string) $amount;
 		foreach ( $others as $other ) {
 			if ( ! $other instanceof WC_Order ) {
 				continue;
@@ -253,7 +419,10 @@ class Xdwp_Verifier {
 			// Overlapping bands are unsafe even with different strings after formatting.
 			$band_a = self::match_band( $amount, $coin );
 			$band_b = self::match_band( $other_amount, $coin );
-			if ( $band_a['min'] <= $band_b['max'] && $band_b['min'] <= $band_a['max'] ) {
+			if (
+				self::e18_cmp( self::to_e18( $band_a['min'] ), self::to_e18( $band_b['max'] ) ) <= 0
+				&& self::e18_cmp( self::to_e18( $band_b['min'] ), self::to_e18( $band_a['max'] ) ) <= 0
+			) {
 				return false;
 			}
 		}
@@ -549,19 +718,13 @@ class Xdwp_Verifier {
 	 * Whether amount falls inside the accepted band.
 	 *
 	 * @param float|string $value Value.
-	 * @param float        $min   Min.
-	 * @param float        $max   Max.
+	 * @param string       $min   Min (from match_band()).
+	 * @param string       $max   Max (from match_band()).
 	 * @return bool
 	 */
 	private static function amount_in_band( $value, $min, $max ) {
-		if ( function_exists( 'bccomp' ) ) {
-			$v  = is_string( $value ) ? $value : number_format( (float) $value, 18, '.', '' );
-			$mn = number_format( (float) $min, 18, '.', '' );
-			$mx = number_format( (float) $max, 18, '.', '' );
-			return bccomp( $v, $mn, 18 ) >= 0 && bccomp( $v, $mx, 18 ) <= 0;
-		}
-		$value = (float) $value;
-		return ( ( $value + 1e-12 ) >= $min ) && ( ( $value - 1e-12 ) <= $max );
+		$v = self::to_e18( $value );
+		return self::e18_cmp( $v, self::to_e18( $min ) ) >= 0 && self::e18_cmp( $v, self::to_e18( $max ) ) <= 0;
 	}
 
 	/**
@@ -649,27 +812,29 @@ class Xdwp_Verifier {
 	}
 
 	/**
-	 * Compare an integer base-unit amount against a float band using BCMath when available.
+	 * Compare an integer base-unit amount against a match band exactly.
 	 *
 	 * @param string $raw      Integer string in base units.
 	 * @param int    $decimals Token decimals.
-	 * @param float  $min      Min human amount.
-	 * @param float  $max      Max human amount.
+	 * @param string $min      Min human amount (from match_band()).
+	 * @param string $max      Max human amount (from match_band()).
 	 * @return bool
 	 */
 	private static function raw_amount_in_band( $raw, $decimals, $min, $max ) {
-		$raw      = preg_replace( '/\D/', '', (string) $raw );
+		$raw      = ltrim( preg_replace( '/\D/', '', (string) $raw ), '0' );
 		$decimals = max( 0, (int) $decimals );
 		if ( '' === $raw ) {
 			return false;
 		}
-		if ( function_exists( 'bcdiv' ) && function_exists( 'bcpow' ) ) {
-			$scale = min( 18, $decimals + 6 );
-			$value = bcdiv( $raw, bcpow( '10', (string) $decimals, 0 ), $scale );
-			return self::amount_in_band( $value, $min, $max );
+		// Exact: shift base units to 1e18 fixed point (truncating sub-1e-18 digits for >18-decimal chains).
+		if ( $decimals <= 18 ) {
+			$e18 = $raw . str_repeat( '0', 18 - $decimals );
+		} else {
+			$e18 = strlen( $raw ) > $decimals - 18 ? substr( $raw, 0, strlen( $raw ) - ( $decimals - 18 ) ) : '0';
 		}
-		return self::amount_in_band( ( (float) $raw ) / pow( 10, $decimals ), $min, $max );
+		return self::e18_cmp( $e18, self::to_e18( $min ) ) >= 0 && self::e18_cmp( $e18, self::to_e18( $max ) ) <= 0;
 	}
+
 
 	/**
 	 * Check if a txid is already claimed by another Xorro Wallet Payments order.
@@ -2585,7 +2750,7 @@ class Xdwp_Verifier {
 				continue;
 			}
 			$events      = isset( $tx['events'] ) ? $tx['events'] : array();
-			$amount_raw  = 0;
+			$amount_raw  = '0';
 			foreach ( $events as $event ) {
 				if ( empty( $event['type'] ) || 'transfer' !== $event['type'] ) {
 					continue;
@@ -2613,13 +2778,13 @@ class Xdwp_Verifier {
 					continue;
 				}
 				if ( preg_match( '/(\d+)' . preg_quote( $denom, '/' ) . '(?!\w)/', $attrs['amount'], $m ) ) {
-					$amount_raw += (int) $m[1];
+					$amount_raw = self::e18_add( $amount_raw, ltrim( $m[1], '0' ) );
 				}
 			}
-			if ( $amount_raw <= 0 ) {
+			if ( '0' === $amount_raw ) {
 				continue;
 			}
-			if ( self::raw_amount_in_band( (string) $amount_raw, $decimals, $min, $max ) ) {
+			if ( self::raw_amount_in_band( $amount_raw, $decimals, $min, $max ) ) {
 				return ! empty( $tx['txhash'] ) ? (string) $tx['txhash'] : false;
 			}
 		}
@@ -4312,7 +4477,14 @@ class Xdwp_Verifier {
 	 */
 	private static function check_nem( $address, $min, $max, $since ) {
 		$nem_epoch = 1427587585;
-		$nodes     = array( 'http://hugealice.nem.ninja:7890', 'http://176.9.68.110:7890' );
+		// HTTPS only (NIS1 TLS port 7891): a plain-HTTP node lets anyone on the network path
+		// inject a fake incoming transfer and get an order marked paid.
+		$nodes     = array(
+			'https://nem01.symbol-node.com:7891',
+			'https://nis1.dusanjp.com:7891',
+			'https://sakia.nis1.harvestasya.com:7891',
+			'https://arasio.tsvr.net:7891',
+		);
 
 		$response = null;
 		foreach ( $nodes as $node ) {
@@ -4363,9 +4535,34 @@ class Xdwp_Verifier {
 	}
 
 	/**
+	 * Symbol base32 address (N… / T…, 39 chars) → 48-char uppercase hex, as REST rows report it.
+	 *
+	 * @param string $address Address.
+	 * @return string Empty on malformed input.
+	 */
+	private static function symbol_address_hex( $address ) {
+		$address = strtoupper( str_replace( '-', '', (string) $address ) );
+		if ( ! preg_match( '/^[A-Z2-7]{39}$/', $address ) ) {
+			return '';
+		}
+		$alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+		$bits     = '';
+		for ( $i = 0; $i < 39; $i++ ) {
+			$bits .= str_pad( decbin( strpos( $alphabet, $address[ $i ] ) ), 5, '0', STR_PAD_LEFT );
+		}
+		$hex = '';
+		for ( $i = 0; $i + 8 <= strlen( $bits ); $i += 8 ) {
+			$hex .= str_pad( strtoupper( dechex( bindec( substr( $bits, $i, 8 ) ) ) ), 2, '0', STR_PAD_LEFT );
+		}
+		return 48 === strlen( $hex ) ? $hex : '';
+	}
+
+	/**
 	 * Symbol (XYM) — Symbol REST Gateway nodes (community-run; a small
-	 * fallback list is used). The `address=` query filters server-side, so
-	 * no manual hex/base32 address conversion is needed. Only
+	 * fallback list is used). `recipientAddress=` filters server-side to
+	 * incoming transfers (`address=` also returns the merchant's own outgoing
+	 * transfers), and each row's hex recipient is re-checked against the
+	 * base32-decoded merchant address. Only
 	 * `type:16724` (TransferTransaction) rows carry `mosaics[]`/
 	 * `recipientAddress` — aggregate rows (type 16705) must be skipped.
 	 * Real BFT finalization exists (`chain/info.latestFinalizedBlock`), but
@@ -4381,11 +4578,15 @@ class Xdwp_Verifier {
 	private static function check_symbol( $address, $min, $max, $since ) {
 		$currency_mosaic_id = '6BED913FA20223F8';
 		$nodes               = array( 'https://xym.allnodes.me:3001', 'https://sn1.msus-symbol.com:3001' );
+		$recipient_hex       = self::symbol_address_hex( $address );
+		if ( '' === $recipient_hex ) {
+			return false;
+		}
 
 		$response = null;
 		$node_used = '';
 		foreach ( $nodes as $node ) {
-			$response = self::http_get( $node . '/transactions/confirmed?address=' . rawurlencode( $address ) . '&pageSize=20&order=desc' );
+			$response = self::http_get( $node . '/transactions/confirmed?recipientAddress=' . rawurlencode( $address ) . '&pageSize=20&order=desc' );
 			if ( is_array( $response ) && isset( $response['data'] ) ) {
 				$node_used = $node;
 				break;
@@ -4416,8 +4617,11 @@ class Xdwp_Verifier {
 			if ( ! isset( $tx['type'] ) || 16724 !== (int) $tx['type'] ) {
 				continue;
 			}
-			// Timestamps are Symbol epoch (network genesis) milliseconds — recipient
-			// matching isn't needed here since the API already filters by address.
+			$to = isset( $tx['recipientAddress'] ) ? strtoupper( (string) $tx['recipientAddress'] ) : '';
+			if ( ! hash_equals( $recipient_hex, $to ) ) {
+				continue;
+			}
+			// Timestamps are Symbol epoch (network genesis) milliseconds.
 			$time = isset( $row['meta']['timestamp'] ) ? (int) ( ( (float) $row['meta']['timestamp'] / 1000 ) + 1615853185 ) : 0;
 			if ( ! $time || $time < $since ) {
 				continue;

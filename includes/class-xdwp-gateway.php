@@ -160,6 +160,10 @@ class Xdwp_Gateway extends WC_Payment_Gateway {
 	 * @return bool
 	 */
 	private function should_load_checkout_assets() {
+		// is_checkout() is also true on the thank-you page, which has no coin picker.
+		if ( is_wc_endpoint_url( 'order-received' ) ) {
+			return false;
+		}
 		if ( is_checkout() || is_wc_endpoint_url( 'order-pay' ) ) {
 			return true;
 		}
@@ -395,7 +399,8 @@ class Xdwp_Gateway extends WC_Payment_Gateway {
 
 		$ok = Xdwp_Order::assign_payment( $order, $coin_id );
 		if ( ! $ok ) {
-			wc_add_notice( __( 'Unable to create crypto payment. Check wallet and price settings, then try again.', 'xorro-direct-wallet-payments-woocommerce' ), 'error' );
+			// Customer-facing: the admin-side reason is logged by assign_payment().
+			wc_add_notice( __( 'We could not prepare this crypto payment right now. Please try again in a minute, or choose a different coin.', 'xorro-direct-wallet-payments-woocommerce' ), 'error' );
 			return array( 'result' => 'failure' );
 		}
 

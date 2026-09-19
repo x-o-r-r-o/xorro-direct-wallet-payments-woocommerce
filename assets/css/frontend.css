@@ -289,11 +289,56 @@
 	font-weight: 600;
 }
 
+.xdwp-box__line {
+	display: flex;
+	align-items: stretch;
+	gap: 0.5rem;
+	min-width: 0;
+}
+
+.xdwp-box__line .xdwp-box__value {
+	flex: 1 1 auto;
+	min-width: 0;
+	margin: 0;
+}
+
+/* Self-contained button look: themes reset or restyle .button very differently. */
+.xdwp-box .xdwp-copy:not(.button-link) {
+	flex: 0 0 auto;
+	margin: 0;
+	padding: 0.4rem 0.9rem;
+	min-height: 0;
+	border: 1px solid #d0d5dd;
+	border-radius: 4px;
+	background: #fff;
+	color: #1d2939;
+	font: inherit;
+	font-size: 0.85rem;
+	font-weight: 600;
+	line-height: 1.2;
+	text-transform: none;
+	letter-spacing: normal;
+	box-shadow: none;
+	cursor: pointer;
+}
+
+.xdwp-box .xdwp-copy:not(.button-link):hover,
+.xdwp-box .xdwp-copy:not(.button-link):focus-visible {
+	border-color: #98a2b3;
+	background: #f9fafb;
+}
+
 .xdwp-copy {
 	justify-self: start;
 	cursor: pointer;
 }
 
-.xdwp-copy.is-copied {
-	opacity: 0.85;
+.xdwp-copy.is-copied,
+.xdwp-box .xdwp-copy.is-copied:not(.button-link) {
+	border-color: #12b76a;
+	color: #027a48;
+}
+
+.xdwp-pay-callout a {
+	font-weight: 600;
 }

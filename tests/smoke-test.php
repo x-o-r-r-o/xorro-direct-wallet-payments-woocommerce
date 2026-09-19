@@ -193,7 +193,16 @@ foreach ( $recent_verifier_functions as $fn ) {
 foreach ( array( 'iotx', 'cspr' ) as $manual_case ) {
 	xdwp_assert( false !== strpos( $verifier, "case '{$manual_case}':" ), "find_payment has an explicit case for manual-only '{$manual_case}'" );
 }
-xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-prices.php' ), '$slots      = 499' ), 'unique dust has 499 slots' );
+$prices_src = file_get_contents( $root . '/includes/class-xdwp-prices.php' );
+preg_match( '/DUST_STEP = (\d+);/', $prices_src, $dust_step );
+preg_match( '/DUST_SLOTS = (\d+);/', $prices_src, $dust_slots );
+preg_match( '/DUST_BAND = (\d+);/', $prices_src, $dust_band );
+xdwp_assert( ! empty( $dust_step ) && ! empty( $dust_band ) && 2 * (int) $dust_band[1] < (int) $dust_step[1], 'unique dust bands never overlap' );
+xdwp_assert( ! empty( $dust_step ) && ! empty( $dust_slots ) && (int) $dust_step[1] * (int) $dust_slots[1] <= 1000, 'unique dust capped at 1000 base units (no large overcharge)' );
+$verifier_src = file_get_contents( $root . '/includes/class-xdwp-verifier.php' );
+xdwp_assert( false !== strpos( $verifier_src, 'private static function to_e18(' ), 'amount matching uses exact fixed-point' );
+xdwp_assert( false === strpos( $verifier_src, 'http://' ), 'no plain-HTTP verification endpoints' );
+xdwp_assert( false !== strpos( $verifier_src, "'date_created'   => '>'" ), 'peer-order query bounded by age' );
 
 $order_php = file_get_contents( $root . '/includes/class-xdwp-order.php' );
 xdwp_assert( false !== strpos( $order_php, 'expiry_grace_minutes' ), 'order expiry grace' );
@@ -266,8 +275,9 @@ xdwp_assert( false !== strpos( file_get_contents( $root . '/uninstall.php' ), 'x
 
 // --- Headers ---
 $main = file_get_contents( $root . '/xorro-direct-wallet-payments-woocommerce.php' );
-xdwp_assert( false !== strpos( $main, 'Version:           1.5.33' ), 'plugin version 1.5.33' );
-xdwp_assert( false !== strpos( $main, "XDWP_VERSION', '1.5.33'" ), 'XDWP_VERSION 1.5.33' );
+preg_match( '/Version:\s+([0-9.]+)/', $main, $header_ver );
+preg_match( "/XDWP_VERSION', '([0-9.]+)'/", $main, $const_ver );
+xdwp_assert( ! empty( $header_ver ) && ! empty( $const_ver ) && $header_ver[1] === $const_ver[1], 'plugin header version matches XDWP_VERSION' );
 xdwp_assert( false !== strpos( $main, 'Author:            xorro' ), 'author is xorro' );
 xdwp_assert( false !== strpos( $main, 'Author URI:        https://github.com/x-o-r-r-o' ), 'author URI is GitHub profile' );
 xdwp_assert( false === strpos( $main, 'Author URI:        https://github.com/x-o-r-r-o/xorro-direct-wallet-payments-woocommerce' ), 'author URI not the plugin repo' );
@@ -330,7 +340,7 @@ xdwp_assert( false !== strpos( $readme_md, 'Checkout branding' ), 'README.md bra
 
 $readme = file_get_contents( $root . '/readme.txt' );
 xdwp_assert( false !== strpos( $readme, 'Tested up to: 7.0' ), 'readme Tested up to WP 7.0' );
-xdwp_assert( false !== strpos( $readme, 'Stable tag: 1.5.33' ), 'readme stable 1.5.33' );
+xdwp_assert( ! empty( $const_ver ) && false !== strpos( $readme, 'Stable tag: ' . $const_ver[1] ), 'readme stable tag matches XDWP_VERSION' );
 
 $readme = file_get_contents( $root . '/readme.txt' );
 xdwp_assert( false !== strpos( $readme, '== External services ==' ), 'readme external services section' );

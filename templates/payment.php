@@ -36,19 +36,26 @@ defined( 'ABSPATH' ) || exit;
 		<div class="xdwp-box__row">
 			<div class="xdwp-box__field">
 				<span class="xdwp-box__label"><?php esc_html_e( 'Amount', 'xorro-direct-wallet-payments-woocommerce' ); ?></span>
-				<code id="xdwp-amount" class="xdwp-box__value"><?php echo esc_html( $amount ); ?></code>
+				<span class="xdwp-box__line">
+				<code id="xdwp-amount" class="xdwp-box__value"><?php echo esc_html( $amount ); ?> <?php echo esc_html( $coin['symbol'] ); ?></code>
 				<button
 					type="button"
 					class="xdwp-copy button"
 					id="xdwp-copy-amount"
 					data-copy-text="<?php echo esc_attr( $amount ); ?>"
 					data-copy-target="xdwp-amount"
-					onclick="return window.xdwpCopy ? window.xdwpCopy(this) : false;"
 				><?php esc_html_e( 'Copy', 'xorro-direct-wallet-payments-woocommerce' ); ?></button>
-				<span class="xdwp-box__fiat"><?php echo wp_kses_post( $order->get_formatted_order_total() ); ?></span>
+				</span>
+				<span class="xdwp-box__fiat">
+					<?php
+					/* translators: %s: order total in store currency */
+					echo wp_kses_post( sprintf( __( '≈ %s order total', 'xorro-direct-wallet-payments-woocommerce' ), $order->get_formatted_order_total() ) );
+					?>
+				</span>
 			</div>
 			<div class="xdwp-box__field">
 				<span class="xdwp-box__label"><?php esc_html_e( 'Address', 'xorro-direct-wallet-payments-woocommerce' ); ?></span>
+				<span class="xdwp-box__line">
 				<code id="xdwp-address" class="xdwp-box__value xdwp-box__address"><?php echo esc_html( $address ); ?></code>
 				<button
 					type="button"
@@ -56,8 +63,8 @@ defined( 'ABSPATH' ) || exit;
 					id="xdwp-copy-address"
 					data-copy-text="<?php echo esc_attr( $address ); ?>"
 					data-copy-target="xdwp-address"
-					onclick="return window.xdwpCopy ? window.xdwpCopy(this) : false;"
 				><?php esc_html_e( 'Copy', 'xorro-direct-wallet-payments-woocommerce' ); ?></button>
+				</span>
 			</div>
 			<div class="xdwp-box__field">
 				<span class="xdwp-box__label"><?php esc_html_e( 'Network', 'xorro-direct-wallet-payments-woocommerce' ); ?></span>
@@ -74,7 +81,6 @@ defined( 'ABSPATH' ) || exit;
 						type="button"
 						class="button-link xdwp-copy"
 						data-copy-text="<?php echo esc_attr( $uri ); ?>"
-						onclick="return window.xdwpCopy ? window.xdwpCopy(this) : false;"
 					>
 						<?php esc_html_e( 'Copy payment link', 'xorro-direct-wallet-payments-woocommerce' ); ?>
 					</button>

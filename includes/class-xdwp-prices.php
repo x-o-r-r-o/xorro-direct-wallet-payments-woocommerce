@@ -17,6 +17,14 @@ class Xdwp_Prices {
 	const CACHE_TTL = 120;
 	/** Keep cached rates available for stale fallback (must be >= CACHE_TTL). */
 	const STALE_TTL = 600;
+	/** Unique dust spacing, in base units at min(decimals, 8) decimals. */
+	const DUST_STEP = 10;
+	/** Distinct dust values (DUST_STEP..DUST_STEP*DUST_SLOTS) before the cycle repeats. */
+	const DUST_SLOTS = 100;
+	/** Verifier match band half-width in the same units; must stay below DUST_STEP / 2. */
+	const DUST_BAND = 4;
+	/** Longest a pre-order checkout quote is honoured, in minutes. */
+	const QUOTE_HOLD_MINUTES = 15;
 	/** WC session key for reserved checkout crypto amount. */
 	const CHECKOUT_QUOTE_SESSION = 'xdwp_checkout_quote';
 
@@ -107,7 +115,10 @@ class Xdwp_Prices {
 		}
 
 		if ( $session ) {
-			$window = max( 5, (int) Xdwp_Settings::get( 'payment_window', 60 ) );
+			// Hold the pre-order quote briefly: the payment window starts again once the order
+			// exists, so reusing the full window here let a customer sit on a quote for up to
+			// twice the window and only order if the price moved in their favour.
+			$window = min( self::QUOTE_HOLD_MINUTES, max( 5, (int) Xdwp_Settings::get( 'payment_window', 60 ) ) );
 			$session->set(
 				self::CHECKOUT_QUOTE_SESSION,
 				array(
@@ -180,10 +191,10 @@ class Xdwp_Prices {
 		}
 
 		$counter = self::next_amount_seq();
-		// Space dust by 1000 units so match bands (~±400 units) never overlap across concurrent orders.
-		$step       = 1000;
-		$slots      = 499; // 1000..499000 — wider cycle; assign_payment also rejects band collisions.
-		$dust_units = $step + ( ( $counter % $slots ) * $step );
+		// 10..1000 base units (at most 1000 sats ≈ a few cents to ~$1 on BTC). The old
+		// 1000..499000 range could add ~0.005 BTC (hundreds of dollars) to a small order.
+		// Bands (±DUST_BAND) never overlap across steps; assign_payment rejects collisions.
+		$dust_units = self::DUST_STEP + ( ( $counter % self::DUST_SLOTS ) * self::DUST_STEP );
 		$dust       = $dust_units / pow( 10, $decimals );
 
 		return $amount + $dust;
@@ -233,15 +244,34 @@ class Xdwp_Prices {
 		}
 
 		$key     = $coingecko_id . '_' . $currency;
-		$updated = (int) get_transient( self::TRANSIENT_KEY . '_updated' );
+		// Freshness is per rate: a global "last refresh" timestamp let a coin whose own
+		// refresh failed keep serving an old rate as fresh whenever any other coin refreshed.
+		$stamps  = get_transient( self::TRANSIENT_KEY . '_ts' );
+		$updated = ( is_array( $stamps ) && isset( $stamps[ $key ] ) ) ? (int) $stamps[ $key ] : 0;
 		$fresh   = $updated && ( time() - $updated ) < self::CACHE_TTL;
 
 		if ( $fresh && isset( $cache[ $key ] ) && is_numeric( $cache[ $key ] ) ) {
 			return (float) $cache[ $key ];
 		}
 
-		// Prefer rates returned by this refresh so a concurrent cache write cannot drop them.
-		$fetched = self::refresh_rates( array( $coingecko_id ), $currency );
+		// Refresh every enabled coin in the same request (one call, up to 50 ids) so the next
+		// coin a customer picks is already cached — one request per coin burned CoinGecko's
+		// free rate limit after a handful of checkouts. Back off briefly after a failure
+		// instead of re-hitting a rate-limited API on every quote.
+		$fetched = array();
+		if ( ! get_transient( self::TRANSIENT_KEY . '_backoff' ) ) {
+			// Prefer rates returned by this refresh so a concurrent cache write cannot drop them.
+			$fetched = self::refresh_rates( array_values( array_unique( array_merge( array( $coingecko_id ), self::enabled_coingecko_ids() ) ) ), $currency );
+			if ( ! isset( $fetched[ $key ] ) ) {
+				set_transient( self::TRANSIENT_KEY . '_backoff', 1, 30 );
+				if ( function_exists( 'wc_get_logger' ) ) {
+					wc_get_logger()->warning(
+						sprintf( 'Could not fetch a live %s/%s rate from CoinGecko (rate-limited or unreachable). Checkouts in this coin fail until it recovers; adding a CoinGecko API key under Prices & APIs raises the limit.', $coingecko_id, strtoupper( $currency ) ),
+						array( 'source' => 'xorro-wallet-payments' )
+					);
+				}
+			}
+		}
 		if ( isset( $fetched[ $key ] ) && is_numeric( $fetched[ $key ] ) && (float) $fetched[ $key ] > 0 ) {
 			return (float) $fetched[ $key ];
 		}
@@ -369,7 +399,14 @@ class Xdwp_Prices {
 			}
 			$cache = array_merge( $latest, $new_rates );
 			set_transient( self::TRANSIENT_KEY, $cache, self::STALE_TTL );
-			set_transient( self::TRANSIENT_KEY . '_updated', time(), DAY_IN_SECONDS );
+			$stamps = get_transient( self::TRANSIENT_KEY . '_ts' );
+			$stamps = is_array( $stamps ) ? $stamps : array();
+			$now    = time();
+			foreach ( array_keys( $new_rates ) as $rate_key ) {
+				$stamps[ $rate_key ] = $now;
+			}
+			set_transient( self::TRANSIENT_KEY . '_ts', $stamps, self::STALE_TTL );
+			set_transient( self::TRANSIENT_KEY . '_updated', $now, DAY_IN_SECONDS );
 		}
 
 		return $new_rates;
@@ -399,19 +436,29 @@ class Xdwp_Prices {
 	 * Cron callback to warm price cache for enabled coins.
 	 */
 	public static function cron_refresh() {
-		$ids      = array();
-		$enabled  = Xdwp_Settings::get( 'enabled_coins', array() );
+		$ids = self::enabled_coingecko_ids();
+		if ( ! empty( $ids ) ) {
+			self::refresh_rates( $ids );
+		}
+	}
+
+	/**
+	 * CoinGecko ids for the coins the merchant has enabled.
+	 *
+	 * @return array<int, string>
+	 */
+	private static function enabled_coingecko_ids() {
+		$ids     = array();
+		$enabled = Xdwp_Settings::get( 'enabled_coins', array() );
 		if ( ! is_array( $enabled ) ) {
-			return;
+			return $ids;
 		}
 		foreach ( $enabled as $coin_id ) {
 			$coin = Xdwp_Coins::get( $coin_id );
-			if ( $coin ) {
+			if ( $coin && ! empty( $coin['coingecko_id'] ) ) {
 				$ids[] = $coin['coingecko_id'];
 			}
 		}
-		if ( ! empty( $ids ) ) {
-			self::refresh_rates( array_unique( $ids ) );
-		}
+		return array_values( array_unique( $ids ) );
 	}
 }

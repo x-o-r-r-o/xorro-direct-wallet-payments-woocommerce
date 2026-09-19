@@ -17,6 +17,7 @@ class Xdwp_Order {
 	 */
 	public static function init() {
 		add_action( 'woocommerce_thankyou_' . XDWP_GATEWAY_ID, array( __CLASS__, 'render_payment_box' ), 10, 1 );
+		add_filter( 'woocommerce_thankyou_order_received_text', array( __CLASS__, 'payment_callout' ), 10, 2 );
 		add_action( 'woocommerce_view_order', array( __CLASS__, 'maybe_render_on_view' ), 5 );
 		add_action( 'add_meta_boxes', array( __CLASS__, 'add_order_metabox' ) );
 		add_action( 'woocommerce_admin_order_data_after_billing_address', array( __CLASS__, 'admin_order_info' ), 10, 1 );
@@ -101,6 +102,41 @@ class Xdwp_Order {
 	}
 
 	/**
+	 * Record on the order why crypto payment setup failed (the customer only sees a generic retry message).
+	 *
+	 * @param WC_Order $order   Order.
+	 * @param string   $coin_id Coin ID.
+	 * @param string   $reason  Reason.
+	 */
+	private static function note_setup_failure( $order, $coin_id, $reason ) {
+		if ( $order instanceof WC_Order ) {
+			$order->add_order_note(
+				sprintf(
+					/* translators: 1: coin ID, 2: reason */
+					__( 'Crypto payment could not be set up for %1$s: %2$s', 'xorro-direct-wallet-payments-woocommerce' ),
+					$coin_id,
+					$reason
+				)
+			);
+		}
+	}
+
+	/**
+	 * Point the customer at the payment box, which WooCommerce renders below the order
+	 * details — easy to miss while a payment timer is running.
+	 *
+	 * @param string        $text  Thank-you text.
+	 * @param WC_Order|null $order Order.
+	 * @return string
+	 */
+	public static function payment_callout( $text, $order ) {
+		if ( ! $order instanceof WC_Order || ! self::is_ours( $order ) || 'awaiting' !== self::meta( $order, 'status' ) ) {
+			return $text;
+		}
+		return $text . ' <span class="xdwp-pay-callout">' . esc_html__( 'Your order is waiting for payment.', 'xorro-direct-wallet-payments-woocommerce' ) . ' <a href="#xdwp-box">' . esc_html__( 'Complete your crypto payment below', 'xorro-direct-wallet-payments-woocommerce' ) . ' &darr;</a></span>';
+	}
+
+	/**
 	 * Assign payment details to order.
 	 *
 	 * @param WC_Order $order   Order.
@@ -115,11 +151,13 @@ class Xdwp_Order {
 
 		$address = Xdwp_Wallets::pick_address( $coin_id );
 		if ( ! $address ) {
+			self::note_setup_failure( $order, $coin_id, __( 'no wallet address is configured for this coin.', 'xorro-direct-wallet-payments-woocommerce' ) );
 			return false;
 		}
 
 		$amount = Xdwp_Prices::take_checkout_quote( (float) $order->get_total(), $coin_id, $order->get_currency() );
 		if ( '' === $amount || (float) $amount <= 0 ) {
+			self::note_setup_failure( $order, $coin_id, __( 'no live exchange rate was available (CoinGecko rate limit or outage — see WooCommerce → Status → Logs, source "xorro-wallet-payments").', 'xorro-direct-wallet-payments-woocommerce' ) );
 			return false;
 		}
 
@@ -127,10 +165,11 @@ class Xdwp_Order {
 
 		// Never silently change the reserved checkout quote (customer already saw it). Fail closed on collision.
 		// Atomic (address, amount) reservation closes the concurrent-checkout TOCTOU window.
-		if ( ! Xdwp_Verifier::amount_safe_for_address( $coin_id, $address, $amount, $order_id ) ) {
-			return false;
-		}
-		if ( ! Xdwp_Verifier::reserve_amount_slot( $address, $amount, $order_id ) ) {
+		if (
+			! Xdwp_Verifier::amount_safe_for_address( $coin_id, $address, $amount, $order_id )
+			|| ! Xdwp_Verifier::reserve_amount_slot( $address, $amount, $order_id )
+		) {
+			self::note_setup_failure( $order, $coin_id, __( 'another open order on the same address expects an overlapping amount, so payments could not be told apart. Adding more addresses for this coin (with rotation on) avoids this.', 'xorro-direct-wallet-payments-woocommerce' ) );
 			return false;
 		}
 
