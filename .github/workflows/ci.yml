@@ -55,9 +55,6 @@ jobs:
   standards:
     name: WordPress coding standards
     runs-on: ubuntu-latest
-    # Advisory: the sniffs disagree with some deliberate choices here (raw SQL for
-    # atomic locks, for one), so a failure reports rather than blocks.
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
 
@@ -74,4 +71,7 @@ jobs:
           echo "$HOME/.composer/vendor/bin" >> "$GITHUB_PATH"
 
       - name: Run phpcs
-        run: phpcs -q --report=checkstyle | cs2pr
+        # Errors fail the build. Warnings are still reported inline, but several are
+        # deliberate here — base64 memos from Cosmos and Hedera, a one-minute cron, direct
+        # file calls in the test scripts — so they do not stop a release.
+        run: phpcs -q --report=checkstyle --runtime-set ignore_warnings_on_exit 1 | cs2pr --graceful-warnings
