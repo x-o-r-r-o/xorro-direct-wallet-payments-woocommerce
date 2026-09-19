@@ -4,7 +4,7 @@ Tags: woocommerce, cryptocurrency, bitcoin, ethereum, payments, usdt, crypto che
 Requires at least: 6.9
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.5.34
+Stable tag: 1.5.35
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -324,6 +324,9 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 * QR Code generator (`assets/js/qrcode.min.js`) — MIT-licensed library by davidshimjs (https://github.com/davidshimjs/qrcodejs). Source is publicly available; the bundled file is minified for production use.
 
 == Changelog ==
+
+= 1.5.35 =
+* Fix: the last 12 coins still showing a lettered placeholder (CATS, CNS, HMSTR, HOTCROSS, MRSOON, MYRO, NOW, NTVRK, PLX, QUACK, SUPER, XYM) now show their official project logos, taken from each token's own on-chain metadata or the project's listing. Every coin in the registry now has a real icon
 
 = 1.5.34 =
 * Fix: 105 coins added since 1.5.23 (TON, Kaspa, Starknet, Kaia, Aptos, Casper, Stratis, THORChain, Sei, PulseChain, ZKsync, Notcoin, Dogs, Floki, LayerZero and more) were still showing a lettered placeholder circle instead of their real logo in the checkout coin picker and admin Coins list. They now use real brand icons from openly-licensed sources (cryptocurrency-icons CC0, web3icons MIT, Trust Wallet Assets MIT — see `assets/svg/coins/ATTRIBUTION.txt`). 12 tokens with no openly-licensed logo available (CATS, CNS, HMSTR, HOTCROSS, MRSOON, MYRO, NOW, NTVRK, PLX, QUACK, SUPER, XYM) keep their placeholder

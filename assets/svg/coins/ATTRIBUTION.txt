@@ -34,12 +34,18 @@ to 64px and embedded in a circle-clipped SVG: babydoge, banana, bone, brett, cat
 dogs, floki, flokibsc, hex, hoge, jetton, mew, not, okb, ponke, raca, sidus, sundog,
 usdj, x, zro.
 
+Official project logos (no openly-licensed copy exists) — taken from the issuer's
+own on-chain token metadata or the project's own hosted asset, resized to 64px and
+embedded in a circle-clipped SVG:
+cats (CATS jetton metadata, via tonapi.io cache), hmstr (api.hamsterkombat.io, from
+the HMSTR jetton metadata), mrsoon (tonstation.app/soon_logo.svg, from the SOON
+jetton metadata, used as-is). Project logos as listed on CoinGecko: cns, hotcross,
+myro, now, ntvrk, plx, quack, super, xym.
+
 All coin logos are trademarks of their respective projects and are used only to
 identify the coin being paid with.
 
-Monogram placeholders (everything else — as of 1.5.34 only cats, cns, hmstr,
-hotcross, mrsoon, myro, now, ntvrk, plx, quack, super, xym, none of which have a
-logo in any of the openly-licensed sources above) are auto-generated,
+Monogram placeholders (none remain in use as of 1.5.35) are auto-generated,
 deterministically-colored circle + ticker-initials SVGs, wholly original and
 not derived from any brand's actual logo. They exist so every coin renders as
 a real icon tile instead of a plain text tile in the checkout/admin coin
