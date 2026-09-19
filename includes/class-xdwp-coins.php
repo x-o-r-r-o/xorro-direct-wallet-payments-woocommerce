@@ -499,7 +499,10 @@ class Xdwp_Coins {
 		if ( ! is_readable( $file ) ) {
 			return '';
 		}
-		return XDWP_URL . 'assets/svg/coins/' . $slug . '.svg';
+		// Versioned like enqueued CSS/JS: icon files change between releases under the same
+		// name, and browsers / CDNs / cache plugins keep serving the old SVG for as long as
+		// their image cache lifetime (often weeks) unless the URL changes too.
+		return XDWP_URL . 'assets/svg/coins/' . $slug . '.svg?ver=' . rawurlencode( XDWP_VERSION );
 	}
 
 	/**

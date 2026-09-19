@@ -221,6 +221,7 @@ xdwp_assert( false !== strpos( $updater_src, "'xdwp_bad_signature'" ), 'updater 
 xdwp_assert( false !== strpos( $workflow, 'openssl pkeyutl -sign' ) && false !== strpos( $workflow, '.zip.sig#' ), 'release workflow signs and publishes .sig' );
 // The workflow manifest must match Xdwp_Updater::signed_manifest() byte for byte.
 xdwp_assert( false !== strpos( $workflow, "printf 'xdwp-release:1\\nplugin:xorro-direct-wallet-payments-woocommerce\\nversion:%s\\nsha256:%s\\n'" ) && false !== strpos( $updater_src, "const MANIFEST_FORMAT = 'xdwp-release:1'" ), 'signed manifest format matches workflow' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-coins.php' ), "'.svg?ver=' . rawurlencode( XDWP_VERSION )" ), 'coin icon URLs are versioned (cache busting)' );
 $settings_view = file_get_contents( $root . '/includes/admin/views/settings-page.php' );
 xdwp_assert( false !== strpos( $settings_view, 'wp-header-end' ), 'admin notices anchored above settings header' );
 

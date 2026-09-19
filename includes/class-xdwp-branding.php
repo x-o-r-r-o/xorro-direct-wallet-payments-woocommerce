@@ -93,7 +93,7 @@ class Xdwp_Branding {
 	 * @return string
 	 */
 	public static function default_icon_url() {
-		return XDWP_URL . 'assets/images/xdwp-icon.svg';
+		return XDWP_URL . 'assets/images/xdwp-icon.svg?ver=' . rawurlencode( XDWP_VERSION );
 	}
 
 	/**
