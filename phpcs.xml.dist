@@ -23,8 +23,13 @@
 		Yoda conditions, alignment, comment punctuation) are left out on purpose — they
 		would bury real findings under hundreds of spacing notices.
 	-->
-	<rule ref="WordPress.Security"/>
-	<rule ref="WordPress.WP"/>
+	<rule ref="WordPress.Security">
+		<!-- The test scripts run on the command line: their echo is a console line, not a page. -->
+		<exclude-pattern>*/tests/*</exclude-pattern>
+	</rule>
+	<rule ref="WordPress.WP">
+		<exclude-pattern>*/tests/*</exclude-pattern>
+	</rule>
 	<rule ref="WordPress.DB">
 		<!-- Deliberate: raw SQL is how the atomic payment locks stay atomic. -->
 		<exclude name="WordPress.DB.DirectDatabaseQuery"/>

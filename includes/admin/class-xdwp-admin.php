@@ -639,7 +639,9 @@ class Xdwp_Admin {
 		}
 		self::enqueue_shell_assets();
 		if ( did_action( 'admin_print_styles' ) && wp_style_is( 'xdwp-admin', 'enqueued' ) ) {
-			wp_print_styles( 'xdwp-admin' );
+			// Already registered and enqueued above; this only prints it on screens where the
+			// normal enqueue pass has been and gone.
+			wp_print_styles( 'xdwp-admin' ); // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet
 		}
 
 		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- read-only filters.
@@ -683,7 +685,9 @@ class Xdwp_Admin {
 		self::enqueue_shell_assets();
 
 		if ( did_action( 'admin_print_styles' ) && wp_style_is( 'xdwp-admin', 'enqueued' ) ) {
-			wp_print_styles( 'xdwp-admin' );
+			// Already registered and enqueued above; this only prints it on screens where the
+			// normal enqueue pass has been and gone.
+			wp_print_styles( 'xdwp-admin' ); // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet
 		}
 
 		$tab      = self::current_tab();
