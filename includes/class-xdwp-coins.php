@@ -713,6 +713,48 @@ class Xdwp_Coins {
 	}
 
 	/**
+	 * How many decimals a customer can realistically send.
+	 *
+	 * A chain may support eighteen, but the customer is often paying from an exchange
+	 * withdrawal screen that will only accept two — and an amount they cannot type is an
+	 * order that never completes. Quotes are therefore rounded to what is actually payable,
+	 * and the unique-amount spacing uses the same precision so two orders still differ by an
+	 * amount a human can send.
+	 *
+	 * Stablecoins are the case that bites: 17.34 USDT is payable anywhere, 17.340010 is not.
+	 *
+	 * @param array|string $coin Coin definition or ID.
+	 * @return int
+	 */
+	public static function payable_decimals( $coin ) {
+		if ( ! is_array( $coin ) ) {
+			$coin = self::get( (string) $coin );
+		}
+		if ( ! is_array( $coin ) ) {
+			return 8;
+		}
+
+		$native   = min( (int) $coin['decimals'], 8 );
+		$decimals = $native;
+
+		// A coin worth about one unit of fiat is quoted in cents, like the fiat it tracks.
+		$pegs = class_exists( 'Xdwp_Rates' ) ? Xdwp_Rates::stablecoin_pegs() : array();
+		if ( isset( $pegs[ strtoupper( (string) $coin['symbol'] ) ] ) ) {
+			$decimals = min( $native, 2 );
+		}
+
+		/**
+		 * Decimals a quote in this coin is rounded to.
+		 *
+		 * @param int   $decimals Decimals that will be used.
+		 * @param array $coin     Coin definition.
+		 * @param int   $native   What the chain itself supports (capped at 8).
+		 */
+		$decimals = (int) apply_filters( 'xdwp_payable_decimals', $decimals, $coin, $native );
+		return max( 0, min( $native, $decimals ) );
+	}
+
+	/**
 	 * Chains where a payment can carry a reference the payer types in — a destination tag on
 	 * XRP, a memo elsewhere — and where this plugin can read it back off the chain.
 	 *
@@ -1188,10 +1230,9 @@ class Xdwp_Coins {
 	 * @return string
 	 */
 	public static function format_amount( $amount, $coin_id ) {
-		$coin     = self::get( $coin_id );
-		$decimals = $coin ? (int) $coin['decimals'] : 8;
-		// Cap display/matching precision for practical payment amounts.
-		$decimals = min( $decimals, 8 );
+		$coin = self::get( $coin_id );
+		// Never quote an amount finer than a customer can actually send.
+		$decimals = $coin ? self::payable_decimals( $coin ) : 8;
 		$formatted = number_format( (float) $amount, $decimals, '.', '' );
 		$formatted = rtrim( rtrim( $formatted, '0' ), '.' );
 		return $formatted !== '' ? $formatted : '0';

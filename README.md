@@ -194,6 +194,14 @@ Pushing a `vX.Y.Z` tag runs the Release workflow, which builds the ZIP, its SHA-
 
 Full details for every release are in [`readme.txt`](readme.txt).
 
+### 1.16.0 — amounts people can actually send
+
+- **Stablecoins are quoted in cents.** Asking for 17.340010 USDT is asking for a payment most exchanges cannot make; orders are now spaced a cent apart and still told apart
+- The uniqueness surcharge is **capped at 1% of the order**
+- **Vanished payments**: a transfer that leaves the mempool (replaced or too cheap) no longer leaves the page claiming "payment detected" — the order returns to waiting with a note, and a fee-bumped replacement is followed
+- **What happened** to a payment — part paid, overpaid, paid late, vanished — is recorded beside its status and shown on the Payments screen
+- **Pegged coins get a day to pay**: no price can move, so no reason to hurry
+
 ### 1.15.0 — accessibility and mobile
 
 - **Keyboard**: the coin picker had no visible focus at all; it does now

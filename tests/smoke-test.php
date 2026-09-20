@@ -559,6 +559,13 @@ xdwp_assert( false !== strpos( file_get_contents( $root . '/assets/js/frontend.j
 xdwp_assert( false !== strpos( file_get_contents( $root . '/assets/js/blocks.js' ), "role: 'radiogroup'" ), 'block checkout names the coin group' );
 // The shortfall, not the whole amount, is what an underpaid order asks for.
 xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-order.php' ), "\$amount = (string) Xdwp_Order::meta( \$order, 'remainder' );" ), 'underpaid orders quote the remainder' );
+// Release 1.16.0: amounts people can actually send, and payments that vanish.
+xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-coins.php' ), 'function payable_decimals' ), 'quotes are rounded to what can be sent' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-prices.php' ), 'function step_fiat_value' ), 'the cost of unique amounts is measured' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-verifier.php' ), 'function transfer_vanished' ), 'a dropped transfer is noticed' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-verifier.php' ), 'xdwp_payment_dropped' ), 'a dropped transfer is announced to extensions' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-order.php' ), 'function set_flag' ), 'what happened to a payment is recorded beside its status' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-order.php' ), 'Xdwp_Rates::pegged_rate' ), 'a pegged coin is given a longer window' );
 xdwp_assert( false !== strpos( $readme, '== External services ==' ), 'readme external services section present' );
 xdwp_assert( false !== strpos( $readme, 'XRPSCan' ), 'readme documents XRPSCan' );
 xdwp_assert( false !== strpos( $readme, 'Subscan' ), 'readme documents Subscan' );

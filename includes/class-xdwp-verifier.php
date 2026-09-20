@@ -321,6 +321,7 @@ class Xdwp_Verifier {
 		);
 		$order->save();
 
+		Xdwp_Order::set_flag( $order, 'underpaid' );
 		do_action( 'xdwp_order_underpaid', $order, $received, $remainder, $txid );
 		return false;
 	}
@@ -416,6 +417,87 @@ class Xdwp_Verifier {
 	}
 
 	/**
+	 * How long a seen-but-unconfirmed transfer may be missing before it is treated as gone.
+	 */
+	const DROPPED_AFTER = 900;
+
+	/**
+	 * Has a transfer we already saw disappeared from the chain?
+	 *
+	 * Checked sparingly: a transfer is only questioned once it has been missing for a while,
+	 * because an explorer briefly not listing a transaction is common and means nothing.
+	 *
+	 * @param WC_Order $order Order.
+	 * @param string   $seen  Transaction that was seen.
+	 * @return bool True when it is gone and the order was put back to waiting.
+	 */
+	private static function transfer_vanished( $order, $seen ) {
+		$since = (int) Xdwp_Order::meta( $order, 'seen_at' );
+		if ( ! $since || ( time() - $since ) < self::DROPPED_AFTER ) {
+			return false;
+		}
+
+		$throttle = 'xdwp_dropped_' . $order->get_id();
+		if ( get_transient( $throttle ) ) {
+			return false;
+		}
+		set_transient( $throttle, 1, self::DETECT_INTERVAL );
+
+		$coin    = Xdwp_Coins::get( (string) Xdwp_Order::meta( $order, 'coin' ) );
+		$address = (string) Xdwp_Order::meta( $order, 'address' );
+		$amount  = (string) Xdwp_Order::meta( $order, 'amount' );
+		if ( ! $coin || '' === $address || '' === $amount ) {
+			return false;
+		}
+
+		// Look again with no depth required: if the transfer were still in the mempool or in
+		// a block, this is exactly how it was found the first time.
+		$band                         = self::match_band( $amount, $coin );
+		$previous                     = self::$confirmations_override;
+		self::$confirmations_override = 0;
+		$hit                          = self::find_payment_detailed(
+			$coin,
+			$address,
+			$band['min'],
+			$band['max'],
+			max( 0, (int) Xdwp_Order::meta( $order, 'started' ) - 30 ),
+			(string) Xdwp_Order::meta( $order, 'memo' )
+		);
+		self::$confirmations_override = $previous;
+
+		if ( $hit && ! empty( $hit['txid'] ) ) {
+			// Still there, possibly under a new id after a fee bump — same money arriving.
+			if ( $hit['txid'] !== $seen ) {
+				$order->update_meta_data( '_xdwp_seen_txid', (string) $hit['txid'] );
+				$order->update_meta_data( '_xdwp_seen_at', time() );
+				$order->save();
+			}
+			return false;
+		}
+
+		$order->delete_meta_data( '_xdwp_seen_txid' );
+		$order->delete_meta_data( '_xdwp_seen_at' );
+		$order->update_meta_data( '_xdwp_flag', 'dropped' );
+		$order->save();
+		$order->add_order_note(
+			sprintf(
+				/* translators: %s: transaction id */
+				__( 'A payment was seen on chain (%s) but has since disappeared — most likely replaced by the sender or dropped for too low a fee. Nothing was received, so the order is waiting for payment again.', 'xorro-direct-wallet-payments-woocommerce' ),
+				$seen
+			)
+		);
+
+		/**
+		 * A transfer that was visible on chain vanished before confirming.
+		 *
+		 * @param WC_Order $order Order.
+		 * @param string   $txid  Transaction that disappeared.
+		 */
+		do_action( 'xdwp_payment_dropped', $order, $seen );
+		return true;
+	}
+
+	/**
 	 * Has the expected payment arrived but not yet reached the required confirmations?
 	 *
 	 * Display only: it tells the customer "payment detected, waiting for confirmations" so they
@@ -429,8 +511,12 @@ class Xdwp_Verifier {
 		if ( ! $order instanceof WC_Order ) {
 			return false;
 		}
-		if ( '' !== (string) Xdwp_Order::meta( $order, 'seen_txid' ) ) {
-			return true;
+		$seen = (string) Xdwp_Order::meta( $order, 'seen_txid' );
+		if ( '' !== $seen ) {
+			// A transfer in the mempool can leave it again — replaced by a higher fee, or
+			// dropped for being too cheap. Saying "payment detected" forever about money
+			// that is no longer coming is worse than admitting it went away.
+			return ! self::transfer_vanished( $order, $seen );
 		}
 		$status = (string) Xdwp_Order::meta( $order, 'status' );
 		if ( ! in_array( $status, array( 'awaiting', 'underpaid' ), true ) ) {
@@ -739,11 +825,16 @@ class Xdwp_Verifier {
 		$pct_under     = self::float_to_e18( (float) $amount * ( $tolerance_pct / 100 ) );
 		$pct_over      = self::float_to_e18( (float) $amount * ( max( $tolerance_pct, 0.5 ) / 100 ) );
 
-		if ( 'yes' === Xdwp_Settings::get( 'unique_amounts', 'yes' ) && $decimals > 4 ) {
-			// Unique dust steps are Xdwp_Prices::DUST_STEP units apart (at min(decimals, 8)
-			// decimals); keep the band under half a step so neighbouring orders never overlap.
-			$dust_unit = '1' . str_repeat( '0', 18 - min( $decimals, 8 ) );
-			$max_band  = self::e18_mul_small( $dust_unit, Xdwp_Prices::DUST_BAND );
+		$payable = Xdwp_Coins::payable_decimals( $coin );
+		if ( 'yes' === Xdwp_Settings::get( 'unique_amounts', 'yes' ) && $payable >= 2 ) {
+			// Orders are spaced Xdwp_Prices::DUST_STEP apart at the payable precision; keep the
+			// band under half a step so neighbouring orders can never overlap. Using the
+			// payable precision here is what lets a stablecoin payment rounded to the cent
+			// still match the quote it was rounded from.
+			// A tenth of a payable unit, times four: 0.4 of one step, so two orders one step
+			// apart can never both accept the same payment.
+			$tenth    = '1' . str_repeat( '0', 18 - min( 18, $payable + 1 ) );
+			$max_band = self::e18_mul_small( $tenth, Xdwp_Prices::DUST_BAND );
 		} else {
 			$two_pct  = self::float_to_e18( (float) $amount * 0.02 );
 			$max_band = self::e18_max( $abs_eps, self::e18_min( '0' !== $pct_under ? $pct_under : $abs_eps, $two_pct ) );

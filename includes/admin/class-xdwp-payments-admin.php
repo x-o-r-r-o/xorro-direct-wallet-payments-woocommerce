@@ -239,7 +239,18 @@ class Xdwp_Payments_Admin {
 		$class = isset( $classes[ $status ] ) ? $classes[ $status ] : 'xdwp-pill--dead';
 
 		$out = '<span class="xdwp-pill ' . esc_attr( $class ) . '">' . esc_html( $label ) . '</span>';
-		if ( self::needs_attention( $order ) ) {
+
+		// Say what happened, not just that something did.
+		$flags = array(
+			'underpaid' => __( 'Part paid', 'xorro-direct-wallet-payments-woocommerce' ),
+			'overpaid'  => __( 'Overpaid', 'xorro-direct-wallet-payments-woocommerce' ),
+			'paid_late' => __( 'Paid late', 'xorro-direct-wallet-payments-woocommerce' ),
+			'dropped'   => __( 'Payment vanished', 'xorro-direct-wallet-payments-woocommerce' ),
+		);
+		$flag  = (string) $order->get_meta( '_xdwp_flag' );
+		if ( isset( $flags[ $flag ] ) ) {
+			$out .= ' <span class="xdwp-pill xdwp-pill--attn">' . esc_html( $flags[ $flag ] ) . '</span>';
+		} elseif ( self::needs_attention( $order ) ) {
 			$out .= ' <span class="xdwp-pill xdwp-pill--attn">' . esc_html__( 'Check', 'xorro-direct-wallet-payments-woocommerce' ) . '</span>';
 		}
 		return $out;

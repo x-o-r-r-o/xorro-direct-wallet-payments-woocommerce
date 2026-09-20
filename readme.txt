@@ -4,7 +4,7 @@ Tags: woocommerce, cryptocurrency, bitcoin, ethereum, payments, usdt, crypto che
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.15.0
+Stable tag: 1.16.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -336,6 +336,14 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 * QR Code generator (`assets/js/qrcode.min.js`) — MIT-licensed library by davidshimjs (https://github.com/davidshimjs/qrcodejs). Source is publicly available; the bundled file is minified for production use.
 
 == Changelog ==
+
+= 1.16.0 =
+Amounts customers can actually send, and honesty about payments that vanish.
+* Fixed: stablecoin orders asked for amounts like 17.340010 USDT. Exchanges often only send to the cent, so that payment could not be made exactly — and what did arrive matched nothing. Stablecoins are now quoted in cents (17.36, 17.37), which any exchange can send, and orders are still told apart
+* The extra few units that make each order's amount unique are now capped at one per cent of the order, so a busy shop never asks a customer for a noticeably odd amount
+* New: a payment seen on chain that later disappears — replaced by the sender or dropped for too low a fee — no longer leaves the page claiming "payment detected" forever. The order goes back to waiting, the shop owner gets a note explaining it, and a fee-bumped replacement is followed rather than given up on
+* New: what happened to a payment (part paid, overpaid, paid late, vanished) is recorded beside its status and shown on the Payments screen, instead of a bare "Check"
+* New: coins pegged to your shop's currency get a full day to pay instead of an hour. There is no price to move, so there was never a reason to hurry
 
 = 1.15.0 =
 Usable with a screen reader, a keyboard, and one hand on a phone.

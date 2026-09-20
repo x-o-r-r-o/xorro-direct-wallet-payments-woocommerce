@@ -62,6 +62,29 @@ class Xdwp_Order {
 	}
 
 	/**
+	 * Record what is unusual about this payment, alongside its status.
+	 *
+	 * Status answers "where is this order"; the flag answers "what happened to it". Keeping
+	 * the two apart avoids inventing statuses like settled-but-overpaid-and-late, and gives
+	 * the Payments screen and any extension a single field to read.
+	 *
+	 * @param WC_Order $order Order.
+	 * @param string   $flag  underpaid | overpaid | paid_late | dropped, or '' to clear.
+	 */
+	public static function set_flag( $order, $flag ) {
+		if ( ! $order instanceof WC_Order ) {
+			return;
+		}
+		$flag = (string) $flag;
+		if ( '' === $flag ) {
+			$order->delete_meta_data( '_xdwp_flag' );
+		} else {
+			$order->update_meta_data( '_xdwp_flag', $flag );
+		}
+		$order->save();
+	}
+
+	/**
 	 * Orders the store owner still has to look at: money arrived late, more than was due, or a
 	 * part payment left behind when the window closed.
 	 *
@@ -340,7 +363,14 @@ class Xdwp_Order {
 		 * @param WC_Order $order  Order.
 		 * @param array    $coin   Coin definition.
 		 */
-		$window  = (int) apply_filters( 'xdwp_payment_window_minutes', (int) Xdwp_Settings::get( 'payment_window', 60 ), $order, $coin );
+		// The window exists to cap how far the price can move while a customer pays. A coin
+		// pegged to the shop's own currency cannot move against it, so hurrying the customer
+		// buys nothing — give those a full day instead.
+		$window = (int) Xdwp_Settings::get( 'payment_window', 60 );
+		if ( Xdwp_Rates::pegged_rate( $coin['symbol'], $order->get_currency() ) > 0 ) {
+			$window = max( $window, (int) DAY_IN_SECONDS / MINUTE_IN_SECONDS );
+		}
+		$window  = (int) apply_filters( 'xdwp_payment_window_minutes', $window, $order, $coin );
 		$window  = max( 1, min( 1440, $window ) );
 		$started = time();
 		$expires = $started + ( $window * MINUTE_IN_SECONDS );
@@ -509,6 +539,7 @@ class Xdwp_Order {
 						$overpaid
 					)
 				);
+				self::set_flag( $order, 'overpaid' );
 				do_action( 'xdwp_order_overpaid', $order, $overpaid );
 			}
 			// Remember how far the wallet needs to have scanned for this payment to be visible.

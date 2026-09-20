@@ -187,13 +187,29 @@ class Xdwp_Prices {
 	 * @return float
 	 */
 	public static function apply_unique_dust( $amount, $coin_id ) {
-		$coin     = Xdwp_Coins::get( $coin_id );
-		$decimals = $coin ? min( (int) $coin['decimals'], 8 ) : 8;
-
-		// Low-decimal assets cannot safely encode unique dust without large overcharge.
-		if ( ! $coin || $decimals <= 4 ) {
+		$coin = Xdwp_Coins::get( $coin_id );
+		if ( ! $coin ) {
 			return $amount;
 		}
+
+		// Space orders at the finest amount a customer can actually send. Spacing them any
+		// finer produces quotes an exchange withdrawal screen will not accept, and the
+		// payment that does arrive then matches nothing.
+		$decimals = Xdwp_Coins::payable_decimals( $coin );
+
+		// Orders are spaced one unit apart at that precision — a cent on a stablecoin, a
+		// satoshi on Bitcoin. Note who pays for this: the amount goes *up*, so the surcharge
+		// lands on the customer. One step must therefore be small enough not to be noticed.
+		if ( $decimals < 2 || self::step_fiat_value( $coin, $decimals ) > 0.05 ) {
+			return $amount;
+		}
+
+		// And the surcharge must stay small however busy the shop is. Each concurrent order
+		// on the same address takes the next step up, so the slots are bounded by what the
+		// customer could reasonably be asked to pay over the odds: one per cent of the order,
+		// and never less than two steps.
+		$allowance = max( 2, (int) floor( ( (float) $amount * 0.01 ) / pow( 10, -$decimals ) ) );
+		$max_slots = (int) min( self::DUST_SLOTS, $allowance );
 
 		// Use the smallest dust slot not already reserved by an open/recent order for this coin,
 		// so the extra charge stays at a few base units (10 sats on BTC) and only grows with real
@@ -202,8 +218,8 @@ class Xdwp_Prices {
 		$unit     = pow( 10, -$decimals );
 		$occupied = Xdwp_Verifier::occupied_amounts( $coin_id );
 		if ( is_array( $occupied ) ) {
-			for ( $slot = 1; $slot <= self::DUST_SLOTS; $slot++ ) {
-				$candidate = Xdwp_Coins::format_amount( $amount + ( $slot * self::DUST_STEP * $unit ), $coin_id );
+			for ( $slot = 1; $slot <= $max_slots; $slot++ ) {
+				$candidate = Xdwp_Coins::format_amount( $amount + ( $slot * $unit ), $coin_id );
 				$free      = ! Xdwp_Verifier::amount_slot_taken( $coin_id, $candidate );
 				foreach ( $occupied as $taken ) {
 					if ( Xdwp_Verifier::amounts_overlap( $candidate, $taken, $coin ) ) {
@@ -220,7 +236,7 @@ class Xdwp_Prices {
 		// Fallback (peer lookup failed / every slot taken): rotate so concurrent orders still
 		// differ; assign_payment() rejects and retries any collision.
 		$counter    = self::next_amount_seq();
-		$dust_units = self::DUST_STEP + ( ( $counter % self::DUST_SLOTS ) * self::DUST_STEP );
+		$dust_units = 1 + ( $counter % $max_slots );
 		return $amount + ( $dust_units * $unit );
 	}
 
@@ -260,6 +276,30 @@ class Xdwp_Prices {
 	 * @param bool   $allow_stale  Whether to serve STALE_TTL rates when live refresh fails.
 	 * @return float
 	 */
+	/**
+	 * Roughly what one unique-amount step costs the merchant, in store currency.
+	 *
+	 * Uniqueness is bought by giving a few base units away. That is nothing on Bitcoin and a
+	 * cent on a stablecoin, but on a coin quoted in whole numbers it could be real money — so
+	 * the cost is worked out rather than assumed.
+	 *
+	 * @param array $coin     Coin definition.
+	 * @param int   $decimals Decimals the spacing uses.
+	 * @return float Store-currency value of one step; 0 when no rate is known.
+	 */
+	private static function step_fiat_value( array $coin, $decimals ) {
+		// One step is one unit at the payable precision.
+		$currency = get_woocommerce_currency();
+		$per_coin = Xdwp_Rates::pegged_rate( $coin['symbol'], $currency );
+		if ( $per_coin <= 0 ) {
+			$per_coin = (float) self::get_rate( $coin['coingecko_id'], strtolower( $currency ), true, $coin['symbol'] );
+		}
+		if ( $per_coin <= 0 ) {
+			return 0.0;
+		}
+		return pow( 10, -$decimals ) * $per_coin;
+	}
+
 	public static function get_rate( $coingecko_id, $currency, $allow_stale = true, $symbol = '' ) {
 		$currency = strtolower( $currency );
 		$cache    = get_transient( self::TRANSIENT_KEY );

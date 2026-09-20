@@ -261,6 +261,7 @@ class Xdwp_Cron {
 				)
 			);
 			$order->save();
+			Xdwp_Order::set_flag( $order, 'paid_late' );
 			do_action( 'xdwp_late_payment_detected', $order, $hit['txid'], $hit['amount'] );
 		}
 	}
