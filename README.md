@@ -1,6 +1,6 @@
 # Xorro Direct Wallet Payments for WooCommerce
 
-Accept cryptocurrency in WooCommerce **straight into your own wallets** — no payment processor, no custody, no license keys, no phone-home. 238 coins and tokens across 70+ blockchains, with automatic on-chain payment detection.
+Accept cryptocurrency in WooCommerce **straight into your own wallets** — no payment processor, no custody, no license keys, no phone-home. 233 coins and tokens across 74 blockchains, with automatic on-chain payment detection.
 
 [![Release](https://img.shields.io/github/v/release/x-o-r-r-o/xorro-direct-wallet-payments-woocommerce)](https://github.com/x-o-r-r-o/xorro-direct-wallet-payments-woocommerce/releases/latest)
 [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](LICENSE)
@@ -19,9 +19,9 @@ Each order gets a slightly unique amount (usually a few base units, e.g. 10 sato
 
 ## Features
 
-- **238 coins and tokens** — 74 native coins plus ERC-20, BEP-20, TRC-20, SPL (Solana) and TON jetton tokens
+- **233 coins and tokens** — 69 native coins plus ERC-20, BEP-20, TRC-20, SPL (Solana) and TON jetton tokens
 - **USDT and USDC on 9 networks each** — Ethereum, Arbitrum, Optimism, BNB Chain, Polygon, Avalanche, Base, Solana, TRON — plus DAI on 5
-- **Automatic payment detection** on every coin except five manual-only ones (see below), with configurable confirmations
+- **Automatic payment detection** on every coin except three manual-only ones (see below), with confirmations you can tune per coin, or by order value
 - **Classic and block checkout** (WooCommerce Checkout Blocks) and **HPOS** compatible
 - Live crypto quote at checkout; payment page with Copy buttons, QR code (BIP-21, EIP-681, Solana Pay and other wallet URI formats) and countdown
 - **Backup exchange-rate sources** (Coinbase, Kraken, Binance) when CoinGecko is unavailable, with a 5% agreement check
@@ -38,7 +38,13 @@ Each order gets a slightly unique amount (usually a few base units, e.g. 10 sato
 - **No lost payments:** payment details in customer emails, a reminder before the window closes, partial-payment handling (customer is asked for the rest), overpayment notes, and a late-payment scan that alerts you when money arrives after an order expired
 - **Payments screen** listing every crypto order, with a "needs you" filter, plus a crypto payment column on the orders list
 - Admin alerts when an explorer API rejects requests (e.g. a missing or limited API key), so verification never fails silently
-- **Help screen** in the plugin, and translations for sixteen languages
+- **Refunds without custody** — you create a claim link, the customer gives an address they control on the right network, you send it from your own wallet and record the transaction. The plugin never holds or moves your money
+- **Alerts** — signed webhooks (HMAC-SHA256 over a timestamp and the exact body) and Telegram messages for part payments, overpayments, late money, a payment that vanished, and refunds waiting to go out, plus a daily summary
+- **Reports** — what you took, the typical wait from quote to confirmed, how many customers were quoted and never paid, and how many sent too little; overall and per coin, for the last 7, 30 or 90 days
+- **Find any payment** — search your orders by transaction id or receiving address, and every order keeps a timeline of what happened to its payment
+- **Per-coin discount or surcharge** — shown on the order as its own line, so the total the customer sees is the total they pay
+- **Settings backup and restore** — every setting in one file, with API keys held back unless you ask for them
+- **Help screen** in the plugin, and translations for sixteen languages (98–100% complete)
 - Automatic updates from GitHub Releases — every package must carry the maintainer's Ed25519 signature
 
 ### Supported coins
@@ -85,9 +91,10 @@ Everything works without keys, but free keys raise rate limits and some chains n
 | Etherscan (API V2) | Automatic detection on Ethereum and other EVM chains. Some chains (e.g. BNB Chain, Base) may need a paid plan; the plugin tells you if Etherscan rejects them. | [etherscan.io/apis](https://etherscan.io/apis) |
 | TronGrid | Higher TRON limits | [trongrid.io](https://www.trongrid.io/) |
 | Helius | Solana and SPL tokens | [helius.dev](https://www.helius.dev/) |
-| Aptos | Aptos (APT) | [aptoslabs.com](https://aptoslabs.com/developers) |
+| Aptos | Aptos (APT) — must be a **mainnet** key; a devnet key is refused by the mainnet API | [aptoslabs.com](https://aptoslabs.com/developers) |
+| Blockchair | Optional. Dogecoin, Bitcoin Cash, Zcash, Dash and eCash are read through Blockchair, which stops answering once the day's free allowance is used. Only worth it on a busy shop. | [blockchair.com/api/plans](https://blockchair.com/api/plans) |
 
-Keys can also be set in `wp-config.php` so they are never stored in the database: `XDWP_COINGECKO_API_KEY`, `XDWP_ETHERSCAN_API_KEY`, `XDWP_TRONGRID_API_KEY`, `XDWP_HELIUS_API_KEY`, `XDWP_SUBSCAN_API_KEY`, `XDWP_VIEWBLOCK_API_KEY`, `XDWP_APTOS_API_KEY`.
+Keys can also be set in `wp-config.php` so they are never stored in the database: `XDWP_COINGECKO_API_KEY`, `XDWP_ETHERSCAN_API_KEY`, `XDWP_TRONGRID_API_KEY`, `XDWP_HELIUS_API_KEY`, `XDWP_APTOS_API_KEY`, `XDWP_BLOCKCHAIR_API_KEY`.
 
 ### Updates
 
@@ -95,7 +102,7 @@ The plugin checks this repository's [Releases](https://github.com/x-o-r-r-o/xorr
 
 ## Compatibility
 
-Version 1.19.0 was tested end to end on WordPress 7.1 and WooCommerce 11.1 — guest checkout on both
+Version 1.19.3 was tested end to end on WordPress 7.1 and WooCommerce 11.1 — guest checkout on both
 classic and block checkout, live quote, order placement, payment page, status polling, the "I have
 sent the payment" path, and a PHP error-log check on every single run.
 
@@ -176,6 +183,9 @@ Built-in compatibility handling:
 - Admin actions require `manage_woocommerce` plus nonces. Customers can only see their own order (order key or account owner).
 - Frontend endpoints are nonce-protected and rate-limited per IP. Use the `xdwp_rate_limit_client_ip` filter to trust a CDN's client-IP header.
 - Payout-address changes are notified to the site admin.
+- Refund claim links are 24 random bytes, stored only as an HMAC, compared in constant time, expiring after 14 days, rate-limited per visitor, and dead once the refund is recorded. The plugin has no code path that sends money — a refund is always made by a person from their own wallet.
+- Webhooks are signed with HMAC-SHA256 over a timestamp and the exact body sent, so a receiver can verify the shop sent it and reject a replayed one.
+- Every explorer response is capped at 8 MB and two redirects, so a third-party service cannot stall a customer's payment page by answering with something enormous.
 - Updates are verified with an Ed25519 signature from a key that never touches GitHub releases (see [Release signing](#release-signing)).
 
 Found a vulnerability? Please open a private [security advisory](https://github.com/x-o-r-r-o/xorro-direct-wallet-payments-woocommerce/security/advisories/new) rather than a public issue.
@@ -200,6 +210,7 @@ Found a vulnerability? Please open a private [security advisory](https://github.
 | `xdwp_confirmations_required` ( `$confirmations, $coin` ) | filter | Confirmations for a coin are resolved |
 | `xdwp_order_confirmations_required` ( `$confirmations, $coin, $order` ) | filter | Confirmations are resolved for one order, after any value tier |
 | `xdwp_coin_adjustment` ( `$percent, $coin_id` ) | filter | A coin's discount or surcharge is read |
+| `xdwp_backup_rate_symbols` ( `$renamed` ) | filter | Tickers to ask a backup rate source for, where a coin has been renamed |
 | `xdwp_notification_payload` ( `$payload, $event, $order` ) | filter | An alert is about to be queued |
 | `xdwp_wallet_add_chain` ( `$params, $coin, $chain_id` ) | filter | A browser wallet does not know the chain (empty by default: no RPC is supplied) |
 | `xdwp_coin_allowed_for_total` ( `$allowed, $coin_id, $total` ) | filter | A coin is offered (or hidden) for an order total |
@@ -221,6 +232,9 @@ The plugin never contacts the author's servers. It calls public price and blockc
 | EVM orders never confirm automatically | Add an Etherscan API V2 key. If the Prices & APIs page shows an Etherscan error for a chain, that chain needs a paid Etherscan plan. |
 | A payment arrived but the order didn't update | Check **WooCommerce → Status → Logs** (source `xorro-wallet-payments`), make sure WP-Cron runs, then use **Mark payment received** with the transaction ID. |
 | QR code or countdown missing on the payment page | Clear your cache/optimization plugin's cache. If the problem persists, exclude `xorro-direct-wallet-payments-woocommerce/assets/js/` from JS optimization. |
+| "Test this coin" says the explorer has no record of your address | Normal for an address nothing has been sent to. XRP and Stellar only create an account on chain once it receives its first payment. |
+| Dogecoin, Bitcoin Cash, Zcash, Dash or eCash stop confirming on a busy day | Those are read through Blockchair, which stops answering once the day's free allowance is used. Add a free Blockchair key under Prices & APIs. |
+| A customer says they were asked to pay for an order you already completed | Fixed in 1.19.2. Before that, completing an order in WooCommerce did not stop the payment page asking for payment. |
 
 ## Development
 
@@ -251,6 +265,12 @@ Pushing a `vX.Y.Z` tag runs the Release workflow, which builds the ZIP, its SHA-
 ## Changelog
 
 Full details for every release are in [`readme.txt`](readme.txt).
+
+### 1.19.3 — Polkadot and Zilliqa withdrawn
+
+- Removed: Polkadot (DOT) and Zilliqa (ZIL). Neither can be checked on chain without a key that is not freely available — Subscan is a paid product and ViewBlock no longer issues keys — so both could only ever be confirmed by hand
+- The Subscan and ViewBlock key fields are gone with them, and the External Services list now names the sources actually contacted
+- 233 coins remain, all of which can be priced, quoted and checked on their own chain, except Monero, IoTeX and Kaia which are documented as manual
 
 ### 1.19.2 — the payment page as a customer sees it
 

@@ -54,6 +54,7 @@ class Xdwp_Settings {
 			'trongrid_api_key'  => 'XDWP_TRONGRID_API_KEY',
 			'helius_api_key'    => 'XDWP_HELIUS_API_KEY',
 			'aptos_api_key'     => 'XDWP_APTOS_API_KEY',
+			'blockchair_api_key' => 'XDWP_BLOCKCHAIR_API_KEY',
 		);
 	}
 
