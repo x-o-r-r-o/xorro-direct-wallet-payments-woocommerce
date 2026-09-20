@@ -525,6 +525,11 @@ xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-
 xdwp_assert( file_exists( $root . '/tests/hd-tests.php' ), 'derivation is checked against published vectors' );
 // Nothing here may ever accept or store a private key.
 xdwp_assert( false === strpos( file_get_contents( $root . '/includes/class-xdwp-hd.php' ), '0488ade4' ), 'private-key version bytes are not recognised' );
+// Release 1.12.0: the Help screen and shipped translations.
+xdwp_assert( file_exists( $root . '/includes/admin/views/help-page.php' ), 'help screen present' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/admin/class-xdwp-admin.php' ), 'render_help_page' ), 'help screen is registered' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/admin/views/help-page.php' ), 'xdwp-help-devs' ), 'help covers the developer hooks' );
+xdwp_assert( count( glob( $root . '/languages/*.mo' ) ) >= 10, 'translations shipped for the common locales' );
 xdwp_assert( false !== strpos( $readme, '== External services ==' ), 'readme external services section present' );
 xdwp_assert( false !== strpos( $readme, 'XRPSCan' ), 'readme documents XRPSCan' );
 xdwp_assert( false !== strpos( $readme, 'Subscan' ), 'readme documents Subscan' );

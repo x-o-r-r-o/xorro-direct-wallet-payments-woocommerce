@@ -1,0 +1,1656 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Xorro Direct Wallet Payments for WooCommerce\n"
+"Report-Msgid-Bugs-To: https://github.com/x-o-r-r-o/xorro-direct-wallet-payments-woocommerce/issues\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=(0);\n"
+"X-Generator: LibreTranslate (machine translation, not yet reviewed by a person)\n"
+
+#. Plugin Name of the plugin
+#: xorro-direct-wallet-payments-woocommerce.php
+msgid "Xorro Direct Wallet Payments for WooCommerce"
+msgstr "Xorro 给WooCommerce的直接钱包付款"
+
+#. Plugin URI of the plugin
+#: xorro-direct-wallet-payments-woocommerce.php
+msgid "https://github.com/x-o-r-r-o/xorro-direct-wallet-payments-woocommerce"
+msgstr "https://github.com/x-o-r-r-o/xor-direct-wallet-paying-woo commerce (中文(中国大陆) )"
+
+#. Description of the plugin
+#: xorro-direct-wallet-payments-woocommerce.php
+msgid "Accept cryptocurrency payments directly to your own wallets — no third-party payment processor. Supports BTC, BCH, ETH, USDT, USDC, DAI, TON, ADA, APT, KAS, XTZ and 200+ coins/tokens with automatic on-chain verification."
+msgstr "直接接受密码货币支付给自己的钱包——没有第三方支付处理器. 支持BTC,BCH,ETH,USDT,USDC,DAI,TON,ADA,APT,KAS,XTZ和200多枚硬币/托盘,并带有自动链上验证."
+
+#. Author of the plugin
+#: xorro-direct-wallet-payments-woocommerce.php
+msgid "xorro"
+msgstr "x"
+
+#. Author URI of the plugin
+#: xorro-direct-wallet-payments-woocommerce.php
+msgid "https://github.com/x-o-r-r-o"
+msgstr "https://github.com/x-o-r-r-o (英语)"
+
+#: includes/admin/class-xdwp-admin.php:106
+#: includes/admin/views/wallets-ui.php:66
+msgid "Paste wallet address"
+msgstr "粘贴钱包地址"
+
+#: includes/admin/class-xdwp-admin.php:107
+#: includes/admin/views/wallets-ui.php:73
+#: templates/payment.php:78
+#: templates/payment.php:97
+#: templates/payment.php:111
+msgid "Copy"
+msgstr "复制"
+
+#: includes/admin/class-xdwp-admin.php:108
+msgid "Copied"
+msgstr "复制"
+
+#: includes/admin/class-xdwp-admin.php:109
+#: includes/admin/views/wallets-ui.php:75
+msgid "Remove address"
+msgstr "删除地址"
+
+#: includes/admin/class-xdwp-admin.php:110
+msgid "Invalid format"
+msgstr "无效的格式"
+
+#: includes/admin/class-xdwp-admin.php:111
+msgid "Duplicate address"
+msgstr "复制地址"
+
+#. translators: %d: coins still missing a wallet
+#: includes/admin/class-xdwp-admin.php:113
+#: includes/admin/class-xdwp-admin.php:117
+#, php-format
+msgid "%d coin(s) still need an address"
+msgstr "%d 硬币仍然需要地址"
+
+#. translators: %d: number of wallet addresses
+#: includes/admin/class-xdwp-admin.php:115
+#, php-format
+msgid "%d addresses"
+msgstr ""
+
+#: includes/admin/class-xdwp-admin.php:119
+msgid "Select checkout icon"
+msgstr "选择退出图标"
+
+#: includes/admin/class-xdwp-admin.php:120
+msgid "Use this icon"
+msgstr "使用此图标"
+
+#: includes/admin/class-xdwp-admin.php:121
+msgid "Media library is not available."
+msgstr "没有媒体库."
+
+#: includes/admin/class-xdwp-admin.php:162
+msgid "Settings"
+msgstr "设置"
+
+#: includes/admin/class-xdwp-admin.php:172
+#: includes/admin/class-xdwp-admin.php:173
+#: includes/admin/views/payments-page.php:51
+#: includes/admin/views/settings-page.php:26
+#: includes/class-xdwp-gateway.php:20
+#: includes/class-xdwp-order.php:675
+#: includes/class-xdwp-order.php:952
+#: includes/class-xdwp-privacy.php:81
+#: includes/class-xdwp-privacy.php:95
+#: includes/class-xdwp-privacy.php:136
+msgid "Xorro Wallet Payments"
+msgstr "Xorro 钱包付款"
+
+#: includes/admin/class-xdwp-admin.php:183
+#: includes/admin/class-xdwp-admin.php:184
+#: includes/admin/class-xdwp-admin.php:581
+#: includes/admin/class-xdwp-admin.php:584
+msgid "General"
+msgstr "常规"
+
+#: includes/admin/class-xdwp-admin.php:192
+#: includes/admin/class-xdwp-admin.php:193
+#: includes/admin/class-xdwp-admin.php:588
+#: includes/admin/class-xdwp-admin.php:591
+msgid "Payments"
+msgstr "付款"
+
+#: includes/admin/class-xdwp-admin.php:201
+#: includes/admin/class-xdwp-admin.php:202
+#: includes/admin/class-xdwp-admin.php:595
+#: includes/admin/class-xdwp-admin.php:598
+#: includes/admin/views/settings-page.php:245
+#: includes/admin/views/wallets-ui.php:19
+#: includes/admin/views/wallets-ui.php:96
+#: includes/admin/views/wallets-ui.php:107
+#: includes/admin/views/wallets-ui.php:126
+msgid "Coins"
+msgstr "币"
+
+#: includes/admin/class-xdwp-admin.php:210
+#: includes/admin/class-xdwp-admin.php:211
+#: includes/admin/class-xdwp-admin.php:602
+#: includes/admin/class-xdwp-admin.php:605
+msgid "Wallets"
+msgstr "钱包"
+
+#: includes/admin/class-xdwp-admin.php:219
+#: includes/admin/class-xdwp-admin.php:220
+#: includes/admin/class-xdwp-admin.php:430
+#: includes/admin/class-xdwp-admin.php:493
+#: includes/admin/class-xdwp-admin.php:609
+#: includes/admin/class-xdwp-admin.php:612
+msgid "Prices & APIs"
+msgstr "价格和APIs"
+
+#. translators: %d: number of invalid addresses
+#: includes/admin/class-xdwp-admin.php:316
+#, php-format
+msgid "%d wallet address was rejected as invalid and was not saved."
+msgid_plural "%d wallet addresses were rejected as invalid and were not saved."
+msgstr[0] "%d 钱包地址被拒为无效,没有保存 ."
+
+#: includes/admin/class-xdwp-admin.php:331
+msgid "Settings saved."
+msgstr "设置已保存 ."
+
+#. translators: 1: site URL, 2: user login, 3: user ID, 4: date/time, 5: list of changed wallets
+#: includes/admin/class-xdwp-admin.php:376
+#, php-format
+msgid ""
+"A Xorro Wallet Payments payout address was changed on %1$s by %2$s (user #%3$d) at %4$s.\n"
+"\n"
+"If this wasn't you, secure this account immediately — this controls where future customer crypto payments are sent, and non-custodial crypto payments cannot be reversed once sent.\n"
+"\n"
+"%5$s"
+msgstr ""
+
+#: includes/admin/class-xdwp-admin.php:378
+msgid "an unknown user"
+msgstr "一个未知的用户"
+
+#. translators: %s: site name
+#: includes/admin/class-xdwp-admin.php:388
+#, php-format
+msgid "[%s] Wallet payout address changed"
+msgstr "[%s] 钱包支付地址已更改"
+
+#. translators: %s: Prices & APIs settings URL
+#: includes/admin/class-xdwp-admin.php:429
+#, php-format
+msgid "Automatic verification for ETH and other EVM coins requires an Etherscan API V2 key. Add one under %s."
+msgstr "对ETH和其他EVM硬币的自动验证需要用以太色能API V2键. 在 %s 下添加一个."
+
+#. translators: 1: API name, 2: chain name, 3: error message from the API, 4: time ago
+#: includes/admin/class-xdwp-admin.php:461
+#, php-format
+msgid "Automatic verification is failing: %1$s rejected requests for %2$s — \"%3$s\" (%4$s ago). Orders in coins on this chain will not confirm automatically until this is fixed; use \"Mark payment received\" on the order meanwhile."
+msgstr ""
+
+#. translators: %s: store currency code
+#: includes/admin/class-xdwp-admin.php:479
+#, php-format
+msgid "Your store currency (%s) is not supported by the exchange-rate sources, so crypto amounts cannot be calculated and checkout in crypto will fail. Switch the store currency, or use a currency-switcher plugin that charges in a supported currency."
+msgstr "您的存储货币 (%s) 不为汇率源所支持, 因此加密金额无法计算, 加密中退出将失败 。 切换存储货币,或者使用以所支持的货币收费的货币交换器插件."
+
+#. translators: %s: Prices & APIs settings URL
+#: includes/admin/class-xdwp-admin.php:492
+#, php-format
+msgid "Automatic verification for APT requires an Aptos API key. Add one under %s."
+msgstr "APT 的自动校验需要 Aptos API 密钥 。 在 %s 下添加一个."
+
+#: includes/admin/class-xdwp-admin.php:522
+msgid "Minimum confirmations is set to 0. Failed or unvalidated explorer rows are still rejected, but unconfirmed successful txs may mark orders paid. Raise this under General unless you intentionally accept zero-conf risk."
+msgstr "最小确认值设定为 0. 失败或未验证的探险家行仍然被拒绝,但未经证实的成功tx可能会给支付的命令打上标记. 在将军下加注 除非你有意接受零信任风险."
+
+#: includes/admin/class-xdwp-admin.php:528
+msgid "Minimum confirmations is above 1. Chains without tip-depth APIs (e.g. XRP, Stellar, NEAR, ATOM) fail closed and will not auto-verify until you lower this to 0 or 1, or mark paid manually."
+msgstr "最低确认额为1级以上. 没有尖深API的链条(如XRP,Stellar,NEAR,ATOM)会失效而关闭,直到您将它降为0或1,或者标记手动支付时才会自动验证."
+
+#. translators: %s: settings URL
+#: includes/admin/class-xdwp-admin.php:561
+#, php-format
+msgid "Xorro Direct Wallet Payments for WooCommerce is installed. Enable coins and add wallet addresses in %s to start accepting payments."
+msgstr "安装了WooCommerce的Xorro直接钱包支付. 启用硬币并在 %s 中添加钱包地址以开始接受支付."
+
+#: includes/admin/class-xdwp-admin.php:562
+#: includes/admin/views/payments-page.php:60
+#: includes/admin/views/settings-page.php:38
+#: includes/class-xdwp-gateway.php:101
+msgid "Xorro Wallet Payments settings"
+msgstr "Xorro 钱包支付设置"
+
+#: includes/admin/class-xdwp-admin.php:585
+msgid "Payment window, order status, checkout branding, and gateway options."
+msgstr "支付窗口,订单状态,退货品牌,以及网关选项."
+
+#: includes/admin/class-xdwp-admin.php:592
+msgid "Every order paid (or waiting to be paid) in crypto, and the ones that still need you."
+msgstr "每一个支付(或等待支付) 密码,和那些仍然需要你."
+
+#: includes/admin/class-xdwp-admin.php:599
+msgid "Enable the coins and networks you want to accept. Add at least one wallet for each enabled coin."
+msgstr "启用您想要接受的硬币和网络 。 每个启用的硬币至少添加一个钱包 ."
+
+#: includes/admin/class-xdwp-admin.php:606
+msgid "Receiving addresses for enabled coins. Use multiple addresses for rotation."
+msgstr "接收允许的硬币地址 。 旋转时使用多个地址 ."
+
+#: includes/admin/class-xdwp-admin.php:613
+msgid "Exchange rates and blockchain API keys for quotes and auto-verification."
+msgstr "报价和自动核查的汇率和块链 API 键."
+
+#: includes/admin/class-xdwp-payments-admin.php:46
+#: includes/admin/class-xdwp-payments-admin.php:50
+msgid "Crypto payment"
+msgstr "加密支付"
+
+#: includes/admin/class-xdwp-payments-admin.php:91
+msgid "Waiting"
+msgstr "等待时"
+
+#: includes/admin/class-xdwp-payments-admin.php:92
+#: includes/admin/views/payments-page.php:32
+msgid "Part paid"
+msgstr "已支付部分"
+
+#: includes/admin/class-xdwp-payments-admin.php:93
+#: includes/admin/views/payments-page.php:36
+#: includes/class-xdwp-order.php:709
+msgid "Paid"
+msgstr "已支付"
+
+#: includes/admin/class-xdwp-payments-admin.php:94
+#: includes/admin/views/payments-page.php:40
+#: includes/class-xdwp-order.php:710
+msgid "Expired"
+msgstr "过期"
+
+#: includes/admin/class-xdwp-payments-admin.php:95
+#: includes/class-xdwp-order.php:711
+msgid "Cancelled"
+msgstr "已取消"
+
+#: includes/admin/class-xdwp-payments-admin.php:109
+msgid "Check"
+msgstr "检查"
+
+#: includes/admin/views/payments-page.php:24
+msgid "Needs you"
+msgstr "需要你帮忙"
+
+#: includes/admin/views/payments-page.php:25
+msgid "Late, overpaid, or part-paid after the window closed"
+msgstr "窗口关闭后迟付、多付或部分付款"
+
+#: includes/admin/views/payments-page.php:28
+#: includes/class-xdwp-order.php:707
+msgid "Waiting for payment"
+msgstr "等待付款"
+
+#: includes/admin/views/payments-page.php:29
+msgid "Quoted, nothing received yet"
+msgstr "引用,还没有收到"
+
+#: includes/admin/views/payments-page.php:33
+msgid "Customer was asked for the rest"
+msgstr "其余的都是客户要的"
+
+#: includes/admin/views/payments-page.php:37
+msgid "Confirmed on chain"
+msgstr "连锁确认"
+
+#: includes/admin/views/payments-page.php:41
+msgid "Window closed with nothing received"
+msgstr "窗口关闭, 没有收到任何信息"
+
+#: includes/admin/views/payments-page.php:55
+#: includes/admin/views/settings-page.php:30
+msgid "Direct to wallet"
+msgstr "直接到钱包"
+
+#: includes/admin/views/payments-page.php:88
+msgid "Payment state"
+msgstr "支付状态"
+
+#: includes/admin/views/payments-page.php:90
+msgid "All payments"
+msgstr "所有付款"
+
+#: includes/admin/views/payments-page.php:96
+#: includes/admin/views/payments-page.php:116
+#: includes/admin/views/settings-page.php:262
+#: includes/class-xdwp-privacy.php:31
+msgid "Coin"
+msgstr "铜"
+
+#: includes/admin/views/payments-page.php:98
+msgid "Every coin"
+msgstr "每个硬币"
+
+#: includes/admin/views/payments-page.php:104
+msgid "Filter"
+msgstr "过滤器"
+
+#: includes/admin/views/payments-page.php:108
+msgid "No orders here yet."
+msgstr "这里还没有命令."
+
+#: includes/admin/views/payments-page.php:113
+msgid "Order"
+msgstr "顺序"
+
+#: includes/admin/views/payments-page.php:114
+msgid "Placed"
+msgstr "已放置"
+
+#: includes/admin/views/payments-page.php:115
+msgid "Customer"
+msgstr "客户"
+
+#: includes/admin/views/payments-page.php:117
+msgid "Expected"
+msgstr "预期"
+
+#: includes/admin/views/payments-page.php:118
+msgid "Received"
+msgstr "实收"
+
+#: includes/admin/views/payments-page.php:119
+msgid "State"
+msgstr "状态"
+
+#: includes/admin/views/payments-page.php:120
+msgid "Transaction"
+msgstr "交易"
+
+#: includes/admin/views/settings-page.php:61
+msgid "Payment window (minutes)"
+msgstr "付款窗口(分钟)"
+
+#: includes/admin/views/settings-page.php:64
+msgid "Quoted crypto amount is valid for this duration. Default: 60."
+msgstr "所引用的加密金额在此期间有效. 默认: 60."
+
+#: includes/admin/views/settings-page.php:68
+msgid "Order status after payment"
+msgstr "付款后的命令状态"
+
+#: includes/admin/views/settings-page.php:73
+msgid "Processing"
+msgstr "处理"
+
+#: includes/admin/views/settings-page.php:74
+msgid "Completed"
+msgstr "已完成"
+
+#: includes/admin/views/settings-page.php:75
+msgid "On Hold"
+msgstr "暂停"
+
+#: includes/admin/views/settings-page.php:86
+msgid "Underpayment tolerance (%)"
+msgstr "支付能力(%)"
+
+#: includes/admin/views/settings-page.php:89
+msgid "Capped automatically when unique amounts are enabled so concurrent orders on a shared wallet stay distinguishable."
+msgstr "当允许在共享钱包上同时发布命令时自动卡住."
+
+#: includes/admin/views/settings-page.php:93
+msgid "Minimum confirmations"
+msgstr "最低确认额"
+
+#: includes/admin/views/settings-page.php:96
+msgid "Required on-chain confirmations before marking an order paid. Chains without tip-depth APIs only accept payments when this is 0 or 1 (fail closed above that)."
+msgstr "在发出付款命令前,必须先获得链上确认。 没有尖深API的链条只有在0或1时才接受付款(未关闭于此上方)."
+
+#: includes/admin/views/settings-page.php:100
+msgid "Confirmations per chain"
+msgstr "每个链的确认"
+
+#: includes/admin/views/settings-page.php:104
+msgid "Wait for the confirmations that suit each chain"
+msgstr "等待每个链子的确认"
+
+#: includes/admin/views/settings-page.php:106
+msgid "One confirmation does not mean the same thing on every chain. With this on, each coin waits for a number suited to its own chain (Bitcoin 2, Ethereum 12, TRON 20 and so on) and never less than the number above. Set your own per coin on the Coins tab."
+msgstr "一次确认并不意味着每条链子上都有同样的东西。 随此而来,每枚硬币都等待一个适合自己连锁的号码(Bitcoin 2,Ethereum 12,TRON 20等),并且永远不低于上面的数字. 把每枚硬币都贴在币子上."
+
+#: includes/admin/views/settings-page.php:110
+msgid "Expiry grace (minutes)"
+msgstr "过期优惠(分钟)"
+
+#: includes/admin/views/settings-page.php:113
+msgid "Keep looking for payment after the window ends. Orders fail (not cancel) after grace so late funds can still be recovered."
+msgstr "窗口关闭后继续寻找付款. 命令在恩典后失败(没有取消),所以迟到的资金仍然可以收回."
+
+#: includes/admin/views/settings-page.php:117
+msgid "Unique payment amounts"
+msgstr "独特的付款数额"
+
+#: includes/admin/views/settings-page.php:121
+msgid "Add a tiny unique dust amount so payments to reused addresses can be matched reliably."
+msgstr "添加一个微小的独特粉尘量,这样对再利用地址的付款就可以可靠地匹配."
+
+#: includes/admin/views/settings-page.php:126
+msgid "Wallet rotation"
+msgstr "钱包旋转"
+
+#: includes/admin/views/settings-page.php:130
+msgid "Rotate through multiple addresses per coin when available."
+msgstr "每枚硬币有多个地址时旋转 ."
+
+#: includes/admin/views/settings-page.php:135
+msgid "Automatic verification"
+msgstr "自动核查"
+
+#: includes/admin/views/settings-page.php:139
+msgid "Poll public block explorers / RPCs and mark orders paid when payment is detected."
+msgstr "发现付款时,会向公共区块勘探商/RPC和标出订单."
+
+#: includes/admin/views/settings-page.php:144
+msgid "Partial and over payments"
+msgstr "部分缴款和超额缴款"
+
+#: includes/admin/views/settings-page.php:148
+msgid "Handle them automatically: at least 50% received → the customer is asked for the rest; up to 10% too much → the order completes and the excess is noted."
+msgstr "自动处理:至少50%收到 —— 要求客户提供其余的;最多10%过多 —— 订单完成并注明超额."
+
+#: includes/admin/views/settings-page.php:150
+msgid "A transfer that could belong to more than one open order is never credited automatically — you get an email instead. Turn this off if your payment addresses also receive other money (e.g. exchange withdrawals), since such a transfer could otherwise be taken for an order payment."
+msgstr "可能属于一个以上开放命令的转帐从不会自动记帐——你得到一个电子邮件。 如果您的付款地址也收到其他款项(例如汇出), 则关闭此功能, 因为否则可以进行这种转账以支付订单."
+
+#: includes/admin/views/settings-page.php:154
+msgid "Late payments"
+msgstr "逾期付款"
+
+#: includes/admin/views/settings-page.php:158
+msgid "Check orders that expired in the last 7 days and email me if a payment arrives late."
+msgstr "检查过去7天到期的订单,如果付款迟到就发电子邮件给我."
+
+#: includes/admin/views/settings-page.php:160
+msgid "The order is not changed automatically — you decide whether to complete it or refund."
+msgstr "订单不会自动更改——由您决定是完成还是退款."
+
+#: includes/admin/views/settings-page.php:164
+msgid "Checkout title"
+msgstr "退出标题"
+
+#: includes/admin/views/settings-page.php:166
+#: includes/class-xdwp-branding.php:50
+#: includes/class-xdwp-branding.php:52
+#: includes/class-xdwp-gateway.php:86
+#: includes/class-xdwp-install.php:84
+msgid "Pay with Cryptocurrency"
+msgstr "用加密货币支付"
+
+#: includes/admin/views/settings-page.php:167
+msgid "Payment method name shown at checkout (e.g. “Pay with Cryptocurrency”)."
+msgstr "在离职时显示的付款方法名称(例如“用加密货币付款”)."
+
+#: includes/admin/views/settings-page.php:171
+msgid "Checkout description"
+msgstr "退出说明"
+
+#: includes/admin/views/settings-page.php:177
+msgid "Checkout label style"
+msgstr "退出标签样式"
+
+#: includes/admin/views/settings-page.php:190
+msgid "Choose how the payment method is identified on the checkout page."
+msgstr "选择如何在退出页面中识别支付方法 ."
+
+#: includes/admin/views/settings-page.php:194
+msgid "Checkout icon"
+msgstr "退出图标"
+
+#: includes/admin/views/settings-page.php:208
+msgid "Upload / replace icon"
+msgstr "上传/ 替换图标"
+
+#: includes/admin/views/settings-page.php:209
+msgid "Use default icon"
+msgstr "使用默认图标"
+
+#: includes/admin/views/settings-page.php:211
+msgid "PNG, JPG, GIF, WebP, or SVG. Default plugin icon is used when none is selected."
+msgstr "PNG,JPG,GIF,WebP,或作SVG. 没有选择时会使用默认插件图标 ."
+
+#: includes/admin/views/settings-page.php:216
+msgid "Icon size (px)"
+msgstr "图标大小 (px)"
+
+#: includes/admin/views/settings-page.php:219
+msgid "Width"
+msgstr "宽度"
+
+#: includes/admin/views/settings-page.php:223
+msgid "Height"
+msgstr "高度"
+
+#: includes/admin/views/settings-page.php:226
+msgid "Recommended: 24–40px. Allowed range: 16–128."
+msgstr "建议:24-40px。 允许的范围:16-128."
+
+#: includes/admin/views/settings-page.php:230
+msgid "WooCommerce gateway"
+msgstr "WooCommerce 网关"
+
+#: includes/admin/views/settings-page.php:233
+msgid "Enable gateway in Payments settings"
+msgstr "在支付设置中启用网关"
+
+#: includes/admin/views/settings-page.php:240
+msgid "Leave min / max empty for no limit. Coins outside the limits are hidden at checkout — useful where network fees make small orders impractical."
+msgstr "将分钟/ 最大空置无限制 。 限额外的硬币被隐藏在离职时——在网络收费使小订单不切实际的地方有用."
+
+#: includes/admin/views/settings-page.php:241
+msgid "Confirmations shown in grey are what this coin waits for now. Type a number to require your own instead — higher is safer and slower."
+msgstr "用灰色显示的确认就是这枚硬币现在所等待的. 输入一个数字来要求自己的数字——更高更安全,更慢."
+
+#: includes/admin/views/settings-page.php:242
+msgid "Auto-verify uses public blockchain APIs. Coins marked Manual (such as Monero) have no free way to detect payments — confirm those with “Mark payment received” on the order."
+msgstr "自动验证使用公共块链API. 标记为 \" 货币手册 \" (如Monero)的货币无法自由发现付款——确认订购时有 \" 马克付款 \" 的付款."
+
+#: includes/admin/views/settings-page.php:246
+msgid "USDT (multi-network)"
+msgstr "USDT(多网络)"
+
+#: includes/admin/views/settings-page.php:247
+msgid "USDC (multi-network)"
+msgstr "USDC(多网络)"
+
+#: includes/admin/views/settings-page.php:248
+msgid "DAI (multi-network)"
+msgstr "DAI(多网络)"
+
+#: includes/admin/views/settings-page.php:249
+#: includes/admin/views/wallets-ui.php:23
+msgid "Tokens"
+msgstr "键"
+
+#: includes/admin/views/settings-page.php:261
+msgid "On"
+msgstr "打开"
+
+#: includes/admin/views/settings-page.php:263
+#: templates/emails/plain/xdwp-payment-details.php:32
+#: templates/emails/xdwp-payment-details.php:43
+#: templates/payment.php:117
+msgid "Network"
+msgstr "网络"
+
+#: includes/admin/views/settings-page.php:264
+msgid "Type"
+msgstr "类型"
+
+#: includes/admin/views/settings-page.php:265
+msgid "Auto-verify"
+msgstr "自动验证"
+
+#. translators: %s: store currency code
+#: includes/admin/views/settings-page.php:271
+#, php-format
+msgid "Order min / max (%s)"
+msgstr "按分数/最大数排列 (%s)"
+
+#: includes/admin/views/settings-page.php:277
+msgid "Confirmations"
+msgstr "确认"
+
+#: includes/admin/views/settings-page.php:311
+msgid "Yes"
+msgstr "对"
+
+#: includes/admin/views/settings-page.php:312
+msgid "Manual"
+msgstr "手动"
+
+#: includes/admin/views/settings-page.php:316
+msgid "min"
+msgstr "分钟"
+
+#. translators: %s: coin name
+#: includes/admin/views/settings-page.php:316
+#, php-format
+msgid "Minimum order total for %s"
+msgstr "%s 最小顺序总计"
+
+#. translators: %s: coin name
+#: includes/admin/views/settings-page.php:317
+msgid "max"
+msgstr "最大数"
+
+#. translators: %s: coin name
+#: includes/admin/views/settings-page.php:317
+#, php-format
+msgid "Maximum order total for %s"
+msgstr "%s 的最大顺序总计"
+
+#. translators: %s: coin name
+#: includes/admin/views/settings-page.php:320
+#, php-format
+msgid "Confirmations required for %s"
+msgstr "%s 需要确认"
+
+#: includes/admin/views/settings-page.php:335
+msgid "CoinGecko API key (optional)"
+msgstr "CoinGecko API 密钥( 可选)"
+
+#. translators: %s: URL
+#: includes/admin/views/settings-page.php:343
+#, php-format
+msgid "Fiat↔crypto rates. Free without a key. Demo keys (CG-…) use the public API; Pro keys use the Pro API. Get a key at %s"
+msgstr "菲亚特克赖普托率。 免费没有钥匙。 Demo密钥(CG-.)使用公共API;Pro密钥使用Pro API. 在 %s 获取密钥"
+
+#: includes/admin/views/settings-page.php:359
+msgid "Etherscan API V2 key"
+msgstr "Etherscan API V2 密钥"
+
+#. translators: %s: URL
+#: includes/admin/views/settings-page.php:367
+#, php-format
+msgid "One free key covers ETH, BNB, Polygon, Arbitrum, Optimism, Avalanche, Fantom, Cronos, ETC and 50+ EVM chains. Get it at %s"
+msgstr "一个免费密钥涵盖ETH, BNB, Polygon, Arbitrum, Optimism, Avalanche, Fantom, Cronos, ETC和50+ EVM链. 以 %s 获取"
+
+#: includes/admin/views/settings-page.php:383
+msgid "TronGrid API key (optional)"
+msgstr "TronGrid API 密钥( 可选)"
+
+#. translators: %s: URL
+#: includes/admin/views/settings-page.php:391
+#, php-format
+msgid "Recommended for TRX / USDT-TRC20 stability. Free at %s"
+msgstr "建议的TRX/USDT-TRC20稳定性。 以 %s 为空"
+
+#: includes/admin/views/settings-page.php:407
+msgid "Helius API key (optional)"
+msgstr "Helius API 密钥( 可选)"
+
+#. translators: %s: URL
+#: includes/admin/views/settings-page.php:415
+#, php-format
+msgid "More stable Solana RPC than the public endpoint. Free tier at %s"
+msgstr "比公共终点更稳定 索拉纳 RPC. 空分等级为 %s"
+
+#: includes/admin/views/settings-page.php:431
+msgid "Subscan API key (optional)"
+msgstr "Subscan API 密钥( 可选)"
+
+#. translators: %s: URL
+#: includes/admin/views/settings-page.php:439
+#, php-format
+msgid "Improves Polkadot (DOT) auto-verify rate limits. Free at %s"
+msgstr "改进Polkadot(DOT)自动核实利率限制。 空闲于 %s"
+
+#: includes/admin/views/settings-page.php:455
+msgid "ViewBlock API key (optional)"
+msgstr "查看 API 密钥( 可选)"
+
+#. translators: %s: URL
+#: includes/admin/views/settings-page.php:463
+#, php-format
+msgid "Improves Zilliqa (ZIL) auto-verify reliability. Free at %s"
+msgstr "提高Zilliqa(ZIL)自动核实可靠性。 以 %s 为空"
+
+#: includes/admin/views/settings-page.php:479
+msgid "Aptos API key"
+msgstr "API 密钥"
+
+#. translators: %s: URL
+#: includes/admin/views/settings-page.php:487
+#, php-format
+msgid "Required for APT auto-verify — Aptos&#8217;s public indexer rate-limits anonymous requests too aggressively to use without one. Free at %s"
+msgstr "APT 自动验证—— Aptos- 8217; 公共指数器的费率限制 匿名请求过于激烈, 无法使用。 空闲于 %s"
+
+#: includes/admin/views/settings-page.php:503
+msgid "Stablecoin pricing"
+msgstr "稳定币定价"
+
+#: includes/admin/views/settings-page.php:507
+msgid "Price stablecoins that track your store currency 1:1 (a 17.34 order asks for exactly 17.34 USDT)."
+msgstr "价格稳定币追踪你的店面货币1:1(17.34个订单要求17.34美元)."
+
+#: includes/admin/views/settings-page.php:509
+msgid "Off: the live market rate is used, so the amount is slightly different (e.g. 17.3465 USDT). Applies to USDT, USDC, DAI, TUSD, USDP, GUSD, PYUSD, USDD, USDe and USDJ in USD stores, and EURT in EUR stores."
+msgstr "Off:使用活市场率,因此金额略有不同(例如17.3465美元)。 适用于USDT、USDC、DAI、TUSD、USDP、GUSD、PYUSD、USD、USDe和USDJ在USD商店以及EUR商店中的EURRT."
+
+#: includes/admin/views/settings-page.php:513
+msgid "Show crypto price on products"
+msgstr "在产品上显示加密价格"
+
+#: includes/admin/views/settings-page.php:517
+msgid "Display an approximate crypto equivalent near product prices."
+msgstr "显示接近产品价格的近似密码等同值."
+
+#: includes/admin/views/settings-page.php:522
+msgid "Product price coin"
+msgstr "产品价格硬币"
+
+#: includes/admin/views/settings-page.php:533
+#: includes/admin/views/wallets-ui.php:20
+msgid "USDT"
+msgstr "乌干达"
+
+#: includes/admin/views/settings-page.php:534
+#: includes/admin/views/wallets-ui.php:21
+msgid "USDC"
+msgstr "USDC USDC 美联社"
+
+#: includes/admin/views/settings-page.php:550
+msgid "Bitcoin uses mempool.space with Blockstream fallback (no key needed). BCH/LTC/DOGE use Blockchair. Base/Arbitrum/Optimism and other EVMs use Etherscan V2. XRP/XLM and most alt chains use public APIs. Monero (XMR) stays manual because inbound detection requires a private view key."
+msgstr "比特币使用mempool.space 与 Blockstream回落(不需要密钥). BCH/LTC/DOGE使用块椅. Base/Arbitrum/optimism等EVMs使用以太子座V2. XRP/XLM,而大多数等位链使用公共API. Monero(XMR)保持手动状态,因为入境检测需要私人视图密钥."
+
+#: includes/admin/views/settings-page.php:557
+msgid "Save changes"
+msgstr "保存更改"
+
+#: includes/admin/views/wallets-ui.php:22
+msgid "DAI"
+msgstr "DAI 达赖"
+
+#: includes/admin/views/wallets-ui.php:88
+msgid "Wallet addresses"
+msgstr "钱包地址"
+
+#: includes/admin/views/wallets-ui.php:89
+msgid "Add one or more receiving addresses for each activated coin. Extra addresses rotate automatically when rotation is on."
+msgstr "为每个激活的硬币添加一个或多个接收地址. 额外地址在旋转时自动旋转 ."
+
+#. translators: %s: Coins settings URL
+#: includes/admin/views/wallets-ui.php:95
+#, php-format
+msgid "Manage which coins appear here on the %s tab."
+msgstr "管理 %s 标签上显示的硬币 ."
+
+#: includes/admin/views/wallets-ui.php:111
+msgid "Addresses"
+msgstr "地址"
+
+#. translators: %s: Coins settings URL
+#: includes/admin/views/wallets-ui.php:125
+#, php-format
+msgid "No coins are activated yet. Enable coins and tokens under %s, then come back to add wallet addresses."
+msgstr "尚未激活硬币。 在 %s 下启用硬币和令牌,然后回来添加钱包地址."
+
+#: includes/admin/views/wallets-ui.php:137
+msgid "Go to Coins"
+msgstr "转到硬币"
+
+#: includes/admin/views/wallets-ui.php:144
+msgid "Search coins"
+msgstr "搜索硬币"
+
+#: includes/admin/views/wallets-ui.php:145
+msgid "Filter by coin, symbol, or network…"
+msgstr "通过硬币、符号或网络过滤.."
+
+#. translators: %d: coins missing addresses
+#: includes/admin/views/wallets-ui.php:152
+#, php-format
+msgid "%d coin still needs an address"
+msgid_plural "%d coins still need an address"
+msgstr[0] "%d 硬币还需要地址"
+
+#. translators: %d: number of coins in section
+#: includes/admin/views/wallets-ui.php:182
+#, php-format
+msgid "%d coin"
+msgid_plural "%d coins"
+msgstr[0] "%d 硬币"
+
+#: includes/admin/views/wallets-ui.php:226
+msgid "This network is matched by address + amount only — a destination tag/memo is not read here. Use an address only this store controls, never a shared or exchange-hosted address, or unrelated payments to the same address could be misattributed."
+msgstr "此网络仅配有地址+量——此处不读取目的地标记/memo. 只使用此商店控件的地址,绝不使用共享地址或交换托管地址,或对同一地址的不相干付款可能会被错误分配."
+
+#: includes/admin/views/wallets-ui.php:232
+msgid "Each order also gets its own destination tag / memo, shown to the customer and checked against the payment — so an address shared with other orders still tells payments apart."
+msgstr "每份订单还获得自己的目的地标签/备忘录,向客户显示,并与付款核对——因此与其他订单共享的地址仍然会分道扬镳."
+
+#: includes/admin/views/wallets-ui.php:250
+msgid "+ Add address"
+msgstr "+ 添加地址"
+
+#: includes/admin/views/wallets-ui.php:253
+msgid "Clear all"
+msgstr "全部清除"
+
+#: includes/admin/views/wallets-ui.php:264
+#: includes/class-xdwp-gateway.php:368
+#: assets/js/blocks.js:283
+msgid "No coins match your search."
+msgstr "没有硬币符合你的搜索."
+
+#: includes/class-xdwp-ajax.php:139
+#: includes/class-xdwp-ajax.php:237
+#: includes/class-xdwp-order.php:837
+msgid "Forbidden."
+msgstr "被禁绝."
+
+#: includes/class-xdwp-ajax.php:157
+#: includes/class-xdwp-ajax.php:243
+#: includes/class-xdwp-ajax.php:274
+msgid "Too many requests. Please wait a moment."
+msgstr "请求太多 请等一下."
+
+#: includes/class-xdwp-ajax.php:260
+msgid "This order cannot be re-quoted. Please contact us."
+msgstr "此顺序无法被重新引用 。 请联系我们."
+
+#: includes/class-xdwp-ajax.php:281
+msgid "Cart unavailable."
+msgstr "无法使用 Cart ."
+
+#: includes/class-xdwp-ajax.php:288
+msgid "Coin not available for this order total."
+msgstr "此命令总共没有硬币 ."
+
+#: includes/class-xdwp-ajax.php:294
+msgid "Unable to fetch exchange rate. Try again shortly."
+msgstr "无法获取汇率 。 再试一下."
+
+#: includes/class-xdwp-ajax.php:305
+msgid "Exact amount due if you place the order now."
+msgstr "如果你现在下订单的话, 准确的金额."
+
+#: includes/class-xdwp-branding.php:27
+msgid "Icon and text"
+msgstr "图标和文本"
+
+#: includes/class-xdwp-branding.php:28
+msgid "Icon only"
+msgstr "只有图标"
+
+#: includes/class-xdwp-branding.php:29
+msgid "Text only"
+msgstr "只有文本"
+
+#. translators: 1: amount, 2: symbol, 3: txid
+#: includes/class-xdwp-cron.php:257
+#, php-format
+msgid "Late crypto payment detected after the payment window closed: %1$s %2$s (txid: %3$s). Review it and use \"Mark payment received\" to complete the order, or refund the customer."
+msgstr ""
+
+#: includes/class-xdwp-gateway.php:21
+msgid "Accept cryptocurrency payments directly to your own wallets with automatic on-chain verification."
+msgstr "直接接受密码货币支付,并自动进行链上验证."
+
+#: includes/class-xdwp-gateway.php:77
+msgid "Enable/Disable"
+msgstr "启用/ 禁用"
+
+#: includes/class-xdwp-gateway.php:79
+msgid "Enable Xorro Wallet Payments"
+msgstr "启用 Xorro 钱包支付"
+
+#: includes/class-xdwp-gateway.php:83
+msgid "Title"
+msgstr "标题"
+
+#: includes/class-xdwp-gateway.php:85
+msgid "Payment method title shown at checkout."
+msgstr "在离职时显示付款方法标题 ."
+
+#: includes/class-xdwp-gateway.php:90
+msgid "Description"
+msgstr "说明"
+
+#: includes/class-xdwp-gateway.php:92
+msgid "Payment method description shown at checkout."
+msgstr "在离职时显示付款方法说明."
+
+#: includes/class-xdwp-gateway.php:93
+#: includes/class-xdwp-install.php:85
+msgid "Pay directly to our wallet with cryptocurrency. No third-party processor."
+msgstr "用加密货币直接付给我们的钱包. 无第三方处理器."
+
+#: includes/class-xdwp-gateway.php:96
+msgid "Configuration"
+msgstr "配置"
+
+#. translators: %s: admin URL
+#: includes/class-xdwp-gateway.php:100
+#, php-format
+msgid "Configure coins, wallets, prices, and API keys under %s."
+msgstr "在 %s 下配置硬币、钱包、价格和 API 密钥."
+
+#: includes/class-xdwp-gateway.php:309
+msgid "No cryptocurrency is available for this order total."
+msgstr "此顺序总计没有加密货币 ."
+
+#: includes/class-xdwp-gateway.php:320
+msgid "Select cryptocurrency"
+msgstr "选择加密货币"
+
+#: includes/class-xdwp-gateway.php:325
+#: assets/js/blocks.js:275
+#: assets/js/blocks.js:276
+msgid "Search coin or network…"
+msgstr "搜索硬币或网络.."
+
+#: includes/class-xdwp-gateway.php:383
+msgid "Please select a cryptocurrency to pay with."
+msgstr "请选择要支付的密码货币 ."
+
+#: includes/class-xdwp-gateway.php:399
+msgid "Invalid order."
+msgstr "无效的命令 ."
+
+#: includes/class-xdwp-gateway.php:406
+msgid "We already received a crypto payment for this order. Please contact us to complete it — do not send the full amount again."
+msgstr "我们已经收到这笔订单的密码付款。 请与我们联系,以完成这项工作——不要再寄出全额款项."
+
+#: includes/class-xdwp-gateway.php:414
+msgid "Selected cryptocurrency is not available for this order total."
+msgstr "此顺序总计没有选中的加密货币 ."
+
+#: includes/class-xdwp-gateway.php:421
+msgid "We could not prepare this crypto payment right now. Please try again in a minute, or choose a different coin."
+msgstr "我们现在无法准备这个密码付款。 请在一分钟内再试一次,或者选择不同的硬币."
+
+#: includes/class-xdwp-install.php:28
+#: includes/class-xdwp.php:107
+msgid "Every Minute (Xorro Wallet Payments)"
+msgstr "每分钟( Xorro 钱包付款)"
+
+#: includes/class-xdwp-order.php:75
+msgid "Xorro crypto payment cancelled — auto-verify stopped."
+msgstr "索罗密码支付被取消——自动验证停止."
+
+#: includes/class-xdwp-order.php:146
+msgid "Customer requested a new crypto payment quote."
+msgstr "客户要求一个新的加密付款报价."
+
+#. translators: 1: coin ID, 2: reason
+#: includes/class-xdwp-order.php:164
+#, php-format
+msgid "Crypto payment could not be set up for %1$s: %2$s"
+msgstr ""
+
+#: includes/class-xdwp-order.php:186
+msgid "Part of your payment has arrived."
+msgstr "你的钱有一部分到了."
+
+#: includes/class-xdwp-order.php:187
+msgid "Your order is waiting for payment."
+msgstr "你的订单在等待付款."
+
+#: includes/class-xdwp-order.php:189
+msgid "Send the remaining amount below"
+msgstr "将剩余数额送交以下"
+
+#: includes/class-xdwp-order.php:190
+msgid "Complete your crypto payment below"
+msgstr "在下面完成密码支付"
+
+#: includes/class-xdwp-order.php:223
+msgid "no wallet address is configured for this coin."
+msgstr "此硬币没有配置钱包地址 ."
+
+#: includes/class-xdwp-order.php:231
+msgid "no live exchange rate was available (CoinGecko rate limit or outage — see WooCommerce → Status → Logs, source \"xorro-wallet-payments\")."
+msgstr "没有现成汇率(CoinGecko汇率限制或停用——见WooCommerce – Status – Logs,来源\"xorro-wallet-paying\")."
+
+#: includes/class-xdwp-order.php:241
+msgid "other open orders on the same address expect overlapping amounts, so payments could not be told apart. Adding more addresses for this coin (with rotation on) avoids this."
+msgstr "同一地址上的其他开放订单预计金额会相重叠,因此无法区分付款。 为这枚硬币添加更多的地址(同时进行旋转)可以避免这种情况."
+
+#. translators: 1: amount 2: coin 3: address
+#: includes/class-xdwp-order.php:283
+#, php-format
+msgid "Awaiting crypto payment of %1$s %2$s to %3$s."
+msgstr ""
+
+#: includes/class-xdwp-order.php:392
+#: includes/class-xdwp-order.php:396
+msgid "Crypto payment confirmed on-chain."
+msgstr "加密支付确认."
+
+#: includes/class-xdwp-order.php:394
+msgid "Crypto payment confirmed on-chain (held)."
+msgstr "加密支付确认在链上( 持有) ."
+
+#. translators: 1: amount received, 2: symbol, 3: amount due, 4: excess
+#: includes/class-xdwp-order.php:405
+#, php-format
+msgid "Overpayment: received %1$s %2$s for %3$s %2$s due (%4$s %2$s extra). Refund the difference if appropriate."
+msgstr ""
+
+#. translators: 1: amount received, 2: symbol, 3: amount due
+#: includes/class-xdwp-order.php:481
+#, php-format
+msgid "Crypto payment window expired with a partial payment: received %1$s %2$s of %3$s %2$s. Refund the customer or complete the order manually."
+msgstr ""
+
+#: includes/class-xdwp-order.php:490
+msgid "Crypto payment window expired. Contact the store if you already sent funds."
+msgstr "加密支付窗口已过期 。 如果您已经寄出资金, 请联系商店 ."
+
+#: includes/class-xdwp-order.php:546
+msgid "Payment details are unavailable for this order."
+msgstr "此订单没有支付细节 ."
+
+#: includes/class-xdwp-order.php:621
+msgid "Payment detected — waiting for network confirmations…"
+msgstr "已检测到付款——等待网络确认.."
+
+#: includes/class-xdwp-order.php:622
+msgid "Getting a new amount…"
+msgstr "获得新数量.."
+
+#: includes/class-xdwp-order.php:623
+msgid "Could not get a new amount. Please contact us."
+msgstr "无法获得新金额 。 请联系我们."
+
+#: includes/class-xdwp-order.php:624
+msgid "Copied!"
+msgstr "被拦截了!"
+
+#: includes/class-xdwp-order.php:625
+msgid "Payment window expired."
+msgstr "付款窗口过期 ."
+
+#: includes/class-xdwp-order.php:626
+msgid "Payment confirmed! Thank you."
+msgstr "付款确认! 谢谢."
+
+#: includes/class-xdwp-order.php:627
+msgid "Checking…"
+msgstr "正在检查.."
+
+#: includes/class-xdwp-order.php:628
+#: templates/payment.php:144
+msgid "Waiting for payment…"
+msgstr "正在等待付款.."
+
+#: includes/class-xdwp-order.php:629
+msgid "QR unavailable — copy the address manually."
+msgstr "QR 不可用——手动复制地址 ."
+
+#: includes/class-xdwp-order.php:691
+msgid "Not a Xorro Wallet Payments order."
+msgstr "不是索罗钱包支付单."
+
+#: includes/class-xdwp-order.php:697
+msgid "Coin:"
+msgstr "币:"
+
+#: includes/class-xdwp-order.php:698
+msgid "Amount:"
+msgstr "数额 :"
+
+#: includes/class-xdwp-order.php:699
+msgid "Address:"
+msgstr "地址:"
+
+#: includes/class-xdwp-order.php:703
+msgid "Destination tag:"
+msgstr "目标标签 :"
+
+#: includes/class-xdwp-order.php:703
+msgid "Memo:"
+msgstr "备忘:"
+
+#: includes/class-xdwp-order.php:708
+msgid "Partially paid"
+msgstr "部分缴款"
+
+#: includes/class-xdwp-order.php:713
+msgid "Status:"
+msgstr "状态 :"
+
+#: includes/class-xdwp-order.php:720
+msgid "Received:"
+msgstr "收到 :"
+
+#: includes/class-xdwp-order.php:723
+msgid "Still due:"
+msgstr "仍应:"
+
+#: includes/class-xdwp-order.php:726
+msgid "Overpaid by:"
+msgstr "超额支付者:"
+
+#: includes/class-xdwp-order.php:730
+msgid "Partial payment txids:"
+msgstr "部分缴款txids:"
+
+#: includes/class-xdwp-order.php:734
+msgid "Payment received after the window closed"
+msgstr "窗口关闭后收到的付款"
+
+#. translators: 1: amount, 2: symbol, 3: txid
+#: includes/class-xdwp-order.php:737
+#, php-format
+msgid "%1$s %2$s arrived in transaction %3$s. Check it, then use \"Mark payment received\" below (the transaction ID is filled in) or refund the customer."
+msgstr ""
+
+#: includes/class-xdwp-order.php:767
+#: includes/class-xdwp-privacy.php:35
+msgid "On-chain transaction ID"
+msgstr "链上交易ID"
+
+#: includes/class-xdwp-order.php:773
+msgid "I confirm this transaction paid this order on-chain."
+msgstr "我确认这笔交易已经支付订单."
+
+#: includes/class-xdwp-order.php:776
+msgid "Mark payment received"
+msgstr "已收付款标记"
+
+#: includes/class-xdwp-order.php:778
+msgid "Requires a txid. Use for chains without auto-verify, delayed detection, or late payments after expiry."
+msgstr "需要一个txid。 用于链条,无需自动验证,延迟检测,或过期后延迟支付."
+
+#: includes/class-xdwp-order.php:829
+msgid "Payment marked as received. The order status has been updated."
+msgstr "付款记为实收。 订单状态已更新 ."
+
+#: includes/class-xdwp-order.php:841
+msgid "Invalid request method."
+msgstr "无效的请求方法 ."
+
+#: includes/class-xdwp-order.php:852
+msgid "A valid on-chain transaction ID is required."
+msgstr "需要有效的链上交易ID."
+
+#: includes/class-xdwp-order.php:855
+msgid "Manual confirmation checkbox is required."
+msgstr "需要手动确认复选框 ."
+
+#: includes/class-xdwp-order.php:860
+msgid "Order not found."
+msgstr "未找到命令 ."
+
+#: includes/class-xdwp-order.php:874
+msgid "This order cannot be marked paid (wrong status)."
+msgstr "此命令无法标记支付( 错误状态 ) ."
+
+#: includes/class-xdwp-order.php:878
+msgid "That transaction ID is already linked to another order."
+msgstr "该交易ID已经链接到另一个订单 ."
+
+#: includes/class-xdwp-order.php:890
+msgid "Could not complete payment for this order. The transaction ID was not kept."
+msgstr "无法完成此订单的支付 。 交易ID没有保存 ."
+
+#. translators: %s: transaction id
+#: includes/class-xdwp-order.php:896
+#, php-format
+msgid "Payment marked as received manually by admin (txid: %s)."
+msgstr "以管理员手动收到的付款标记(txid: %s)."
+
+#: includes/class-xdwp-privacy.php:32
+msgid "Receiving address"
+msgstr "接收地址"
+
+#: includes/class-xdwp-privacy.php:33
+msgid "Quoted amount"
+msgstr "引号金额"
+
+#: includes/class-xdwp-privacy.php:34
+msgid "Payment status"
+msgstr "缴款状况"
+
+#: includes/class-xdwp-privacy.php:36
+msgid "Payment window started"
+msgstr "开始支付窗口"
+
+#: includes/class-xdwp-privacy.php:37
+msgid "Payment window expires"
+msgstr "支付窗口过期"
+
+#: includes/class-xdwp-privacy.php:38
+msgid "Confirmed at"
+msgstr "确认于"
+
+#: includes/class-xdwp-privacy.php:39
+msgid "Amount received"
+msgstr "收到的数额"
+
+#: includes/class-xdwp-privacy.php:40
+msgid "Partial payments received"
+msgstr "收到的部分缴款"
+
+#: includes/class-xdwp-privacy.php:41
+msgid "Amount still due"
+msgstr "应付数额"
+
+#: includes/class-xdwp-privacy.php:42
+msgid "Partial payment transaction IDs"
+msgstr "部分支付交易ID"
+
+#: includes/class-xdwp-privacy.php:43
+msgid "Overpaid amount"
+msgstr "超额支付额"
+
+#: includes/class-xdwp-privacy.php:44
+msgid "Late payment transaction ID"
+msgstr "逾期付款交易 ID"
+
+#: includes/class-xdwp-privacy.php:45
+msgid "Late payment amount"
+msgstr "迟付数额"
+
+#: includes/class-xdwp-privacy.php:183
+msgid "Xorro Wallet Payments: coin, address, amount, and transaction-ID metadata on crypto orders was retained for payment verification and merchant accounting/dispute records, consistent with how order data is kept after uninstalling the plugin."
+msgstr "Xorro钱包支付:保留了密码订单上的硬币、地址、金额和交易ID元数据,用于支付核实和商家会计/争议记录,这与未计入插件后如何保存订单数据相一致."
+
+#: includes/class-xdwp-privacy.php:202
+msgid "Xorro Direct Wallet Payments for WooCommerce lets customers pay with cryptocurrency directly to store wallets. The plugin does not send data to the plugin author’s servers."
+msgstr "Xorro直接钱包给WooCommerce的付款让客户用密码货币直接支付来存储钱包. 插件不向插件作者的服务器发送数据 ."
+
+#: includes/class-xdwp-privacy.php:204
+msgid "What is stored locally"
+msgstr "何为本地存储"
+
+#: includes/class-xdwp-privacy.php:206
+msgid "Public cryptocurrency receiving addresses you configure."
+msgstr "您配置的公共密码货币接收地址 ."
+
+#: includes/class-xdwp-privacy.php:207
+msgid "Order metadata needed to match payments (selected coin, quoted amount, assigned address, payment status)."
+msgstr "订购匹配支付所需的元数据(所选的硬币,引号金额,指定地址,支付状况)."
+
+#: includes/class-xdwp-privacy.php:210
+msgid "Third-party services"
+msgstr "第三方服务"
+
+#: includes/class-xdwp-privacy.php:211
+msgid "When a customer uses this payment method, or when automatic verification is enabled, the store may contact public blockchain and price APIs. Typical data includes coin identifiers, wallet addresses, transaction IDs, and fiat currency codes. Optional API keys you add are sent only to the matching provider."
+msgstr "当客户使用这种支付方法,或者当自动验证被启用时,商店可以联系公共区块链和价格API. 典型的数据包括硬币标识符,钱包地址,交易ID,和fiat货币代码. 您添加的可选 API 密钥只发送到匹配的提供者 ."
+
+#: includes/class-xdwp-privacy.php:213
+msgid "CoinGecko — exchange rates for crypto quotes."
+msgstr "CoinGecko — 密码引用的汇率."
+
+#: includes/class-xdwp-privacy.php:214
+msgid "Etherscan API V2 — EVM chain payment detection."
+msgstr "Etherscan API V2——EVM连锁支付检测."
+
+#: includes/class-xdwp-privacy.php:215
+msgid "mempool.space / Blockstream — Bitcoin payment detection."
+msgstr "mempool.space / Blockstream – 比特币支付检测."
+
+#: includes/class-xdwp-privacy.php:216
+msgid "Blockchair — Bitcoin Cash / Litecoin / Dogecoin payment detection."
+msgstr "块椅-比特币现金/利特币/多克币支付检测."
+
+#: includes/class-xdwp-privacy.php:217
+msgid "TronGrid, Solana RPC / Helius, and other public explorers/RPCs for supported networks."
+msgstr "TronGrid,Solana RPC / Helius,以及其他公共探险家/RPC为所支持的网络服务."
+
+#: includes/class-xdwp-privacy.php:220
+msgid "Automatic on-chain verification can be disabled under Xorro Wallet Payments → General. Disabling the payment gateway stops these checkout-related requests."
+msgstr "在 Xorro 钱包支付 → General 下可禁用自动的链上验证. 禁用支付网关会停止这些与出账相关的请求."
+
+#. translators: %s: PHP constant name
+#: includes/class-xdwp-settings.php:110
+#, php-format
+msgid "Set via %s in wp-config.php"
+msgstr "以 wp- config.php 通过 %s 设定"
+
+#: includes/class-xdwp-settings.php:117
+msgid "Key saved — leave blank to keep, paste a new key, or enter - to clear"
+msgstr "已保存的密钥—— 留空以保留、 粘贴新密钥或输入—— 以清除"
+
+#: includes/class-xdwp-updater.php:179
+msgid "Accept cryptocurrency payments directly to your own wallets — updates are delivered from GitHub Releases."
+msgstr "直接接受密码货币支付给自己的钱包——更新从GitHub Releases发送."
+
+#: includes/class-xdwp-updater.php:182
+msgid "See GitHub Releases for changelog details."
+msgstr "见 GitHub 发布器的更改日志细节 ."
+
+#: includes/class-xdwp-updater.php:219
+msgid "Refused plugin update: package host is not an allowlisted GitHub download host."
+msgstr "被拒绝的插件更新:包主机不是一个被允许上市的GitHub下载主机."
+
+#: includes/class-xdwp-updater.php:244
+msgid "Refused plugin update: release SHA-256 checksum is unavailable."
+msgstr "拒绝的插件更新: 无法发布 SHA-256 校验和 ."
+
+#: includes/class-xdwp-updater.php:253
+msgid "Refused plugin update: ZIP SHA-256 does not match the GitHub release checksum."
+msgstr "拒绝的插件更新:ZIP SHA-256不匹配GitHub放出校验和."
+
+#: includes/class-xdwp-updater.php:269
+msgid "Refused plugin update: the release is not signed with the Xorro Wallet Payments release key."
+msgstr "拒绝的插件更新: 发行时未与 Xorro 钱包支付发行密钥签名."
+
+#. translators: 1: amount received, 2: symbol, 3: amount due, 4: remaining amount, 5: txid
+#: includes/class-xdwp-verifier.php:299
+#, php-format
+msgid "Partial crypto payment: received %1$s %2$s of %3$s %2$s. Waiting for the remaining %4$s %2$s (txid: %5$s). The payment window was restarted."
+msgstr ""
+
+#. translators: 1: amount, 2: symbol, 3: txid
+#: includes/class-xdwp-verifier.php:394
+#, php-format
+msgid "A transfer of %1$s %2$s (txid: %3$s) arrived that could belong to this order or another open order on the same address, so it was not credited automatically. Check which customer sent it and use \"Mark payment received\" on the right order."
+msgstr ""
+
+#: includes/emails/class-xdwp-email-partial-payment.php:21
+msgid "Crypto partial payment"
+msgstr "加密部分付款"
+
+#: includes/emails/class-xdwp-email-partial-payment.php:22
+msgid "Sent to the customer when less than the full crypto amount arrives (often because an exchange deducted a withdrawal fee). Shows what was received and how much is still due."
+msgstr "当不到全部加密数额时(往往因为交易所扣除了提款费)发送给客户。 显示收到什么,还有多少到期."
+
+#: includes/emails/class-xdwp-email-partial-payment.php:36
+msgid "We received part of your payment for order #{order_number}"
+msgstr ""
+
+#: includes/emails/class-xdwp-email-partial-payment.php:43
+msgid "Part of your payment arrived"
+msgstr "你的钱有一部分到了"
+
+#: includes/emails/class-xdwp-email-payment-alert.php:29
+#: includes/emails/class-xdwp-email-payment-alert.php:54
+msgid "Crypto payment needs attention"
+msgstr "密码支付需要注意"
+
+#: includes/emails/class-xdwp-email-payment-alert.php:30
+msgid "Sent to the store owner when a crypto payment is short, over the amount due, or arrives after the payment window closed."
+msgstr "当密码支付不足时, 发送到店主, 超过到期金额, 或在支付窗口关闭后到达 ."
+
+#: includes/emails/class-xdwp-email-payment-alert.php:47
+msgid "[{site_title}] Order #{order_number}: {issue}"
+msgstr ""
+
+#: includes/emails/class-xdwp-email-payment-alert.php:65
+msgid "partial payment received"
+msgstr "收到部分缴款"
+
+#: includes/emails/class-xdwp-email-payment-alert.php:66
+msgid "partial payment, window expired"
+msgstr "部分付款,窗口已过期"
+
+#: includes/emails/class-xdwp-email-payment-alert.php:67
+msgid "overpayment received"
+msgstr "收到的多付款项"
+
+#: includes/emails/class-xdwp-email-payment-alert.php:68
+msgid "payment arrived after expiry"
+msgstr "到期后付款"
+
+#: includes/emails/class-xdwp-email-payment-alert.php:69
+msgid "unassigned payment to check"
+msgstr "未分配的付款进行核对"
+
+#: includes/emails/class-xdwp-email-payment-alert.php:71
+msgid "crypto payment issue"
+msgstr "加密付款问题"
+
+#. translators: 1: received, 2: symbol, 3: due, 4: remaining
+#: includes/emails/class-xdwp-email-payment-alert.php:89
+#, php-format
+msgid "The customer sent %1$s %2$s of %3$s %2$s. They have been emailed to send the remaining %4$s %2$s and the payment window was restarted. The order completes automatically if the rest arrives; otherwise it expires and you can refund the partial payment."
+msgstr ""
+
+#. translators: 1: received, 2: symbol, 3: due
+#: includes/emails/class-xdwp-email-payment-alert.php:92
+#, php-format
+msgid "The payment window closed after only %1$s %2$s of %3$s %2$s arrived. The order is marked failed. Refund the customer, or complete the order manually with \"Mark payment received\" if you accept the shortfall."
+msgstr ""
+
+#. translators: 1: received, 2: symbol, 3: due, 4: excess
+#: includes/emails/class-xdwp-email-payment-alert.php:95
+#, php-format
+msgid "The customer sent %1$s %2$s for %3$s %2$s due. The order was completed; %4$s %2$s was paid on top, which you may want to refund."
+msgstr ""
+
+#. translators: 1: amount, 2: symbol, 3: due
+#: includes/emails/class-xdwp-email-payment-alert.php:98
+#, php-format
+msgid "%1$s %2$s arrived for this order after its payment window had closed (%3$s %2$s was due). The order was not changed. Check the payment, then complete it with \"Mark payment received\" (the transaction ID is filled in) or refund the customer."
+msgstr ""
+
+#. translators: 1: amount, 2: symbol
+#: includes/emails/class-xdwp-email-payment-alert.php:101
+#, php-format
+msgid "A transfer of %1$s %2$s arrived on this order's address, but it does not match any order exactly and could belong to more than one open order (for example a customer whose exchange deducted a fee). It was not credited automatically. Check which customer sent it, then use \"Mark payment received\" on that order."
+msgstr ""
+
+#: includes/emails/class-xdwp-email-payment-alert.php:176
+msgid "Recipient(s)"
+msgstr "收件人"
+
+#. translators: %s: admin email
+#: includes/emails/class-xdwp-email-payment-alert.php:179
+#, php-format
+msgid "Comma-separated. Defaults to %s."
+msgstr "逗号分出. 默认为 %s."
+
+#: includes/emails/class-xdwp-email-payment-reminder.php:21
+msgid "Crypto payment reminder"
+msgstr "加密付款提醒"
+
+#: includes/emails/class-xdwp-email-payment-reminder.php:22
+msgid "Sent to the customer about 15 minutes before the crypto payment window closes, if the order is still unpaid. Only sent when the payment window is 30 minutes or longer."
+msgstr "密码支付窗口关闭前约15分钟发给客户,如果订单仍未支付. 只有在支付窗口超过30分钟时发送 ."
+
+#: includes/emails/class-xdwp-email-payment-reminder.php:36
+msgid "Your order #{order_number} is waiting for payment"
+msgstr ""
+
+#: includes/emails/class-xdwp-email-payment-reminder.php:43
+#: templates/emails/plain/xdwp-payment-details.php:16
+#: templates/emails/xdwp-payment-details.php:18
+msgid "Complete your crypto payment"
+msgstr "完成您的加密支付"
+
+#. translators: %s: customer first name
+#: templates/emails/plain/xdwp-partial-payment.php:17
+#: templates/emails/plain/xdwp-payment-reminder.php:17
+#: templates/emails/xdwp-partial-payment.php:22
+#: templates/emails/xdwp-payment-reminder.php:22
+#, php-format
+msgid "Hi %s,"
+msgstr ""
+
+#. translators: %s: order number
+#: templates/emails/plain/xdwp-partial-payment.php:21
+#: templates/emails/xdwp-partial-payment.php:30
+#, php-format
+msgid "Thank you — part of the payment for order #%s has arrived. This often happens when a wallet or exchange deducts its fee from the amount sent. Please send the remaining amount below to complete your order; the payment window has been restarted."
+msgstr ""
+
+#. translators: 1: order number, 2: issue
+#: templates/emails/plain/xdwp-payment-alert.php:24
+#: templates/emails/xdwp-payment-alert.php:31
+#, php-format
+msgid "Order #%1$s: %2$s."
+msgstr ""
+
+#: templates/emails/plain/xdwp-payment-alert.php:27
+#: templates/emails/xdwp-payment-alert.php:36
+msgid "Transaction ID:"
+msgstr "交易编号 :"
+
+#: templates/emails/plain/xdwp-payment-alert.php:29
+#: templates/emails/xdwp-payment-alert.php:38
+msgid "Open the order"
+msgstr "打开命令"
+
+#: templates/emails/plain/xdwp-payment-details.php:16
+#: templates/emails/xdwp-payment-details.php:18
+msgid "Crypto payment details"
+msgstr "加密支付细节"
+
+#. translators: 1: received, 2: symbol, 3: full amount, 4: remaining
+#: templates/emails/plain/xdwp-payment-details.php:21
+#: templates/emails/xdwp-payment-details.php:25
+#, php-format
+msgid "We received %1$s %2$s of %3$s %2$s. Please send the remaining %4$s %2$s to the same address."
+msgstr ""
+
+#: templates/emails/plain/xdwp-payment-details.php:29
+#: templates/emails/xdwp-payment-details.php:35
+msgid "Send exactly this amount to the address below. Network fees are paid on top, by you."
+msgstr "把这笔钱寄到下面的地址 网络费由你支付."
+
+#: templates/emails/plain/xdwp-payment-details.php:31
+#: templates/emails/xdwp-payment-details.php:39
+#: templates/payment.php:69
+msgid "Remaining amount"
+msgstr "剩余数额"
+
+#: templates/emails/plain/xdwp-payment-details.php:31
+#: templates/emails/xdwp-payment-details.php:39
+#: templates/payment.php:69
+msgid "Amount"
+msgstr "数额"
+
+#: templates/emails/plain/xdwp-payment-details.php:33
+#: templates/emails/xdwp-payment-details.php:47
+#: templates/payment.php:88
+msgid "Address"
+msgstr "地址"
+
+#: templates/emails/plain/xdwp-payment-details.php:35
+#: templates/emails/xdwp-payment-details.php:52
+#: templates/payment.php:102
+msgid "Destination tag"
+msgstr "目标标记"
+
+#: templates/emails/plain/xdwp-payment-details.php:35
+#: templates/emails/xdwp-payment-details.php:52
+#: templates/payment.php:102
+msgid "Memo"
+msgstr "备忘"
+
+#: templates/emails/plain/xdwp-payment-details.php:36
+#: templates/emails/xdwp-payment-details.php:53
+msgid "Include this with the payment so we know it is yours."
+msgstr "把这笔钱加上钱 这样我们就知道是你的了."
+
+#: templates/emails/plain/xdwp-payment-details.php:39
+#: templates/emails/xdwp-payment-details.php:58
+msgid "Pay before"
+msgstr "支付前"
+
+#: templates/emails/plain/xdwp-payment-details.php:41
+msgid "Payment page (QR code):"
+msgstr "支付页面( QR 代码) :"
+
+#: templates/emails/plain/xdwp-payment-details.php:42
+#: templates/emails/xdwp-payment-details.php:68
+msgid "Only send on the network shown. Your order is confirmed automatically once the payment arrives."
+msgstr "只在显示的网络上发送 。 付款一到,你的订单就自动确认."
+
+#. translators: %s: order number
+#: templates/emails/plain/xdwp-payment-reminder.php:21
+#: templates/emails/xdwp-payment-reminder.php:30
+#, php-format
+msgid "Your order #%s is still waiting for payment, and the payment window closes soon. If you have already sent it, you can ignore this email — the order updates as soon as the transfer arrives."
+msgstr ""
+
+#: templates/emails/xdwp-payment-details.php:65
+msgid "Open payment page (QR code)"
+msgstr "打开支付页面( QR 代码)"
+
+#. translators: %s: coin name
+#: templates/payment.php:26
+#, php-format
+msgid "Pay with %s"
+msgstr "用 %s 支付"
+
+#: templates/payment.php:31
+msgid "Payment confirmed. Thank you!"
+msgstr "付款确认。 谢谢!"
+
+#: templates/payment.php:33
+msgid "The payment window closed before the full amount arrived. We have received part of your payment — please contact us and we will complete or refund your order. Do not send more."
+msgstr "付款窗口在全额到达之前关闭了。 我们收到了你的一部分付款——请与我们联系,我们将完成或退还你的订单。 别再寄了."
+
+#: templates/payment.php:36
+msgid "The payment window closed, so the amount shown is out of date. You can get a new amount at today's rate — your order is kept."
+msgstr "支付窗口关闭, 因此显示的金额已经过时 。 你可以以今天的速度得到一个新的金额——你的订单是保留下来的."
+
+#: templates/payment.php:38
+msgid "Get a new amount"
+msgstr "获取新金额"
+
+#: templates/payment.php:42
+msgid "Payment window expired. Please place a new order."
+msgstr "付款窗口过期 。 请下个新命令."
+
+#. translators: 1: amount received, 2: symbol, 3: full amount due, 4: remaining amount
+#: templates/payment.php:51
+#, php-format
+msgid "We received %1$s %2$s of %3$s %2$s. Please send the remaining %4$s %2$s to the same address to complete your order."
+msgstr ""
+
+#: templates/payment.php:62
+msgid "Send exactly the amount below (network fees are extra)."
+msgstr "准确发送以下数额(网络费是额外的)."
+
+#: templates/payment.php:63
+msgid "Use the matching network shown for this coin."
+msgstr "使用此硬币显示的匹配网络 ."
+
+#: templates/payment.php:64
+msgid "Wait for automatic confirmation — this page updates itself."
+msgstr "等自动确认——本页自我更新."
+
+#. translators: %s: order total in store currency
+#: templates/payment.php:83
+#, php-format
+msgid "≈ %s order total"
+msgstr "%s 顺序总计"
+
+#: templates/payment.php:113
+msgid "Paste this into your wallet with the payment. It tells us the payment is yours."
+msgstr "把这个粘入钱包 与付款。 它告诉我们付款是你的."
+
+#: templates/payment.php:124
+msgid "Open in wallet app"
+msgstr "在钱包应用程序中打开"
+
+#: templates/payment.php:130
+msgid "Scan with your wallet app"
+msgstr "扫描您的钱包应用程序"
+
+#: templates/payment.php:138
+msgid "Copy payment link"
+msgstr "复制付款链接"
+
+#. translators: 1: required PHP 2: current PHP
+#. translators: 1: required PHP version, 2: current PHP version
+#: xorro-direct-wallet-payments-woocommerce.php:67
+#: xorro-direct-wallet-payments-woocommerce.php:112
+#, php-format
+msgid "Xorro Wallet Payments requires PHP %1$s or higher. You are running %2$s."
+msgstr ""
+
+#: xorro-direct-wallet-payments-woocommerce.php:131
+msgid "Xorro Wallet Payments requires WooCommerce to be installed and active."
+msgstr "Xorro钱包支付需要WooCommerce安装并激活."
+
+#. translators: %s: WordPress version
+#: xorro-direct-wallet-payments-woocommerce.php:150
+#, php-format
+msgid "Xorro Wallet Payments requires WordPress %s or higher (WordPress 7.0 recommended)."
+msgstr "Xorro钱包支付需要WordPress %s或更高(WordPress 7.0推荐)."
+
+#. translators: %s: WooCommerce version
+#: xorro-direct-wallet-payments-woocommerce.php:171
+#, php-format
+msgid "Xorro Wallet Payments requires WooCommerce %s or higher."
+msgstr "Xorro钱包支付需要WooCommerce %s或更高."
+
+#: assets/js/blocks.js:141
+msgid "Please select a cryptocurrency."
+msgstr "请选择一个加密货币 ."
+
+#: assets/js/blocks.js:244
+msgid "No cryptocurrencies are configured."
+msgstr "没有配置加密 ."
+

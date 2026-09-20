@@ -216,6 +216,15 @@ class Xdwp_Admin {
 
 		add_submenu_page(
 			'xorro-direct-wallet-payments-woocommerce',
+			__( 'Help', 'xorro-direct-wallet-payments-woocommerce' ),
+			__( 'Help', 'xorro-direct-wallet-payments-woocommerce' ),
+			'manage_woocommerce',
+			'xorro-direct-wallet-payments-woocommerce-help',
+			array( __CLASS__, 'render_help_page' )
+		);
+
+		add_submenu_page(
+			'xorro-direct-wallet-payments-woocommerce',
 			__( 'Prices & APIs', 'xorro-direct-wallet-payments-woocommerce' ),
 			__( 'Prices & APIs', 'xorro-direct-wallet-payments-woocommerce' ),
 			'manage_woocommerce',
@@ -237,6 +246,7 @@ class Xdwp_Admin {
 			'xorro-direct-wallet-payments-woocommerce-wallets' => 'wallets',
 			'xorro-direct-wallet-payments-woocommerce-prices'  => 'prices',
 			'xorro-direct-wallet-payments-woocommerce-payments' => 'payments',
+			'xorro-direct-wallet-payments-woocommerce-help'   => 'help',
 		);
 		return isset( $map[ $page ] ) ? $map[ $page ] : 'general';
 	}
@@ -620,6 +630,13 @@ class Xdwp_Admin {
 				'title' => __( 'Wallets', 'xorro-direct-wallet-payments-woocommerce' ),
 				'desc'  => __( 'Receiving addresses for enabled coins. Use multiple addresses for rotation.', 'xorro-direct-wallet-payments-woocommerce' ),
 			),
+			'help'    => array(
+				'label' => __( 'Help', 'xorro-direct-wallet-payments-woocommerce' ),
+				'url'   => admin_url( 'admin.php?page=xorro-direct-wallet-payments-woocommerce-help' ),
+				'icon'  => 'dashicons-editor-help',
+				'title' => __( 'Help', 'xorro-direct-wallet-payments-woocommerce' ),
+				'desc'  => __( 'What every setting does, how a payment is matched, and what to do when something looks wrong.', 'xorro-direct-wallet-payments-woocommerce' ),
+			),
 			'prices'  => array(
 				'label' => __( 'Prices & APIs', 'xorro-direct-wallet-payments-woocommerce' ),
 				'url'   => admin_url( 'admin.php?page=xorro-direct-wallet-payments-woocommerce-prices' ),
@@ -628,6 +645,22 @@ class Xdwp_Admin {
 				'desc'  => __( 'Exchange rates and blockchain API keys for quotes and auto-verification.', 'xorro-direct-wallet-payments-woocommerce' ),
 			),
 		);
+	}
+
+	/**
+	 * Render the help screen.
+	 */
+	public static function render_help_page() {
+		if ( ! current_user_can( 'manage_woocommerce' ) ) {
+			return;
+		}
+		self::enqueue_shell_assets();
+		if ( did_action( 'admin_print_styles' ) && wp_style_is( 'xdwp-admin', 'enqueued' ) ) {
+			wp_print_styles( 'xdwp-admin' );
+		}
+
+		$tab = 'help';
+		include XDWP_PATH . 'includes/admin/views/help-page.php';
 	}
 
 	/**

@@ -4,7 +4,7 @@ Tags: woocommerce, cryptocurrency, bitcoin, ethereum, payments, usdt, crypto che
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.11.0
+Stable tag: 1.12.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -336,6 +336,11 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 * QR Code generator (`assets/js/qrcode.min.js`) — MIT-licensed library by davidshimjs (https://github.com/davidshimjs/qrcodejs). Source is publicly available; the bundled file is minified for production use.
 
 == Changelog ==
+
+= 1.12.0 =
+A Help screen, and the plugin in sixteen languages.
+* New: Help tab — what every setting does, how a payment is recognised, what the customer sees, what to do when something looks wrong, and the hooks a developer can use
+* New: bundled translations for Arabic, Chinese (simplified), Dutch, French, German, Hindi, Indonesian, Italian, Japanese, Polish, Portuguese (Brazil), Russian, Spanish, Turkish, Ukrainian and Vietnamese. These are machine translations, so a native speaker's corrections are welcome; a site's own translation always wins over the bundled one
 
 = 1.11.0 =
 A fresh address for every order, if you want one.

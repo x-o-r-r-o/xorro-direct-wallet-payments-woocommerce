@@ -1,0 +1,1664 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Xorro Direct Wallet Payments for WooCommerce\n"
+"Report-Msgid-Bugs-To: https://github.com/x-o-r-r-o/xorro-direct-wallet-payments-woocommerce/issues\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: de_DE\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: LibreTranslate (machine translation, not yet reviewed by a person)\n"
+
+#. Plugin Name of the plugin
+#: xorro-direct-wallet-payments-woocommerce.php
+msgid "Xorro Direct Wallet Payments for WooCommerce"
+msgstr "Xorro Direct Wallet Zahlungen für WooCommerce"
+
+#. Plugin URI of the plugin
+#: xorro-direct-wallet-payments-woocommerce.php
+msgid "https://github.com/x-o-r-r-o/xorro-direct-wallet-payments-woocommerce"
+msgstr "https://github.com/x-o-r-r-o/xorro-direct-wallet-payments-woocommerce"
+
+#. Description of the plugin
+#: xorro-direct-wallet-payments-woocommerce.php
+msgid "Accept cryptocurrency payments directly to your own wallets — no third-party payment processor. Supports BTC, BCH, ETH, USDT, USDC, DAI, TON, ADA, APT, KAS, XTZ and 200+ coins/tokens with automatic on-chain verification."
+msgstr "Akzeptieren Sie Kryptowährungszahlungen direkt an Ihre eigenen Wallets - kein Zahlungsprozessor von Drittanbietern. Unterstützt BTC, BCH, ETH, USDT, USDC, DAI, TON, ADA, APT, KAS, XTZ und 200+ Münzen / Token mit automatischer On-Chain-Verifizierung."
+
+#. Author of the plugin
+#: xorro-direct-wallet-payments-woocommerce.php
+msgid "xorro"
+msgstr "xorro"
+
+#. Author URI of the plugin
+#: xorro-direct-wallet-payments-woocommerce.php
+msgid "https://github.com/x-o-r-r-o"
+msgstr "https://github.com/x-o-r-r-o"
+
+#: includes/admin/class-xdwp-admin.php:106
+#: includes/admin/views/wallets-ui.php:66
+msgid "Paste wallet address"
+msgstr "Paste Wallet Adresse"
+
+#: includes/admin/class-xdwp-admin.php:107
+#: includes/admin/views/wallets-ui.php:73
+#: templates/payment.php:78
+#: templates/payment.php:97
+#: templates/payment.php:111
+msgid "Copy"
+msgstr "Kopie"
+
+#: includes/admin/class-xdwp-admin.php:108
+msgid "Copied"
+msgstr "Kopiert"
+
+#: includes/admin/class-xdwp-admin.php:109
+#: includes/admin/views/wallets-ui.php:75
+msgid "Remove address"
+msgstr "Adresse entfernen"
+
+#: includes/admin/class-xdwp-admin.php:110
+msgid "Invalid format"
+msgstr "Ungültiges Format"
+
+#: includes/admin/class-xdwp-admin.php:111
+msgid "Duplicate address"
+msgstr "Doppelte Anschrift"
+
+#. translators: %d: coins still missing a wallet
+#: includes/admin/class-xdwp-admin.php:113
+#: includes/admin/class-xdwp-admin.php:117
+#, php-format
+msgid "%d coin(s) still need an address"
+msgstr "%d coin(s) benötigen noch eine adresse"
+
+#. translators: %d: number of wallet addresses
+#: includes/admin/class-xdwp-admin.php:115
+#, php-format
+msgid "%d addresses"
+msgstr "%d adressen"
+
+#: includes/admin/class-xdwp-admin.php:119
+msgid "Select checkout icon"
+msgstr "Checkout-Icon auswählen"
+
+#: includes/admin/class-xdwp-admin.php:120
+msgid "Use this icon"
+msgstr "Verwenden Sie dieses Icon"
+
+#: includes/admin/class-xdwp-admin.php:121
+msgid "Media library is not available."
+msgstr "Medienbibliothek ist nicht verfügbar."
+
+#: includes/admin/class-xdwp-admin.php:162
+msgid "Settings"
+msgstr "Einstellungen"
+
+#: includes/admin/class-xdwp-admin.php:172
+#: includes/admin/class-xdwp-admin.php:173
+#: includes/admin/views/payments-page.php:51
+#: includes/admin/views/settings-page.php:26
+#: includes/class-xdwp-gateway.php:20
+#: includes/class-xdwp-order.php:675
+#: includes/class-xdwp-order.php:952
+#: includes/class-xdwp-privacy.php:81
+#: includes/class-xdwp-privacy.php:95
+#: includes/class-xdwp-privacy.php:136
+msgid "Xorro Wallet Payments"
+msgstr "Xorro Wallet Zahlungen"
+
+#: includes/admin/class-xdwp-admin.php:183
+#: includes/admin/class-xdwp-admin.php:184
+#: includes/admin/class-xdwp-admin.php:581
+#: includes/admin/class-xdwp-admin.php:584
+msgid "General"
+msgstr "Generalgeneral"
+
+#: includes/admin/class-xdwp-admin.php:192
+#: includes/admin/class-xdwp-admin.php:193
+#: includes/admin/class-xdwp-admin.php:588
+#: includes/admin/class-xdwp-admin.php:591
+msgid "Payments"
+msgstr "Zahlungen"
+
+#: includes/admin/class-xdwp-admin.php:201
+#: includes/admin/class-xdwp-admin.php:202
+#: includes/admin/class-xdwp-admin.php:595
+#: includes/admin/class-xdwp-admin.php:598
+#: includes/admin/views/settings-page.php:245
+#: includes/admin/views/wallets-ui.php:19
+#: includes/admin/views/wallets-ui.php:96
+#: includes/admin/views/wallets-ui.php:107
+#: includes/admin/views/wallets-ui.php:126
+msgid "Coins"
+msgstr "Münzen"
+
+#: includes/admin/class-xdwp-admin.php:210
+#: includes/admin/class-xdwp-admin.php:211
+#: includes/admin/class-xdwp-admin.php:602
+#: includes/admin/class-xdwp-admin.php:605
+msgid "Wallets"
+msgstr "Geldbörsen"
+
+#: includes/admin/class-xdwp-admin.php:219
+#: includes/admin/class-xdwp-admin.php:220
+#: includes/admin/class-xdwp-admin.php:430
+#: includes/admin/class-xdwp-admin.php:493
+#: includes/admin/class-xdwp-admin.php:609
+#: includes/admin/class-xdwp-admin.php:612
+msgid "Prices & APIs"
+msgstr "Preise & APIs"
+
+#. translators: %d: number of invalid addresses
+#: includes/admin/class-xdwp-admin.php:316
+#, php-format
+msgid "%d wallet address was rejected as invalid and was not saved."
+msgid_plural "%d wallet addresses were rejected as invalid and were not saved."
+msgstr[0] "%d wallet adresse wurde als ungültig abgelehnt und nicht gespeichert."
+msgstr[1] "%d wallet-adressen wurden als ungültig abgelehnt und nicht gespeichert."
+
+#: includes/admin/class-xdwp-admin.php:331
+msgid "Settings saved."
+msgstr "Einstellungen gespeichert."
+
+#. translators: 1: site URL, 2: user login, 3: user ID, 4: date/time, 5: list of changed wallets
+#: includes/admin/class-xdwp-admin.php:376
+#, php-format
+msgid ""
+"A Xorro Wallet Payments payout address was changed on %1$s by %2$s (user #%3$d) at %4$s.\n"
+"\n"
+"If this wasn't you, secure this account immediately — this controls where future customer crypto payments are sent, and non-custodial crypto payments cannot be reversed once sent.\n"
+"\n"
+"%5$s"
+msgstr ""
+"Eine Auszahlungsadresse von Xorro Wallet Payments wurde auf %1$s um %2$s (Benutzer #%3$d) auf %4$s geändert.\n"
+"\n"
+"Wenn dies nicht Sie waren, sichern Sie dieses Konto sofort - dies steuert, wo zukünftige Kunden-Kryptozahlungen gesendet werden, und nicht-depotpflichtige Kryptozahlungen können nach dem Versand nicht rückgängig gemacht werden.\n"
+"\n"
+"%5$s"
+
+#: includes/admin/class-xdwp-admin.php:378
+msgid "an unknown user"
+msgstr "ein unbekannter benutzer"
+
+#. translators: %s: site name
+#: includes/admin/class-xdwp-admin.php:388
+#, php-format
+msgid "[%s] Wallet payout address changed"
+msgstr "[%s] Wallet Auszahlungsadresse geändert"
+
+#. translators: %s: Prices & APIs settings URL
+#: includes/admin/class-xdwp-admin.php:429
+#, php-format
+msgid "Automatic verification for ETH and other EVM coins requires an Etherscan API V2 key. Add one under %s."
+msgstr "Die automatische Überprüfung für ETH- und andere EVM-Münzen erfordert einen Etherscan API V2-Schlüssel. Fügen Sie einen unter %s hinzu."
+
+#. translators: 1: API name, 2: chain name, 3: error message from the API, 4: time ago
+#: includes/admin/class-xdwp-admin.php:461
+#, php-format
+msgid "Automatic verification is failing: %1$s rejected requests for %2$s — \"%3$s\" (%4$s ago). Orders in coins on this chain will not confirm automatically until this is fixed; use \"Mark payment received\" on the order meanwhile."
+msgstr "Die automatische Überprüfung scheitert: %1$s abgelehnte Anfragen für %2$s - \"%3$s\" (%4$s vor). Bestellungen in Münzen auf dieser Kette werden nicht automatisch bestätigt, bis dies behoben ist; Verwenden Sie \"Zahlung erhalten markieren\" auf der Bestellung in der Zwischenzeit."
+
+#. translators: %s: store currency code
+#: includes/admin/class-xdwp-admin.php:479
+#, php-format
+msgid "Your store currency (%s) is not supported by the exchange-rate sources, so crypto amounts cannot be calculated and checkout in crypto will fail. Switch the store currency, or use a currency-switcher plugin that charges in a supported currency."
+msgstr ""
+
+#. translators: %s: Prices & APIs settings URL
+#: includes/admin/class-xdwp-admin.php:492
+#, php-format
+msgid "Automatic verification for APT requires an Aptos API key. Add one under %s."
+msgstr "Die automatische Überprüfung für APT erfordert einen Aptos API-Schlüssel. Fügen Sie einen unter %s hinzu."
+
+#: includes/admin/class-xdwp-admin.php:522
+msgid "Minimum confirmations is set to 0. Failed or unvalidated explorer rows are still rejected, but unconfirmed successful txs may mark orders paid. Raise this under General unless you intentionally accept zero-conf risk."
+msgstr "Mindestbestätigungen werden auf 0 gesetzt. Fehlgeschlagene oder unvalidierte Explorer-Zeilen werden immer noch abgelehnt, aber nicht bestätigte erfolgreiche txs können bezahlte Bestellungen markieren. Erhöhen Sie dies unter Allgemein, es sei denn, Sie akzeptieren absichtlich ein Null-Konflikt-Risiko."
+
+#: includes/admin/class-xdwp-admin.php:528
+msgid "Minimum confirmations is above 1. Chains without tip-depth APIs (e.g. XRP, Stellar, NEAR, ATOM) fail closed and will not auto-verify until you lower this to 0 or 1, or mark paid manually."
+msgstr "Mindestbestätigungen liegen über 1. Ketten ohne Tip-Tiefen-APIs (z. B. XRP, Stellar, NEAR, ATOM) scheitern geschlossen und werden nicht automatisch überprüft, bis Sie dies auf 0 oder 1 senken oder manuell bezahlt werden."
+
+#. translators: %s: settings URL
+#: includes/admin/class-xdwp-admin.php:561
+#, php-format
+msgid "Xorro Direct Wallet Payments for WooCommerce is installed. Enable coins and add wallet addresses in %s to start accepting payments."
+msgstr "Xorro Direct Wallet Payments für WooCommerce ist installiert. Aktivieren Sie Münzen und fügen Sie Wallet-Adressen in %s hinzu, um Zahlungen anzunehmen."
+
+#: includes/admin/class-xdwp-admin.php:562
+#: includes/admin/views/payments-page.php:60
+#: includes/admin/views/settings-page.php:38
+#: includes/class-xdwp-gateway.php:101
+msgid "Xorro Wallet Payments settings"
+msgstr "Xorro Wallet Payments Einstellungen"
+
+#: includes/admin/class-xdwp-admin.php:585
+msgid "Payment window, order status, checkout branding, and gateway options."
+msgstr "Zahlungsfenster, Bestellstatus, Checkout-Branding und Gateway-Optionen."
+
+#: includes/admin/class-xdwp-admin.php:592
+msgid "Every order paid (or waiting to be paid) in crypto, and the ones that still need you."
+msgstr "Jede Bestellung bezahlt (oder warten, um bezahlt zu werden) in crypto, und diejenigen, die noch brauchen Sie."
+
+#: includes/admin/class-xdwp-admin.php:599
+msgid "Enable the coins and networks you want to accept. Add at least one wallet for each enabled coin."
+msgstr "Aktivieren Sie die Münzen und Netzwerke, die Sie akzeptieren möchten. Fügen Sie mindestens eine Brieftasche für jede aktivierte Münze hinzu."
+
+#: includes/admin/class-xdwp-admin.php:606
+msgid "Receiving addresses for enabled coins. Use multiple addresses for rotation."
+msgstr "Empfangen von Adressen für aktivierte Münzen. Verwenden Sie mehrere Adressen für die Rotation."
+
+#: includes/admin/class-xdwp-admin.php:613
+msgid "Exchange rates and blockchain API keys for quotes and auto-verification."
+msgstr "Wechselkurse und Blockchain-API-Schlüssel für Zitate und automatische Verifizierung."
+
+#: includes/admin/class-xdwp-payments-admin.php:46
+#: includes/admin/class-xdwp-payments-admin.php:50
+msgid "Crypto payment"
+msgstr "Kryptozahlung"
+
+#: includes/admin/class-xdwp-payments-admin.php:91
+msgid "Waiting"
+msgstr "Warten"
+
+#: includes/admin/class-xdwp-payments-admin.php:92
+#: includes/admin/views/payments-page.php:32
+msgid "Part paid"
+msgstr "Teilzahlung"
+
+#: includes/admin/class-xdwp-payments-admin.php:93
+#: includes/admin/views/payments-page.php:36
+#: includes/class-xdwp-order.php:709
+msgid "Paid"
+msgstr "Bezahlt"
+
+#: includes/admin/class-xdwp-payments-admin.php:94
+#: includes/admin/views/payments-page.php:40
+#: includes/class-xdwp-order.php:710
+msgid "Expired"
+msgstr "Abgelaufen"
+
+#: includes/admin/class-xdwp-payments-admin.php:95
+#: includes/class-xdwp-order.php:711
+msgid "Cancelled"
+msgstr "Gestorben"
+
+#: includes/admin/class-xdwp-payments-admin.php:109
+msgid "Check"
+msgstr "Überprüfung"
+
+#: includes/admin/views/payments-page.php:24
+msgid "Needs you"
+msgstr "Du brauchst dich"
+
+#: includes/admin/views/payments-page.php:25
+msgid "Late, overpaid, or part-paid after the window closed"
+msgstr "Verspätet, überbezahlt oder teilweise bezahlt, nachdem das Fenster geschlossen wurde"
+
+#: includes/admin/views/payments-page.php:28
+#: includes/class-xdwp-order.php:707
+msgid "Waiting for payment"
+msgstr "Warten auf Zahlung"
+
+#: includes/admin/views/payments-page.php:29
+msgid "Quoted, nothing received yet"
+msgstr "Zitiert, noch nichts erhalten"
+
+#: includes/admin/views/payments-page.php:33
+msgid "Customer was asked for the rest"
+msgstr "Der Kunde wurde um den Rest gebeten"
+
+#: includes/admin/views/payments-page.php:37
+msgid "Confirmed on chain"
+msgstr "Bestätigt in der Kette"
+
+#: includes/admin/views/payments-page.php:41
+msgid "Window closed with nothing received"
+msgstr "Fenster geschlossen mit nichts erhalten"
+
+#: includes/admin/views/payments-page.php:55
+#: includes/admin/views/settings-page.php:30
+msgid "Direct to wallet"
+msgstr "Direkt zum Wallet"
+
+#: includes/admin/views/payments-page.php:88
+msgid "Payment state"
+msgstr "Zahlungsstatus"
+
+#: includes/admin/views/payments-page.php:90
+msgid "All payments"
+msgstr "Alle Zahlungen"
+
+#: includes/admin/views/payments-page.php:96
+#: includes/admin/views/payments-page.php:116
+#: includes/admin/views/settings-page.php:262
+#: includes/class-xdwp-privacy.php:31
+msgid "Coin"
+msgstr "Münze"
+
+#: includes/admin/views/payments-page.php:98
+msgid "Every coin"
+msgstr "Jede Münze"
+
+#: includes/admin/views/payments-page.php:104
+msgid "Filter"
+msgstr "Filter"
+
+#: includes/admin/views/payments-page.php:108
+msgid "No orders here yet."
+msgstr "Noch keine Befehle hier."
+
+#: includes/admin/views/payments-page.php:113
+msgid "Order"
+msgstr "Bestellung"
+
+#: includes/admin/views/payments-page.php:114
+msgid "Placed"
+msgstr "Platzieren"
+
+#: includes/admin/views/payments-page.php:115
+msgid "Customer"
+msgstr "Kunde"
+
+#: includes/admin/views/payments-page.php:117
+msgid "Expected"
+msgstr "Erwartet"
+
+#: includes/admin/views/payments-page.php:118
+msgid "Received"
+msgstr "Empfangen"
+
+#: includes/admin/views/payments-page.php:119
+msgid "State"
+msgstr "Staat"
+
+#: includes/admin/views/payments-page.php:120
+msgid "Transaction"
+msgstr "Transaktion"
+
+#: includes/admin/views/settings-page.php:61
+msgid "Payment window (minutes)"
+msgstr "Zahlungsfenster (Minuten)"
+
+#: includes/admin/views/settings-page.php:64
+msgid "Quoted crypto amount is valid for this duration. Default: 60."
+msgstr "Der angegebene Kryptobetrag ist für diese Dauer gültig. Standard: 60."
+
+#: includes/admin/views/settings-page.php:68
+msgid "Order status after payment"
+msgstr "Auftragsstatus nach Zahlung"
+
+#: includes/admin/views/settings-page.php:73
+msgid "Processing"
+msgstr "Verarbeitung"
+
+#: includes/admin/views/settings-page.php:74
+msgid "Completed"
+msgstr "Abgeschlossen"
+
+#: includes/admin/views/settings-page.php:75
+msgid "On Hold"
+msgstr "Auf Eis"
+
+#: includes/admin/views/settings-page.php:86
+msgid "Underpayment tolerance (%)"
+msgstr "Unterzahlungstoleranz (%)"
+
+#: includes/admin/views/settings-page.php:89
+msgid "Capped automatically when unique amounts are enabled so concurrent orders on a shared wallet stay distinguishable."
+msgstr "Gedeckelt automatisch, wenn eindeutige Beträge aktiviert sind, so dass gleichzeitige Bestellungen auf einer gemeinsamen Brieftasche unterscheidbar bleiben."
+
+#: includes/admin/views/settings-page.php:93
+msgid "Minimum confirmations"
+msgstr "Mindestbestätigungen"
+
+#: includes/admin/views/settings-page.php:96
+msgid "Required on-chain confirmations before marking an order paid. Chains without tip-depth APIs only accept payments when this is 0 or 1 (fail closed above that)."
+msgstr "Erforderliche On-Chain-Bestätigungen, bevor eine bezahlte Bestellung markiert wird. Ketten ohne Tip-Tiefen-APIs akzeptieren nur Zahlungen, wenn dies 0 oder 1 ist (über diesem Fehler geschlossen)."
+
+#: includes/admin/views/settings-page.php:100
+msgid "Confirmations per chain"
+msgstr "Bestätigungen pro Kette"
+
+#: includes/admin/views/settings-page.php:104
+msgid "Wait for the confirmations that suit each chain"
+msgstr "Warten Sie auf die Bestätigungen, die zu jeder Kette passen"
+
+#: includes/admin/views/settings-page.php:106
+msgid "One confirmation does not mean the same thing on every chain. With this on, each coin waits for a number suited to its own chain (Bitcoin 2, Ethereum 12, TRON 20 and so on) and never less than the number above. Set your own per coin on the Coins tab."
+msgstr "Eine Bestätigung bedeutet nicht auf jeder Kette dasselbe. Damit wartet jede Münze auf eine Zahl, die für ihre eigene Kette geeignet ist (Bitcoin 2, Ethereum 12, TRON 20 und so weiter) und niemals weniger als die oben genannte Zahl. Legen Sie Ihre eigenen pro Münze auf der Registerkarte Münzen."
+
+#: includes/admin/views/settings-page.php:110
+msgid "Expiry grace (minutes)"
+msgstr "Verfallsfrist (Minuten)"
+
+#: includes/admin/views/settings-page.php:113
+msgid "Keep looking for payment after the window ends. Orders fail (not cancel) after grace so late funds can still be recovered."
+msgstr "Halten Sie auf der Suche nach Zahlung, nachdem das Fenster endet. Bestellungen scheitern (nicht stornieren) nach Gnade, so dass verspätete Mittel noch zurückgewonnen werden können."
+
+#: includes/admin/views/settings-page.php:117
+msgid "Unique payment amounts"
+msgstr "Einmalige Zahlungsbeträge"
+
+#: includes/admin/views/settings-page.php:121
+msgid "Add a tiny unique dust amount so payments to reused addresses can be matched reliably."
+msgstr "Fügen Sie eine winzige einzigartige Staubmenge hinzu, damit Zahlungen an wiederverwendete Adressen zuverlässig abgeglichen werden können."
+
+#: includes/admin/views/settings-page.php:126
+msgid "Wallet rotation"
+msgstr "Wallet Rotation"
+
+#: includes/admin/views/settings-page.php:130
+msgid "Rotate through multiple addresses per coin when available."
+msgstr "Rotieren Sie durch mehrere Adressen pro Münze, wenn verfügbar."
+
+#: includes/admin/views/settings-page.php:135
+msgid "Automatic verification"
+msgstr "Automatische Überprüfung"
+
+#: includes/admin/views/settings-page.php:139
+msgid "Poll public block explorers / RPCs and mark orders paid when payment is detected."
+msgstr "Umfragen Sie öffentliche Block-Explorer / RPCs und markieren Sie Bestellungen, die bei Zahlungserkennung bezahlt werden."
+
+#: includes/admin/views/settings-page.php:144
+msgid "Partial and over payments"
+msgstr "Teilweise und zu hohe Zahlungen"
+
+#: includes/admin/views/settings-page.php:148
+msgid "Handle them automatically: at least 50% received → the customer is asked for the rest; up to 10% too much → the order completes and the excess is noted."
+msgstr "Behandeln Sie sie automatisch: mindestens 50% erhalten → der Kunde wird nach dem Rest gefragt; bis zu 10% zu viel → die Bestellung ist abgeschlossen und der Überschuss wird vermerkt."
+
+#: includes/admin/views/settings-page.php:150
+msgid "A transfer that could belong to more than one open order is never credited automatically — you get an email instead. Turn this off if your payment addresses also receive other money (e.g. exchange withdrawals), since such a transfer could otherwise be taken for an order payment."
+msgstr "Eine Überweisung, die zu mehr als einer offenen Bestellung gehören könnte, wird niemals automatisch gutgeschrieben - Sie erhalten stattdessen eine E-Mail. Schalten Sie dies aus, wenn Ihre Zahlungsadressen auch anderes Geld erhalten (z. B. Umtauschabhebungen), da eine solche Überweisung ansonsten für eine Bestellzahlung in Anspruch genommen werden könnte."
+
+#: includes/admin/views/settings-page.php:154
+msgid "Late payments"
+msgstr "Verspätete Zahlungen"
+
+#: includes/admin/views/settings-page.php:158
+msgid "Check orders that expired in the last 7 days and email me if a payment arrives late."
+msgstr "Überprüfen Sie Bestellungen, die in den letzten 7 Tagen abgelaufen sind, und senden Sie mir eine E-Mail, wenn eine Zahlung zu spät eintrifft."
+
+#: includes/admin/views/settings-page.php:160
+msgid "The order is not changed automatically — you decide whether to complete it or refund."
+msgstr "Die Bestellung wird nicht automatisch geändert - Sie entscheiden, ob Sie sie abschließen oder erstatten möchten."
+
+#: includes/admin/views/settings-page.php:164
+msgid "Checkout title"
+msgstr "Titel Checkout"
+
+#: includes/admin/views/settings-page.php:166
+#: includes/class-xdwp-branding.php:50
+#: includes/class-xdwp-branding.php:52
+#: includes/class-xdwp-gateway.php:86
+#: includes/class-xdwp-install.php:84
+msgid "Pay with Cryptocurrency"
+msgstr "Bezahlen mit Cryptocurrency"
+
+#: includes/admin/views/settings-page.php:167
+msgid "Payment method name shown at checkout (e.g. “Pay with Cryptocurrency”)."
+msgstr "Name der Zahlungsmethode, der an der Kasse angezeigt wird (z. B. „Bezahlen mit Kryptowährung)."
+
+#: includes/admin/views/settings-page.php:171
+msgid "Checkout description"
+msgstr "Beschreibung der Kasse"
+
+#: includes/admin/views/settings-page.php:177
+msgid "Checkout label style"
+msgstr "Checkout Label Style"
+
+#: includes/admin/views/settings-page.php:190
+msgid "Choose how the payment method is identified on the checkout page."
+msgstr "Wählen Sie, wie die Zahlungsmethode auf der Checkout-Seite identifiziert wird."
+
+#: includes/admin/views/settings-page.php:194
+msgid "Checkout icon"
+msgstr "Checkout Icon"
+
+#: includes/admin/views/settings-page.php:208
+msgid "Upload / replace icon"
+msgstr "Upload / Ersetzen Icon"
+
+#: includes/admin/views/settings-page.php:209
+msgid "Use default icon"
+msgstr "Standard-Icon verwenden"
+
+#: includes/admin/views/settings-page.php:211
+msgid "PNG, JPG, GIF, WebP, or SVG. Default plugin icon is used when none is selected."
+msgstr "PNG, JPG, GIF, WebP oder SVG. Default Plugin Icon wird verwendet, wenn keines ausgewählt ist."
+
+#: includes/admin/views/settings-page.php:216
+msgid "Icon size (px)"
+msgstr "Icon Größe (px)"
+
+#: includes/admin/views/settings-page.php:219
+msgid "Width"
+msgstr "Breite"
+
+#: includes/admin/views/settings-page.php:223
+msgid "Height"
+msgstr "Höhe"
+
+#: includes/admin/views/settings-page.php:226
+msgid "Recommended: 24–40px. Allowed range: 16–128."
+msgstr "Empfohlen: 24-40px. Zulässige Reichweite: 16-128."
+
+#: includes/admin/views/settings-page.php:230
+msgid "WooCommerce gateway"
+msgstr "WooCommerce Gateway"
+
+#: includes/admin/views/settings-page.php:233
+msgid "Enable gateway in Payments settings"
+msgstr "Gateway in den Zahlungseinstellungen aktivieren"
+
+#: includes/admin/views/settings-page.php:240
+msgid "Leave min / max empty for no limit. Coins outside the limits are hidden at checkout — useful where network fees make small orders impractical."
+msgstr "Lassen Sie min / max leer für kein Limit. Münzen außerhalb der Grenzen sind an der Kasse versteckt - nützlich, wo Netzwerkgebühren kleine Bestellungen unpraktisch machen."
+
+#: includes/admin/views/settings-page.php:241
+msgid "Confirmations shown in grey are what this coin waits for now. Type a number to require your own instead — higher is safer and slower."
+msgstr "In Grau gezeigte Bestätigungen sind das, worauf diese Münze jetzt wartet. Geben Sie eine Zahl ein, um stattdessen Ihre eigene zu benötigen - höher ist sicherer und langsamer."
+
+#: includes/admin/views/settings-page.php:242
+msgid "Auto-verify uses public blockchain APIs. Coins marked Manual (such as Monero) have no free way to detect payments — confirm those with “Mark payment received” on the order."
+msgstr "Auto-verify verwendet öffentliche Blockchain-APIs. Manuell markierte Münzen (wie Monero) haben keine kostenlose Möglichkeit, Zahlungen zu erkennen - bestätigen Sie diejenigen mit \"Mark-Zahlung erhalten\" auf der Bestellung."
+
+#: includes/admin/views/settings-page.php:246
+msgid "USDT (multi-network)"
+msgstr "USDT (Multi-Netzwerk)"
+
+#: includes/admin/views/settings-page.php:247
+msgid "USDC (multi-network)"
+msgstr "USDC (Multi-Netzwerk)"
+
+#: includes/admin/views/settings-page.php:248
+msgid "DAI (multi-network)"
+msgstr "DAI (Multi-Network)"
+
+#: includes/admin/views/settings-page.php:249
+#: includes/admin/views/wallets-ui.php:23
+msgid "Tokens"
+msgstr "Tokens"
+
+#: includes/admin/views/settings-page.php:261
+msgid "On"
+msgstr "Am"
+
+#: includes/admin/views/settings-page.php:263
+#: templates/emails/plain/xdwp-payment-details.php:32
+#: templates/emails/xdwp-payment-details.php:43
+#: templates/payment.php:117
+msgid "Network"
+msgstr "Netz"
+
+#: includes/admin/views/settings-page.php:264
+msgid "Type"
+msgstr "Typ"
+
+#: includes/admin/views/settings-page.php:265
+msgid "Auto-verify"
+msgstr "Auto-Verifizierung"
+
+#. translators: %s: store currency code
+#: includes/admin/views/settings-page.php:271
+#, php-format
+msgid "Order min / max (%s)"
+msgstr "Order min/max (%s)"
+
+#: includes/admin/views/settings-page.php:277
+msgid "Confirmations"
+msgstr "Bestätigungen"
+
+#: includes/admin/views/settings-page.php:311
+msgid "Yes"
+msgstr "Ja"
+
+#: includes/admin/views/settings-page.php:312
+msgid "Manual"
+msgstr "Handbuch"
+
+#: includes/admin/views/settings-page.php:316
+msgid "min"
+msgstr "min"
+
+#. translators: %s: coin name
+#: includes/admin/views/settings-page.php:316
+#, php-format
+msgid "Minimum order total for %s"
+msgstr ""
+
+#. translators: %s: coin name
+#: includes/admin/views/settings-page.php:317
+msgid "max"
+msgstr "max"
+
+#. translators: %s: coin name
+#: includes/admin/views/settings-page.php:317
+#, php-format
+msgid "Maximum order total for %s"
+msgstr "Maximale Auftragssumme für %s"
+
+#. translators: %s: coin name
+#: includes/admin/views/settings-page.php:320
+#, php-format
+msgid "Confirmations required for %s"
+msgstr "Bestätigungen erforderlich für %s"
+
+#: includes/admin/views/settings-page.php:335
+msgid "CoinGecko API key (optional)"
+msgstr "CoinGecko API-Schlüssel (optional)"
+
+#. translators: %s: URL
+#: includes/admin/views/settings-page.php:343
+#, php-format
+msgid "Fiat↔crypto rates. Free without a key. Demo keys (CG-…) use the public API; Pro keys use the Pro API. Get a key at %s"
+msgstr "Fiat↔crypto Preise. Frei ohne Schlüssel. Demo Keys (CG-...) verwenden die öffentliche API; Pro Keys verwenden die Pro API. Erhalten Sie einen Schlüssel bei %s"
+
+#: includes/admin/views/settings-page.php:359
+msgid "Etherscan API V2 key"
+msgstr "Etherscan API V2 Schlüssel"
+
+#. translators: %s: URL
+#: includes/admin/views/settings-page.php:367
+#, php-format
+msgid "One free key covers ETH, BNB, Polygon, Arbitrum, Optimism, Avalanche, Fantom, Cronos, ETC and 50+ EVM chains. Get it at %s"
+msgstr "Ein kostenloser Schlüssel umfasst ETH, BNB, Polygon, Arbitrum, Optimismus, Avalanche, Fantom, Cronos, ETC und 50+ EVM-Ketten. Holen Sie es bei %s"
+
+#: includes/admin/views/settings-page.php:383
+msgid "TronGrid API key (optional)"
+msgstr "TronGrid API-Schlüssel (optional)"
+
+#. translators: %s: URL
+#: includes/admin/views/settings-page.php:391
+#, php-format
+msgid "Recommended for TRX / USDT-TRC20 stability. Free at %s"
+msgstr ""
+
+#: includes/admin/views/settings-page.php:407
+msgid "Helius API key (optional)"
+msgstr "Helius API-Schlüssel (optional)"
+
+#. translators: %s: URL
+#: includes/admin/views/settings-page.php:415
+#, php-format
+msgid "More stable Solana RPC than the public endpoint. Free tier at %s"
+msgstr ""
+
+#: includes/admin/views/settings-page.php:431
+msgid "Subscan API key (optional)"
+msgstr "Subscan API Key (optional)"
+
+#. translators: %s: URL
+#: includes/admin/views/settings-page.php:439
+#, php-format
+msgid "Improves Polkadot (DOT) auto-verify rate limits. Free at %s"
+msgstr ""
+
+#: includes/admin/views/settings-page.php:455
+msgid "ViewBlock API key (optional)"
+msgstr "ViewBlock API-Schlüssel (optional)"
+
+#. translators: %s: URL
+#: includes/admin/views/settings-page.php:463
+#, php-format
+msgid "Improves Zilliqa (ZIL) auto-verify reliability. Free at %s"
+msgstr ""
+
+#: includes/admin/views/settings-page.php:479
+msgid "Aptos API key"
+msgstr "Aptos API-Schlüssel"
+
+#. translators: %s: URL
+#: includes/admin/views/settings-page.php:487
+#, php-format
+msgid "Required for APT auto-verify — Aptos&#8217;s public indexer rate-limits anonymous requests too aggressively to use without one. Free at %s"
+msgstr ""
+
+#: includes/admin/views/settings-page.php:503
+msgid "Stablecoin pricing"
+msgstr "Stablecoin Preis"
+
+#: includes/admin/views/settings-page.php:507
+msgid "Price stablecoins that track your store currency 1:1 (a 17.34 order asks for exactly 17.34 USDT)."
+msgstr "Preisstabilcoins, die Ihre Ladenwährung 1:1 verfolgen (eine Bestellung von 17,34 verlangt genau 17,34 USDT)."
+
+#: includes/admin/views/settings-page.php:509
+msgid "Off: the live market rate is used, so the amount is slightly different (e.g. 17.3465 USDT). Applies to USDT, USDC, DAI, TUSD, USDP, GUSD, PYUSD, USDD, USDe and USDJ in USD stores, and EURT in EUR stores."
+msgstr "Aus: Der Live-Marktkurs wird verwendet, so dass der Betrag etwas anders ist (z. B. 17.3465 USDT). Gilt für USDT, USDC, DAI, TUSD, USDP, GUSD, PYUSD, USDD, USDe und USDJ in USD-Stores und EURT in EUR-Stores."
+
+#: includes/admin/views/settings-page.php:513
+msgid "Show crypto price on products"
+msgstr "Krypto-Preis auf Produkten anzeigen"
+
+#: includes/admin/views/settings-page.php:517
+msgid "Display an approximate crypto equivalent near product prices."
+msgstr "Zeigen Sie ein ungefähres Krypto-Äquivalent nahe der Produktpreise an."
+
+#: includes/admin/views/settings-page.php:522
+msgid "Product price coin"
+msgstr "Produktpreismünze"
+
+#: includes/admin/views/settings-page.php:533
+#: includes/admin/views/wallets-ui.php:20
+msgid "USDT"
+msgstr "USDT"
+
+#: includes/admin/views/settings-page.php:534
+#: includes/admin/views/wallets-ui.php:21
+msgid "USDC"
+msgstr "USDC"
+
+#: includes/admin/views/settings-page.php:550
+msgid "Bitcoin uses mempool.space with Blockstream fallback (no key needed). BCH/LTC/DOGE use Blockchair. Base/Arbitrum/Optimism and other EVMs use Etherscan V2. XRP/XLM and most alt chains use public APIs. Monero (XMR) stays manual because inbound detection requires a private view key."
+msgstr "Bitcoin verwendet mempool.space mit Blockstream Fallback (kein Schlüssel erforderlich). BCH/LTC/DOGE verwenden Blockchair. Base/Arbitrum/Optimism und andere EVMs verwenden Etherscan V2. XRP/XLM und die meisten Alt Chains verwenden öffentliche APIs. Monero (XMR) bleibt manuell, da die eingehende Erkennung einen privaten Ansichtsschlüssel erfordert."
+
+#: includes/admin/views/settings-page.php:557
+msgid "Save changes"
+msgstr "Änderungen speichern"
+
+#: includes/admin/views/wallets-ui.php:22
+msgid "DAI"
+msgstr "DAI"
+
+#: includes/admin/views/wallets-ui.php:88
+msgid "Wallet addresses"
+msgstr "Wallet-Adressen"
+
+#: includes/admin/views/wallets-ui.php:89
+msgid "Add one or more receiving addresses for each activated coin. Extra addresses rotate automatically when rotation is on."
+msgstr "Fügen Sie eine oder mehrere Empfangsadressen für jede aktivierte Münze hinzu. Zusätzliche Adressen rotieren automatisch, wenn die Rotation eingeschaltet ist."
+
+#. translators: %s: Coins settings URL
+#: includes/admin/views/wallets-ui.php:95
+#, php-format
+msgid "Manage which coins appear here on the %s tab."
+msgstr "Verwalten Sie, welche Münzen hier auf der Registerkarte %s erscheinen."
+
+#: includes/admin/views/wallets-ui.php:111
+msgid "Addresses"
+msgstr "Anschriften"
+
+#. translators: %s: Coins settings URL
+#: includes/admin/views/wallets-ui.php:125
+#, php-format
+msgid "No coins are activated yet. Enable coins and tokens under %s, then come back to add wallet addresses."
+msgstr "Noch sind keine Münzen aktiviert. Aktivieren Sie Münzen und Token unter %s, dann kommen Sie zurück, um Wallet-Adressen hinzuzufügen."
+
+#: includes/admin/views/wallets-ui.php:137
+msgid "Go to Coins"
+msgstr "Gehen Sie zu Münzen"
+
+#: includes/admin/views/wallets-ui.php:144
+msgid "Search coins"
+msgstr "Suchmünzen"
+
+#: includes/admin/views/wallets-ui.php:145
+msgid "Filter by coin, symbol, or network…"
+msgstr "Filter nach Münze, Symbol oder Netzwerk.."
+
+#. translators: %d: coins missing addresses
+#: includes/admin/views/wallets-ui.php:152
+#, php-format
+msgid "%d coin still needs an address"
+msgid_plural "%d coins still need an address"
+msgstr[0] "%d coin benötigt noch eine adresse"
+msgstr[1] "%d-münzen benötigen noch eine adresse"
+
+#. translators: %d: number of coins in section
+#: includes/admin/views/wallets-ui.php:182
+#, php-format
+msgid "%d coin"
+msgid_plural "%d coins"
+msgstr[0] ""
+msgstr[1] ""
+
+#: includes/admin/views/wallets-ui.php:226
+msgid "This network is matched by address + amount only — a destination tag/memo is not read here. Use an address only this store controls, never a shared or exchange-hosted address, or unrelated payments to the same address could be misattributed."
+msgstr "Dieses Netzwerk wird nur durch Adresse + Betrag abgestimmt - ein Ziel-Tag / Memo wird hier nicht gelesen. Verwenden Sie eine Adresse nur diese Speichersteuerelemente, niemals eine gemeinsame oder Exchange-gehostete Adresse oder nicht zusammenhängende Zahlungen an die gleiche Adresse könnten falsch zugeordnet werden."
+
+#: includes/admin/views/wallets-ui.php:232
+msgid "Each order also gets its own destination tag / memo, shown to the customer and checked against the payment — so an address shared with other orders still tells payments apart."
+msgstr "Jede Bestellung erhält auch ein eigenes Ziel-Tag / Memo, das dem Kunden angezeigt und gegen die Zahlung überprüft wird - so dass eine mit anderen Bestellungen geteilte Adresse die Zahlungen immer noch auseinander hält."
+
+#: includes/admin/views/wallets-ui.php:250
+msgid "+ Add address"
+msgstr "+ Adresse hinzufügen"
+
+#: includes/admin/views/wallets-ui.php:253
+msgid "Clear all"
+msgstr "Alles klar machen"
+
+#: includes/admin/views/wallets-ui.php:264
+#: includes/class-xdwp-gateway.php:368
+#: assets/js/blocks.js:283
+msgid "No coins match your search."
+msgstr "Keine Münzen passen zu Ihrer Suche."
+
+#: includes/class-xdwp-ajax.php:139
+#: includes/class-xdwp-ajax.php:237
+#: includes/class-xdwp-order.php:837
+msgid "Forbidden."
+msgstr "Verboten."
+
+#: includes/class-xdwp-ajax.php:157
+#: includes/class-xdwp-ajax.php:243
+#: includes/class-xdwp-ajax.php:274
+msgid "Too many requests. Please wait a moment."
+msgstr "Zu viele Anfragen. Bitte warten Sie einen Moment."
+
+#: includes/class-xdwp-ajax.php:260
+msgid "This order cannot be re-quoted. Please contact us."
+msgstr "Diese Reihenfolge kann nicht erneut zitiert werden. Bitte kontaktieren Sie uns."
+
+#: includes/class-xdwp-ajax.php:281
+msgid "Cart unavailable."
+msgstr "Wagen nicht verfügbar."
+
+#: includes/class-xdwp-ajax.php:288
+msgid "Coin not available for this order total."
+msgstr "Coin nicht verfügbar für diese Bestellung insgesamt."
+
+#: includes/class-xdwp-ajax.php:294
+msgid "Unable to fetch exchange rate. Try again shortly."
+msgstr "Unfähig, den Wechselkurs zu erhalten. Versuchen Sie es gleich noch einmal."
+
+#: includes/class-xdwp-ajax.php:305
+msgid "Exact amount due if you place the order now."
+msgstr "Genauer Betrag fällig, wenn Sie die Bestellung jetzt aufgeben."
+
+#: includes/class-xdwp-branding.php:27
+msgid "Icon and text"
+msgstr "Icon und Text"
+
+#: includes/class-xdwp-branding.php:28
+msgid "Icon only"
+msgstr "Nur Icon"
+
+#: includes/class-xdwp-branding.php:29
+msgid "Text only"
+msgstr "Nur Text"
+
+#. translators: 1: amount, 2: symbol, 3: txid
+#: includes/class-xdwp-cron.php:257
+#, php-format
+msgid "Late crypto payment detected after the payment window closed: %1$s %2$s (txid: %3$s). Review it and use \"Mark payment received\" to complete the order, or refund the customer."
+msgstr "Verspätete Krypto-Zahlung nach dem Schließen des Zahlungsfensters: %1$s %2$s (txid: %3$s). Überprüfen Sie es und verwenden Sie \"Zahlung erhalten markieren\", um die Bestellung abzuschließen, oder erstatten Sie dem Kunden."
+
+#: includes/class-xdwp-gateway.php:21
+msgid "Accept cryptocurrency payments directly to your own wallets with automatic on-chain verification."
+msgstr "Akzeptieren Sie Kryptowährungszahlungen direkt an Ihre eigenen Wallets mit automatischer On-Chain-Verifizierung."
+
+#: includes/class-xdwp-gateway.php:77
+msgid "Enable/Disable"
+msgstr "Aktivieren/Deaktivieren"
+
+#: includes/class-xdwp-gateway.php:79
+msgid "Enable Xorro Wallet Payments"
+msgstr "Xorro Wallet Zahlungen aktivieren"
+
+#: includes/class-xdwp-gateway.php:83
+msgid "Title"
+msgstr "Titel"
+
+#: includes/class-xdwp-gateway.php:85
+msgid "Payment method title shown at checkout."
+msgstr "Titel der Zahlungsmethode wird an der Kasse angezeigt."
+
+#: includes/class-xdwp-gateway.php:90
+msgid "Description"
+msgstr "Beschreibung"
+
+#: includes/class-xdwp-gateway.php:92
+msgid "Payment method description shown at checkout."
+msgstr "Beschreibung der Zahlungsmethode an der Kasse gezeigt."
+
+#: includes/class-xdwp-gateway.php:93
+#: includes/class-xdwp-install.php:85
+msgid "Pay directly to our wallet with cryptocurrency. No third-party processor."
+msgstr "Zahlen Sie direkt in unsere Brieftasche mit Kryptowährung. Kein Drittverarbeiter."
+
+#: includes/class-xdwp-gateway.php:96
+msgid "Configuration"
+msgstr "Konfiguration"
+
+#. translators: %s: admin URL
+#: includes/class-xdwp-gateway.php:100
+#, php-format
+msgid "Configure coins, wallets, prices, and API keys under %s."
+msgstr ""
+
+#: includes/class-xdwp-gateway.php:309
+msgid "No cryptocurrency is available for this order total."
+msgstr "Für diese Bestellung insgesamt ist keine Kryptowährung verfügbar."
+
+#: includes/class-xdwp-gateway.php:320
+msgid "Select cryptocurrency"
+msgstr "Kryptowährung auswählen"
+
+#: includes/class-xdwp-gateway.php:325
+#: assets/js/blocks.js:275
+#: assets/js/blocks.js:276
+msgid "Search coin or network…"
+msgstr "Search Coin oder Netzwerk.."
+
+#: includes/class-xdwp-gateway.php:383
+msgid "Please select a cryptocurrency to pay with."
+msgstr "Bitte wählen Sie eine Kryptowährung, mit der Sie bezahlen können."
+
+#: includes/class-xdwp-gateway.php:399
+msgid "Invalid order."
+msgstr "Ungültige Anordnung."
+
+#: includes/class-xdwp-gateway.php:406
+msgid "We already received a crypto payment for this order. Please contact us to complete it — do not send the full amount again."
+msgstr "Wir haben bereits eine Krypto-Zahlung für diese Bestellung erhalten. Bitte kontaktieren Sie uns, um es abzuschließen - senden Sie nicht den vollen Betrag erneut."
+
+#: includes/class-xdwp-gateway.php:414
+msgid "Selected cryptocurrency is not available for this order total."
+msgstr "Ausgewählte Kryptowährung ist für diese Bestellung insgesamt nicht verfügbar."
+
+#: includes/class-xdwp-gateway.php:421
+msgid "We could not prepare this crypto payment right now. Please try again in a minute, or choose a different coin."
+msgstr "Wir konnten diese Krypto-Zahlung derzeit nicht vorbereiten. Bitte versuchen Sie es in einer Minute erneut oder wählen Sie eine andere Münze."
+
+#: includes/class-xdwp-install.php:28
+#: includes/class-xdwp.php:107
+msgid "Every Minute (Xorro Wallet Payments)"
+msgstr "Jede Minute (Xorro Wallet Zahlungen)"
+
+#: includes/class-xdwp-order.php:75
+msgid "Xorro crypto payment cancelled — auto-verify stopped."
+msgstr "Xorro crypto Zahlung storniert — auto-verify gestoppt."
+
+#: includes/class-xdwp-order.php:146
+msgid "Customer requested a new crypto payment quote."
+msgstr "Der Kunde hat ein neues Krypto-Zahlungsangebot angefordert."
+
+#. translators: 1: coin ID, 2: reason
+#: includes/class-xdwp-order.php:164
+#, php-format
+msgid "Crypto payment could not be set up for %1$s: %2$s"
+msgstr "Krypto-Zahlung konnte nicht für %1$s eingerichtet werden: %2$s"
+
+#: includes/class-xdwp-order.php:186
+msgid "Part of your payment has arrived."
+msgstr "Ein Teil Ihrer Zahlung ist angekommen."
+
+#: includes/class-xdwp-order.php:187
+msgid "Your order is waiting for payment."
+msgstr "Ihre Bestellung wartet auf die Zahlung."
+
+#: includes/class-xdwp-order.php:189
+msgid "Send the remaining amount below"
+msgstr "Senden Sie den verbleibenden Betrag unten"
+
+#: includes/class-xdwp-order.php:190
+msgid "Complete your crypto payment below"
+msgstr "Füllen Sie Ihre Krypto-Zahlung unten aus"
+
+#: includes/class-xdwp-order.php:223
+msgid "no wallet address is configured for this coin."
+msgstr "für diese münze ist keine wallet-adresse konfiguriert."
+
+#: includes/class-xdwp-order.php:231
+msgid "no live exchange rate was available (CoinGecko rate limit or outage — see WooCommerce → Status → Logs, source \"xorro-wallet-payments\")."
+msgstr "es war kein Live-Wechselkurs verfügbar (CoinGecko-Ratenlimit oder -Ausfall - siehe WooCommerce → Status → Logs, Quelle \"Xorro-Wallet-Zahlungen\")."
+
+#: includes/class-xdwp-order.php:241
+msgid "other open orders on the same address expect overlapping amounts, so payments could not be told apart. Adding more addresses for this coin (with rotation on) avoids this."
+msgstr "andere offene Aufträge an derselben Adresse erwarten sich überschneidende Beträge, so dass die Zahlungen nicht voneinander getrennt werden können. Das Hinzufügen weiterer Adressen für diese Münze (mit Drehung auf) vermeidet dies."
+
+#. translators: 1: amount 2: coin 3: address
+#: includes/class-xdwp-order.php:283
+#, php-format
+msgid "Awaiting crypto payment of %1$s %2$s to %3$s."
+msgstr "Warten auf eine Krypto-Zahlung von %1$s %2$s bis %3$s."
+
+#: includes/class-xdwp-order.php:392
+#: includes/class-xdwp-order.php:396
+msgid "Crypto payment confirmed on-chain."
+msgstr "Crypto-Zahlung bestätigt on-chain."
+
+#: includes/class-xdwp-order.php:394
+msgid "Crypto payment confirmed on-chain (held)."
+msgstr "Crypto-Zahlung bestätigt on-chain (gehalten)."
+
+#. translators: 1: amount received, 2: symbol, 3: amount due, 4: excess
+#: includes/class-xdwp-order.php:405
+#, php-format
+msgid "Overpayment: received %1$s %2$s for %3$s %2$s due (%4$s %2$s extra). Refund the difference if appropriate."
+msgstr "Überzahlung: erhalten %1$s %2$s für %3$s %2$s fällig (%4$s %2$s extra). Gegebenenfalls Differenz zurückerstatten."
+
+#. translators: 1: amount received, 2: symbol, 3: amount due
+#: includes/class-xdwp-order.php:481
+#, php-format
+msgid "Crypto payment window expired with a partial payment: received %1$s %2$s of %3$s %2$s. Refund the customer or complete the order manually."
+msgstr "Krypto-Zahlungsfenster lief mit einer Teilzahlung ab: erhielt %1$s %2$s von %3$s %2$s. Refundieren Sie den Kunden oder füllen Sie die Bestellung manuell aus."
+
+#: includes/class-xdwp-order.php:490
+msgid "Crypto payment window expired. Contact the store if you already sent funds."
+msgstr "Crypto-Zahlungsfenster abgelaufen. Kontaktieren Sie den Laden, wenn Sie bereits Geld gesendet haben."
+
+#: includes/class-xdwp-order.php:546
+msgid "Payment details are unavailable for this order."
+msgstr "Zahlungsdetails sind für diese Bestellung nicht verfügbar."
+
+#: includes/class-xdwp-order.php:621
+msgid "Payment detected — waiting for network confirmations…"
+msgstr "Zahlungserkennung - Warten auf Netzwerkbestätigungen .."
+
+#: includes/class-xdwp-order.php:622
+msgid "Getting a new amount…"
+msgstr "Einen neuen Betrag bekommen.."
+
+#: includes/class-xdwp-order.php:623
+msgid "Could not get a new amount. Please contact us."
+msgstr "Konnte keinen neuen Betrag bekommen. Bitte kontaktieren Sie uns."
+
+#: includes/class-xdwp-order.php:624
+msgid "Copied!"
+msgstr "Kopiert!"
+
+#: includes/class-xdwp-order.php:625
+msgid "Payment window expired."
+msgstr "Zahlungsfenster abgelaufen."
+
+#: includes/class-xdwp-order.php:626
+msgid "Payment confirmed! Thank you."
+msgstr "Zahlung bestätigt! Vielen Dank."
+
+#: includes/class-xdwp-order.php:627
+msgid "Checking…"
+msgstr "Überprüfung .."
+
+#: includes/class-xdwp-order.php:628
+#: templates/payment.php:144
+msgid "Waiting for payment…"
+msgstr "Warten auf Zahlung.."
+
+#: includes/class-xdwp-order.php:629
+msgid "QR unavailable — copy the address manually."
+msgstr "QR nicht verfügbar - kopieren Sie die Adresse manuell."
+
+#: includes/class-xdwp-order.php:691
+msgid "Not a Xorro Wallet Payments order."
+msgstr "Keine Bestellung von Xorro Wallet Payments."
+
+#: includes/class-xdwp-order.php:697
+msgid "Coin:"
+msgstr "Münze:"
+
+#: includes/class-xdwp-order.php:698
+msgid "Amount:"
+msgstr "Betrag:"
+
+#: includes/class-xdwp-order.php:699
+msgid "Address:"
+msgstr "Anschrift:"
+
+#: includes/class-xdwp-order.php:703
+msgid "Destination tag:"
+msgstr "Bestimmungsort:"
+
+#: includes/class-xdwp-order.php:703
+msgid "Memo:"
+msgstr "Mitteilung:"
+
+#: includes/class-xdwp-order.php:708
+msgid "Partially paid"
+msgstr "Teilweise gezahlt"
+
+#: includes/class-xdwp-order.php:713
+msgid "Status:"
+msgstr "Status:"
+
+#: includes/class-xdwp-order.php:720
+msgid "Received:"
+msgstr "Empfangen:"
+
+#: includes/class-xdwp-order.php:723
+msgid "Still due:"
+msgstr "Noch fällig:"
+
+#: includes/class-xdwp-order.php:726
+msgid "Overpaid by:"
+msgstr "Zu viel gezahlt von:"
+
+#: includes/class-xdwp-order.php:730
+msgid "Partial payment txids:"
+msgstr "Teilzahlungscodes:"
+
+#: includes/class-xdwp-order.php:734
+msgid "Payment received after the window closed"
+msgstr "Zahlung erhalten, nachdem das Fenster geschlossen wurde"
+
+#. translators: 1: amount, 2: symbol, 3: txid
+#: includes/class-xdwp-order.php:737
+#, php-format
+msgid "%1$s %2$s arrived in transaction %3$s. Check it, then use \"Mark payment received\" below (the transaction ID is filled in) or refund the customer."
+msgstr "%1$s %2$s kamen in Transaktion %3$s an. Überprüfen Sie es, dann verwenden Sie unten \"Zahlung erhalten markieren\" (die Transaktions-ID ist ausgefüllt) oder erstatten Sie dem Kunden."
+
+#: includes/class-xdwp-order.php:767
+#: includes/class-xdwp-privacy.php:35
+msgid "On-chain transaction ID"
+msgstr "On-Chain-Transaktions-ID"
+
+#: includes/class-xdwp-order.php:773
+msgid "I confirm this transaction paid this order on-chain."
+msgstr "Ich bestätige, dass diese Transaktion diese Bestellung on-chain bezahlt hat."
+
+#: includes/class-xdwp-order.php:776
+msgid "Mark payment received"
+msgstr "Markzahlung eingegangen"
+
+#: includes/class-xdwp-order.php:778
+msgid "Requires a txid. Use for chains without auto-verify, delayed detection, or late payments after expiry."
+msgstr "Benötigt ein Txid. Verwenden Sie für Ketten ohne automatische Überprüfung, verzögerte Erkennung oder verspätete Zahlungen nach Ablauf."
+
+#: includes/class-xdwp-order.php:829
+msgid "Payment marked as received. The order status has been updated."
+msgstr "Als erhalten markierte Zahlung. Der Bestellstatus wurde aktualisiert."
+
+#: includes/class-xdwp-order.php:841
+msgid "Invalid request method."
+msgstr "Ungültige Anforderungsmethode."
+
+#: includes/class-xdwp-order.php:852
+msgid "A valid on-chain transaction ID is required."
+msgstr "Eine gültige On-Chain-Transaktions-ID ist erforderlich."
+
+#: includes/class-xdwp-order.php:855
+msgid "Manual confirmation checkbox is required."
+msgstr "Manuelles Bestätigungs-Checkbox ist erforderlich."
+
+#: includes/class-xdwp-order.php:860
+msgid "Order not found."
+msgstr "Ordnung nicht gefunden."
+
+#: includes/class-xdwp-order.php:874
+msgid "This order cannot be marked paid (wrong status)."
+msgstr "Diese Bestellung kann nicht als bezahlt markiert werden (falscher Status)."
+
+#: includes/class-xdwp-order.php:878
+msgid "That transaction ID is already linked to another order."
+msgstr "Diese Transaktions-ID ist bereits mit einer anderen Bestellung verknüpft."
+
+#: includes/class-xdwp-order.php:890
+msgid "Could not complete payment for this order. The transaction ID was not kept."
+msgstr "Konnte die Zahlung für diese Bestellung nicht abschließen. Die Transaktions-ID wurde nicht beibehalten."
+
+#. translators: %s: transaction id
+#: includes/class-xdwp-order.php:896
+#, php-format
+msgid "Payment marked as received manually by admin (txid: %s)."
+msgstr "Zahlung, die als manuell vom Admin erhalten gekennzeichnet ist (txid: %s)."
+
+#: includes/class-xdwp-privacy.php:32
+msgid "Receiving address"
+msgstr "Empfängeradresse"
+
+#: includes/class-xdwp-privacy.php:33
+msgid "Quoted amount"
+msgstr "Börsennotierter Betrag"
+
+#: includes/class-xdwp-privacy.php:34
+msgid "Payment status"
+msgstr "Zahlungsstatus"
+
+#: includes/class-xdwp-privacy.php:36
+msgid "Payment window started"
+msgstr "Zahlungsfenster gestartet"
+
+#: includes/class-xdwp-privacy.php:37
+msgid "Payment window expires"
+msgstr "Zahlungsfenster läuft ab"
+
+#: includes/class-xdwp-privacy.php:38
+msgid "Confirmed at"
+msgstr "Bestätigt am"
+
+#: includes/class-xdwp-privacy.php:39
+msgid "Amount received"
+msgstr "Erhaltener Betrag"
+
+#: includes/class-xdwp-privacy.php:40
+msgid "Partial payments received"
+msgstr "Erhaltene Teilzahlungen"
+
+#: includes/class-xdwp-privacy.php:41
+msgid "Amount still due"
+msgstr "Noch fälliger Betrag"
+
+#: includes/class-xdwp-privacy.php:42
+msgid "Partial payment transaction IDs"
+msgstr "ID des Teilzahlungsvorgangs"
+
+#: includes/class-xdwp-privacy.php:43
+msgid "Overpaid amount"
+msgstr "Zu viel gezahlter Betrag"
+
+#: includes/class-xdwp-privacy.php:44
+msgid "Late payment transaction ID"
+msgstr "ID des Zahlungsdienstleisters"
+
+#: includes/class-xdwp-privacy.php:45
+msgid "Late payment amount"
+msgstr "Betrag der verspäteten Zahlung"
+
+#: includes/class-xdwp-privacy.php:183
+msgid "Xorro Wallet Payments: coin, address, amount, and transaction-ID metadata on crypto orders was retained for payment verification and merchant accounting/dispute records, consistent with how order data is kept after uninstalling the plugin."
+msgstr "Xorro Wallet Payments: Münz-, Adress-, Betrags- und Transaktions-ID-Metadaten zu Krypto-Aufträgen wurden für die Zahlungsüberprüfung und Händlerbuchhaltung / Streitdatensätze aufbewahrt, die mit der Aufbewahrung der Bestelldaten nach der Deinstallation des Plugins übereinstimmen."
+
+#: includes/class-xdwp-privacy.php:202
+msgid "Xorro Direct Wallet Payments for WooCommerce lets customers pay with cryptocurrency directly to store wallets. The plugin does not send data to the plugin author’s servers."
+msgstr "Xorro Direct Wallet Payments für WooCommerce ermöglicht es Kunden, direkt mit Kryptowährung zu bezahlen, um Wallets zu speichern. Das Plugin sendet keine Daten an die Server des Plugin-Autors."
+
+#: includes/class-xdwp-privacy.php:204
+msgid "What is stored locally"
+msgstr "Was lokal gespeichert wird"
+
+#: includes/class-xdwp-privacy.php:206
+msgid "Public cryptocurrency receiving addresses you configure."
+msgstr "Öffentliche Kryptowährung, die Adressen empfängt, die Sie konfigurieren."
+
+#: includes/class-xdwp-privacy.php:207
+msgid "Order metadata needed to match payments (selected coin, quoted amount, assigned address, payment status)."
+msgstr "Bestellen Sie Metadaten, die zum Abgleich von Zahlungen erforderlich sind (ausgewählte Münze, zitierter Betrag, zugewiesene Adresse, Zahlungsstatus)."
+
+#: includes/class-xdwp-privacy.php:210
+msgid "Third-party services"
+msgstr "Dienstleistungen von Drittanbietern"
+
+#: includes/class-xdwp-privacy.php:211
+msgid "When a customer uses this payment method, or when automatic verification is enabled, the store may contact public blockchain and price APIs. Typical data includes coin identifiers, wallet addresses, transaction IDs, and fiat currency codes. Optional API keys you add are sent only to the matching provider."
+msgstr "Wenn ein Kunde diese Zahlungsmethode verwendet oder wenn die automatische Überprüfung aktiviert ist, kann der Shop öffentliche Blockchain- und Preis-APIs kontaktieren. Typische Daten umfassen Münzkennungen, Wallet-Adressen, Transaktions-IDs und Fiat-Währungscodes. Optionale API-Schlüssel, die Sie hinzufügen, werden nur an den passenden Anbieter gesendet."
+
+#: includes/class-xdwp-privacy.php:213
+msgid "CoinGecko — exchange rates for crypto quotes."
+msgstr "CoinGecko - Wechselkurse für Krypto-Kurse."
+
+#: includes/class-xdwp-privacy.php:214
+msgid "Etherscan API V2 — EVM chain payment detection."
+msgstr "Etherscan API V2 - Erkennung von EVM-Kettenzahlungen."
+
+#: includes/class-xdwp-privacy.php:215
+msgid "mempool.space / Blockstream — Bitcoin payment detection."
+msgstr "mempool.space / Blockstream — Bitcoin Zahlungserkennung."
+
+#: includes/class-xdwp-privacy.php:216
+msgid "Blockchair — Bitcoin Cash / Litecoin / Dogecoin payment detection."
+msgstr "Blockchair - Bitcoin Cash / Litecoin / Dogecoin Zahlungserkennung."
+
+#: includes/class-xdwp-privacy.php:217
+msgid "TronGrid, Solana RPC / Helius, and other public explorers/RPCs for supported networks."
+msgstr "TronGrid, Solana RPC / Helius und andere öffentliche Forscher / RPCs für unterstützte Netzwerke."
+
+#: includes/class-xdwp-privacy.php:220
+msgid "Automatic on-chain verification can be disabled under Xorro Wallet Payments → General. Disabling the payment gateway stops these checkout-related requests."
+msgstr "Die automatische On-Chain-Verifizierung kann unter Xorro Wallet Payments → General deaktiviert werden. Das Deaktivieren des Zahlungs-Gateways stoppt diese Checkout-bezogenen Anfragen."
+
+#. translators: %s: PHP constant name
+#: includes/class-xdwp-settings.php:110
+#, php-format
+msgid "Set via %s in wp-config.php"
+msgstr "Setzen über %s in wp-config.php"
+
+#: includes/class-xdwp-settings.php:117
+msgid "Key saved — leave blank to keep, paste a new key, or enter - to clear"
+msgstr "Schlüssel gespeichert - leer lassen, um zu behalten, einen neuen Schlüssel einzufügen oder einzugeben - um zu löschen"
+
+#: includes/class-xdwp-updater.php:179
+msgid "Accept cryptocurrency payments directly to your own wallets — updates are delivered from GitHub Releases."
+msgstr "Akzeptieren Sie Kryptowährungszahlungen direkt an Ihre eigenen Wallets - Updates werden von GitHub Releases geliefert."
+
+#: includes/class-xdwp-updater.php:182
+msgid "See GitHub Releases for changelog details."
+msgstr "Siehe GitHub Releases für Changelog Details."
+
+#: includes/class-xdwp-updater.php:219
+msgid "Refused plugin update: package host is not an allowlisted GitHub download host."
+msgstr "Verweigerte Plugin-Update: Paket-Host ist kein zulässiger GitHub-Download-Host."
+
+#: includes/class-xdwp-updater.php:244
+msgid "Refused plugin update: release SHA-256 checksum is unavailable."
+msgstr "Verweigerte Plugin-Update: Release SHA-256 Prüfsumme ist nicht verfügbar."
+
+#: includes/class-xdwp-updater.php:253
+msgid "Refused plugin update: ZIP SHA-256 does not match the GitHub release checksum."
+msgstr "Plugin-Update abgelehnt: ZIP SHA-256 stimmt nicht mit der GitHub-Release-Prüfsumme überein."
+
+#: includes/class-xdwp-updater.php:269
+msgid "Refused plugin update: the release is not signed with the Xorro Wallet Payments release key."
+msgstr "Verweigerte Plugin-Update: Die Version ist nicht mit dem Xorro Wallet Payments Release Key signiert."
+
+#. translators: 1: amount received, 2: symbol, 3: amount due, 4: remaining amount, 5: txid
+#: includes/class-xdwp-verifier.php:299
+#, php-format
+msgid "Partial crypto payment: received %1$s %2$s of %3$s %2$s. Waiting for the remaining %4$s %2$s (txid: %5$s). The payment window was restarted."
+msgstr "Teilweise Kryptozahlung: Erhalten %1$s %2$s von %3$s %2$s. Warten auf die restlichen %4$s %2$s (txid: %5$s). Das Zahlungsfenster wurde neu gestartet."
+
+#. translators: 1: amount, 2: symbol, 3: txid
+#: includes/class-xdwp-verifier.php:394
+#, php-format
+msgid "A transfer of %1$s %2$s (txid: %3$s) arrived that could belong to this order or another open order on the same address, so it was not credited automatically. Check which customer sent it and use \"Mark payment received\" on the right order."
+msgstr "Eine Überweisung von %1$s %2$s (txid: %3$s) kam an, die zu dieser Bestellung oder einer anderen offenen Bestellung an derselben Adresse gehören könnte, so dass sie nicht automatisch gutgeschrieben wurde. Überprüfen Sie, welcher Kunde es gesendet hat, und verwenden Sie \"Zahlung erhalten markieren\" für die richtige Bestellung."
+
+#: includes/emails/class-xdwp-email-partial-payment.php:21
+msgid "Crypto partial payment"
+msgstr "Krypto-Teilzahlung"
+
+#: includes/emails/class-xdwp-email-partial-payment.php:22
+msgid "Sent to the customer when less than the full crypto amount arrives (often because an exchange deducted a withdrawal fee). Shows what was received and how much is still due."
+msgstr "An den Kunden gesendet, wenn weniger als der volle Kryptobetrag eintrifft (oft, weil ein Umtausch eine Auszahlungsgebühr abgezogen hat). Zeigt, was empfangen wurde und wie viel noch fällig ist."
+
+#: includes/emails/class-xdwp-email-partial-payment.php:36
+msgid "We received part of your payment for order #{order_number}"
+msgstr ""
+
+#: includes/emails/class-xdwp-email-partial-payment.php:43
+msgid "Part of your payment arrived"
+msgstr "Ein Teil Ihrer Zahlung ist angekommen"
+
+#: includes/emails/class-xdwp-email-payment-alert.php:29
+#: includes/emails/class-xdwp-email-payment-alert.php:54
+msgid "Crypto payment needs attention"
+msgstr "Crypto Payment braucht Aufmerksamkeit"
+
+#: includes/emails/class-xdwp-email-payment-alert.php:30
+msgid "Sent to the store owner when a crypto payment is short, over the amount due, or arrives after the payment window closed."
+msgstr "An den Ladenbesitzer gesendet, wenn eine Krypto-Zahlung kurz ist, über den fälligen Betrag hinausgeht oder nach dem Schließen des Zahlungsfensters eintrifft."
+
+#: includes/emails/class-xdwp-email-payment-alert.php:47
+msgid "[{site_title}] Order #{order_number}: {issue}"
+msgstr ""
+
+#: includes/emails/class-xdwp-email-payment-alert.php:65
+msgid "partial payment received"
+msgstr "teilzahlung erhalten"
+
+#: includes/emails/class-xdwp-email-payment-alert.php:66
+msgid "partial payment, window expired"
+msgstr "teilzahlung, fenster abgelaufen"
+
+#: includes/emails/class-xdwp-email-payment-alert.php:67
+msgid "overpayment received"
+msgstr "zu viel gezahlt"
+
+#: includes/emails/class-xdwp-email-payment-alert.php:68
+msgid "payment arrived after expiry"
+msgstr "zahlungseingang nach ablauf"
+
+#: includes/emails/class-xdwp-email-payment-alert.php:69
+msgid "unassigned payment to check"
+msgstr "nicht zugewiesene zahlung zur überprüfung"
+
+#: includes/emails/class-xdwp-email-payment-alert.php:71
+msgid "crypto payment issue"
+msgstr "krypto-zahlungsproblem"
+
+#. translators: 1: received, 2: symbol, 3: due, 4: remaining
+#: includes/emails/class-xdwp-email-payment-alert.php:89
+#, php-format
+msgid "The customer sent %1$s %2$s of %3$s %2$s. They have been emailed to send the remaining %4$s %2$s and the payment window was restarted. The order completes automatically if the rest arrives; otherwise it expires and you can refund the partial payment."
+msgstr ""
+
+#. translators: 1: received, 2: symbol, 3: due
+#: includes/emails/class-xdwp-email-payment-alert.php:92
+#, php-format
+msgid "The payment window closed after only %1$s %2$s of %3$s %2$s arrived. The order is marked failed. Refund the customer, or complete the order manually with \"Mark payment received\" if you accept the shortfall."
+msgstr "Das Zahlungsfenster schloss sich, nachdem nur %1$s %2$s von %3$s %2$s angekommen waren. Der Auftrag ist als fehlgeschlagen gekennzeichnet. Erstatten Sie den Kunden oder füllen Sie die Bestellung manuell mit \"Zahlung erhalten markieren\" aus, wenn Sie den Fehlbetrag akzeptieren."
+
+#. translators: 1: received, 2: symbol, 3: due, 4: excess
+#: includes/emails/class-xdwp-email-payment-alert.php:95
+#, php-format
+msgid "The customer sent %1$s %2$s for %3$s %2$s due. The order was completed; %4$s %2$s was paid on top, which you may want to refund."
+msgstr ""
+
+#. translators: 1: amount, 2: symbol, 3: due
+#: includes/emails/class-xdwp-email-payment-alert.php:98
+#, php-format
+msgid "%1$s %2$s arrived for this order after its payment window had closed (%3$s %2$s was due). The order was not changed. Check the payment, then complete it with \"Mark payment received\" (the transaction ID is filled in) or refund the customer."
+msgstr "%1$s %2$s kamen für diese Bestellung an, nachdem das Zahlungsfenster geschlossen war (%3$s %2$s war fällig). Die Reihenfolge wurde nicht geändert. Überprüfen Sie die Zahlung, füllen Sie sie dann mit \"Zahlung erhalten markieren\" (die Transaktions-ID ist ausgefüllt) oder erstatten Sie dem Kunden zurück."
+
+#. translators: 1: amount, 2: symbol
+#: includes/emails/class-xdwp-email-payment-alert.php:101
+#, php-format
+msgid "A transfer of %1$s %2$s arrived on this order's address, but it does not match any order exactly and could belong to more than one open order (for example a customer whose exchange deducted a fee). It was not credited automatically. Check which customer sent it, then use \"Mark payment received\" on that order."
+msgstr "Eine Überweisung von %1$s %2$s kam an die Adresse dieser Bestellung, aber sie passt nicht genau zu einer Bestellung und könnte zu mehr als einer offenen Bestellung gehören (z. B. einem Kunden, dessen Umtausch eine Gebühr abgezogen hat). Es wurde nicht automatisch gutgeschrieben. Überprüfen Sie, welcher Kunde es gesendet hat, und verwenden Sie dann \"Zahlung erhalten markieren\" für diese Bestellung."
+
+#: includes/emails/class-xdwp-email-payment-alert.php:176
+msgid "Recipient(s)"
+msgstr "Empfänger"
+
+#. translators: %s: admin email
+#: includes/emails/class-xdwp-email-payment-alert.php:179
+#, php-format
+msgid "Comma-separated. Defaults to %s."
+msgstr "Komma getrennt. Defaults auf %s."
+
+#: includes/emails/class-xdwp-email-payment-reminder.php:21
+msgid "Crypto payment reminder"
+msgstr "Krypto-Zahlungserinnerung"
+
+#: includes/emails/class-xdwp-email-payment-reminder.php:22
+msgid "Sent to the customer about 15 minutes before the crypto payment window closes, if the order is still unpaid. Only sent when the payment window is 30 minutes or longer."
+msgstr "Etwa 15 Minuten vor dem Schließen des Krypto-Zahlungsfensters an den Kunden gesendet, wenn die Bestellung noch unbezahlt ist. Nur gesendet, wenn das Zahlungsfenster 30 Minuten oder länger ist."
+
+#: includes/emails/class-xdwp-email-payment-reminder.php:36
+msgid "Your order #{order_number} is waiting for payment"
+msgstr ""
+
+#: includes/emails/class-xdwp-email-payment-reminder.php:43
+#: templates/emails/plain/xdwp-payment-details.php:16
+#: templates/emails/xdwp-payment-details.php:18
+msgid "Complete your crypto payment"
+msgstr "Vervollständigen Sie Ihre Krypto-Zahlung"
+
+#. translators: %s: customer first name
+#: templates/emails/plain/xdwp-partial-payment.php:17
+#: templates/emails/plain/xdwp-payment-reminder.php:17
+#: templates/emails/xdwp-partial-payment.php:22
+#: templates/emails/xdwp-payment-reminder.php:22
+#, php-format
+msgid "Hi %s,"
+msgstr ""
+
+#. translators: %s: order number
+#: templates/emails/plain/xdwp-partial-payment.php:21
+#: templates/emails/xdwp-partial-payment.php:30
+#, php-format
+msgid "Thank you — part of the payment for order #%s has arrived. This often happens when a wallet or exchange deducts its fee from the amount sent. Please send the remaining amount below to complete your order; the payment window has been restarted."
+msgstr "Vielen Dank - ein Teil der Zahlung für die Bestellung #%s ist angekommen. Dies geschieht häufig, wenn eine Brieftasche oder ein Umtausch ihre Gebühr von dem gesendeten Betrag abzieht. Bitte senden Sie den verbleibenden Betrag unten, um Ihre Bestellung abzuschließen; das Zahlungsfenster wurde neu gestartet."
+
+#. translators: 1: order number, 2: issue
+#: templates/emails/plain/xdwp-payment-alert.php:24
+#: templates/emails/xdwp-payment-alert.php:31
+#, php-format
+msgid "Order #%1$s: %2$s."
+msgstr "Bestellung #%1$s:%2$s."
+
+#: templates/emails/plain/xdwp-payment-alert.php:27
+#: templates/emails/xdwp-payment-alert.php:36
+msgid "Transaction ID:"
+msgstr "Transaktionskennung:"
+
+#: templates/emails/plain/xdwp-payment-alert.php:29
+#: templates/emails/xdwp-payment-alert.php:38
+msgid "Open the order"
+msgstr "Öffnen Sie den Auftrag"
+
+#: templates/emails/plain/xdwp-payment-details.php:16
+#: templates/emails/xdwp-payment-details.php:18
+msgid "Crypto payment details"
+msgstr "Crypto Payment Details"
+
+#. translators: 1: received, 2: symbol, 3: full amount, 4: remaining
+#: templates/emails/plain/xdwp-payment-details.php:21
+#: templates/emails/xdwp-payment-details.php:25
+#, php-format
+msgid "We received %1$s %2$s of %3$s %2$s. Please send the remaining %4$s %2$s to the same address."
+msgstr "Wir erhielten %1$s %2$s von %3$s %2$s. Bitte senden Sie die restlichen %4$s %2$s an die gleiche Adresse."
+
+#: templates/emails/plain/xdwp-payment-details.php:29
+#: templates/emails/xdwp-payment-details.php:35
+msgid "Send exactly this amount to the address below. Network fees are paid on top, by you."
+msgstr "Senden Sie genau diesen Betrag an die unten stehende Adresse. Netzwerkgebühren werden obendrein von Ihnen bezahlt."
+
+#: templates/emails/plain/xdwp-payment-details.php:31
+#: templates/emails/xdwp-payment-details.php:39
+#: templates/payment.php:69
+msgid "Remaining amount"
+msgstr "Restbetrag"
+
+#: templates/emails/plain/xdwp-payment-details.php:31
+#: templates/emails/xdwp-payment-details.php:39
+#: templates/payment.php:69
+msgid "Amount"
+msgstr "Betrag"
+
+#: templates/emails/plain/xdwp-payment-details.php:33
+#: templates/emails/xdwp-payment-details.php:47
+#: templates/payment.php:88
+msgid "Address"
+msgstr "Anschrift"
+
+#: templates/emails/plain/xdwp-payment-details.php:35
+#: templates/emails/xdwp-payment-details.php:52
+#: templates/payment.php:102
+msgid "Destination tag"
+msgstr "Bestimmungsort"
+
+#: templates/emails/plain/xdwp-payment-details.php:35
+#: templates/emails/xdwp-payment-details.php:52
+#: templates/payment.php:102
+msgid "Memo"
+msgstr "Mitteilung"
+
+#: templates/emails/plain/xdwp-payment-details.php:36
+#: templates/emails/xdwp-payment-details.php:53
+msgid "Include this with the payment so we know it is yours."
+msgstr "Fügen Sie dies mit der Zahlung hinzu, damit wir wissen, dass es Ihnen gehört."
+
+#: templates/emails/plain/xdwp-payment-details.php:39
+#: templates/emails/xdwp-payment-details.php:58
+msgid "Pay before"
+msgstr "Vorauszahlung"
+
+#: templates/emails/plain/xdwp-payment-details.php:41
+msgid "Payment page (QR code):"
+msgstr "Zahlungsseite (QR-Code):"
+
+#: templates/emails/plain/xdwp-payment-details.php:42
+#: templates/emails/xdwp-payment-details.php:68
+msgid "Only send on the network shown. Your order is confirmed automatically once the payment arrives."
+msgstr "Senden Sie nur in das gezeigte Netzwerk. Ihre Bestellung wird automatisch bestätigt, sobald die Zahlung eintrifft."
+
+#. translators: %s: order number
+#: templates/emails/plain/xdwp-payment-reminder.php:21
+#: templates/emails/xdwp-payment-reminder.php:30
+#, php-format
+msgid "Your order #%s is still waiting for payment, and the payment window closes soon. If you have already sent it, you can ignore this email — the order updates as soon as the transfer arrives."
+msgstr "Ihre Bestellung #%s wartet immer noch auf die Zahlung, und das Zahlungsfenster schließt sich bald. Wenn Sie es bereits gesendet haben, können Sie diese E-Mail ignorieren - die Bestellung wird aktualisiert, sobald die Überweisung eintrifft."
+
+#: templates/emails/xdwp-payment-details.php:65
+msgid "Open payment page (QR code)"
+msgstr "Offene Zahlungsseite (QR-Code)"
+
+#. translators: %s: coin name
+#: templates/payment.php:26
+#, php-format
+msgid "Pay with %s"
+msgstr "Bezahlen mit %s"
+
+#: templates/payment.php:31
+msgid "Payment confirmed. Thank you!"
+msgstr "Zahlung bestätigt. Vielen Dank!"
+
+#: templates/payment.php:33
+msgid "The payment window closed before the full amount arrived. We have received part of your payment — please contact us and we will complete or refund your order. Do not send more."
+msgstr "Das Zahlungsfenster wurde geschlossen, bevor der volle Betrag eintraf. Wir haben einen Teil Ihrer Zahlung erhalten - kontaktieren Sie uns bitte und wir werden Ihre Bestellung abschließen oder zurückerstatten. Senden Sie nicht mehr."
+
+#: templates/payment.php:36
+msgid "The payment window closed, so the amount shown is out of date. You can get a new amount at today's rate — your order is kept."
+msgstr "Das Zahlungsfenster ist geschlossen, sodass der angezeigte Betrag veraltet ist. Sie können einen neuen Betrag zum heutigen Kurs erhalten - Ihre Bestellung wird beibehalten."
+
+#: templates/payment.php:38
+msgid "Get a new amount"
+msgstr "Erhalten Sie einen neuen Betrag"
+
+#: templates/payment.php:42
+msgid "Payment window expired. Please place a new order."
+msgstr "Zahlungsfenster abgelaufen. Bitte geben Sie eine neue Bestellung auf."
+
+#. translators: 1: amount received, 2: symbol, 3: full amount due, 4: remaining amount
+#: templates/payment.php:51
+#, php-format
+msgid "We received %1$s %2$s of %3$s %2$s. Please send the remaining %4$s %2$s to the same address to complete your order."
+msgstr "Wir erhielten %1$s %2$s von %3$s %2$s. Bitte senden Sie die restlichen %4$s %2$s an die gleiche Adresse, um Ihre Bestellung abzuschließen."
+
+#: templates/payment.php:62
+msgid "Send exactly the amount below (network fees are extra)."
+msgstr "Senden sie genau den betrag unten (netzwerkgebühren sind extra)."
+
+#: templates/payment.php:63
+msgid "Use the matching network shown for this coin."
+msgstr "Verwenden Sie das für diese Münze gezeigte passende Netzwerk."
+
+#: templates/payment.php:64
+msgid "Wait for automatic confirmation — this page updates itself."
+msgstr "Warten Sie auf die automatische Bestätigung - diese Seite aktualisiert sich selbst."
+
+#. translators: %s: order total in store currency
+#: templates/payment.php:83
+#, php-format
+msgid "≈ %s order total"
+msgstr "≈ %s auftragssumme"
+
+#: templates/payment.php:113
+msgid "Paste this into your wallet with the payment. It tells us the payment is yours."
+msgstr "Fügen Sie dies mit der Zahlung in Ihre Brieftasche ein. Es sagt uns, dass die Zahlung Ihnen gehört."
+
+#: templates/payment.php:124
+msgid "Open in wallet app"
+msgstr "Open in Wallet App"
+
+#: templates/payment.php:130
+msgid "Scan with your wallet app"
+msgstr "Scannen Sie mit Ihrer Wallet App"
+
+#: templates/payment.php:138
+msgid "Copy payment link"
+msgstr "Kopieren Sie den Zahlungslink"
+
+#. translators: 1: required PHP 2: current PHP
+#. translators: 1: required PHP version, 2: current PHP version
+#: xorro-direct-wallet-payments-woocommerce.php:67
+#: xorro-direct-wallet-payments-woocommerce.php:112
+#, php-format
+msgid "Xorro Wallet Payments requires PHP %1$s or higher. You are running %2$s."
+msgstr "Xorro Wallet Payments erfordert PHP %1$s oder höher. Sie laufen %2$s."
+
+#: xorro-direct-wallet-payments-woocommerce.php:131
+msgid "Xorro Wallet Payments requires WooCommerce to be installed and active."
+msgstr "Xorro Wallet Payments erfordert, dass WooCommerce installiert und aktiv ist."
+
+#. translators: %s: WordPress version
+#: xorro-direct-wallet-payments-woocommerce.php:150
+#, php-format
+msgid "Xorro Wallet Payments requires WordPress %s or higher (WordPress 7.0 recommended)."
+msgstr "Xorro Wallet Payments erfordert WordPress %s oder höher (WordPress 7.0 empfohlen)."
+
+#. translators: %s: WooCommerce version
+#: xorro-direct-wallet-payments-woocommerce.php:171
+#, php-format
+msgid "Xorro Wallet Payments requires WooCommerce %s or higher."
+msgstr "Xorro Wallet Payments erfordert WooCommerce %s oder höher."
+
+#: assets/js/blocks.js:141
+msgid "Please select a cryptocurrency."
+msgstr "Bitte wählen Sie eine Kryptowährung aus."
+
+#: assets/js/blocks.js:244
+msgid "No cryptocurrencies are configured."
+msgstr "Es sind keine Kryptowährungen konfiguriert."
+

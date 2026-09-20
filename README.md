@@ -38,6 +38,7 @@ Each order gets a slightly unique amount (usually a few base units, e.g. 10 sato
 - **No lost payments:** payment details in customer emails, a reminder before the window closes, partial-payment handling (customer is asked for the rest), overpayment notes, and a late-payment scan that alerts you when money arrives after an order expired
 - **Payments screen** listing every crypto order, with a "needs you" filter, plus a crypto payment column on the orders list
 - Admin alerts when an explorer API rejects requests (e.g. a missing or limited API key), so verification never fails silently
+- **Help screen** in the plugin, and translations for sixteen languages
 - Automatic updates from GitHub Releases — every package must carry the maintainer's Ed25519 signature
 
 ### Supported coins
@@ -182,6 +183,11 @@ Pushing a `vX.Y.Z` tag runs the Release workflow, which builds the ZIP, its SHA-
 ## Changelog
 
 Full details for every release are in [`readme.txt`](readme.txt).
+
+### 1.12.0 — a Help screen, and sixteen languages
+
+- **Help tab** covering every setting, how payments are matched, the customer's view, troubleshooting and the developer hooks
+- **Bundled translations** for sixteen locales (machine-translated; a site's own translation always takes precedence)
 
 ### 1.11.0 — a fresh address for every order (optional)
 

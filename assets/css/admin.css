@@ -1560,3 +1560,135 @@ body.xdwp-admin-page #wpbody-content > .wrap > h1.wp-heading-inline {
 	word-break: break-all;
 	color: #1d2327;
 }
+
+/* ---- Help ------------------------------------------------------------- */
+
+.xdwp-help {
+	max-width: 900px;
+	font-size: 13.5px;
+	line-height: 1.65;
+}
+
+.xdwp-help__index {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.4rem 0.75rem;
+	margin: 0 0 1.5rem;
+	padding: 0.85rem 1rem;
+	border: 1px solid #dcdcde;
+	border-radius: 6px;
+	background: #f6f7f7;
+	font-size: 12.5px;
+}
+
+.xdwp-help__index a {
+	color: #2271b1;
+	text-decoration: none;
+}
+
+.xdwp-help__index a:hover {
+	text-decoration: underline;
+}
+
+.xdwp-help__section {
+	margin: 0 0 2rem;
+	scroll-margin-top: 40px;
+}
+
+.xdwp-help__section h3 {
+	margin: 0 0 0.5rem;
+	padding-bottom: 0.35rem;
+	border-bottom: 2px solid #1d2733;
+	font-size: 16px;
+}
+
+.xdwp-help__section h4 {
+	margin: 1.25rem 0 0.4rem;
+	font-size: 13.5px;
+}
+
+.xdwp-help__list,
+.xdwp-help__steps {
+	margin: 0.5rem 0 0 1.25rem;
+	padding: 0;
+}
+
+.xdwp-help__list li,
+.xdwp-help__steps li {
+	margin: 0 0 0.5rem;
+}
+
+.xdwp-help__table {
+	width: 100%;
+	margin: 0.75rem 0 0;
+	border-collapse: collapse;
+}
+
+.xdwp-help__table th,
+.xdwp-help__table td {
+	padding: 0.6rem 0.75rem;
+	border-bottom: 1px solid #e0e3e7;
+	text-align: left;
+	vertical-align: top;
+}
+
+.xdwp-help__table th {
+	width: 30%;
+	font-weight: 600;
+}
+
+.xdwp-help__table--code th {
+	width: 38%;
+	font-weight: 400;
+}
+
+.xdwp-help__where {
+	display: block;
+	margin-top: 2px;
+	color: #646970;
+	font-size: 11px;
+	font-weight: 400;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+}
+
+.xdwp-help__note,
+.xdwp-help__warn {
+	margin: 0.9rem 0 0;
+	padding: 0.6rem 0.8rem;
+	border-left: 3px solid #72aee6;
+	border-radius: 0 4px 4px 0;
+	background: #f0f6fc;
+	font-size: 12.5px;
+}
+
+.xdwp-help__warn {
+	border-left-color: #d63638;
+	background: #fcf0f1;
+}
+
+.xdwp-help__faq dt {
+	margin: 0.9rem 0 0.2rem;
+	font-weight: 600;
+}
+
+.xdwp-help__faq dd {
+	margin: 0;
+	color: #3c434a;
+}
+
+@media (max-width: 782px) {
+	.xdwp-help__table th,
+	.xdwp-help__table td {
+		display: block;
+		width: auto;
+		border-bottom: 0;
+		padding: 0.25rem 0;
+	}
+
+	.xdwp-help__table tr {
+		display: block;
+		padding: 0.6rem 0;
+		border-bottom: 1px solid #e0e3e7;
+	}
+}
