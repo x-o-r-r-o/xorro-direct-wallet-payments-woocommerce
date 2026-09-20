@@ -247,6 +247,11 @@ msgid ""
 "\n"
 "%5$s"
 msgstr ""
+"Một địa chỉ trả tiền cho Xorro được đổi trên %1$s bởi %2$s (người dùng %3$d) tại %4$s.\n"
+"\n"
+"Nếu điều này không phải là bạn, đảm bảo rằng tài khoản này ngay lập tức - điều khiển này nơi mà các khách hàng tương lai trả tiền bí mật được gửi, và không thể đảo ngược một khi gửi.\n"
+"\n"
+"%5$s"
 
 #: includes/admin/class-xdwp-admin.php:430
 msgid "an unknown user"
@@ -406,7 +411,7 @@ msgstr "Đồng tiền đã bật"
 #: includes/admin/class-xdwp-admin.php:727
 #, php-format
 msgid "%1$d ticked, %2$d with somewhere to receive"
-msgstr ""
+msgstr "%1$d đánh dấu, %2$d ở đâu đó để nhận"
 
 #: includes/admin/class-xdwp-admin.php:761
 msgid "You are not allowed to run this."
@@ -617,7 +622,7 @@ msgstr[0] "%d phút"
 #: includes/admin/class-xdwp-payments-admin.php:754
 #, php-format
 msgid "%1$dh %2$dm"
-msgstr ""
+msgstr "%1$dh %2$dmm"
 
 #. translators: %s: a percentage
 #: includes/admin/class-xdwp-payments-admin.php:769
@@ -1955,7 +1960,7 @@ msgstr "Giá trị"
 #: includes/admin/views/payments-page.php:202
 #, php-format
 msgid "%1$s of %2$s"
-msgstr ""
+msgstr "%1$s trong số %2$s"
 
 #: includes/admin/views/payments-page.php:223
 msgid ""
@@ -1970,7 +1975,7 @@ msgstr ""
 #, php-format
 msgid "%s quieter coin is not shown."
 msgid_plural "%s quieter coins are not shown."
-msgstr[0] ""
+msgstr[0] "%s đồng xu yên tĩnh hơn không được hiển thị."
 
 #. translators: %s: number of orders
 #: includes/admin/views/payments-page.php:236
@@ -2835,7 +2840,7 @@ msgstr "địa chỉ %d"
 #, php-format
 msgid ""
 "%1$d addresses handed out, %2$d of them ahead of your last received payment."
-msgstr ""
+msgstr "%1$d địa chỉ được đưa ra, %2$d địa chỉ trước khi anh nhận được tiền."
 
 #: includes/admin/views/wallets-ui.php:311
 msgid ""
@@ -3010,7 +3015,7 @@ msgstr ""
 #: includes/class-xdwp-cron.php:264
 #, php-format
 msgid "Money arrived after the window closed: %1$s (%2$s)"
-msgstr ""
+msgstr "Tiền đến sau khi cửa sổ đóng lại: %1$s (%2$s)"
 
 #: includes/class-xdwp-gateway.php:21
 msgid ""
@@ -3142,13 +3147,13 @@ msgstr "Đã gửi trả lại"
 #: includes/class-xdwp-notify.php:266
 #, php-format
 msgid "%1$s — order #%2$s"
-msgstr ""
+msgstr "%1$s — thứ tự #%2$s"
 
 #. translators: 1: crypto amount with symbol, 2: order total in shop currency
 #: includes/class-xdwp-notify.php:275
 #, php-format
 msgid "%1$s (%2$s)"
-msgstr ""
+msgstr "%1$s (%2$s)"
 
 #. translators: 1: site name, 2: number of paid orders, 3: money taken, 4:
 #. number needing attention
@@ -3159,6 +3164,9 @@ msgid ""
 "%2$s paid, %3$s taken\n"
 "%4$s need you"
 msgstr ""
+"%1$s — bí mật trong ngày cuối cùng\n"
+"%2$s được trả, %3$s lần.\n"
+"%4$s cần anh"
 
 #: includes/class-xdwp-notify.php:344
 msgid ""
@@ -3181,6 +3189,8 @@ msgid ""
 "Customer asked for a new quote. The previous one was %1$s %2$s to %3$s "
 "(reference: %4$s) — if anything was sent to it, credit this order by hand."
 msgstr ""
+"Khách hàng yêu cầu một câu nói mới. Bài trước là %1$s %2$s đến %3$s (tham "
+"khảo: %4$s) — nếu có bất cứ điều gì được gửi đến đó, hãy tin chắc điều này."
 
 #: includes/class-xdwp-order.php:304
 msgid "none"
@@ -3255,13 +3265,13 @@ msgstr ""
 #: includes/class-xdwp-order.php:545
 #, php-format
 msgid "Quoted %1$s %2$s to %3$s"
-msgstr ""
+msgstr "Trích từ %1$s %2$s đến %3$s"
 
 #. translators: 1: amount 2: coin 3: address
 #: includes/class-xdwp-order.php:556
 #, php-format
 msgid "Awaiting crypto payment of %1$s %2$s to %3$s."
-msgstr ""
+msgstr "Đang chờ thanh toán bí mật từ %1$s %2$s đến %3$s."
 
 #: includes/class-xdwp-order.php:670 includes/class-xdwp-order.php:674
 msgid "Crypto payment confirmed on-chain."
@@ -3278,12 +3288,14 @@ msgid ""
 "Overpayment: received %1$s %2$s for %3$s %2$s due (%4$s %2$s extra). Refund "
 "the difference if appropriate."
 msgstr ""
+"Trả giá quá cao: %1$s %2$s cho %3$s %2$s khoản nợ (%4$s %2$s). Thay đổi nếu "
+"thích hợp."
 
 #. translators: 1: amount received, 2: coin, 3: transaction id
 #: includes/class-xdwp-order.php:698
 #, php-format
 msgid "Confirmed on chain: %1$s %2$s, transaction %3$s"
-msgstr ""
+msgstr "Xác nhận trên chuỗi: %1$s %2$s, giao dịch %3$s"
 
 #. translators: 1: amount received, 2: symbol, 3: amount due
 #: includes/class-xdwp-order.php:778
@@ -3292,6 +3304,8 @@ msgid ""
 "Crypto payment window expired with a partial payment: received %1$s %2$s of "
 "%3$s %2$s. Refund the customer or complete the order manually."
 msgstr ""
+"Cửa sổ thanh toán mật mã hết hạn với một phần thanh toán: được %1$s %2$s "
+"trong %3$s %2$s. Nạp lại khách hàng hoặc hoàn tất lệnh bằng tay."
 
 #: includes/class-xdwp-order.php:787
 msgid ""
@@ -3483,7 +3497,7 @@ msgstr "Gỡ bỏ"
 #: includes/class-xdwp-order.php:1064
 #, php-format
 msgid "Sent %1$s to %2$s."
-msgstr ""
+msgstr "Gửi %1$s đến %2$s."
 
 #: includes/class-xdwp-order.php:1075
 msgid ""
@@ -3506,6 +3520,8 @@ msgid ""
 "Send %1$s on %2$s from your own wallet, then record the transaction id "
 "below."
 msgstr ""
+"Gửi %1$s trên %2$s từ ví riêng của bạn, sau đó ghi lại các giao dịch nằm "
+"dưới đây."
 
 #: includes/class-xdwp-order.php:1095
 msgid "Refund transaction id"
@@ -3611,6 +3627,9 @@ msgid ""
 "%1$s %2$s arrived in transaction %3$s. Check it, then use \"Mark payment "
 "received\" below (the transaction ID is filled in) or refund the customer."
 msgstr ""
+"%1$s %2$s đến giao dịch %3$s. Kiểm tra nó, sau đó sử dụng \"dấu tiền nhận "
+"được\" bên dưới (số chứng minh giao dịch được điền vào) hoặc hoàn trả lại "
+"khách hàng."
 
 #: includes/class-xdwp-order.php:1236 includes/class-xdwp-privacy.php:35
 msgid "On-chain transaction ID"
@@ -3881,7 +3900,7 @@ msgstr "Khách hàng cung cấp một địa chỉ hoàn lại (%s)"
 #: includes/class-xdwp-refunds.php:315
 #, php-format
 msgid "Refund of %1$s sent, transaction %2$s."
-msgstr ""
+msgstr "Tổng đài số %1$s gửi, giao dịch %2$s."
 
 #. translators: %s: transaction id
 #: includes/class-xdwp-refunds.php:326
@@ -4075,6 +4094,8 @@ msgid ""
 "Payments go to %s. Only you can confirm it is yours — send a small amount to"
 " be certain."
 msgstr ""
+"Tiền công là %s. Chỉ có bạn mới có thể xác nhận nó là của bạn — gửi một số "
+"tiền nhỏ để chắc chắn."
 
 #: includes/class-xdwp-selftest.php:249 includes/class-xdwp-selftest.php:261
 msgid "Price in this coin"
@@ -4094,7 +4115,7 @@ msgstr ""
 #: includes/class-xdwp-selftest.php:265
 #, php-format
 msgid "%1$s converts to %2$s %3$s right now."
-msgstr ""
+msgstr "%1$s chuyển sang %2$s %3$s ngay bây giờ."
 
 #: includes/class-xdwp-selftest.php:282
 msgid "Reading the blockchain"
@@ -4169,6 +4190,8 @@ msgid ""
 "%1$s answered with HTTP %2$d. Payments in this coin may not be confirmed "
 "automatically."
 msgstr ""
+"%1$s trả lời với HTTP %2$d. Tiền trong đồng xu này có thể không được xác "
+"nhận tự động."
 
 #. translators: %s: host
 #: includes/class-xdwp-selftest.php:374
@@ -4293,6 +4316,8 @@ msgid ""
 "Partial crypto payment: received %1$s %2$s of %3$s %2$s. Waiting for the "
 "remaining %4$s %2$s (txid: %5$s). The payment window was restarted."
 msgstr ""
+"Một phần tiền mật mã: được %1$s %2$s trong %3$s %2$s. Chờ đợi %4$s %2$s "
+"(txid: %5$s). Cửa sổ thanh toán đã được khởi chạy lại."
 
 #. translators: 1: amount received, 2: amount still due
 #: includes/class-xdwp-verifier.php:339
@@ -4309,6 +4334,10 @@ msgid ""
 "automatically. Check which customer sent it and use \"Mark payment "
 "received\" on the right order."
 msgstr ""
+"Sự chuyển tiếp số %1$s %2$s (txid: %3$s) đã đến và có thể thuộc về thứ tự "
+"này hoặc một thứ tự mở khác trên cùng một địa chỉ, vì thế nó không được xem "
+"là tự động. Kiểm tra xem khách hàng nào đã gửi nó và sử dụng \"dấu tiền nhận"
+" được\" theo đúng thứ tự."
 
 #. translators: %s: transaction id
 #: includes/class-xdwp-verifier.php:505
@@ -4350,7 +4379,7 @@ msgstr ""
 
 #: includes/emails/class-xdwp-email-partial-payment.php:36
 msgid "We received part of your payment for order #{order_number}"
-msgstr ""
+msgstr "Chúng tôi đã nhận được một phần tiền của bạn để đặt #{order_number}"
 
 #: includes/emails/class-xdwp-email-partial-payment.php:43
 msgid "Part of your payment arrived"
@@ -4371,7 +4400,7 @@ msgstr ""
 
 #: includes/emails/class-xdwp-email-payment-alert.php:47
 msgid "[{site_title}] Order #{order_number}: {issue}"
-msgstr ""
+msgstr "[{site_title}] Trật tự #{order_number}: {issue}"
 
 #: includes/emails/class-xdwp-email-payment-alert.php:65
 msgid "partial payment received"
@@ -4406,6 +4435,10 @@ msgid ""
 "completes automatically if the rest arrives; otherwise it expires and you "
 "can refund the partial payment."
 msgstr ""
+"Khách hàng gửi %1$s %2$s của %3$s %2$s. Họ đã email để gửi %4$s %2$s còn lại"
+" và cửa sổ thanh toán đã được khởi động lại. Mệnh lệnh hoàn tất tự động nếu "
+"phần còn lại đến; nếu không nó sẽ hết hạn và bạn có thể hoàn trả lại phần "
+"thanh toán."
 
 #. translators: 1: received, 2: symbol, 3: due
 #: includes/emails/class-xdwp-email-payment-alert.php:92
@@ -4415,6 +4448,9 @@ msgid ""
 "order is marked failed. Refund the customer, or complete the order manually "
 "with \"Mark payment received\" if you accept the shortfall."
 msgstr ""
+"Cửa sổ thanh toán đóng cửa sau khi chỉ có %1$s %2$s của %3$s %2$s đến. Mệnh "
+"lệnh đã thất bại. Nạp lại khách hàng, hoặc hoàn thành lệnh bằng tay với "
+"\"dấu đã nhận\" nếu bạn chấp nhận sự thiếu hụt."
 
 #. translators: 1: received, 2: symbol, 3: due, 4: excess
 #: includes/emails/class-xdwp-email-payment-alert.php:95
@@ -4423,6 +4459,8 @@ msgid ""
 "The customer sent %1$s %2$s for %3$s %2$s due. The order was completed; %4$s"
 " %2$s was paid on top, which you may want to refund."
 msgstr ""
+"Khách hàng gửi %1$s %2$s cho %3$s %2$s. Mệnh lệnh đã hoàn tất; %4$s %2$s "
+"được trả trên đỉnh, mà có thể bạn muốn hoàn trả lại."
 
 #. translators: 1: amount, 2: symbol, 3: due
 #: includes/emails/class-xdwp-email-payment-alert.php:98
@@ -4433,6 +4471,10 @@ msgid ""
 "it with \"Mark payment received\" (the transaction ID is filled in) or "
 "refund the customer."
 msgstr ""
+"%1$s %2$s đến để nhận lệnh này sau khi cửa sổ thanh toán đóng cửa (%3$s %2$s"
+" là hạn chót). Mệnh lệnh không thay đổi. Hãy kiểm tra, sau đó hoàn thành nó "
+"với \"dấu tiền được nhận\" (số hiệu giao dịch được điền) hoặc hoàn trả lại "
+"khách hàng."
 
 #. translators: 1: amount, 2: symbol
 #: includes/emails/class-xdwp-email-payment-alert.php:101
@@ -4444,6 +4486,11 @@ msgid ""
 "automatically. Check which customer sent it, then use \"Mark payment "
 "received\" on that order."
 msgstr ""
+"Việc chuyển giao %1$s %2$s đã đến theo thứ tự này, nhưng nó không khớp với "
+"bất kỳ lệnh nào và có thể thuộc về nhiều hơn một thứ tự mở (chẳng hạn một "
+"khách hàng mà trao đổi khấu trừ một phí). Nó không tự động được công nhận. "
+"Kiểm tra xem khách hàng nào đã gửi nó, rồi dùng lệnh đó để trả \"dấu ấn đã "
+"nhận\"."
 
 #: includes/emails/class-xdwp-email-payment-alert.php:176
 msgid "Recipient(s)"
@@ -4471,7 +4518,7 @@ msgstr ""
 
 #: includes/emails/class-xdwp-email-payment-reminder.php:36
 msgid "Your order #{order_number} is waiting for payment"
-msgstr ""
+msgstr "Hàng của bạn #{order_number} đang chờ thanh toán"
 
 #: includes/emails/class-xdwp-email-payment-reminder.php:43
 #: templates/emails/plain/xdwp-payment-details.php:16
@@ -4508,7 +4555,7 @@ msgstr ""
 #: templates/emails/xdwp-payment-alert.php:31
 #, php-format
 msgid "Order #%1$s: %2$s."
-msgstr ""
+msgstr "Thứ tự # %1$s: %2$s."
 
 #: templates/emails/plain/xdwp-payment-alert.php:27
 #: templates/emails/xdwp-payment-alert.php:36
@@ -4533,6 +4580,8 @@ msgid ""
 "We received %1$s %2$s of %3$s %2$s. Please send the remaining %4$s %2$s to "
 "the same address."
 msgstr ""
+"Chúng tôi nhận %1$s %2$s của %3$s %2$s. Vui lòng gửi %4$s %2$s còn lại đến "
+"cùng một địa chỉ."
 
 #: templates/emails/plain/xdwp-payment-details.php:29
 #: templates/emails/xdwp-payment-details.php:35
@@ -4636,6 +4685,8 @@ msgid ""
 "We received %1$s %2$s of %3$s %2$s. Please send the remaining %4$s %2$s to "
 "the same address to complete your order."
 msgstr ""
+"Chúng tôi nhận %1$s %2$s của %3$s %2$s. Vui lòng gửi %4$s %2$s còn lại đến "
+"cùng địa chỉ để hoàn thành mệnh lệnh."
 
 #. translators: 1: coin symbol, 2: network name as wallets and exchanges write
 #. it
@@ -4645,6 +4696,8 @@ msgid ""
 "Send %1$s on %2$s only. Sending on any other network will lose the money — "
 "it cannot be recovered."
 msgstr ""
+"Chỉ gởi %1$s cho %2$s người. Việc gửi bất cứ mạng lưới nào khác sẽ mất tiền "
+"— không thể phục hồi được."
 
 #: templates/payment.php:83
 msgid "Send exactly the amount below. Network fees are paid on top, by you."
@@ -4655,7 +4708,7 @@ msgstr "Gửi chính xác số tiền dưới đây. Tiền phí mạng được
 #, php-format
 msgid "Your order confirms after %1$d network confirmation — %2$s."
 msgid_plural "Your order confirms after %1$d network confirmations — %2$s."
-msgstr[0] ""
+msgstr[0] "Lệnh của bạn xác nhận sau %1$d mạng lưới — %2$s."
 
 #: templates/payment.php:96
 msgid "Your order confirms once the network has confirmed the payment."
@@ -4782,7 +4835,7 @@ msgstr ""
 #, php-format
 msgid ""
 "Xorro Wallet Payments requires PHP %1$s or higher. You are running %2$s."
-msgstr ""
+msgstr "Trả tiền ví Xro đòi hỏi PHP %1$s hoặc cao hơn. Anh đang chạy %2$s."
 
 #: xorro-direct-wallet-payments-woocommerce.php:131
 msgid "Xorro Wallet Payments requires WooCommerce to be installed and active."

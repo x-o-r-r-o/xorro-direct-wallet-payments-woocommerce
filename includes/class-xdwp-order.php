@@ -1303,7 +1303,10 @@ class Xdwp_Order {
 	 */
 	public static function handle_mark_paid() {
 		if ( ! current_user_can( 'manage_woocommerce' ) ) {
-			wp_die( esc_html__( 'Forbidden.', 'xorro-direct-wallet-payments-woocommerce' ) );
+			// 403, like every other refusal in this plugin. Without a code wp_die() answers
+			// 500, which says "this broke" where it means "you may not do that" — and turns a
+			// denial into something that looks like a fault in any monitoring watching the site.
+			wp_die( esc_html__( 'Forbidden.', 'xorro-direct-wallet-payments-woocommerce' ), 403 );
 		}
 
 		$request_method = isset( $_SERVER['REQUEST_METHOD'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_METHOD'] ) ) : '';

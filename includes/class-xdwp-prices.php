@@ -450,71 +450,37 @@ class Xdwp_Prices {
 		$api_key = Xdwp_Settings::get( 'coingecko_api_key', '' );
 		// Free/Demo keys use api.coingecko.com + x-cg-demo-api-key.
 		// Paid Pro keys use pro-api.coingecko.com + x-cg-pro-api-key.
-		$is_pro = $api_key && self::coingecko_key_is_pro( $api_key );
-		$base   = $is_pro
-			? 'https://pro-api.coingecko.com/api/v3/simple/price'
-			: 'https://api.coingecko.com/api/v3/simple/price';
+		// Which one a key is cannot be told by looking at it, so the answer is remembered from
+		// whatever CoinGecko said last time and corrected below if it turns out to be wrong.
+		$remembered = get_option( 'xdwp_coingecko_tier', '' );
+		$is_pro     = $api_key && ( 'pro' === $remembered || ( '' === $remembered && self::coingecko_key_is_pro( $api_key ) ) );
 
 		foreach ( $chunks as $chunk ) {
-			$url = add_query_arg(
-				array(
-					'ids'           => implode( ',', $chunk ),
-					'vs_currencies' => $currency,
-				),
-				$base
-			);
+			$result = self::coingecko_request( $chunk, $currency, $api_key, $is_pro );
+			$code   = $result['code'];
+			$body   = $result['body'];
 
-			$args = array(
-				'timeout' => 15,
-				'headers' => array(
-					'Accept' => 'application/json',
-				),
-			);
+			if ( $api_key && ( 200 !== $code || ! is_array( $body ) ) ) {
+				// Either CoinGecko named the host mismatch outright, or it simply refused a Pro
+				// request; both are worth one attempt on the other host.
+				$hint  = self::coingecko_host_hint( $body );
+				$other = ( 10010 === $hint ) ? true : ( ( 10011 === $hint ) ? false : ! $is_pro );
+				$worth = $hint > 0 || in_array( $code, array( 400, 401, 403 ), true );
 
-			if ( $api_key ) {
-				if ( $is_pro ) {
-					$args['headers']['x-cg-pro-api-key'] = $api_key;
-				} else {
-					$args['headers']['x-cg-demo-api-key'] = $api_key;
+				if ( $worth && $other !== $is_pro ) {
+					$result = self::coingecko_request( $chunk, $currency, $api_key, $other );
+					if ( 200 === $result['code'] && is_array( $result['body'] ) ) {
+						// It works on that host, so stop guessing from now on.
+						update_option( 'xdwp_coingecko_tier', $other ? 'pro' : 'demo', false );
+						$is_pro = $other;
+						$code   = $result['code'];
+						$body   = $result['body'];
+					}
 				}
 			}
 
-			$response = wp_remote_get( $url, $args );
-			if ( is_wp_error( $response ) ) {
+			if ( 200 !== $code || ! is_array( $body ) ) {
 				continue;
-			}
-
-			$code = wp_remote_retrieve_response_code( $response );
-			$body = json_decode( wp_remote_retrieve_body( $response ), true );
-			if ( 200 !== (int) $code || ! is_array( $body ) ) {
-				// If Pro endpoint rejected the key, retry once as Demo on the free host.
-				if ( $api_key && $is_pro && in_array( (int) $code, array( 401, 403 ), true ) ) {
-					$retry_url  = add_query_arg(
-						array(
-							'ids'           => implode( ',', $chunk ),
-							'vs_currencies' => $currency,
-						),
-						'https://api.coingecko.com/api/v3/simple/price'
-					);
-					$retry_args = array(
-						'timeout' => 15,
-						'headers' => array(
-							'Accept'            => 'application/json',
-							'x-cg-demo-api-key' => $api_key,
-						),
-					);
-					$response   = wp_remote_get( $retry_url, $retry_args );
-					if ( is_wp_error( $response ) ) {
-						continue;
-					}
-					$code = wp_remote_retrieve_response_code( $response );
-					$body = json_decode( wp_remote_retrieve_body( $response ), true );
-					if ( 200 !== (int) $code || ! is_array( $body ) ) {
-						continue;
-					}
-				} else {
-					continue;
-				}
 			}
 
 			foreach ( $body as $id => $prices ) {
@@ -543,6 +509,70 @@ class Xdwp_Prices {
 		}
 
 		return $new_rates;
+	}
+
+	/**
+	 * Ask CoinGecko for a page of prices, on whichever host this key belongs to.
+	 *
+	 * @param array  $chunk    CoinGecko ids.
+	 * @param string $currency Fiat currency.
+	 * @param string $api_key  Key, or ''.
+	 * @param bool   $pro      Use the Pro host and header.
+	 * @return array{code:int,body:mixed}
+	 */
+	private static function coingecko_request( array $chunk, $currency, $api_key, $pro ) {
+		$url = add_query_arg(
+			array(
+				'ids'           => implode( ',', $chunk ),
+				'vs_currencies' => $currency,
+			),
+			$pro
+				? 'https://pro-api.coingecko.com/api/v3/simple/price'
+				: 'https://api.coingecko.com/api/v3/simple/price'
+		);
+
+		$args = array(
+			'timeout' => 15,
+			'headers' => array( 'Accept' => 'application/json' ),
+		);
+		if ( '' !== (string) $api_key ) {
+			$args['headers'][ $pro ? 'x-cg-pro-api-key' : 'x-cg-demo-api-key' ] = $api_key;
+		}
+
+		$response = wp_remote_get( $url, $args );
+		if ( is_wp_error( $response ) ) {
+			return array(
+				'code' => 0,
+				'body' => null,
+			);
+		}
+		return array(
+			'code' => (int) wp_remote_retrieve_response_code( $response ),
+			'body' => json_decode( wp_remote_retrieve_body( $response ), true ),
+		);
+	}
+
+	/**
+	 * Whether a reply is CoinGecko saying "right key, wrong host".
+	 *
+	 * Demo and Pro keys are both spelled CG-…, so a key alone cannot say which host it belongs
+	 * to. CoinGecko will though: 10010 means a Pro key arrived at the free host, 10011 the other
+	 * way round. Reading that is the only way to get a paid key onto the right host without
+	 * asking the shop owner to know which kind they bought.
+	 *
+	 * @param mixed $body Decoded response.
+	 * @return int 10010, 10011, or 0.
+	 */
+	private static function coingecko_host_hint( $body ) {
+		if ( ! is_array( $body ) ) {
+			return 0;
+		}
+		foreach ( array( $body, isset( $body['status'] ) && is_array( $body['status'] ) ? $body['status'] : array() ) as $where ) {
+			if ( isset( $where['error_code'] ) && in_array( (int) $where['error_code'], array( 10010, 10011 ), true ) ) {
+				return (int) $where['error_code'];
+			}
+		}
+		return 0;
 	}
 
 	/**

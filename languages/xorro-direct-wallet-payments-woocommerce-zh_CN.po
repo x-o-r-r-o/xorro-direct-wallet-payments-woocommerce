@@ -247,6 +247,11 @@ msgid ""
 "\n"
 "%5$s"
 msgstr ""
+"一个Xorro钱包支付支付地址被更改为%1$s乘以%2$s(用户#%3$d)%4$s.\n"
+"\n"
+"如果不是你,请立即保护这个账户——这个控制系统是未来客户加密支付发送的地方,非封闭加密支付一旦发送就无法逆转.\n"
+"\n"
+"%5$s (简体中文)"
 
 #: includes/admin/class-xdwp-admin.php:430
 msgid "an unknown user"
@@ -591,7 +596,7 @@ msgstr[0] "%d 分钟"
 #: includes/admin/class-xdwp-payments-admin.php:754
 #, php-format
 msgid "%1$dh %2$dm"
-msgstr ""
+msgstr "%1$d小时%2$d分"
 
 #. translators: %s: a percentage
 #: includes/admin/class-xdwp-payments-admin.php:769
@@ -2801,7 +2806,7 @@ msgstr "已经退款了"
 #: includes/class-xdwp-notify.php:266
 #, php-format
 msgid "%1$s — order #%2$s"
-msgstr ""
+msgstr "%1$s-第%2$s号命令"
 
 #. translators: 1: crypto amount with symbol, 2: order total in shop currency
 #: includes/class-xdwp-notify.php:275
@@ -2818,6 +2823,9 @@ msgid ""
 "%2$s paid, %3$s taken\n"
 "%4$s need you"
 msgstr ""
+"%1$s——最后一天的密码\n"
+"%2$s笔已支付,%3$s笔已支付\n"
+"%4$s个需要你"
 
 #: includes/class-xdwp-notify.php:344
 msgid ""
@@ -3073,13 +3081,13 @@ msgstr "您的钱包尚未设置 %s 。 在钱包中添加网络, 然后再试�
 #: includes/class-xdwp-order.php:965
 #, php-format
 msgid "%d minutes left to pay"
-msgstr ""
+msgstr "还剩%d分钟"
 
 #. translators: %d: whole hours remaining
 #: includes/class-xdwp-order.php:967
 #, php-format
 msgid "%d hours left to pay"
-msgstr ""
+msgstr "还剩%d小时"
 
 #. translators: %d: whole days remaining
 #: includes/class-xdwp-order.php:969
@@ -3923,7 +3931,7 @@ msgstr "当密码支付不足时, 发送到店主, 超过到期金额, 或在支
 
 #: includes/emails/class-xdwp-email-payment-alert.php:47
 msgid "[{site_title}] Order #{order_number}: {issue}"
-msgstr ""
+msgstr "[{site_title}] 第{order_number}号命令: {issue}"
 
 #: includes/emails/class-xdwp-email-payment-alert.php:65
 msgid "partial payment received"
@@ -4041,7 +4049,7 @@ msgstr "完成您的加密支付"
 #: templates/emails/xdwp-payment-reminder.php:22
 #, php-format
 msgid "Hi %s,"
-msgstr ""
+msgstr "你好,%s号,"
 
 #. translators: %s: order number
 #: templates/emails/plain/xdwp-partial-payment.php:21
@@ -4053,6 +4061,8 @@ msgid ""
 "Please send the remaining amount below to complete your order; the payment "
 "window has been restarted."
 msgstr ""
+"谢谢 %s号订单的一部分已经到货 当钱包或交换从发送的金额中扣除其费用时,这种情况经常发生. 请在下面发送剩余金额以完成您的订单; 支付窗口已重新启动 "
+"."
 
 #. translators: 1: order number, 2: issue
 #: templates/emails/plain/xdwp-payment-alert.php:24
@@ -4136,7 +4146,7 @@ msgid ""
 "Your order #%s is still waiting for payment, and the payment window closes "
 "soon. If you have already sent it, you can ignore this email — the order "
 "updates as soon as the transfer arrives."
-msgstr ""
+msgstr "您的%s号订单仍在等待支付,支付窗口很快关闭. 如果您已经发送了它, 您可以忽略此电子邮件 —— 发送到达后立即更新命令 ."
 
 #: templates/emails/xdwp-payment-details.php:65
 msgid "Open payment page (QR code)"

@@ -93,33 +93,73 @@ The plugin checks this repository's [Releases](https://github.com/x-o-r-r-o/xorr
 
 ## Compatibility
 
-Version 1.13.0 was tested end to end on WordPress 7.1 and WooCommerce 11.1 — guest checkout on both classic and block checkout, live quote, order placement, payment page, status polling, the "I have sent the payment" path, and a PHP error-log check on every run.
+Version 1.19.0 was tested end to end on WordPress 7.1 and WooCommerce 11.1 — guest checkout on both
+classic and block checkout, live quote, order placement, payment page, status polling, the "I have
+sent the payment" path, and a PHP error-log check on every single run.
 
-**Themes — 20 of 20 clean, on both checkouts:** Divi, Woodmart, Betheme, The7, Flatsome, Porto, Martfury, Dokan, Astra, OceanWP, GeneratePress, Kadence, Blocksy, Hello Elementor, Neve, Storefront, Twenty Twenty-One / Three / Four / Five.
+**Themes — 44 of 44 clean, on both checkouts:** Astra, Avada (and its child theme), Beratung, Betheme,
+Blocksy, Bricks, Divi, Dokan, Electro, Enfold, Fixera, Flatsome, GeneratePress, Hello Elementor,
+Impreza, Kadence, Martfury, Neve, Newspaper, OceanWP, Ohio, Porto, Saira, Salient, Savoy (and child),
+Shoptimizer, Storefront, The7, Thrive Theme, Uncode (and child), Vault, Wolmart, Woodmart, X, XStore,
+asri, bb-theme, and Twenty Twenty-One / Three / Four / Five.
 
-**Plugins — 74 tested one at a time, 73 clean:**
+**Plugins — 236 tested one at a time, 230 clean.** Every plugin on the test site was activated on its
+own alongside the gateway and taken through a full crypto checkout. The list spans caching and
+performance (WP Rocket, LiteSpeed, W3 Total Cache, WP Super Cache, WP Fastest Cache, Autoptimize,
+Perfmatters, Breeze, Cache Enabler, Hummingbird, SiteGround Optimizer, Jetpack Boost, RabbitLoader,
+SpeedyCache, Seraphinite, Asset CleanUp Pro, WP-Optimize), security (Wordfence, Solid Security,
+All-In-One Security, Sucuri, SecuPress, Shield, Defender, SiteGuard, Loginizer, Limit Login Attempts
+Reloaded, WPS Hide Login, Really Simple SSL), the WooCommerce ecosystem (Subscriptions, Bookings,
+Product Add-ons, Product Vendors, Warranty, Order Barcodes, Services, Payments, Stripe, PayPal
+Payments, AutomateWoo, CartFlows, CommerceKit, Checkout Field Editor, Flexible Checkout Fields, CURCY,
+FOX, Google Listings & Ads, WooLoyalty, Easy Digital Downloads), marketplaces (Dokan Lite and Dokan
+Pro), page builders (Elementor and Elementor Pro, WPBakery, Beaver Builder, Fusion/Avada Builder,
+Kadence Blocks Pro, Royal/Premium/Essential/Sky addons, Element Pack, ElementsKit), multilingual and
+SEO (WPML and its add-ons, Polylang, TranslatePress, GTranslate, Loco Translate, Yoast Premium +
+Video + WooCommerce SEO, Rank Math Pro, AIOSEO), forms and membership (Gravity Forms, Contact Form 7,
+WPForms, Fluent Forms, Forminator, Ninja Forms, SureForms, ARMember, Indeed Membership Pro,
+MasterStudy LMS, FluentCommunity), and site tooling (ACF Pro, Meta Box, Redux, JetPack, UpdraftPlus,
+Duplicator Pro, All-in-One WP Migration, WPvivid, Backuply, MainWP Child, Query Monitor, Code
+Snippets, WP File Manager, TablePress, The Events Calendar, Smush, EWWW, Imagify, and more).
 
-- *Cache and speed:* WP Rocket, Perfmatters, W3 Total Cache, WP Super Cache, LiteSpeed Cache, WP Fastest Cache, Autoptimize, WP-Optimize, Breeze, Cache Enabler, Hummingbird, Jetpack Boost, SiteGround Optimizer, RabbitLoader.
-- *Security:* Wordfence, Solid Security (iThemes Security Pro), All-In-One Security, Sucuri, Shield, Defender, Limit Login Attempts Reloaded, WPS Hide Login.
-- *Store:* WooCommerce Subscriptions, Bookings, Product Add-ons, AutomateWoo, Stripe, PayPal Payments, CartFlows, Checkout Field Editor, Flexible Checkout Fields, CURCY and FOX currency switchers, YITH Wishlist, Variation Swatches, WooCommerce Deals.
-- *Marketplace:* Dokan Lite and Dokan Pro — including a two-vendor cart, which splits into vendor sub-orders: paying the parent in crypto moves the parent and both sub-orders to processing together.
-- *Builders and site:* Elementor and Elementor Pro (including a checkout page built with Elementor Pro's own WooCommerce Checkout widget), Element Pack, WPBakery, Slider Revolution, LayerSlider, Kirki, ACF Pro, Yoast SEO (Premium + WooCommerce SEO), Rank Math Pro, TranslatePress, Polylang, Gravity Forms, Contact Form 7, ARMember, Indeed Membership Pro, Real Estate Manager Pro, Ajax Search Pro, Redirection, WP Mail SMTP, UpdraftPlus, Duplicator Pro, All-in-One WP Migration, Query Monitor.
+**Stacks — all clean:** cache-heavy (WP Rocket + Perfmatters + Autoptimize + WP-Optimize),
+security-heavy (Wordfence + Solid Security + Shield + Limit Login Attempts), builder-heavy (Elementor
++ WPBakery + Slider Revolution + LayerSlider + Kirki), store-heavy (Subscriptions + Bookings + Product
+Add-ons + AutomateWoo + CartFlows), and translation + multi-currency (Polylang + TranslatePress +
+CURCY + FOX). A 30-plugin stack was also run on Woodmart, Divi, Betheme and Flatsome.
 
-**Stacks — all clean:** cache-heavy (WP Rocket + Perfmatters + Autoptimize + WP-Optimize), security-heavy (Wordfence + Solid Security + Shield + Limit Login Attempts), builder-heavy (Elementor + WPBakery + Slider Revolution + LayerSlider + Kirki), store-heavy (Subscriptions + Bookings + Product Add-ons + AutomateWoo + CartFlows), and translation + multi-currency (Polylang + TranslatePress + CURCY + FOX). A 30-plugin stack was also run on Woodmart, Divi, Betheme and Flatsome.
+**Coins — all 238 priced and quoted** against live market data, and 50+ of the chain readers were
+driven against their real explorers to confirm a payment in that coin can actually be detected.
 
 Problems found in other products while testing, none of them caused by this plugin:
 
-- **Dokan Pro's Booking module** takes the whole site down with a fatal error (`DependencyNotice` class missing from the package). Verified with this plugin fully deactivated — the site still fails. Keep that module off until Dokan fix it.
-- **Ultimate Affiliate** queries a `wp_uap_referrals` table its own installer never created, logging a database error on every order from any gateway.
-- **LiteSpeed Cache "JS Combine"**, and **Autoptimize with "Also optimize for checkout"**, break WooCommerce's own block checkout. Leave both off on checkout pages.
+- **Dokan Pro's Booking module** takes the whole site down with a fatal error (`DependencyNotice` class
+  missing from the package). Verified with this plugin fully deactivated — the site still fails. Keep
+  that module off until Dokan fix it.
+- **Ultimate Affiliate** queries a `wp_uap_referrals` table its own installer never created, logging a
+  database error on every order from any gateway.
+- **Essential Addons for Elementor (Lite)** redirects the site's front page on its own, with this
+  plugin deactivated.
+- **Avada's child theme** enqueues `child-style` against an unregistered `avada-stylesheet`, which
+  WordPress 6.9+ logs as an incorrect-usage notice. Present with this plugin deactivated.
+- **LiteSpeed Cache "JS Combine"**, and **Autoptimize with "Also optimize for checkout"**, break
+  WooCommerce's own block checkout. Leave both off on checkout pages.
 - A 30-plugin stack on Woodmart needs more than 256 MB of PHP memory, with or without this plugin.
+
+Three plugins could not be tested because their free base plugin is not installed and they refuse to
+activate without it (Bit Integrations Pro, Bit Social Pro, Presto Player Pro), and one (Stellar)
+refuses to activate at all.
 
 Built-in compatibility handling:
 
 - Checkout and payment pages are never page-cached (WooCommerce's no-cache rules are respected).
-- Payment-page scripts opt out of "delay JavaScript", defer and combine features (LiteSpeed, WP Rocket, Perfmatters, SiteGround Optimizer, Jetpack Boost, Cloudflare Rocket Loader), so the QR code and countdown appear without the customer having to touch the page.
-- The checkout script stays out of combined JS bundles, so an error in another plugin's script can't break the coin picker.
-- Customer-facing requests use WooCommerce's `?wc-ajax=` endpoint, which security plugins and admin redirects don't interfere with.
+- Payment-page scripts opt out of "delay JavaScript", defer and combine features (LiteSpeed, WP Rocket,
+  Perfmatters, SiteGround Optimizer, Jetpack Boost, Cloudflare Rocket Loader), so the QR code and
+  countdown appear without the customer having to touch the page.
+- The checkout script stays out of combined JS bundles, so an error in another plugin's script can't
+  break the coin picker.
+- Customer-facing requests use WooCommerce's `?wc-ajax=` endpoint, which security plugins and admin
+  redirects don't interfere with.
 - No inline event handlers — works with strict Content-Security-Policy headers.
 
 ## Security

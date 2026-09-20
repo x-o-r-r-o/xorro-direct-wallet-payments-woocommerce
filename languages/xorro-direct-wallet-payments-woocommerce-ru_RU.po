@@ -2151,7 +2151,7 @@ msgstr "Принимайте, как только увидите, до (%s)"
 #: includes/admin/views/settings-page.php:131
 #, php-format
 msgid "Wait longer from (%s)"
-msgstr ""
+msgstr "Подождите дольше (%s)"
 
 #: includes/admin/views/settings-page.php:138
 msgid "and require"
@@ -3054,9 +3054,9 @@ msgstr "обычно менее минуты"
 #, php-format
 msgid "usually about %d minute"
 msgid_plural "usually about %d minutes"
-msgstr[0] ""
-msgstr[1] ""
-msgstr[2] ""
+msgstr[0] "обычно около %d минут"
+msgstr[1] "обычно около %d минут"
+msgstr[2] "обычно около %d минут"
 
 #. translators: 1: amount, 2: symbol, 3: txid
 #: includes/class-xdwp-cron.php:257
@@ -4478,7 +4478,7 @@ msgstr ""
 
 #: includes/emails/class-xdwp-email-payment-alert.php:47
 msgid "[{site_title}] Order #{order_number}: {issue}"
-msgstr ""
+msgstr "[{site_title}] Приказ #{order_number}:{issue}"
 
 #: includes/emails/class-xdwp-email-payment-alert.php:65
 msgid "partial payment received"

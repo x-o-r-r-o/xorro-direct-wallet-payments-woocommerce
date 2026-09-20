@@ -3461,10 +3461,15 @@ class Xdwp_Verifier {
 				'body'    => wp_json_encode( $body ),
 			)
 		);
+		// Recorded for the same reason a GET is: "Test this coin" reports what the last lookup
+		// actually did, and without this every JSON-RPC chain — Solana, TON, Cardano, Nano —
+		// told the merchant its explorer "was not contacted" even when it answered perfectly.
 		if ( is_wp_error( $response ) ) {
+			self::note_http( $url, 0, $response->get_error_message() );
 			return null;
 		}
 		$code = wp_remote_retrieve_response_code( $response );
+		self::note_http( $url, (int) $code, '' );
 		if ( $code < 200 || $code >= 300 ) {
 			return null;
 		}
@@ -3497,10 +3502,16 @@ class Xdwp_Verifier {
 			$tip = self::cached_tip(
 				'algo',
 				static function () {
-					$status = self::http_get( 'https://mainnet-idx.algonode.cloud/v2/status' );
+					// The indexer has no /v2/status — that is an algod node endpoint, and asking
+					// the indexer for it returns 404. Its /health carries the round instead, and
+					// without a round this checker refuses every payment, so Algorand confirmed
+					// nothing at all until this was corrected.
+					$status = self::http_get( 'https://mainnet-idx.algonode.cloud/health' );
 					if ( isset( $status['round'] ) ) {
 						return (int) $status['round'];
 					}
+					// A node, if a shop points this at one, answers with last-round.
+					$status = self::http_get( 'https://mainnet-api.algonode.cloud/v2/status' );
 					if ( isset( $status['last-round'] ) ) {
 						return (int) $status['last-round'];
 					}
@@ -5862,9 +5873,11 @@ class Xdwp_Verifier {
 			)
 		);
 		if ( is_wp_error( $response ) ) {
+			self::note_http( $url, 0, $response->get_error_message() );
 			return null;
 		}
 		$code = wp_remote_retrieve_response_code( $response );
+		self::note_http( $url, (int) $code, '' );
 		if ( $code < 200 || $code >= 300 ) {
 			return null;
 		}

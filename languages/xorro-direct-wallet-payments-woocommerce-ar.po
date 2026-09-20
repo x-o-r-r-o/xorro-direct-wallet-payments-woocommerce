@@ -83,7 +83,7 @@ msgstr "%dعملة (عملات) لا تزال بحاجة إلى عنوان"
 #: includes/admin/class-xdwp-admin.php:118
 #, php-format
 msgid "%d addresses"
-msgstr ""
+msgstr "%d عناوين"
 
 #: includes/admin/class-xdwp-admin.php:122
 msgid "Select checkout icon"
@@ -265,7 +265,7 @@ msgstr "مستعمل مجهول"
 #: includes/admin/class-xdwp-admin.php:440
 #, php-format
 msgid "[%s] Wallet payout address changed"
-msgstr ""
+msgstr "[%s] Wallet payout address changed"
 
 #. translators: %s: Prices & APIs settings URL
 #: includes/admin/class-xdwp-admin.php:481
@@ -299,6 +299,9 @@ msgid ""
 " the store currency, or use a currency-switcher plugin that charges in a "
 "supported currency."
 msgstr ""
+"عملة متجرك (%s) ليست مدعومة من مصادر سعر الصرف، لذلك لا يمكن حساب مبالغ "
+"التبريد والمغادرة في التبريد سوف تفشل. تحويل عملة المخزن، أو استخدام مضخة "
+"عملة - سويتشير تلك الرسوم بعملة مدعومة."
 
 #. translators: %s: Prices & APIs settings URL
 #: includes/admin/class-xdwp-admin.php:544
@@ -609,12 +612,12 @@ msgstr[5] "%dثانية"
 #, php-format
 msgid "%d minute"
 msgid_plural "%d minutes"
-msgstr[0] "%dدقائق }"
-msgstr[1] ""
-msgstr[2] "%dدقائق }"
-msgstr[3] "%dدقائق }"
-msgstr[4] "%dدقائق }"
-msgstr[5] "%dدقائق }"
+msgstr[0] "%d دقائق"
+msgstr[1] "%d دقائق"
+msgstr[2] "%d دقائق"
+msgstr[3] "%d دقائق"
+msgstr[4] "%d دقائق"
+msgstr[5] "%d دقائق"
 
 #. translators: 1: hours, 2: minutes
 #: includes/admin/class-xdwp-payments-admin.php:754
@@ -1424,6 +1427,8 @@ msgid ""
 "your own, a Telegram chat, or both. Nothing there changes an order — it only"
 " reports."
 msgstr ""
+"%s يرسل ما يحدث إلى دفعة في مكان ما ستراه: صورة من الخاص بك، دردشة برقية، أو"
+" كلاهما. لا شيء هناك يُغيّرُ a أمر - هو فقط يُبلغُ."
 
 #: includes/admin/views/help-page.php:372
 msgid "Webhook"
@@ -1908,7 +1913,7 @@ msgstr "القيمة"
 #: includes/admin/views/payments-page.php:202
 #, php-format
 msgid "%1$s of %2$s"
-msgstr ""
+msgstr "%1$s من %2$s"
 
 #: includes/admin/views/payments-page.php:223
 msgid ""
@@ -1923,12 +1928,12 @@ msgstr ""
 #, php-format
 msgid "%s quieter coin is not shown."
 msgid_plural "%s quieter coins are not shown."
-msgstr[0] ""
-msgstr[1] ""
-msgstr[2] ""
-msgstr[3] ""
-msgstr[4] ""
-msgstr[5] ""
+msgstr[0] "%s عملات أكثر هدوءا لا تظهر."
+msgstr[1] "%s عملات أكثر هدوءا لا تظهر."
+msgstr[2] "%s عملات أكثر هدوءا لا تظهر."
+msgstr[3] "%s عملات أكثر هدوءا لا تظهر."
+msgstr[4] "%s عملات أكثر هدوءا لا تظهر."
+msgstr[5] "%s عملات أكثر هدوءا لا تظهر."
 
 #. translators: %s: number of orders
 #: includes/admin/views/payments-page.php:236
@@ -2068,13 +2073,13 @@ msgstr "انتظروا أقل في الأوامر الصغيرة و أطول ف�
 #: includes/admin/views/settings-page.php:121
 #, php-format
 msgid "Accept as soon as it is seen, up to (%s)"
-msgstr ""
+msgstr "تقبل بمجرد النظر إليها، حتى (%s)"
 
 #. translators: %s: store currency symbol
 #: includes/admin/views/settings-page.php:131
 #, php-format
 msgid "Wait longer from (%s)"
-msgstr ""
+msgstr "انتظر أكثر من %s"
 
 #: includes/admin/views/settings-page.php:138
 msgid "and require"
@@ -2764,6 +2769,9 @@ msgid ""
 "public key: it can only create addresses, never spend. Never paste a private"
 " key (xprv, yprv, zprv) or a seed phrase."
 msgstr ""
+"إحتفظ بمفتاح حساب الإستلام من محفظتك (%s) وكل أمر يحصل على عنوان خاص به لذا "
+"لا يمكن الخلط بين الدفعين هذا هو مفتاح عام: لا يمكن إلا خلق عناوين، لا "
+"إنفاق. لا يرث أبداً مفتاح خاص (xprv, yprv, zprv) أو عبارة بذور."
 
 #: includes/admin/views/wallets-ui.php:283
 msgid ""
@@ -3112,6 +3120,9 @@ msgid ""
 "%2$s paid, %3$s taken\n"
 "%4$s need you"
 msgstr ""
+"%1$s - التبريد في اليوم الأخير\n"
+"%2$s مدفوعا، %3$s مأخوذا\n"
+"%4$s أحتاجك"
 
 #: includes/class-xdwp-notify.php:344
 msgid ""
@@ -3800,6 +3811,8 @@ msgid ""
 "That does not look like a %s address. Check it in your wallet and try again "
 "— money sent to a wrong address cannot be recovered."
 msgstr ""
+"هذا لا يبدو كعنوان %s تحقق من ذلك في محفظتك وحاول مرة أخرى - لا يمكن استرداد"
+" الأموال المرسلة إلى عنوان خاطئ."
 
 #: includes/class-xdwp-refunds.php:235
 msgid ""
@@ -3999,7 +4012,7 @@ msgstr ""
 msgid ""
 "%s does not look like an address for this network. Money sent to it would be"
 " lost."
-msgstr ""
+msgstr "%s لا تبدو كعنوان لهذه الشبكة المال المرسل إليه سيضيع."
 
 #. translators: %s: receiving address
 #: includes/class-xdwp-selftest.php:226
@@ -4037,7 +4050,7 @@ msgstr ""
 #: includes/class-xdwp-selftest.php:265
 #, php-format
 msgid "%1$s converts to %2$s %3$s right now."
-msgstr ""
+msgstr "%1$s تحولت إلى %2$s %3$s الآن."
 
 #: includes/class-xdwp-selftest.php:282
 msgid "Reading the blockchain"
@@ -4141,12 +4154,12 @@ msgstr ""
 #, php-format
 msgid "Waiting for %d confirmation."
 msgid_plural "Waiting for %d confirmations."
-msgstr[0] ""
-msgstr[1] ""
-msgstr[2] ""
-msgstr[3] ""
-msgstr[4] ""
-msgstr[5] ""
+msgstr[0] "تنتظر %d تأكيدات."
+msgstr[1] "أنتظر %d تأكيدات."
+msgstr[2] "تنتظر %d تأكيدات."
+msgstr[3] "تنتظر %d تأكيدات."
+msgstr[4] "تنتظر %d تأكيدات."
+msgstr[5] "تنتظر %d تأكيدات."
 
 #. translators: %s: PHP constant name
 #: includes/class-xdwp-settings.php:110
@@ -4267,6 +4280,9 @@ msgid ""
 "replaced by the sender or dropped for too low a fee. Nothing was received, "
 "so the order is waiting for payment again."
 msgstr ""
+"وقد شوهدت دفعة على السلسلة )%s( ولكنها اختفت منذ ذلك الحين - ويرجح أن يحل "
+"محلها المرسل أو يسقط مقابل أجر منخفض جدا. لم يتم استلام شيء، لذا الطلب ينتظر"
+" الدفع مرة أخرى."
 
 #. translators: %s: transaction id
 #: includes/class-xdwp-verifier.php:521
@@ -4317,7 +4333,7 @@ msgstr ""
 
 #: includes/emails/class-xdwp-email-payment-alert.php:47
 msgid "[{site_title}] Order #{order_number}: {issue}"
-msgstr ""
+msgstr "[{site_title}] Order #{order_number}: {issue}"
 
 #: includes/emails/class-xdwp-email-payment-alert.php:65
 msgid "partial payment received"
@@ -4430,7 +4446,7 @@ msgstr ""
 
 #: includes/emails/class-xdwp-email-payment-reminder.php:36
 msgid "Your order #{order_number} is waiting for payment"
-msgstr ""
+msgstr "طلبك رقم {order_number} ينتظر الدفع"
 
 #: includes/emails/class-xdwp-email-payment-reminder.php:43
 #: templates/emails/plain/xdwp-payment-details.php:16
@@ -4445,7 +4461,7 @@ msgstr "أكملي دفعك"
 #: templates/emails/xdwp-payment-reminder.php:22
 #, php-format
 msgid "Hi %s,"
-msgstr ""
+msgstr "مرحباً %s,"
 
 #. translators: %s: order number
 #: templates/emails/plain/xdwp-partial-payment.php:21
@@ -4542,6 +4558,8 @@ msgid ""
 "soon. If you have already sent it, you can ignore this email — the order "
 "updates as soon as the transfer arrives."
 msgstr ""
+"طلبك رقم %s مازال ينتظر الدفع و نافذة الدفع ستغلق قريباً إذا كنت قد أرسلتها "
+"بالفعل، يمكنك تجاهل هذا البريد الإلكتروني - يستكمل الأمر بمجرد وصول النقل."
 
 #: templates/emails/xdwp-payment-details.php:65
 msgid "Open payment page (QR code)"
@@ -4658,7 +4676,7 @@ msgstr "اعرض الرمز QR"
 #: templates/payment.php:186
 #, php-format
 msgid "Scan with your wallet app — %s only"
-msgstr ""
+msgstr "مسح مع تطبيق محفظتك - %s فقط"
 
 #: templates/payment.php:187
 msgid "Scan with your wallet app"
@@ -4733,7 +4751,7 @@ msgstr ""
 #, php-format
 msgid ""
 "Xorro Wallet Payments requires PHP %1$s or higher. You are running %2$s."
-msgstr ""
+msgstr "وتقتضي مدفوعات السورو واليت %1$s أو أكثر. أنت تركض %2$s."
 
 #: xorro-direct-wallet-payments-woocommerce.php:131
 msgid "Xorro Wallet Payments requires WooCommerce to be installed and active."

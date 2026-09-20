@@ -263,7 +263,7 @@ msgstr "अज्ञात उपयोगकर्ता"
 #: includes/admin/class-xdwp-admin.php:440
 #, php-format
 msgid "[%s] Wallet payout address changed"
-msgstr ""
+msgstr "[%s] वॉलेट भुगतान पता बदल गया"
 
 #. translators: %s: Prices & APIs settings URL
 #: includes/admin/class-xdwp-admin.php:481
@@ -1924,7 +1924,7 @@ msgstr "टेक्न"
 #: includes/admin/views/payments-page.php:149
 #, php-format
 msgid "across %s paid orders"
-msgstr ""
+msgstr "%s भुगतान आदेश"
 
 #: includes/admin/views/payments-page.php:157
 #: includes/admin/views/payments-page.php:181
@@ -3471,6 +3471,8 @@ msgid ""
 "Your wallet does not have %s set up yet. Add that network in your wallet, "
 "then try again."
 msgstr ""
+"आपका वॉलेट अभी तक %s सेट अप नहीं है। उस नेटवर्क को अपने वॉलेट में जोड़ें, "
+"फिर फिर से कोशिश करें।."
 
 #. translators: %d: whole minutes remaining
 #: includes/class-xdwp-order.php:965
@@ -4441,7 +4443,7 @@ msgstr ""
 
 #: includes/emails/class-xdwp-email-payment-alert.php:47
 msgid "[{site_title}] Order #{order_number}: {issue}"
-msgstr ""
+msgstr "[{site_title}] आदेश #{order_number}: {issue}"
 
 #: includes/emails/class-xdwp-email-payment-alert.php:65
 msgid "partial payment received"
@@ -4500,6 +4502,8 @@ msgid ""
 "The customer sent %1$s %2$s for %3$s %2$s due. The order was completed; %4$s"
 " %2$s was paid on top, which you may want to refund."
 msgstr ""
+"ग्राहक ने %3$s %2$s के कारण %1$s %2$s भेजे। आदेश पूरा हो गया; %4$s %2$s "
+"शीर्ष पर भुगतान किया गया था, जिसे आप धनवापसी करना चाहते हैं।."
 
 #. translators: 1: amount, 2: symbol, 3: due
 #: includes/emails/class-xdwp-email-payment-alert.php:98

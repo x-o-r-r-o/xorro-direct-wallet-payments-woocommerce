@@ -39,7 +39,10 @@ class Xdwp_Refunds {
 	 * Hook the front-end route and the admin actions.
 	 */
 	public static function init() {
-		add_action( 'init', array( __CLASS__, 'maybe_handle_claim' ), 20 );
+		// template_redirect, not init: init also fires for admin screens, admin-ajax, the REST
+		// API and cron, and this handler ends in get_header() and exit. On init it would answer
+		// a REST call with HTML.
+		add_action( 'template_redirect', array( __CLASS__, 'maybe_handle_claim' ) );
 
 		if ( is_admin() ) {
 			add_action( 'admin_post_xdwp_refund_action', array( __CLASS__, 'handle_admin_action' ) );

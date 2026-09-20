@@ -625,7 +625,7 @@ msgstr[2] "%d sekund"
 #, php-format
 msgid "%d minute"
 msgid_plural "%d minutes"
-msgstr[0] ""
+msgstr[0] "%d minut"
 msgstr[1] "%d minut"
 msgstr[2] "%d minut"
 
@@ -633,7 +633,7 @@ msgstr[2] "%d minut"
 #: includes/admin/class-xdwp-payments-admin.php:754
 #, php-format
 msgid "%1$dh %2$dm"
-msgstr ""
+msgstr "%1$dh %2$dm"
 
 #. translators: %s: a percentage
 #: includes/admin/class-xdwp-payments-admin.php:769
@@ -1992,15 +1992,15 @@ msgstr ""
 #, php-format
 msgid "%s quieter coin is not shown."
 msgid_plural "%s quieter coins are not shown."
-msgstr[0] ""
-msgstr[1] ""
-msgstr[2] ""
+msgstr[0] "nie pokazuje się %s cichszych monet."
+msgstr[1] "nie pokazano %s cichszych monet."
+msgstr[2] "nie pokazano %s cichszych monet."
 
 #. translators: %s: number of orders
 #: includes/admin/views/payments-page.php:236
 #, php-format
 msgid "Based on the most recent %s orders in this period."
-msgstr ""
+msgstr "Na podstawie ostatnich %s zamówień w tym okresie."
 
 #: includes/admin/views/payments-page.php:249
 msgid "All payments"
@@ -2062,9 +2062,9 @@ msgstr "(otwiera się w nowej zakładce)"
 #, php-format
 msgid "%s order"
 msgid_plural "%s orders"
-msgstr[0] ""
-msgstr[1] ""
-msgstr[2] ""
+msgstr[0] "%s"
+msgstr[1] "%s zamówień"
+msgstr[2] "%s zamówień"
 
 #: includes/admin/views/payments-page.php:399
 msgid "Previous"
@@ -2796,18 +2796,18 @@ msgstr "Filtruj monetą, symbolem lub siecią.."
 #, php-format
 msgid "%d coin still needs an address"
 msgid_plural "%d coins still need an address"
-msgstr[0] ""
-msgstr[1] ""
-msgstr[2] ""
+msgstr[0] "%d monet nadal potrzebuje adresu"
+msgstr[1] "%d monet nadal potrzebuje adresu"
+msgstr[2] "%d monet nadal potrzebuje adresu"
 
 #. translators: %d: number of coins in section
 #: includes/admin/views/wallets-ui.php:184
 #, php-format
 msgid "%d coin"
 msgid_plural "%d coins"
-msgstr[0] ""
-msgstr[1] ""
-msgstr[2] ""
+msgstr[0] "%d monet"
+msgstr[1] "%d monet"
+msgstr[2] "%d monet"
 
 #: includes/admin/views/wallets-ui.php:228
 msgid ""
@@ -2871,7 +2871,7 @@ msgstr "adres %d"
 #, php-format
 msgid ""
 "%1$d addresses handed out, %2$d of them ahead of your last received payment."
-msgstr ""
+msgstr "%1$d adresów, %2$d przed ostatnią zapłatą."
 
 #: includes/admin/views/wallets-ui.php:311
 msgid ""
@@ -3204,6 +3204,9 @@ msgid ""
 "%2$s paid, %3$s taken\n"
 "%4$s need you"
 msgstr ""
+"%1$s - krypto w ostatnim dniu\n"
+"%2$s wypłacone, %3$s odebrane\n"
+"%4$s"
 
 #: includes/class-xdwp-notify.php:344
 msgid ""
@@ -3471,6 +3474,8 @@ msgid ""
 "Your wallet does not have %s set up yet. Add that network in your wallet, "
 "then try again."
 msgstr ""
+"Twój portfel nie ma jeszcze %s. Dodaj tę sieć do portfela i spróbuj jeszcze "
+"raz."
 
 #. translators: %d: whole minutes remaining
 #: includes/class-xdwp-order.php:965
@@ -3909,6 +3914,8 @@ msgid ""
 "That does not look like a %s address. Check it in your wallet and try again "
 "— money sent to a wrong address cannot be recovered."
 msgstr ""
+"To nie wygląda na adres %s. Sprawdź go w portfelu i spróbuj ponownie - "
+"pieniędzy wysłanych na zły adres nie można odzyskać."
 
 #: includes/class-xdwp-refunds.php:235
 msgid ""
@@ -4154,7 +4161,7 @@ msgstr ""
 #: includes/class-xdwp-selftest.php:265
 #, php-format
 msgid "%1$s converts to %2$s %3$s right now."
-msgstr ""
+msgstr "%1$s konwertuje na %2$s %3$s."
 
 #: includes/class-xdwp-selftest.php:282
 msgid "Reading the blockchain"
@@ -4209,6 +4216,8 @@ msgid ""
 "%s refused the request. This chain usually needs a free API key — add one "
 "under Prices & APIs."
 msgstr ""
+"%s odmówił złożenia wniosku. Łańcuch ten zazwyczaj wymaga darmowego klucza "
+"API - dodaj jeden pod Ceny i API."
 
 #. translators: %s: host
 #: includes/class-xdwp-selftest.php:349
@@ -4263,8 +4272,8 @@ msgstr ""
 msgid "Waiting for %d confirmation."
 msgid_plural "Waiting for %d confirmations."
 msgstr[0] ""
-msgstr[1] ""
-msgstr[2] ""
+msgstr[1] "Czekam na %d potwierdzeń."
+msgstr[2] "Czekam na %d potwierdzeń."
 
 #. translators: %s: PHP constant name
 #: includes/class-xdwp-settings.php:110
@@ -4442,7 +4451,7 @@ msgstr ""
 
 #: includes/emails/class-xdwp-email-payment-alert.php:47
 msgid "[{site_title}] Order #{order_number}: {issue}"
-msgstr ""
+msgstr "[{site_title}] Zamówienie # {order_number}: {issue}"
 
 #: includes/emails/class-xdwp-email-payment-alert.php:65
 msgid "partial payment received"
@@ -4575,7 +4584,7 @@ msgstr "Wypełnij swoją płatność krypto"
 #: templates/emails/xdwp-payment-reminder.php:22
 #, php-format
 msgid "Hi %s,"
-msgstr ""
+msgstr "Cześć %s,"
 
 #. translators: %s: order number
 #: templates/emails/plain/xdwp-partial-payment.php:21
@@ -4769,7 +4778,7 @@ msgstr ""
 #: templates/payment.php:119
 #, php-format
 msgid "≈ %s order total"
-msgstr ""
+msgstr "▼ %s ogółem zamówień"
 
 #: templates/payment.php:149
 msgid ""

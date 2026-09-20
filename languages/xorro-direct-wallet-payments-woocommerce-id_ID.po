@@ -232,7 +232,7 @@ msgstr "Anda tidak diizinkan untuk melakukan itu."
 msgid "%d wallet address was rejected as invalid and was not saved."
 msgid_plural ""
 "%d wallet addresses were rejected as invalid and were not saved."
-msgstr[0] ""
+msgstr[0] "alamat %d dompet ditolak sebagai tidak valid dan tidak disimpan."
 
 #: includes/admin/class-xdwp-admin.php:383
 msgid "Settings saved."
@@ -4476,7 +4476,7 @@ msgstr ""
 
 #: includes/emails/class-xdwp-email-payment-alert.php:47
 msgid "[{site_title}] Order #{order_number}: {issue}"
-msgstr ""
+msgstr "[{site_title}] Order # {order_number}: {issue}"
 
 #: includes/emails/class-xdwp-email-payment-alert.php:65
 msgid "partial payment received"

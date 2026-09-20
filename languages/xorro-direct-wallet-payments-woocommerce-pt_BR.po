@@ -79,7 +79,7 @@ msgstr "Endereço duplicado"
 #: includes/admin/class-xdwp-admin.php:120
 #, php-format
 msgid "%d coin(s) still need an address"
-msgstr ""
+msgstr "%d moedas ainda precisam de um endereço"
 
 #. translators: %d: number of wallet addresses
 #: includes/admin/class-xdwp-admin.php:118
@@ -233,7 +233,9 @@ msgid "%d wallet address was rejected as invalid and was not saved."
 msgid_plural ""
 "%d wallet addresses were rejected as invalid and were not saved."
 msgstr[0] ""
+"%d endereço da carteira foi rejeitado como inválido e não foi salvo."
 msgstr[1] ""
+"%d endereços da carteira foram rejeitados como inválidos e não foram salvos."
 
 #: includes/admin/class-xdwp-admin.php:383
 msgid "Settings saved."
@@ -250,6 +252,11 @@ msgid ""
 "\n"
 "%5$s"
 msgstr ""
+"Um endereço de pagamento da Carteira Xorro foi alterado em %1$s por %2$s (usuário #%3$d) em %4$s.\n"
+"\n"
+"Se não foi você, proteja esta conta imediatamente. Este controle onde futuros pagamentos de criptografia de clientes são enviados, e pagamentos de criptografia não-custodiais não podem ser invertidos uma vez enviados.\n"
+"\n"
+"%5$s"
 
 #: includes/admin/class-xdwp-admin.php:430
 msgid "an unknown user"
@@ -281,6 +288,10 @@ msgid ""
 "automatically until this is fixed; use \"Mark payment received\" on the "
 "order meanwhile."
 msgstr ""
+"A verificação automática está falhando: %1$s pedidos rejeitados para %2$s - "
+"\"%3$s\" (%4$s atrás). As encomendas em moedas nesta cadeia não confirmarão "
+"automaticamente até que isso seja corrigido; use \"O pagamento de marca "
+"recebido\" na ordem enquanto isso."
 
 #. translators: %s: store currency code
 #: includes/admin/class-xdwp-admin.php:531
@@ -607,7 +618,7 @@ msgstr "Últimos 90 dias"
 #, php-format
 msgid "%d second"
 msgid_plural "%d seconds"
-msgstr[0] ""
+msgstr[0] "%d segundos"
 msgstr[1] "%d segundos"
 
 #. translators: %d: minutes
@@ -615,7 +626,7 @@ msgstr[1] "%d segundos"
 #, php-format
 msgid "%d minute"
 msgid_plural "%d minutes"
-msgstr[0] ""
+msgstr[0] "%d minutos"
 msgstr[1] "%d minutos"
 
 #. translators: 1: hours, 2: minutes
@@ -1978,8 +1989,8 @@ msgstr ""
 #, php-format
 msgid "%s quieter coin is not shown."
 msgid_plural "%s quieter coins are not shown."
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "%s moedas mais silenciosas não são mostradas."
+msgstr[1] "%s moedas mais silenciosas não são mostradas."
 
 #. translators: %s: number of orders
 #: includes/admin/views/payments-page.php:236
@@ -2786,8 +2797,8 @@ msgstr "Filtrar por moeda, símbolo ou rede.."
 #, php-format
 msgid "%d coin still needs an address"
 msgid_plural "%d coins still need an address"
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "%d moedas ainda precisam de um endereço"
+msgstr[1] "%d moedas ainda precisam de um endereço"
 
 #. translators: %d: number of coins in section
 #: includes/admin/views/wallets-ui.php:184
@@ -3024,8 +3035,8 @@ msgstr "normalmente menos de um minuto"
 #, php-format
 msgid "usually about %d minute"
 msgid_plural "usually about %d minutes"
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "normalmente cerca de %d minutos"
+msgstr[1] "normalmente cerca de %d minutos"
 
 #. translators: 1: amount, 2: symbol, 3: txid
 #: includes/class-xdwp-cron.php:257
@@ -3193,6 +3204,9 @@ msgid ""
 "%2$s paid, %3$s taken\n"
 "%4$s need you"
 msgstr ""
+"%1$s - criptografia no último dia\n"
+"%2$s pagas, %3$s tomadas.\n"
+"%4$s precisa de você"
 
 #: includes/class-xdwp-notify.php:344
 msgid ""
@@ -3234,7 +3248,7 @@ msgstr "O cliente pediu uma nova quantia na taxa atual"
 #: includes/class-xdwp-order.php:335
 #, php-format
 msgid "Crypto payment could not be set up for %1$s: %2$s"
-msgstr ""
+msgstr "O pagamento da Crypto não pôde ser feito para %1$s:%2$s"
 
 #: includes/class-xdwp-order.php:357
 msgid "Part of your payment has arrived."
@@ -3356,6 +3370,8 @@ msgid ""
 "Payment detected — waiting for %d network confirmations. You do not need to "
 "send anything else."
 msgstr ""
+"Pagamento detectado, esperando %d confirmações da rede. Não precisa enviar "
+"mais nada."
 
 #: includes/class-xdwp-order.php:939
 msgid "Thanks — we are checking the network now. This page updates itself."
@@ -3466,19 +3482,19 @@ msgstr ""
 #: includes/class-xdwp-order.php:965
 #, php-format
 msgid "%d minutes left to pay"
-msgstr ""
+msgstr "faltam %d minutos para pagar"
 
 #. translators: %d: whole hours remaining
 #: includes/class-xdwp-order.php:967
 #, php-format
 msgid "%d hours left to pay"
-msgstr ""
+msgstr "%d horas para pagar"
 
 #. translators: %d: whole days remaining
 #: includes/class-xdwp-order.php:969
 #, php-format
 msgid "%d days left to pay"
-msgstr ""
+msgstr "restam %d dias para pagar"
 
 #. translators: short unit for days, shown on the countdown
 #: includes/class-xdwp-order.php:971
@@ -3522,7 +3538,7 @@ msgstr "Reembolso"
 #: includes/class-xdwp-order.php:1064
 #, php-format
 msgid "Sent %1$s to %2$s."
-msgstr ""
+msgstr "Enviado %1$s para %2$s."
 
 #: includes/class-xdwp-order.php:1075
 msgid ""
@@ -3545,6 +3561,8 @@ msgid ""
 "Send %1$s on %2$s from your own wallet, then record the transaction id "
 "below."
 msgstr ""
+"Envie %1$s em %2$s da sua própria carteira, então grave a identidade da "
+"transação abaixo."
 
 #: includes/class-xdwp-order.php:1095
 msgid "Refund transaction id"
@@ -3927,7 +3945,7 @@ msgstr "O cliente deu um endereço de reembolso (%s)"
 #: includes/class-xdwp-refunds.php:315
 #, php-format
 msgid "Refund of %1$s sent, transaction %2$s."
-msgstr ""
+msgstr "Reembolso de %1$s enviado, transação %2$s."
 
 #. translators: %s: transaction id
 #: includes/class-xdwp-refunds.php:326
@@ -4185,6 +4203,8 @@ msgid ""
 "Could not reach %1$s: %2$s. Payments in this coin will not be confirmed "
 "automatically."
 msgstr ""
+"Não consegui chegar às %1$s: %2$s. Os pagamentos nesta moeda não serão "
+"confirmados automaticamente."
 
 #. translators: %s: host
 #: includes/class-xdwp-selftest.php:337
@@ -4193,6 +4213,8 @@ msgid ""
 "%s refused the request. This chain usually needs a free API key — add one "
 "under Prices & APIs."
 msgstr ""
+"%s recusou o pedido. Essa cadeia geralmente precisa de uma chave de API "
+"grátis. Adicione uma abaixo de preços e APIs."
 
 #. translators: %s: host
 #: includes/class-xdwp-selftest.php:349
@@ -4218,7 +4240,7 @@ msgstr ""
 #: includes/class-xdwp-selftest.php:374
 #, php-format
 msgid "%s answered normally, so incoming payments can be seen."
-msgstr ""
+msgstr "%s responderam normalmente, assim os pagamentos podem ser vistos."
 
 #: includes/class-xdwp-selftest.php:402
 msgid "Confirmations before an order is paid"
@@ -4245,8 +4267,8 @@ msgstr ""
 #, php-format
 msgid "Waiting for %d confirmation."
 msgid_plural "Waiting for %d confirmations."
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "Esperando a confirmação %d."
+msgstr[1] "Esperando %d confirmações."
 
 #. translators: %s: PHP constant name
 #: includes/class-xdwp-settings.php:110
@@ -4273,6 +4295,8 @@ msgid ""
 "%s settles a payment the moment it is validated, so it cannot wait for more "
 "confirmations. That number was not saved — leave it at 1 or empty."
 msgstr ""
+"%s liquida um pagamento assim que for validado, então não pode esperar por "
+"mais confirmações. Esse número não foi salvo - deixá-lo em 1 ou vazio."
 
 #. translators: %s: coin ID
 #: includes/class-xdwp-settings.php:361
@@ -4393,7 +4417,7 @@ msgstr ""
 
 #: includes/emails/class-xdwp-email-partial-payment.php:36
 msgid "We received part of your payment for order #{order_number}"
-msgstr ""
+msgstr "Recebemos parte do seu pagamento pela ordem #{order_number}"
 
 #: includes/emails/class-xdwp-email-partial-payment.php:43
 msgid "Part of your payment arrived"
@@ -4414,7 +4438,7 @@ msgstr ""
 
 #: includes/emails/class-xdwp-email-payment-alert.php:47
 msgid "[{site_title}] Order #{order_number}: {issue}"
-msgstr ""
+msgstr "[{site_title}] Ordem #{order_number}:{issue}"
 
 #: includes/emails/class-xdwp-email-payment-alert.php:65
 msgid "partial payment received"
@@ -4523,7 +4547,7 @@ msgstr ""
 
 #: includes/emails/class-xdwp-email-payment-reminder.php:36
 msgid "Your order #{order_number} is waiting for payment"
-msgstr ""
+msgstr "Seu pedido número {order_number} está esperando o pagamento"
 
 #: includes/emails/class-xdwp-email-payment-reminder.php:43
 #: templates/emails/plain/xdwp-payment-details.php:16
@@ -4696,6 +4720,8 @@ msgid ""
 "Send %1$s on %2$s only. Sending on any other network will lose the money — "
 "it cannot be recovered."
 msgstr ""
+"Envie %1$s apenas em %2$s. Enviar qualquer outra rede perderá o dinheiro. "
+"Não pode ser recuperado."
 
 #: templates/payment.php:83
 msgid "Send exactly the amount below. Network fees are paid on top, by you."
@@ -4707,8 +4733,8 @@ msgstr ""
 #, php-format
 msgid "Your order confirms after %1$d network confirmation — %2$s."
 msgid_plural "Your order confirms after %1$d network confirmations — %2$s."
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "Seu pedido confirma após %1$d confirmação da rede - %2$s."
+msgstr[1] "Seu pedido confirma após %1$d confirmações de rede - %2$s."
 
 #: templates/payment.php:96
 msgid "Your order confirms once the network has confirmed the payment."
@@ -4838,6 +4864,8 @@ msgstr ""
 msgid ""
 "Xorro Wallet Payments requires PHP %1$s or higher. You are running %2$s."
 msgstr ""
+"Pagamentos de carteira Xorro requer PHP %1$s ou superior. Você está correndo"
+" %2$s."
 
 #: xorro-direct-wallet-payments-woocommerce.php:131
 msgid "Xorro Wallet Payments requires WooCommerce to be installed and active."

@@ -98,6 +98,9 @@ class Xdwp_Backup {
 
 		nocache_headers();
 		header( 'Content-Type: application/json; charset=utf-8' );
+		// The body is the shop's own settings, not markup — make sure no browser decides to
+		// render it as something else.
+		header( 'X-Content-Type-Options: nosniff' );
 		header( 'Content-Disposition: attachment; filename="' . $name . '"' );
 		header( 'Content-Length: ' . strlen( (string) $json ) );
 		echo $json; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON body, not markup.

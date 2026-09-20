@@ -72,7 +72,7 @@ class Xdwp_Rates {
 	 * @return float
 	 */
 	public static function fallback_rate( $symbol, $currency ) {
-		$symbol   = strtoupper( preg_replace( '/[^A-Za-z0-9]/', '', (string) $symbol ) );
+		$symbol   = self::backup_symbol( strtoupper( preg_replace( '/[^A-Za-z0-9]/', '', (string) $symbol ) ) );
 		$currency = strtoupper( (string) $currency );
 		if ( '' === $symbol || '' === $currency ) {
 			return 0.0;
@@ -133,6 +133,36 @@ class Xdwp_Rates {
 	 * @param string $currency Fiat code.
 	 * @return float
 	 */
+	/**
+	 * The ticker the exchanges use for a coin this plugin lists under an older name.
+	 *
+	 * A renamed coin is the one case where a backup source can be confidently wrong rather than
+	 * merely absent: the exchanges keep the old ticker alive for a while pointing at something
+	 * else, or retire it while the asset trades on under a new one. Only a rename where the
+	 * price is demonstrably the same asset belongs here.
+	 *
+	 * Polygon is that case — this plugin already prices it as polygon-ecosystem-token (POL), so
+	 * the backup must ask for POL too. Fantom and EOS deliberately are not: the tickers that
+	 * replaced them (S, A) trade at their own prices, and guessing would quote a customer the
+	 * wrong amount. Those coins simply have no backup source, and checkout in them waits for
+	 * the main one rather than inventing a number.
+	 *
+	 * @param string $symbol Symbol from the coin registry.
+	 * @return string
+	 */
+	private static function backup_symbol( $symbol ) {
+		$renamed = array(
+			'MATIC' => 'POL',
+		);
+		/**
+		 * Tickers to ask a backup rate source for, where they differ from the coin's symbol.
+		 *
+		 * @param array<string,string> $renamed Symbol => exchange ticker.
+		 */
+		$renamed = (array) apply_filters( 'xdwp_backup_rate_symbols', $renamed );
+		return isset( $renamed[ $symbol ] ) ? (string) $renamed[ $symbol ] : $symbol;
+	}
+
 	private static function provider_rate( $provider, $symbol, $currency ) {
 		$backoff_key = 'xdwp_fb_down_' . $provider;
 		if ( get_transient( $backoff_key ) ) {

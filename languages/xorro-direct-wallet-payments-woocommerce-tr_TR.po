@@ -4376,7 +4376,7 @@ msgstr "Daha önce görülen transfer (%s) zincirden kayboldu"
 #: includes/class-xdwp-verifier.php:598
 #, php-format
 msgid "Seen on chain (%1$s), waiting for %2$d confirmations"
-msgstr ""
+msgstr "Zincir üzerinde bakınız (%1$s), %2$d onay bekliyor"
 
 #: includes/emails/class-xdwp-email-partial-payment.php:21
 msgid "Crypto partial payment"
@@ -4415,7 +4415,7 @@ msgstr ""
 
 #: includes/emails/class-xdwp-email-payment-alert.php:47
 msgid "[{site_title}] Order #{order_number}: {issue}"
-msgstr ""
+msgstr "[{site_title}] Order #{order_number}: {issue}"
 
 #: includes/emails/class-xdwp-email-payment-alert.php:65
 msgid "partial payment received"
