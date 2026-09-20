@@ -128,6 +128,7 @@ final class Xdwp_Blocks extends AbstractPaymentMethodType {
 				'coins'       => $coins,
 				'ajaxUrl'     => Xdwp_Ajax::endpoint( 'xdwp_quote' ),
 				'nonce'       => wp_create_nonce( 'xdwp_checkout' ),
+				'selectCoin'  => __( 'Select cryptocurrency', 'xorro-direct-wallet-payments-woocommerce' ),
 			),
 			Xdwp_Branding::frontend_data()
 		);

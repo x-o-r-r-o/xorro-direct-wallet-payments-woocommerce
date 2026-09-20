@@ -27,7 +27,10 @@ defined( 'ABSPATH' ) || exit;
 <div class="xdwp-box" id="xdwp-box" data-status="<?php echo esc_attr( $status ); ?>">
 	<div class="xdwp-box__header">
 		<h2><?php echo esc_html( sprintf( /* translators: %s: coin name */ __( 'Pay with %s', 'xorro-direct-wallet-payments-woocommerce' ), $coin['name'] ) ); ?></h2>
-		<p class="xdwp-box__timer" id="xdwp-timer"></p>
+		<p class="xdwp-box__timer" id="xdwp-timer" role="timer">
+			<span id="xdwp-timer-text" aria-hidden="true"></span>
+			<span class="screen-reader-text" id="xdwp-timer-label"></span>
+		</p>
 	</div>
 
 	<?php if ( 'paid' === $status ) : ?>
@@ -101,7 +104,7 @@ defined( 'ABSPATH' ) || exit;
 			<div class="xdwp-box__field">
 				<span class="xdwp-box__label"><?php echo 'underpaid' === $status ? esc_html__( 'Remaining amount', 'xorro-direct-wallet-payments-woocommerce' ) : esc_html__( 'Amount', 'xorro-direct-wallet-payments-woocommerce' ); ?></span>
 				<span class="xdwp-box__line">
-				<code id="xdwp-amount" class="xdwp-box__value"><?php echo esc_html( $amount ); ?> <?php echo esc_html( $coin['symbol'] ); ?></code>
+				<code id="xdwp-amount" class="xdwp-box__value" dir="ltr"><bdi><?php echo esc_html( $amount ); ?> <?php echo esc_html( $coin['symbol'] ); ?></bdi></code>
 				<button
 					type="button"
 					class="xdwp-copy button"
@@ -120,7 +123,7 @@ defined( 'ABSPATH' ) || exit;
 			<div class="xdwp-box__field">
 				<span class="xdwp-box__label"><?php esc_html_e( 'Address', 'xorro-direct-wallet-payments-woocommerce' ); ?></span>
 				<span class="xdwp-box__line">
-				<code id="xdwp-address" class="xdwp-box__value xdwp-box__address"><?php echo esc_html( $address ); ?></code>
+				<code id="xdwp-address" class="xdwp-box__value xdwp-box__address" dir="ltr"><bdi><?php echo esc_html( $address ); ?></bdi></code>
 				<button
 					type="button"
 					class="xdwp-copy button"
@@ -134,7 +137,7 @@ defined( 'ABSPATH' ) || exit;
 				<div class="xdwp-box__field">
 					<span class="xdwp-box__label"><?php echo 'tag' === $memo_kind ? esc_html__( 'Destination tag', 'xorro-direct-wallet-payments-woocommerce' ) : esc_html__( 'Memo', 'xorro-direct-wallet-payments-woocommerce' ); ?></span>
 					<span class="xdwp-box__line">
-					<code id="xdwp-memo" class="xdwp-box__value"><?php echo esc_html( $memo ); ?></code>
+					<code id="xdwp-memo" class="xdwp-box__value" dir="ltr"><bdi><?php echo esc_html( $memo ); ?></bdi></code>
 					<button
 						type="button"
 						class="xdwp-copy button"
@@ -152,6 +155,10 @@ defined( 'ABSPATH' ) || exit;
 			</div>
 		</div>
 
+		<p class="xdwp-box__assurance">
+			<?php esc_html_e( 'This payment goes straight to this shop\'s own wallet. No third party holds your money.', 'xorro-direct-wallet-payments-woocommerce' ); ?>
+		</p>
+
 		<div class="xdwp-box__actions">
 			<?php if ( ! empty( $uri ) ) : ?>
 				<a class="xdwp-open-wallet" href="<?php echo esc_url( $uri ); ?>"><?php esc_html_e( 'Open in wallet app', 'xorro-direct-wallet-payments-woocommerce' ); ?></a>
@@ -160,14 +167,27 @@ defined( 'ABSPATH' ) || exit;
 		</div>
 		<p class="xdwp-box__hint" id="xdwp-sent-status" role="status"></p>
 
-		<p class="xdwp-box__assurance">
-			<?php esc_html_e( 'This payment goes straight to this shop\'s own wallet. No third party holds your money.', 'xorro-direct-wallet-payments-woocommerce' ); ?>
-		</p>
-
-		<div class="xdwp-box__qr">
+		<?php // Collapsed on a phone by the script — nobody scans a code on the screen they are holding. ?>
+		<details class="xdwp-box__qr" id="xdwp-qr-details" open>
+			<summary class="xdwp-box__qr-summary"><?php esc_html_e( 'Show QR code', 'xorro-direct-wallet-payments-woocommerce' ); ?></summary>
 			<div id="xdwp-qrcode" aria-hidden="true"></div>
-			<p class="xdwp-box__hint"><?php esc_html_e( 'Scan with your wallet app', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
+			<p class="xdwp-box__hint">
+				<?php
+				echo esc_html(
+					'' !== $network_label
+						/* translators: %s: network name, e.g. "TRON (TRC-20)" */
+						? sprintf( __( 'Scan with your wallet app — %s only', 'xorro-direct-wallet-payments-woocommerce' ), $network_label )
+						: __( 'Scan with your wallet app', 'xorro-direct-wallet-payments-woocommerce' )
+				);
+				?>
+			</p>
 			<?php if ( ! empty( $uri ) && $uri !== $address ) : ?>
+				<p class="xdwp-box__qr-plain">
+					<label>
+						<input type="checkbox" id="xdwp-qr-plain" />
+						<?php esc_html_e( 'My wallet will not scan this — show a code with the address only', 'xorro-direct-wallet-payments-woocommerce' ); ?>
+					</label>
+				</p>
 				<p class="xdwp-box__uri">
 					<button
 						type="button"
@@ -178,9 +198,11 @@ defined( 'ABSPATH' ) || exit;
 					</button>
 				</p>
 			<?php endif; ?>
-		</div>
+		</details>
 
-		<p class="xdwp-box__status" id="xdwp-status-text"><?php esc_html_e( 'Waiting for payment…', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
+		<?php // Announced to screen readers when it changes; a customer who cannot see the page still hears "payment detected". ?>
+		<p class="xdwp-box__status" id="xdwp-status-text" role="status" aria-live="polite" aria-atomic="true"><?php esc_html_e( 'Waiting for payment…', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
+		<p class="screen-reader-text" id="xdwp-time-announce" role="status" aria-live="polite" aria-atomic="true"></p>
 		<input type="hidden" id="xdwp-order-key" value="<?php echo esc_attr( $order->get_order_key() ); ?>" />
 	<?php endif; ?>
 </div>

@@ -160,17 +160,52 @@
 		return n < 10 ? '0' + n : String(n);
 	}
 
+	/**
+	 * Minutes at which the remaining time is worth saying out loud. A per-second live region
+	 * would make the page unusable with a screen reader.
+	 */
+	var announceAt = [10, 5, 2, 1];
+	var announced = {};
+
+	/**
+	 * Write a sentence for screen readers without disturbing the visible layout.
+	 *
+	 * @param {string} text What to announce.
+	 */
+	function announce(text) {
+		var region = document.getElementById('xdwp-time-announce');
+		if (region && text && region.textContent !== text) {
+			region.textContent = text;
+		}
+	}
+
+	/**
+	 * Set the payment status, but only when it actually changed — otherwise every poll would
+	 * re-announce the same sentence.
+	 *
+	 * @param {string} text Status sentence.
+	 */
+	function setStatus(text) {
+		if (statusEl && text && statusEl.textContent !== text) {
+			statusEl.textContent = text;
+		}
+	}
+
 	function updateTimer() {
 		if (!timerEl || !data.expires) {
 			return;
 		}
+		// Always derived from the server's expiry timestamp, so a backgrounded tab that missed
+		// a hundred ticks still shows the right time the moment it comes back.
 		var now = Math.floor(Date.now() / 1000);
 		var left = data.expires - now;
 		var pollUntil = data.pollUntil || data.expires;
+		var visual = document.getElementById('xdwp-timer-text') || timerEl;
 		if (left <= 0) {
-			timerEl.textContent = data.i18n.expired;
-			if (statusEl && data.status !== 'paid') {
-				statusEl.textContent = data.i18n.expired;
+			visual.textContent = data.i18n.expired;
+			if (data.status !== 'paid') {
+				setStatus(data.i18n.expired);
+				announce(data.i18n.expired);
 			}
 			// Keep polling through grace so late on-chain payments can still confirm.
 			if (now >= pollUntil && pollTimer) {
@@ -181,16 +216,34 @@
 		}
 		var m = Math.floor(left / 60);
 		var s = left % 60;
-		timerEl.textContent = pad(m) + ':' + pad(s);
+		visual.textContent = pad(m) + ':' + pad(s);
+
+		var label = document.getElementById('xdwp-timer-label');
+		if (label && data.i18n.timeLeft) {
+			label.textContent = data.i18n.timeLeft.replace('%d', String(m + (s > 0 ? 1 : 0)));
+		}
+
+		var remaining = Math.ceil(left / 60);
+		if (announceAt.indexOf(remaining) !== -1 && !announced[remaining] && s === 0) {
+			announced[remaining] = true;
+			if (data.i18n.timeLeft) {
+				announce(data.i18n.timeLeft.replace('%d', String(remaining)));
+			}
+		}
 	}
 
-	function renderQr() {
+	/**
+	 * @param {string|null} override Draw this instead of the payment link, when given.
+	 */
+	function renderQr(override) {
 		var host = document.getElementById('xdwp-qrcode');
 		if (!host) {
 			return;
 		}
 
-		var payload = (data.qrValue && String(data.qrValue).trim()) || data.address || '';
+		var payload = override
+			? String(override)
+			: ((data.qrValue && String(data.qrValue).trim()) || data.address || '');
 		if (!payload) {
 			host.textContent = data.i18n.qrFail || 'QR unavailable';
 			return;
@@ -235,9 +288,13 @@
 		if (data.status === 'paid' || data.status === 'expired') {
 			return;
 		}
-		if (statusEl) {
-			statusEl.textContent = data.i18n.checking;
+		// Nothing to show a customer who is not looking — and every skipped call is one the
+		// shop does not spend from its explorer budget. The check resumes the moment the page
+		// is visible again, so nothing is missed, only deferred.
+		if (document.hidden) {
+			return;
 		}
+		setStatus(data.i18n.checking);
 
 		var body = new FormData();
 		body.append('action', 'xdwp_status');
@@ -288,24 +345,16 @@
 					return;
 				}
 				if (res.data.expired) {
-					if (statusEl) {
-						statusEl.textContent = data.i18n.expired;
-					}
+					setStatus(data.i18n.expired);
 					if (pollTimer) {
 						clearInterval(pollTimer);
 					}
 					return;
 				}
-				if (statusEl) {
-					statusEl.textContent = res.data.detected
-						? detectedMessage()
-						: (data.i18n.waiting || 'Waiting for payment…');
-				}
+				setStatus(res.data.detected ? detectedMessage() : (data.i18n.waiting || 'Waiting for payment…'));
 			})
 			.catch(function () {
-				if (statusEl) {
-					statusEl.textContent = data.i18n.waiting || 'Waiting for payment…';
-				}
+				setStatus(data.i18n.waiting || 'Waiting for payment…');
 			});
 	}
 
@@ -406,14 +455,52 @@
 		});
 	}
 
+	/**
+	 * Some wallets refuse a payment URI that carries an amount. Offer a code with just the
+	 * address rather than leaving the customer stuck with a QR their app will not read.
+	 */
+	var plainToggle = document.getElementById('xdwp-qr-plain');
+	if (plainToggle) {
+		plainToggle.addEventListener('change', function () {
+			renderQr(plainToggle.checked ? (data.address || '') : null);
+		});
+	}
+
+	/**
+	 * A phone is the screen you are holding, so the QR is no use there until asked for; and a
+	 * backgrounded tab should stop polling rather than drain the battery and the shop's
+	 * explorer budget while the customer is in their wallet app.
+	 */
+	var qrDetails = document.getElementById('xdwp-qr-details');
+	if (qrDetails && window.matchMedia && window.matchMedia('(max-width: 600px)').matches) {
+		qrDetails.open = false;
+	}
+
+	document.addEventListener('visibilitychange', function () {
+		if (document.hidden) {
+			if (pollTimer) {
+				clearInterval(pollTimer);
+				pollTimer = null;
+			}
+			return;
+		}
+		// Back in view: correct the clock first, then look straight away rather than waiting
+		// out an interval the customer never saw.
+		updateTimer();
+		if (data.status === 'awaiting' || data.status === 'underpaid') {
+			if (!pollTimer) {
+				pollTimer = window.setInterval(pollStatus, 20000);
+			}
+			pollStatus();
+		}
+	});
+
 	renderQr();
 	updateTimer();
 	window.setInterval(updateTimer, 1000);
 
 	if (data.status === 'awaiting' || data.status === 'underpaid') {
-		if (statusEl) {
-			statusEl.textContent = data.i18n.waiting || 'Waiting for payment…';
-		}
+		setStatus(data.i18n.waiting || 'Waiting for payment…');
 		pollTimer = window.setInterval(pollStatus, 20000);
 		window.setTimeout(pollStatus, 5000);
 	}

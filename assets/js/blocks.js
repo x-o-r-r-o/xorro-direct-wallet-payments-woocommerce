@@ -284,7 +284,13 @@
 				: null,
 			createElement(
 				'div',
-				{ className: 'xdwp-coin-grid' },
+				{
+					className: 'xdwp-coin-grid',
+					// The radios are native and share a name, so arrow keys already work; this
+					// gives the group a name a screen reader can announce when entering it.
+					role: 'radiogroup',
+					'aria-label': settings.selectCoin || 'Select cryptocurrency'
+				},
 				shownCoins.map(function (c) {
 					var classes = 'xdwp-coin-option';
 					if (coin === c.id) {

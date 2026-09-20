@@ -548,3 +548,80 @@
 	font-size: 0.88rem;
 	line-height: 1.5;
 }
+
+/* ---- Keyboard, screen readers and right-to-left ------------------------ */
+
+/*
+ * The coin tiles are real radios, so arrow keys already work — but the input itself is
+ * invisible, so without this a keyboard user can move through the grid with no idea where
+ * they are.
+ */
+.xdwp-coin-option:focus-within {
+	outline: 2px solid #1d2733;
+	outline-offset: 2px;
+	border-color: #1d2733;
+}
+
+@media (forced-colors: active) {
+	.xdwp-coin-option:focus-within {
+		outline: 2px solid CanvasText;
+	}
+}
+
+/* Anything that can be clicked needs to be big enough to hit (WCAG 2.5.8). */
+.xdwp-box .xdwp-copy:not(.button-link),
+.xdwp-box .xdwp-sent,
+.xdwp-box .xdwp-renew,
+.xdwp-box .xdwp-open-wallet {
+	min-height: 24px;
+}
+
+.xdwp-box .xdwp-copy.button-link,
+.xdwp-box__uri .button-link {
+	display: inline-block;
+	min-height: 24px;
+	padding: 4px 0;
+}
+
+/* A mirrored QR code cannot be scanned, and an address read right-to-left is the wrong
+   address — both stay left-to-right whatever the page direction. */
+.xdwp-box__qr,
+#xdwp-qrcode,
+.xdwp-box__address,
+.xdwp-box code.xdwp-box__value {
+	direction: ltr;
+}
+
+.xdwp-box__qr-summary {
+	cursor: pointer;
+	font-size: 0.92rem;
+	font-weight: 600;
+	color: #1d2733;
+	padding: 6px 0;
+	min-height: 24px;
+}
+
+/* Open on a desktop, where the summary is just a label rather than a control. */
+.xdwp-box__qr[open] .xdwp-box__qr-summary {
+	margin-bottom: 0.5rem;
+}
+
+.xdwp-box__qr-plain {
+	margin: 0.6rem 0 0;
+	font-size: 0.85rem;
+	color: #475467;
+	line-height: 1.5;
+}
+
+.xdwp-box__qr-plain label {
+	display: inline-flex;
+	gap: 0.4rem;
+	align-items: flex-start;
+	cursor: pointer;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.xdwp-coin-option {
+		transition: none;
+	}
+}

@@ -4,7 +4,7 @@ Tags: woocommerce, cryptocurrency, bitcoin, ethereum, payments, usdt, crypto che
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.14.0
+Stable tag: 1.15.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -336,6 +336,15 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 * QR Code generator (`assets/js/qrcode.min.js`) — MIT-licensed library by davidshimjs (https://github.com/davidshimjs/qrcodejs). Source is publicly available; the bundled file is minified for production use.
 
 == Changelog ==
+
+= 1.15.0 =
+Usable with a screen reader, a keyboard, and one hand on a phone.
+* Fixed: the coin picker showed no focus at all when moving through it with a keyboard
+* Fixed: the payment page never told a screen reader that anything had changed — "payment detected" and "paid" now announce themselves, and the countdown speaks only at ten, five, two and one minute instead of every second
+* Fixed: addresses, amounts and tags are isolated from the page's text direction, so they read correctly in Arabic and Hebrew shops, and the QR code is never mirrored
+* New: on a phone the wallet button comes first and the QR code is tucked behind "Show QR code" — nobody scans the screen they are holding
+* New: "My wallet will not scan this" shows a code carrying only the address, for wallets that refuse a code with an amount in it
+* The page stops polling while it is in a background tab and checks immediately when you return, which saves the customer's battery and the shop's API budget
 
 = 1.14.0 =
 Prove your setup works before a customer pays, and tell them what they need to know.

@@ -733,6 +733,8 @@ class Xdwp_Order {
 					'renewing' => __( 'Getting a new amount…', 'xorro-direct-wallet-payments-woocommerce' ),
 					'renewFail' => __( 'Could not get a new amount. Please contact us.', 'xorro-direct-wallet-payments-woocommerce' ),
 					'copied'   => __( 'Copied!', 'xorro-direct-wallet-payments-woocommerce' ),
+					/* translators: %d: whole minutes remaining */
+					'timeLeft' => __( '%d minutes left to pay', 'xorro-direct-wallet-payments-woocommerce' ),
 					'expired'  => __( 'Payment window expired.', 'xorro-direct-wallet-payments-woocommerce' ),
 					'paid'     => __( 'Payment confirmed! Thank you.', 'xorro-direct-wallet-payments-woocommerce' ),
 					'checking' => __( 'Checking…', 'xorro-direct-wallet-payments-woocommerce' ),

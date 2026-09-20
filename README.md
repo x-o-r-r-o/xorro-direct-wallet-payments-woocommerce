@@ -194,6 +194,15 @@ Pushing a `vX.Y.Z` tag runs the Release workflow, which builds the ZIP, its SHA-
 
 Full details for every release are in [`readme.txt`](readme.txt).
 
+### 1.15.0 — accessibility and mobile
+
+- **Keyboard**: the coin picker had no visible focus at all; it does now
+- **Screen readers**: status changes are announced, and the countdown speaks at thresholds rather than every second
+- **Right-to-left**: addresses and amounts isolated from page direction, QR never mirrored
+- **Phones**: wallet button first, QR behind a toggle
+- **Stubborn wallets**: an address-only QR for apps that refuse a code containing an amount
+- Polling pauses in background tabs and resumes on return
+
 ### 1.14.0 — prove the setup works before money is involved
 
 - **"Test this coin"** on the Wallets tab: checks the address, the rate, whether this site can read that chain, and the confirmations in force — and names the failing step (including "no Etherscan key saved") rather than failing silently

@@ -548,6 +548,17 @@ xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-
 xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-coins.php' ), 'function wait_estimate' ), 'wait estimated per coin' );
 xdwp_assert( false !== strpos( file_get_contents( $root . '/templates/payment.php' ), 'xdwp-box__network' ), 'wrong-network warning on the payment page' );
 xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/admin/views/settings-page.php' ), 'width="22" height="22" loading="lazy"' ), 'coin icons load lazily' );
+// Release 1.15.0: accessibility and mobile.
+xdwp_assert( false !== strpos( file_get_contents( $root . '/templates/payment.php' ), 'aria-live="polite"' ), 'status changes are announced' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/templates/payment.php' ), 'role="timer"' ), 'countdown uses the timer role' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/templates/payment.php' ), '<bdi>' ), 'addresses are isolated from surrounding text direction' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/templates/payment.php' ), 'id="xdwp-qr-plain"' ), 'a plain address code is offered' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/assets/css/frontend.css' ), '.xdwp-coin-option:focus-within' ), 'the coin picker shows keyboard focus' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/assets/css/frontend.css' ), 'direction: ltr' ), 'the QR is never mirrored' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/assets/js/frontend.js' ), 'document.hidden' ), 'polling stops while the page is hidden' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/assets/js/blocks.js' ), "role: 'radiogroup'" ), 'block checkout names the coin group' );
+// The shortfall, not the whole amount, is what an underpaid order asks for.
+xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-order.php' ), "\$amount = (string) Xdwp_Order::meta( \$order, 'remainder' );" ), 'underpaid orders quote the remainder' );
 xdwp_assert( false !== strpos( $readme, '== External services ==' ), 'readme external services section present' );
 xdwp_assert( false !== strpos( $readme, 'XRPSCan' ), 'readme documents XRPSCan' );
 xdwp_assert( false !== strpos( $readme, 'Subscan' ), 'readme documents Subscan' );
