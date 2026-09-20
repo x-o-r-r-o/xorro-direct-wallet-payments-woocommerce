@@ -356,6 +356,7 @@ Fixes found while auditing 1.19.0 against live chains, with every coin tested.
 * Fixed: no exchange rate was available for Polygon when the main price source was unreachable. It was never misquoted; there was simply no backup. Now covered
 * Fixed: an order screen action answered "500 server error" where it meant "you are not allowed to do that"
 * Every explorer answer is now size-limited and redirect-limited, so no third-party service can stall a customer's payment page again
+* New: an optional Blockchair API key under Prices & APIs. Dogecoin, Bitcoin Cash, Zcash, Dash and eCash are read through Blockchair, which stops answering once the day's free allowance is used — a free key raises that limit. Leave it empty and nothing changes
 * Removed: Casper and Starknet. Neither has any way to detect an incoming payment without a paid or registered key, so they could only ever be confirmed by hand. Verge is removed too — its explorer no longer exists at any address we could find
 * Monero, IoTeX and Kaia stay, and stay manual. Monero's is a property of the protocol; the other two are waiting on a free API key
 

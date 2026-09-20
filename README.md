@@ -251,6 +251,19 @@ Pushing a `vX.Y.Z` tag runs the Release workflow, which builds the ZIP, its SHA-
 
 Full details for every release are in [`readme.txt`](readme.txt).
 
+### 1.19.1 — every coin tested against its live chain
+
+- Fixed: Algorand never confirmed a payment automatically (it asked the indexer for a node-only endpoint)
+- Fixed: XRP checks downloaded up to 100 MB and timed out; XRP now uses the XRP Ledger's own public API
+- Fixed: "Test this coin" wrongly said the explorer was not contacted for Solana, TON, Cardano and Nano
+- Fixed: a brand-new XRP or Stellar address was reported as a failure rather than simply unused
+- Fixed: a paid CoinGecko key was sent to the free host; the right host is now detected and remembered
+- Fixed: Litecoin had no fallback when its single data source ran out of free allowance
+- Fixed: Polygon had no backup exchange rate
+- New: optional Blockchair API key for Dogecoin, Bitcoin Cash, Zcash, Dash and eCash
+- Every explorer request is now capped at 8 MB and two redirects
+- Removed: Casper, Starknet and Verge — no way to detect a payment without a paid key, or no explorer left at all
+
 ### 1.19.0 — refunds, alerts, and settings you can carry
 
 - Refunds by claim link: the customer gives an address they control, you send it from your own wallet, the plugin records it. Nothing is ever sent by the plugin itself

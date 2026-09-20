@@ -500,6 +500,24 @@ $active  = isset( $tabs[ $tab ] ) ? $tabs[ $tab ] : $tabs['general'];
 										</td>
 									</tr>
 									<tr>
+										<th scope="row"><?php esc_html_e( 'Blockchair API key', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
+										<td>
+											<input type="password" class="regular-text cc-input" name="xdwp[blockchair_api_key]" value="" placeholder="<?php echo esc_attr( Xdwp_Settings::api_key_input_placeholder( 'blockchair_api_key' ) ); ?>" autocomplete="new-password" />
+											<p class="description">
+												<?php
+												echo wp_kses(
+													sprintf(
+														/* translators: %s: URL */
+														__( 'Optional, and only worth it on a busy shop. Dogecoin, Bitcoin Cash, Zcash, Dash and eCash are read through Blockchair, which stops answering once the day\'s free allowance is used — at which point payments in those coins are no longer seen until the next day. A key raises that limit. Get one at %s', 'xorro-direct-wallet-payments-woocommerce' ),
+														'<a href="https://blockchair.com/api/plans" target="_blank" rel="noopener noreferrer">blockchair.com/api/plans</a>'
+													),
+													array( 'a' => array( 'href' => array(), 'target' => array(), 'rel' => array() ) )
+												);
+												?>
+											</p>
+										</td>
+									</tr>
+									<tr>
 										<th scope="row"><?php esc_html_e( 'Etherscan API V2 key', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
 										<td>
 											<input type="password" class="regular-text cc-input" name="xdwp[etherscan_api_key]" value="" placeholder="<?php echo esc_attr( Xdwp_Settings::api_key_input_placeholder( 'etherscan_api_key' ) ); ?>" autocomplete="new-password" />

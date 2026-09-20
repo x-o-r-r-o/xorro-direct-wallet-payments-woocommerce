@@ -185,6 +185,7 @@ class Xdwp_Settings {
 		foreach ( array(
 			'webhook_secret',
 			'telegram_token',
+			'blockchair_api_key',
 			'coingecko_api_key',
 			'etherscan_api_key',
 			'trongrid_api_key',

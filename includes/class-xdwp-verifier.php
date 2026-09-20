@@ -2133,8 +2133,23 @@ class Xdwp_Verifier {
 			$lookup = substr( $address, strlen( 'ecash:' ) );
 		}
 
-		$url      = sprintf( 'https://api.blockchair.com/%s/dashboards/address/%s?limit=25', rawurlencode( $chain ), rawurlencode( $lookup ) );
+		$url = sprintf( 'https://api.blockchair.com/%s/dashboards/address/%s?limit=25', rawurlencode( $chain ), rawurlencode( $lookup ) );
+		// Blockchair carries Dogecoin, Bitcoin Cash, Zcash, Dash and eCash here. Anonymously it
+		// answers 430 once a shop has used the day's free allowance, and payments simply stop
+		// being seen; a free key raises that a long way. Sent as a query parameter because that
+		// is the only form Blockchair accepts.
+		$blockchair_key = trim( (string) Xdwp_Settings::get( 'blockchair_api_key', '' ) );
+		if ( '' !== $blockchair_key ) {
+			$url = add_query_arg( 'key', rawurlencode( $blockchair_key ), $url );
+		}
 		$response = self::http_get( $url );
+
+		// Out of allowance: say so rather than reporting "no payment yet", which is the same
+		// answer this function gives when a payment genuinely has not arrived.
+		$http = self::last_http();
+		if ( in_array( (int) $http['code'], array( 402, 429, 430 ), true ) ) {
+			return false;
+		}
 		if ( ! is_array( $response ) || empty( $response['data'] ) || ! is_array( $response['data'] ) ) {
 			return false;
 		}
