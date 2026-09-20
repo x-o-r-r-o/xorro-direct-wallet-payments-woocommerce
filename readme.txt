@@ -4,7 +4,7 @@ Tags: woocommerce, cryptocurrency, bitcoin, ethereum, payments, usdt, crypto che
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.12.0
+Stable tag: 1.12.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -336,6 +336,11 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 * QR Code generator (`assets/js/qrcode.min.js`) — MIT-licensed library by davidshimjs (https://github.com/davidshimjs/qrcodejs). Source is publicly available; the bundled file is minified for production use.
 
 == Changelog ==
+
+= 1.12.1 =
+* Help now sits last in the menu, after Prices & APIs
+* Help redesigned: a search box that filters the page as you type, a contents list that follows you down the page, and each topic in its own card — on a phone the contents fold above the text
+* Portuguese (Brazil) translation completed, Arabic and Polish improved
 
 = 1.12.0 =
 A Help screen, and the plugin in sixteen languages.

@@ -71,7 +71,62 @@
 		}
 		initIconPicker();
 		initTxidCopy();
+		initHelp();
 	});
+
+	/**
+	 * Help screen: filter the sections as you type, and keep the contents list in step with
+	 * whichever section you are reading.
+	 */
+	function initHelp() {
+		var filter = document.getElementById('xdwp-help-filter');
+		var sections = [].slice.call(document.querySelectorAll('.xdwp-help__section'));
+		if (!sections.length) {
+			return;
+		}
+		var links = [].slice.call(document.querySelectorAll('.xdwp-help__index a'));
+		var empty = document.getElementById('xdwp-help-empty');
+
+		if (filter) {
+			filter.addEventListener('input', function () {
+				var term = filter.value.trim().toLowerCase();
+				var shown = 0;
+				sections.forEach(function (section) {
+					var match = '' === term || section.textContent.toLowerCase().indexOf(term) !== -1;
+					section.hidden = !match;
+					if (match) {
+						shown++;
+					}
+					var link = links.filter(function (a) {
+						return a.getAttribute('href') === '#' + section.id;
+					})[0];
+					if (link) {
+						link.hidden = !match;
+					}
+				});
+				if (empty) {
+					empty.hidden = shown !== 0;
+				}
+			});
+		}
+
+		if (!('IntersectionObserver' in window)) {
+			return;
+		}
+		var observer = new IntersectionObserver(function (entries) {
+			entries.forEach(function (entry) {
+				if (!entry.isIntersecting) {
+					return;
+				}
+				links.forEach(function (a) {
+					a.classList.toggle('is-current', a.getAttribute('href') === '#' + entry.target.id);
+				});
+			});
+		}, { rootMargin: '-60px 0px -70% 0px' });
+		sections.forEach(function (section) {
+			observer.observe(section);
+		});
+	}
 
 	/**
 	 * Copy a transaction id from the payments overview.

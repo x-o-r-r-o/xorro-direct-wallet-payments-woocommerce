@@ -1564,58 +1564,133 @@ body.xdwp-admin-page #wpbody-content > .wrap > h1.wp-heading-inline {
 /* ---- Help ------------------------------------------------------------- */
 
 .xdwp-help {
-	max-width: 900px;
 	font-size: 13.5px;
 	line-height: 1.65;
 }
 
-.xdwp-help__index {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 0.4rem 0.75rem;
-	margin: 0 0 1.5rem;
-	padding: 0.85rem 1rem;
-	border: 1px solid #dcdcde;
+.xdwp-help__search {
+	margin: 0 0 1.25rem;
+}
+
+.xdwp-help__search input[type="search"] {
+	width: 100%;
+	max-width: 480px;
+	padding: 0.5rem 0.7rem;
+	border: 1px solid #c3c4c7;
 	border-radius: 6px;
+	font-size: 13.5px;
+	line-height: 1.4;
+}
+
+.xdwp-help__search-empty {
+	margin: 0.5rem 0 0;
+	color: #646970;
+	font-size: 12.5px;
+}
+
+/* Contents down the side on a wide screen, above the text on a narrow one. */
+.xdwp-help__layout {
+	display: grid;
+	grid-template-columns: 210px minmax(0, 1fr);
+	gap: 1.75rem;
+	align-items: start;
+}
+
+.xdwp-help__index {
+	position: sticky;
+	top: 46px;
+	display: flex;
+	flex-direction: column;
+	gap: 1px;
+	padding: 0.85rem 0.75rem;
+	border: 1px solid #dcdcde;
+	border-radius: 8px;
 	background: #f6f7f7;
 	font-size: 12.5px;
 }
 
-.xdwp-help__index a {
-	color: #2271b1;
-	text-decoration: none;
+.xdwp-help__index-title {
+	margin-bottom: 0.4rem;
+	color: #646970;
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
 }
 
-.xdwp-help__index a:hover {
-	text-decoration: underline;
+.xdwp-help__index a {
+	padding: 0.35rem 0.5rem;
+	border-radius: 4px;
+	color: #2c3338;
+	text-decoration: none;
+	line-height: 1.35;
+}
+
+.xdwp-help__index a:hover,
+.xdwp-help__index a:focus {
+	background: #fff;
+	color: #2271b1;
+}
+
+.xdwp-help__index a.is-current {
+	background: #1d2733;
+	color: #fff;
+	font-weight: 600;
+}
+
+.xdwp-help__body {
+	min-width: 0;
+	max-width: 760px;
 }
 
 .xdwp-help__section {
-	margin: 0 0 2rem;
-	scroll-margin-top: 40px;
+	margin: 0 0 1.25rem;
+	padding: 1.1rem 1.25rem;
+	border: 1px solid #e0e3e7;
+	border-radius: 8px;
+	background: #fff;
+	scroll-margin-top: 60px;
+}
+
+.xdwp-help__section[hidden] {
+	display: none;
 }
 
 .xdwp-help__section h3 {
-	margin: 0 0 0.5rem;
-	padding-bottom: 0.35rem;
-	border-bottom: 2px solid #1d2733;
-	font-size: 16px;
+	margin: 0 0 0.75rem;
+	padding-bottom: 0.5rem;
+	border-bottom: 1px solid #e0e3e7;
+	font-size: 15px;
+	letter-spacing: -0.01em;
 }
 
 .xdwp-help__section h4 {
-	margin: 1.25rem 0 0.4rem;
-	font-size: 13.5px;
+	margin: 1.35rem 0 0.4rem;
+	font-size: 13px;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	color: #50575e;
+}
+
+.xdwp-help__section p {
+	margin: 0 0 0.75rem;
 }
 
 .xdwp-help__list,
 .xdwp-help__steps {
-	margin: 0.5rem 0 0 1.25rem;
+	margin: 0.5rem 0 0.75rem 1.25rem;
 	padding: 0;
 }
 
 .xdwp-help__list li,
 .xdwp-help__steps li {
-	margin: 0 0 0.5rem;
+	margin: 0 0 0.55rem;
+	padding-left: 0.15rem;
+}
+
+.xdwp-help__steps li::marker {
+	font-weight: 700;
+	color: #1d2733;
 }
 
 .xdwp-help__table {
@@ -1626,40 +1701,58 @@ body.xdwp-admin-page #wpbody-content > .wrap > h1.wp-heading-inline {
 
 .xdwp-help__table th,
 .xdwp-help__table td {
-	padding: 0.6rem 0.75rem;
-	border-bottom: 1px solid #e0e3e7;
+	padding: 0.7rem 0.75rem;
 	text-align: left;
 	vertical-align: top;
 }
 
+.xdwp-help__table tr + tr th,
+.xdwp-help__table tr + tr td {
+	border-top: 1px solid #f0f0f1;
+}
+
 .xdwp-help__table th {
-	width: 30%;
+	width: 32%;
+	padding-left: 0;
 	font-weight: 600;
 }
 
+.xdwp-help__table td {
+	padding-right: 0;
+	color: #3c434a;
+}
+
 .xdwp-help__table--code th {
-	width: 38%;
+	width: 40%;
 	font-weight: 400;
+}
+
+.xdwp-help__table--code code {
+	padding: 1px 6px;
+	border-radius: 3px;
+	background: #f0f0f1;
+	font-size: 12px;
 }
 
 .xdwp-help__where {
 	display: block;
-	margin-top: 2px;
-	color: #646970;
-	font-size: 11px;
+	margin-top: 3px;
+	color: #787c82;
+	font-size: 10.5px;
 	font-weight: 400;
 	text-transform: uppercase;
-	letter-spacing: 0.04em;
+	letter-spacing: 0.05em;
 }
 
 .xdwp-help__note,
 .xdwp-help__warn {
 	margin: 0.9rem 0 0;
-	padding: 0.6rem 0.8rem;
+	padding: 0.65rem 0.85rem;
 	border-left: 3px solid #72aee6;
-	border-radius: 0 4px 4px 0;
+	border-radius: 0 6px 6px 0;
 	background: #f0f6fc;
 	font-size: 12.5px;
+	line-height: 1.55;
 }
 
 .xdwp-help__warn {
@@ -1668,8 +1761,12 @@ body.xdwp-admin-page #wpbody-content > .wrap > h1.wp-heading-inline {
 }
 
 .xdwp-help__faq dt {
-	margin: 0.9rem 0 0.2rem;
+	margin: 1rem 0 0.2rem;
 	font-weight: 600;
+}
+
+.xdwp-help__faq dt:first-child {
+	margin-top: 0.35rem;
 }
 
 .xdwp-help__faq dd {
@@ -1677,18 +1774,41 @@ body.xdwp-admin-page #wpbody-content > .wrap > h1.wp-heading-inline {
 	color: #3c434a;
 }
 
+@media (max-width: 960px) {
+	.xdwp-help__layout {
+		grid-template-columns: minmax(0, 1fr);
+		gap: 1rem;
+	}
+
+	.xdwp-help__index {
+		position: static;
+		flex-direction: row;
+		flex-wrap: wrap;
+		gap: 0.3rem 0.4rem;
+		align-items: center;
+	}
+
+	.xdwp-help__index-title {
+		width: 100%;
+		margin: 0;
+	}
+}
+
 @media (max-width: 782px) {
+	.xdwp-help__section {
+		padding: 0.9rem 1rem;
+	}
+
 	.xdwp-help__table th,
 	.xdwp-help__table td {
 		display: block;
 		width: auto;
-		border-bottom: 0;
-		padding: 0.25rem 0;
+		padding: 0.2rem 0;
+		border-top: 0;
 	}
 
-	.xdwp-help__table tr {
-		display: block;
-		padding: 0.6rem 0;
-		border-bottom: 1px solid #e0e3e7;
+	.xdwp-help__table tr + tr th {
+		border-top: 1px solid #f0f0f1;
+		padding-top: 0.75rem;
 	}
 }

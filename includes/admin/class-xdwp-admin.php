@@ -216,20 +216,20 @@ class Xdwp_Admin {
 
 		add_submenu_page(
 			'xorro-direct-wallet-payments-woocommerce',
-			__( 'Help', 'xorro-direct-wallet-payments-woocommerce' ),
-			__( 'Help', 'xorro-direct-wallet-payments-woocommerce' ),
-			'manage_woocommerce',
-			'xorro-direct-wallet-payments-woocommerce-help',
-			array( __CLASS__, 'render_help_page' )
-		);
-
-		add_submenu_page(
-			'xorro-direct-wallet-payments-woocommerce',
 			__( 'Prices & APIs', 'xorro-direct-wallet-payments-woocommerce' ),
 			__( 'Prices & APIs', 'xorro-direct-wallet-payments-woocommerce' ),
 			'manage_woocommerce',
 			'xorro-direct-wallet-payments-woocommerce-prices',
 			array( __CLASS__, 'render_page' )
+		);
+
+		add_submenu_page(
+			'xorro-direct-wallet-payments-woocommerce',
+			__( 'Help', 'xorro-direct-wallet-payments-woocommerce' ),
+			__( 'Help', 'xorro-direct-wallet-payments-woocommerce' ),
+			'manage_woocommerce',
+			'xorro-direct-wallet-payments-woocommerce-help',
+			array( __CLASS__, 'render_help_page' )
 		);
 	}
 
@@ -630,19 +630,19 @@ class Xdwp_Admin {
 				'title' => __( 'Wallets', 'xorro-direct-wallet-payments-woocommerce' ),
 				'desc'  => __( 'Receiving addresses for enabled coins. Use multiple addresses for rotation.', 'xorro-direct-wallet-payments-woocommerce' ),
 			),
-			'help'    => array(
-				'label' => __( 'Help', 'xorro-direct-wallet-payments-woocommerce' ),
-				'url'   => admin_url( 'admin.php?page=xorro-direct-wallet-payments-woocommerce-help' ),
-				'icon'  => 'dashicons-editor-help',
-				'title' => __( 'Help', 'xorro-direct-wallet-payments-woocommerce' ),
-				'desc'  => __( 'What every setting does, how a payment is matched, and what to do when something looks wrong.', 'xorro-direct-wallet-payments-woocommerce' ),
-			),
 			'prices'  => array(
 				'label' => __( 'Prices & APIs', 'xorro-direct-wallet-payments-woocommerce' ),
 				'url'   => admin_url( 'admin.php?page=xorro-direct-wallet-payments-woocommerce-prices' ),
 				'icon'  => 'dashicons-chart-area',
 				'title' => __( 'Prices & APIs', 'xorro-direct-wallet-payments-woocommerce' ),
 				'desc'  => __( 'Exchange rates and blockchain API keys for quotes and auto-verification.', 'xorro-direct-wallet-payments-woocommerce' ),
+			),
+			'help'    => array(
+				'label' => __( 'Help', 'xorro-direct-wallet-payments-woocommerce' ),
+				'url'   => admin_url( 'admin.php?page=xorro-direct-wallet-payments-woocommerce-help' ),
+				'icon'  => 'dashicons-editor-help',
+				'title' => __( 'Help', 'xorro-direct-wallet-payments-woocommerce' ),
+				'desc'  => __( 'What every setting does, how a payment is matched, and what to do when something looks wrong.', 'xorro-direct-wallet-payments-woocommerce' ),
 			),
 		);
 	}

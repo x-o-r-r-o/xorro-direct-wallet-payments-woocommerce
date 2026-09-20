@@ -184,6 +184,12 @@ Pushing a `vX.Y.Z` tag runs the Release workflow, which builds the ZIP, its SHA-
 
 Full details for every release are in [`readme.txt`](readme.txt).
 
+### 1.12.1 — Help, tidied
+
+- Help moved to the end of the menu, after Prices & APIs
+- Search box that filters the page as you type, a contents list that tracks the section you are reading, and one card per topic
+- Portuguese (Brazil) completed; Arabic and Polish improved
+
 ### 1.12.0 — a Help screen, and sixteen languages
 
 - **Help tab** covering every setting, how payments are matched, the customer's view, troubleshooting and the developer hooks

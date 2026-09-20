@@ -83,13 +83,23 @@ $xdwp_sections = array(
 					</div>
 					<div class="cc-panel-content xdwp-help">
 
-						<nav class="xdwp-help__index" aria-label="<?php esc_attr_e( 'On this page', 'xorro-direct-wallet-payments-woocommerce' ); ?>">
-							<?php foreach ( $xdwp_sections as $id => $label ) : ?>
-								<a href="#xdwp-help-<?php echo esc_attr( $id ); ?>"><?php echo esc_html( $label ); ?></a>
-							<?php endforeach; ?>
-						</nav>
+						<div class="xdwp-help__search">
+							<label for="xdwp-help-filter" class="screen-reader-text"><?php esc_html_e( 'Search this page', 'xorro-direct-wallet-payments-woocommerce' ); ?></label>
+							<input type="search" id="xdwp-help-filter" placeholder="<?php esc_attr_e( 'Search help — try “confirmations”, “memo”, “refund”…', 'xorro-direct-wallet-payments-woocommerce' ); ?>" autocomplete="off" />
+							<p class="xdwp-help__search-empty" id="xdwp-help-empty" hidden><?php esc_html_e( 'Nothing here matches that. Try a shorter word.', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
+						</div>
 
-						<!-- ------------------------------------------------ getting started -->
+						<div class="xdwp-help__layout">
+							<nav class="xdwp-help__index" aria-label="<?php esc_attr_e( 'On this page', 'xorro-direct-wallet-payments-woocommerce' ); ?>">
+								<span class="xdwp-help__index-title"><?php esc_html_e( 'On this page', 'xorro-direct-wallet-payments-woocommerce' ); ?></span>
+								<?php foreach ( $xdwp_sections as $id => $label ) : ?>
+									<a href="#xdwp-help-<?php echo esc_attr( $id ); ?>" data-section="<?php echo esc_attr( $id ); ?>"><?php echo esc_html( $label ); ?></a>
+								<?php endforeach; ?>
+							</nav>
+
+							<div class="xdwp-help__body">
+
+							<!-- ------------------------------------------------ getting started -->
 						<section id="xdwp-help-start" class="xdwp-help__section">
 							<h3><?php echo esc_html( $xdwp_sections['start'] ); ?></h3>
 							<p><?php esc_html_e( 'This plugin takes cryptocurrency payments straight into wallets you control. No processor holds the money, there is no account to open, and nothing is taken in fees — the customer pays your address and the order is confirmed once the payment appears on the chain.', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
@@ -132,7 +142,7 @@ $xdwp_sections = array(
 							<p class="xdwp-help__note"><?php esc_html_e( 'Most coins confirm payments automatically. Five coins have no free way to check the chain — Monero, IoTeX, Casper, Kaia and Starknet — so for those you confirm the payment yourself with "Mark payment received" on the order. The Coins tab says which is which.', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
 						</section>
 
-						<!-- ------------------------------------------------ matching -->
+							<!-- ------------------------------------------------ matching -->
 						<section id="xdwp-help-matching" class="xdwp-help__section">
 							<h3><?php echo esc_html( $xdwp_sections['matching'] ); ?></h3>
 							<p><?php esc_html_e( 'When a customer picks a coin, the order is quoted an exact amount and an address. From then on the plugin watches that address and credits the order when a matching payment arrives.', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
@@ -152,14 +162,14 @@ $xdwp_sections = array(
 							</ul>
 						</section>
 
-						<!-- ------------------------------------------------ general -->
+							<!-- ------------------------------------------------ general -->
 						<section id="xdwp-help-general" class="xdwp-help__section">
 							<h3><?php echo esc_html( $xdwp_sections['general'] ); ?></h3>
 							<table class="xdwp-help__table">
 								<tbody>
 								<?php
 								$xdwp_setting(
-									__( 'Payment window', 'xorro-direct-wallet-payments-woocommerce' ),
+									__( 'Payment window (minutes)', 'xorro-direct-wallet-payments-woocommerce' ),
 									__( 'General', 'xorro-direct-wallet-payments-woocommerce' ),
 									esc_html__( 'How long the quoted amount is held, in minutes. Crypto prices move, so this is a promise you can keep: 60 minutes is comfortable, 15–30 is tighter on a volatile coin. When it runs out the customer can ask for a new amount without losing the order.', 'xorro-direct-wallet-payments-woocommerce' )
 								);
@@ -169,7 +179,7 @@ $xdwp_sections = array(
 									esc_html__( 'Where a paid order lands. Processing suits physical goods you still have to send; Completed suits downloads and anything delivered instantly.', 'xorro-direct-wallet-payments-woocommerce' )
 								);
 								$xdwp_setting(
-									__( 'Underpayment tolerance', 'xorro-direct-wallet-payments-woocommerce' ),
+									__( 'Underpayment tolerance (%)', 'xorro-direct-wallet-payments-woocommerce' ),
 									__( 'General', 'xorro-direct-wallet-payments-woocommerce' ),
 									esc_html__( 'How far under the quoted amount still counts as paid, as a percentage. Some wallets take their fee out of the amount sent, so a small tolerance saves a lot of support mail. It is capped automatically so orders stay distinguishable.', 'xorro-direct-wallet-payments-woocommerce' )
 								);
@@ -184,7 +194,7 @@ $xdwp_sections = array(
 									esc_html__( 'One confirmation does not mean the same thing everywhere. Leave this on and each coin waits for a number suited to its own chain. Turn it off to use a single number for all of them.', 'xorro-direct-wallet-payments-woocommerce' )
 								);
 								$xdwp_setting(
-									__( 'Expiry grace', 'xorro-direct-wallet-payments-woocommerce' ),
+									__( 'Expiry grace (minutes)', 'xorro-direct-wallet-payments-woocommerce' ),
 									__( 'General', 'xorro-direct-wallet-payments-woocommerce' ),
 									esc_html__( 'Keeps looking for a payment for this long after the window closes, for the customer who pressed send a minute too late. Orders fail rather than cancel, so late money can still be recovered.', 'xorro-direct-wallet-payments-woocommerce' )
 								);
@@ -214,7 +224,7 @@ $xdwp_sections = array(
 									esc_html__( 'Handles the customer who sends too little or too much: they are asked for the remainder, or the excess is recorded for you to refund. With this off, such payments are left for you to sort out by hand.', 'xorro-direct-wallet-payments-woocommerce' )
 								);
 								$xdwp_setting(
-									__( 'Checkout branding', 'xorro-direct-wallet-payments-woocommerce' ),
+									__( 'Checkout title, description, icon and label style', 'xorro-direct-wallet-payments-woocommerce' ),
 									__( 'General', 'xorro-direct-wallet-payments-woocommerce' ),
 									esc_html__( 'The title, description and icon the customer sees at checkout. You can upload your own icon and choose whether to show the icon, the text, or both.', 'xorro-direct-wallet-payments-woocommerce' )
 								);
@@ -223,7 +233,7 @@ $xdwp_sections = array(
 							</table>
 						</section>
 
-						<!-- ------------------------------------------------ coins -->
+							<!-- ------------------------------------------------ coins -->
 						<section id="xdwp-help-coins" class="xdwp-help__section">
 							<h3><?php echo esc_html( $xdwp_sections['coins'] ); ?></h3>
 							<p><?php esc_html_e( 'Every coin and network the plugin knows is listed here, grouped by chain. Ticking one offers it at checkout, as long as it has somewhere to receive.', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
@@ -250,7 +260,7 @@ $xdwp_sections = array(
 							</table>
 						</section>
 
-						<!-- ------------------------------------------------ wallets -->
+							<!-- ------------------------------------------------ wallets -->
 						<section id="xdwp-help-wallets" class="xdwp-help__section">
 							<h3><?php echo esc_html( $xdwp_sections['wallets'] ); ?></h3>
 							<p><?php esc_html_e( 'This is where the money goes, so it is worth being careful. Paste addresses from a wallet you control and check the first one with a small test payment.', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
@@ -274,14 +284,14 @@ $xdwp_sections = array(
 							<p class="xdwp-help__warn"><?php esc_html_e( 'Never use an address that something else also uses — an exchange deposit address, or a wallet shared with another shop. Unrelated money arriving there can be mistaken for an order.', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
 						</section>
 
-						<!-- ------------------------------------------------ prices -->
+							<!-- ------------------------------------------------ prices -->
 						<section id="xdwp-help-prices" class="xdwp-help__section">
 							<h3><?php echo esc_html( $xdwp_sections['prices'] ); ?></h3>
 							<table class="xdwp-help__table">
 								<tbody>
 								<?php
 								$xdwp_setting(
-									__( 'Exchange rates', 'xorro-direct-wallet-payments-woocommerce' ),
+									__( 'CoinGecko API key, and the backup rate sources', 'xorro-direct-wallet-payments-woocommerce' ),
 									__( 'Prices & APIs', 'xorro-direct-wallet-payments-woocommerce' ),
 									esc_html__( 'Rates come from CoinGecko. If it is rate-limited or down, public exchange tickers (Coinbase, Kraken, Binance) stand in. When two of them answer they must agree within 5% or no rate is used at all — a wrong rate would quote a wrong amount, which is worse than asking the customer to try again.', 'xorro-direct-wallet-payments-woocommerce' )
 								);
@@ -291,12 +301,12 @@ $xdwp_sections = array(
 									esc_html__( 'Prices stablecoins that track your shop currency at face value, so a 17.34 order asks for exactly 17.34 USDT instead of 17.3465. Turn it off to use the live market rate instead.', 'xorro-direct-wallet-payments-woocommerce' )
 								);
 								$xdwp_setting(
-									__( 'Show crypto price on products', 'xorro-direct-wallet-payments-woocommerce' ),
+									__( 'Show crypto price on products, Product price coin', 'xorro-direct-wallet-payments-woocommerce' ),
 									__( 'Prices & APIs', 'xorro-direct-wallet-payments-woocommerce' ),
 									esc_html__( 'Adds an approximate crypto figure next to your normal prices. It is a rough guide for shoppers, not the amount they will be quoted at checkout.', 'xorro-direct-wallet-payments-woocommerce' )
 								);
 								$xdwp_setting(
-									__( 'API keys', 'xorro-direct-wallet-payments-woocommerce' ),
+									__( 'Etherscan, TronGrid, Helius, Subscan, ViewBlock and Aptos keys', 'xorro-direct-wallet-payments-woocommerce' ),
 									__( 'Prices & APIs', 'xorro-direct-wallet-payments-woocommerce' ),
 									esc_html__( 'Most chains are read through free public explorers and need nothing from you. A few work better — or at all — with a free key of your own: Etherscan (for Ethereum and the chains it covers), TronGrid, Helius for Solana, Subscan for Polkadot, ViewBlock for Zilliqa. The plugin tells you on screen when a key is missing rather than failing quietly.', 'xorro-direct-wallet-payments-woocommerce' )
 								);
@@ -305,7 +315,7 @@ $xdwp_sections = array(
 							</table>
 						</section>
 
-						<!-- ------------------------------------------------ payments screen -->
+							<!-- ------------------------------------------------ payments screen -->
 						<section id="xdwp-help-payments" class="xdwp-help__section">
 							<h3><?php echo esc_html( $xdwp_sections['payments'] ); ?></h3>
 							<p>
@@ -327,7 +337,7 @@ $xdwp_sections = array(
 							<p><?php esc_html_e( 'On each order itself you also get the coin, amount, address, any tag or memo, the transaction, and a "Mark payment received" button for payments you confirmed yourself.', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
 						</section>
 
-						<!-- ------------------------------------------------ customer -->
+							<!-- ------------------------------------------------ customer -->
 						<section id="xdwp-help-customer" class="xdwp-help__section">
 							<h3><?php echo esc_html( $xdwp_sections['customer'] ); ?></h3>
 							<ul class="xdwp-help__list">
@@ -339,7 +349,7 @@ $xdwp_sections = array(
 							</ul>
 						</section>
 
-						<!-- ------------------------------------------------ emails -->
+							<!-- ------------------------------------------------ emails -->
 						<section id="xdwp-help-emails" class="xdwp-help__section">
 							<h3><?php echo esc_html( $xdwp_sections['emails'] ); ?></h3>
 							<p>
@@ -360,7 +370,7 @@ $xdwp_sections = array(
 							<p class="xdwp-help__note"><?php esc_html_e( 'To change the wording or layout yourself, copy the templates into your theme under woocommerce/emails/ — they are ordinary WooCommerce template files.', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
 						</section>
 
-						<!-- ------------------------------------------------ problems -->
+							<!-- ------------------------------------------------ problems -->
 						<section id="xdwp-help-problems" class="xdwp-help__section">
 							<h3><?php echo esc_html( $xdwp_sections['problems'] ); ?></h3>
 							<dl class="xdwp-help__faq">
@@ -392,7 +402,7 @@ $xdwp_sections = array(
 							</dl>
 						</section>
 
-						<!-- ------------------------------------------------ safety -->
+							<!-- ------------------------------------------------ safety -->
 						<section id="xdwp-help-safety" class="xdwp-help__section">
 							<h3><?php echo esc_html( $xdwp_sections['safety'] ); ?></h3>
 							<ul class="xdwp-help__list">
@@ -404,7 +414,7 @@ $xdwp_sections = array(
 							</ul>
 						</section>
 
-						<!-- ------------------------------------------------ developers -->
+							<!-- ------------------------------------------------ developers -->
 						<section id="xdwp-help-devs" class="xdwp-help__section">
 							<h3><?php echo esc_html( $xdwp_sections['devs'] ); ?></h3>
 							<p><?php esc_html_e( 'Actions fire as payments progress, and filters let you change the numbers this plugin decides on:', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
@@ -430,6 +440,8 @@ $xdwp_sections = array(
 							<p class="xdwp-help__note"><?php esc_html_e( 'Frontend templates (the payment box and the emails) can be overridden from your theme, the same way WooCommerce templates are.', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
 						</section>
 
+							</div>
+						</div>
 					</div>
 				</div>
 			</div>
