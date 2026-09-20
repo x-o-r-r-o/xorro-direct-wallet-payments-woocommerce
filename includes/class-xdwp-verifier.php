@@ -321,6 +321,16 @@ class Xdwp_Verifier {
 		);
 		$order->save();
 
+		Xdwp_Order::log_event(
+			$order,
+			'underpaid',
+			sprintf(
+				/* translators: 1: amount received, 2: amount still due */
+				__( 'Received %1$s, which is short — %2$s still due', 'xorro-direct-wallet-payments-woocommerce' ),
+				$received,
+				$remainder
+			)
+		);
 		Xdwp_Order::set_flag( $order, 'underpaid' );
 		do_action( 'xdwp_order_underpaid', $order, $received, $remainder, $txid );
 		return false;
@@ -493,6 +503,15 @@ class Xdwp_Verifier {
 		 * @param WC_Order $order Order.
 		 * @param string   $txid  Transaction that disappeared.
 		 */
+		Xdwp_Order::log_event(
+			$order,
+			'dropped',
+			sprintf(
+				/* translators: %s: transaction id */
+				__( 'The transfer seen earlier (%s) disappeared from the chain', 'xorro-direct-wallet-payments-woocommerce' ),
+				$seen
+			)
+		);
 		do_action( 'xdwp_payment_dropped', $order, $seen );
 		return true;
 	}
@@ -561,6 +580,16 @@ class Xdwp_Verifier {
 		$order->update_meta_data( '_xdwp_seen_txid', strtolower( (string) $hit['txid'] ) );
 		$order->update_meta_data( '_xdwp_seen_at', time() );
 		$order->save();
+		Xdwp_Order::log_event(
+			$order,
+			'seen',
+			sprintf(
+				/* translators: 1: transaction id, 2: confirmations required */
+				__( 'Seen on chain (%1$s), waiting for %2$d confirmations', 'xorro-direct-wallet-payments-woocommerce' ),
+				$hit['txid'],
+				Xdwp_Coins::confirmations_for( $coin )
+			)
+		);
 		do_action( 'xdwp_payment_detected', $order, $hit['txid'], $hit['amount'] );
 		return true;
 	}

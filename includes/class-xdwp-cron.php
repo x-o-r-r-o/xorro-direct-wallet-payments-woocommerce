@@ -261,6 +261,7 @@ class Xdwp_Cron {
 				)
 			);
 			$order->save();
+			Xdwp_Order::log_event( $order, 'late', sprintf( /* translators: 1: amount, 2: transaction id */ __( 'Money arrived after the window closed: %1$s (%2$s)', 'xorro-direct-wallet-payments-woocommerce' ), $hit['amount'], $hit['txid'] ) );
 			Xdwp_Order::set_flag( $order, 'paid_late' );
 			do_action( 'xdwp_late_payment_detected', $order, $hit['txid'], $hit['amount'] );
 		}

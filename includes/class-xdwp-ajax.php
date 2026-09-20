@@ -316,6 +316,7 @@ class Xdwp_Ajax {
 
 		$order->update_meta_data( '_xdwp_wallet_txid', $txid );
 		$order->save();
+		Xdwp_Order::log_event( $order, 'wallet', sprintf( /* translators: %s: transaction id */ __( 'Paid from a browser wallet, which reported transaction %s', 'xorro-direct-wallet-payments-woocommerce' ), $txid ) );
 		$order->add_order_note(
 			sprintf(
 				/* translators: %s: transaction id */

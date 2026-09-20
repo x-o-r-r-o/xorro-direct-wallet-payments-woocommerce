@@ -31,6 +31,7 @@ rsync -a \
 	--exclude='.DS_Store' \
 	--exclude='**/.DS_Store' \
 	--exclude='tests/' \
+	--exclude='docs/' \
 	--exclude='bin/' \
 	--exclude='releases/' \
 	--exclude='.phpunit*' \
@@ -53,6 +54,7 @@ rsync -a \
 test -f "${STAGE}/${PLUGIN_SLUG}/xorro-direct-wallet-payments-woocommerce.php"
 test -f "${STAGE}/${PLUGIN_SLUG}/readme.txt"
 test ! -d "${STAGE}/${PLUGIN_SLUG}/tests"
+test ! -d "${STAGE}/${PLUGIN_SLUG}/docs"
 test ! -d "${STAGE}/${PLUGIN_SLUG}/.git"
 
 rm -f "${ZIP_PATH}" "${ZIP_VERSIONED}"

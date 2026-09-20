@@ -29,8 +29,34 @@ class Xdwp_Payments_Admin {
 		add_action( 'manage_woocommerce_page_wc-orders_custom_column', array( __CLASS__, 'render_column' ), 20, 2 );
 
 		add_action( 'admin_post_xdwp_export_payments', array( __CLASS__, 'export_csv' ) );
+		add_action( 'admin_post_xdwp_row_action', array( __CLASS__, 'handle_row_action' ) );
+
+		// Legacy order storage and HPOS ask for the same thing in two different filters.
+		add_filter( 'woocommerce_shop_order_search_fields', array( __CLASS__, 'search_fields' ) );
+		add_filter( 'woocommerce_order_table_search_query_meta_keys', array( __CLASS__, 'search_fields' ) );
 		// The count on the menu is recalculated when an order's payment state changes.
 		// The flag itself is kept up to date by Xdwp_Order, which runs during cron too.
+	}
+
+	/**
+	 * Let WooCommerce's own order search find an order by what the chain knows about it.
+	 *
+	 * When money arrives that did not match automatically, the merchant has a transaction id
+	 * or an address and nothing else. Without this they cannot get from that to the order, and
+	 * the usual answer in this corner of the ecosystem is to write a snippet by hand.
+	 *
+	 * @param array $keys Meta keys WooCommerce already searches.
+	 * @return array
+	 */
+	public static function search_fields( $keys ) {
+		$ours = array(
+			'_xdwp_txid',
+			'_xdwp_wallet_txid',
+			'_xdwp_late_txid',
+			'_xdwp_address',
+			'_xdwp_memo',
+		);
+		return array_values( array_unique( array_merge( is_array( $keys ) ? $keys : array(), $ours ) ) );
 	}
 
 	/**
@@ -55,6 +81,108 @@ class Xdwp_Payments_Admin {
 	 */
 	public static function forget_attention_count() {
 		delete_transient( 'xdwp_attention_count' );
+	}
+
+	/**
+	 * Act on one payment from the Payments screen.
+	 *
+	 * Two things a shop owner needs when an order is in limbo: look again now rather than
+	 * waiting for the next scheduled check, and give a customer who is mid-payment more time.
+	 */
+	public static function handle_row_action() {
+		if ( ! current_user_can( 'manage_woocommerce' ) ) {
+			wp_die( esc_html__( 'You are not allowed to do that.', 'xorro-direct-wallet-payments-woocommerce' ), 403 );
+		}
+
+		$order_id = isset( $_GET['order'] ) ? absint( $_GET['order'] ) : 0;
+		$do       = isset( $_GET['do'] ) ? sanitize_key( wp_unslash( $_GET['do'] ) ) : '';
+		check_admin_referer( 'xdwp_row_' . $order_id . '_' . $do );
+
+		$order  = wc_get_order( $order_id );
+		$notice = 'unknown';
+
+		if ( $order && Xdwp_Order::is_ours( $order ) ) {
+			if ( 'recheck' === $do ) {
+				// Clear this order's own throttles so the look happens now.
+				delete_transient( 'xdwp_ajax_verify_' . $order_id );
+				delete_transient( 'xdwp_detect_' . $order_id );
+				delete_transient( 'xdwp_wide_scan_' . $order_id );
+				delete_transient( 'xdwp_dropped_' . $order_id );
+
+				if ( Xdwp_Verifier::verify_order( $order ) ) {
+					Xdwp_Order::mark_paid( wc_get_order( $order_id ) );
+					$notice = 'paid';
+				} else {
+					Xdwp_Order::log_event( $order, 'checked', __( 'The shop owner checked the chain by hand; nothing new was found', 'xorro-direct-wallet-payments-woocommerce' ) );
+					$notice = 'nothing';
+				}
+			} elseif ( 'extend' === $do ) {
+				$status = (string) Xdwp_Order::meta( $order, 'status' );
+				if ( in_array( $status, array( 'awaiting', 'underpaid', 'expired' ), true ) ) {
+					$until = max( time(), (int) Xdwp_Order::meta( $order, 'expires' ) ) + HOUR_IN_SECONDS;
+					$order->update_meta_data( '_xdwp_expires', $until );
+					if ( 'expired' === $status ) {
+						// Back to waiting: the amount and address it already has still stand.
+						$order->update_meta_data( '_xdwp_status', 'awaiting' );
+					}
+					$order->save();
+					Xdwp_Order::log_event( $order, 'extended', __( 'The shop owner gave this payment another hour', 'xorro-direct-wallet-payments-woocommerce' ) );
+					$notice = 'extended';
+				} else {
+					$notice = 'cannot';
+				}
+			}
+		}
+
+		Xdwp_Payments_Admin::forget_attention_count();
+
+		wp_safe_redirect(
+			add_query_arg(
+				'xdwp_done',
+				$notice,
+				wp_get_referer() ? wp_get_referer() : admin_url( 'admin.php?page=xorro-direct-wallet-payments-woocommerce-payments' )
+			)
+		);
+		exit;
+	}
+
+	/**
+	 * The result of the last row action, for the screen to show.
+	 *
+	 * @return string
+	 */
+	public static function row_action_notice() {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- display only.
+		$done = isset( $_GET['xdwp_done'] ) ? sanitize_key( wp_unslash( $_GET['xdwp_done'] ) ) : '';
+		$map  = array(
+			'paid'     => __( 'Checked — the payment was found and the order is now paid.', 'xorro-direct-wallet-payments-woocommerce' ),
+			'nothing'  => __( 'Checked — nothing has arrived for that order yet.', 'xorro-direct-wallet-payments-woocommerce' ),
+			'extended' => __( 'That payment has another hour.', 'xorro-direct-wallet-payments-woocommerce' ),
+			'cannot'   => __( 'That order is finished, so there is nothing to extend.', 'xorro-direct-wallet-payments-woocommerce' ),
+			'unknown'  => __( 'That order could not be found.', 'xorro-direct-wallet-payments-woocommerce' ),
+		);
+		return isset( $map[ $done ] ) ? $map[ $done ] : '';
+	}
+
+	/**
+	 * A link that performs one row action.
+	 *
+	 * @param WC_Order $order Order.
+	 * @param string   $do    recheck | extend.
+	 * @return string URL.
+	 */
+	public static function row_action_url( $order, $do ) {
+		return wp_nonce_url(
+			add_query_arg(
+				array(
+					'action' => 'xdwp_row_action',
+					'order'  => $order->get_id(),
+					'do'     => $do,
+				),
+				admin_url( 'admin-post.php' )
+			),
+			'xdwp_row_' . $order->get_id() . '_' . $do
+		);
 	}
 
 	/**
@@ -369,6 +497,276 @@ class Xdwp_Payments_Admin {
 		$attention              = self::query( array( 'filter' => 'attention' ) );
 		$counts['attention']    = (int) $attention['total'];
 		return $counts;
+	}
+
+
+	/**
+	 * How many quoted orders a single report will look at.
+	 *
+	 * A report is a glance, not an accounting export — the CSV is there for that. The cap keeps
+	 * the Payments screen quick on a shop with years of orders behind it.
+	 */
+	const REPORT_MAX = 5000;
+
+	/**
+	 * Periods offered on the Payments screen, in days.
+	 *
+	 * @return array<int, string>
+	 */
+	public static function report_periods() {
+		return array(
+			7  => __( 'Last 7 days', 'xorro-direct-wallet-payments-woocommerce' ),
+			30 => __( 'Last 30 days', 'xorro-direct-wallet-payments-woocommerce' ),
+			90 => __( 'Last 90 days', 'xorro-direct-wallet-payments-woocommerce' ),
+		);
+	}
+
+	/**
+	 * What the shop's crypto payments actually did over a period.
+	 *
+	 * Four questions a shop owner asks and no gateway screen answers: how much came in per coin,
+	 * how long customers waited, which coins get quoted and then abandoned, and how often people
+	 * send the wrong amount. A coin that is quoted fifty times and paid twice is costing the shop
+	 * checkouts, and the only way to know is to count.
+	 *
+	 * Read straight from order meta rather than through wc_get_orders, because loading five
+	 * thousand order objects to count them is how an admin screen becomes a two-second wait.
+	 *
+	 * @param int $days How far back to look.
+	 * @return array Report data; see the keys assembled below.
+	 */
+	public static function report( $days = 30 ) {
+		global $wpdb;
+
+		$days  = max( 1, min( 365, (int) $days ) );
+		$since = time() - ( $days * DAY_IN_SECONDS );
+		$key   = 'xdwp_report_' . $days;
+		$cached = get_transient( $key );
+		if ( is_array( $cached ) ) {
+			return $cached;
+		}
+
+		$rows = array();
+		$keys = array( '_xdwp_coin', '_xdwp_status', '_xdwp_flag', '_xdwp_started', '_xdwp_confirmed_at', '_xdwp_amount', '_order_total' );
+		$in   = implode( ', ', array_fill( 0, count( $keys ), '%s' ) );
+
+		$sources = array(
+			array(
+				'table' => $wpdb->postmeta,
+				'id'    => 'post_id',
+				'total' => "MAX( CASE WHEN m.meta_key = '_order_total' THEN m.meta_value END )",
+				'join'  => '',
+			),
+		);
+		$hpos = $wpdb->prefix . 'wc_orders_meta';
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $hpos ) ) === $hpos ) {
+			// With HPOS the order total is a column on the orders table, not a meta row.
+			$sources[] = array(
+				'table' => $hpos,
+				'id'    => 'order_id',
+				'total' => 'MAX( o.total_amount )',
+				'join'  => 'LEFT JOIN ' . $wpdb->prefix . 'wc_orders o ON o.id = m.order_id',
+			);
+		}
+
+		foreach ( $sources as $source ) {
+			// Table and column names cannot be placeholders, so they are interpolated from the two
+			// fixed shapes above and never from anything a request can reach. Every value in the
+			// query is a placeholder, and the result is cached in a transient below.
+			// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+			$sql = $wpdb->prepare(
+				"SELECT m.{$source['id']} AS order_id,
+					MAX( CASE WHEN m.meta_key = '_xdwp_coin' THEN m.meta_value END ) AS coin,
+					MAX( CASE WHEN m.meta_key = '_xdwp_status' THEN m.meta_value END ) AS status,
+					MAX( CASE WHEN m.meta_key = '_xdwp_flag' THEN m.meta_value END ) AS flag,
+					MAX( CASE WHEN m.meta_key = '_xdwp_started' THEN m.meta_value END ) AS started,
+					MAX( CASE WHEN m.meta_key = '_xdwp_confirmed_at' THEN m.meta_value END ) AS confirmed,
+					MAX( CASE WHEN m.meta_key = '_xdwp_amount' THEN m.meta_value END ) AS amount,
+					{$source['total']} AS total
+				FROM {$source['table']} m
+				{$source['join']}
+				WHERE m.meta_key IN ( {$in} )
+				GROUP BY m.{$source['id']}
+				HAVING coin IS NOT NULL AND started >= %d
+				ORDER BY started DESC
+				LIMIT %d",
+				array_merge( $keys, array( $since, self::REPORT_MAX ) )
+			);
+			$found = $wpdb->get_results( $sql, ARRAY_A );
+			// phpcs:enable
+			if ( is_array( $found ) ) {
+				foreach ( $found as $row ) {
+					// A store running HPOS in compatibility mode writes the same meta to both
+					// tables. Order ids are shared, so keying by them counts each order once.
+					$rows[ (int) $row['order_id'] ] = $row;
+				}
+			}
+		}
+
+		if ( count( $rows ) > self::REPORT_MAX ) {
+			$rows = array_slice( $rows, 0, self::REPORT_MAX, true );
+		}
+
+		$report = array(
+			'days'    => $days,
+			'quoted'  => 0,
+			'paid'    => 0,
+			'expired' => 0,
+			'short'   => 0,
+			'value'   => '0',
+			'settle'  => null,
+			'capped'  => count( $rows ) >= self::REPORT_MAX,
+			'coins'   => array(),
+			'made_at' => time(),
+		);
+		$settle_all = array();
+
+		foreach ( $rows as $row ) {
+			$coin_id = (string) $row['coin'];
+			$coin    = Xdwp_Coins::get( $coin_id );
+			if ( ! isset( $report['coins'][ $coin_id ] ) ) {
+				$report['coins'][ $coin_id ] = array(
+					'label'   => $coin ? $coin['symbol'] . ' — ' . $coin['name'] : $coin_id,
+					'symbol'  => $coin ? $coin['symbol'] : $coin_id,
+					'quoted'  => 0,
+					'paid'    => 0,
+					'expired' => 0,
+					'short'   => 0,
+					'amount'  => '0',
+					'value'   => '0',
+					'settle'  => null,
+					'times'   => array(),
+				);
+			}
+			$entry = &$report['coins'][ $coin_id ];
+
+			++$report['quoted'];
+			++$entry['quoted'];
+
+			$status = (string) $row['status'];
+			$flag   = (string) $row['flag'];
+
+			// A part payment counts wherever it ends up: an order that arrived short and was then
+			// completed still cost the customer a second attempt, which is the thing being counted.
+			if ( 'underpaid' === $status || 'underpaid' === $flag ) {
+				++$report['short'];
+				++$entry['short'];
+			}
+
+			if ( 'paid' === $status ) {
+				++$report['paid'];
+				++$entry['paid'];
+				$entry['amount'] = bcadd( $entry['amount'], self::numeric( $row['amount'] ), 18 );
+				$entry['value']  = bcadd( $entry['value'], self::numeric( $row['total'] ), 6 );
+				$report['value'] = bcadd( $report['value'], self::numeric( $row['total'] ), 6 );
+
+				$started   = (int) $row['started'];
+				$confirmed = (int) $row['confirmed'];
+				if ( $started > 0 && $confirmed > $started ) {
+					$entry['times'][] = $confirmed - $started;
+					$settle_all[]     = $confirmed - $started;
+				}
+			} elseif ( 'expired' === $status || 'cancelled' === $status ) {
+				++$report['expired'];
+				++$entry['expired'];
+			}
+			unset( $entry );
+		}
+
+		foreach ( $report['coins'] as $coin_id => $entry ) {
+			$report['coins'][ $coin_id ]['settle'] = self::median( $entry['times'] );
+			unset( $report['coins'][ $coin_id ]['times'] );
+		}
+		$report['settle'] = self::median( $settle_all );
+
+		// Busiest coin first: the one taking the most money is the one worth looking at.
+		uasort(
+			$report['coins'],
+			static function ( $a, $b ) {
+				if ( $a['paid'] === $b['paid'] ) {
+					return $b['quoted'] - $a['quoted'];
+				}
+				return $b['paid'] - $a['paid'];
+			}
+		);
+
+		set_transient( $key, $report, HOUR_IN_SECONDS );
+		return $report;
+	}
+
+	/**
+	 * A number from a meta value, whatever a theme or an import left in there.
+	 *
+	 * @param mixed $value Raw meta value.
+	 * @return string Decimal string safe for bcmath.
+	 */
+	private static function numeric( $value ) {
+		$value = preg_replace( '/[^0-9.\-]/', '', (string) $value );
+		if ( '' === $value || ! is_numeric( $value ) ) {
+			return '0';
+		}
+		return $value;
+	}
+
+	/**
+	 * The middle value — not the mean, which one abandoned order left open all weekend ruins.
+	 *
+	 * @param array<int, int> $values Seconds.
+	 * @return int|null
+	 */
+	private static function median( $values ) {
+		if ( empty( $values ) ) {
+			return null;
+		}
+		sort( $values );
+		$count  = count( $values );
+		$middle = (int) floor( ( $count - 1 ) / 2 );
+		if ( 0 === $count % 2 ) {
+			return (int) round( ( $values[ $middle ] + $values[ $middle + 1 ] ) / 2 );
+		}
+		return (int) $values[ $middle ];
+	}
+
+	/**
+	 * A duration a person reads at a glance: "4 min", "1 h 12 min".
+	 *
+	 * @param int|null $seconds Duration.
+	 * @return string
+	 */
+	public static function duration( $seconds ) {
+		if ( null === $seconds ) {
+			return '—';
+		}
+		$seconds = max( 0, (int) $seconds );
+		if ( $seconds < 90 ) {
+			/* translators: %d: seconds */
+			return sprintf( _n( '%d second', '%d seconds', $seconds, 'xorro-direct-wallet-payments-woocommerce' ), $seconds );
+		}
+		$minutes = (int) round( $seconds / 60 );
+		if ( $minutes < 90 ) {
+			/* translators: %d: minutes */
+			return sprintf( _n( '%d minute', '%d minutes', $minutes, 'xorro-direct-wallet-payments-woocommerce' ), $minutes );
+		}
+		$hours = floor( $minutes / 60 );
+		$rest  = $minutes % 60;
+		/* translators: 1: hours, 2: minutes */
+		return sprintf( __( '%1$dh %2$dm', 'xorro-direct-wallet-payments-woocommerce' ), $hours, $rest );
+	}
+
+	/**
+	 * A percentage of a total, or an em dash when there is nothing to divide by.
+	 *
+	 * @param int $part  Part.
+	 * @param int $total Total.
+	 * @return string
+	 */
+	public static function rate( $part, $total ) {
+		if ( $total <= 0 ) {
+			return '—';
+		}
+		/* translators: %s: a percentage */
+		return sprintf( __( '%s%%', 'xorro-direct-wallet-payments-woocommerce' ), number_format_i18n( ( $part / $total ) * 100, 1 ) );
 	}
 
 	/**

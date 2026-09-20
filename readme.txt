@@ -4,7 +4,7 @@ Tags: woocommerce, cryptocurrency, bitcoin, ethereum, payments, usdt, crypto che
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.17.0
+Stable tag: 1.18.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -337,6 +337,15 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 * QR Code generator (`assets/js/qrcode.min.js`) — MIT-licensed library by davidshimjs (https://github.com/davidshimjs/qrcodejs). Source is publicly available; the bundled file is minified for production use.
 
 == Changelog ==
+
+= 1.18.0 =
+Find any payment again, see what happened to it, and know how crypto is actually doing.
+* New: search your orders by transaction id or receiving address. "Where did this payment go?" stops being a support ticket — paste the hash the customer sent you and the order comes up
+* New: every order records what happened to its payment, in order and with times — quoted, seen on chain, confirmed, part paid, expired, re-quoted, paid from a wallet — shown on the order itself
+* New: "Check now" and "Give another hour" beside each payment, so a stuck order can be dealt with without waiting for the next scheduled check
+* New: a summary on the Payments screen — what you took, how long customers typically waited, how many were quoted and never paid, how many sent too little — for the last 7, 30 or 90 days, and the same figures per coin. A coin quoted fifty times and paid twice is costing you checkouts, and now you can see it
+* Fixed: the countdown showed "1431:41" on a stablecoin order given a day to pay. Long windows now read "23h 51m", and a screen reader hears hours or days rather than a count of minutes
+* Fixed: the payment page listed the network as "TRX · trc20" while the warning above it said "TRON (TRC-20)". Both now use the name wallets and exchanges use
 
 = 1.17.0 =
 Pay from MetaMask or TronLink without copying anything.

@@ -1924,3 +1924,237 @@ body.xdwp-admin-page #wpbody-content > .wrap > h1.wp-heading-inline {
 	font-size: 12px;
 	color: #646970;
 }
+
+/* ---- What happened to a payment --------------------------------------- */
+
+.xdwp-timeline {
+	margin: 0 0 1rem;
+	padding: 0;
+	list-style: none;
+	border-left: 2px solid #dcdcde;
+}
+
+.xdwp-timeline li {
+	position: relative;
+	margin: 0;
+	padding: 0 0 0.6rem 0.8rem;
+	font-size: 12px;
+	line-height: 1.5;
+}
+
+.xdwp-timeline li::before {
+	content: "";
+	position: absolute;
+	left: -5px;
+	top: 6px;
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	background: #1d2733;
+}
+
+.xdwp-timeline li:first-child::before {
+	background: #2271b1;
+}
+
+.xdwp-timeline__when {
+	display: block;
+	color: #787c82;
+	font-size: 11px;
+}
+
+.xdwp-timeline__what {
+	display: block;
+	color: #2c3338;
+	overflow-wrap: anywhere;
+}
+
+.xdwp-row-actions {
+	margin-top: 3px;
+	font-size: 11.5px;
+}
+
+.xdwp-row-actions a {
+	margin-right: 0.5rem;
+	text-decoration: none;
+}
+
+.xdwp-action-notice {
+	margin: 0 0 1rem;
+}
+
+/* ---- How payments are going ------------------------------------------- */
+
+.xdwp-report {
+	margin: 0 0 1.25rem;
+	padding: 1rem 1.1rem 1.1rem;
+	border: 1px solid #dcdcde;
+	border-radius: 8px;
+	background: #fff;
+}
+
+.xdwp-report__head {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem 1rem;
+	align-items: center;
+	justify-content: space-between;
+	margin: 0 0 0.9rem;
+}
+
+.xdwp-report__title {
+	margin: 0;
+	font-size: 13px;
+}
+
+.xdwp-report__periods {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.25rem;
+}
+
+.xdwp-report__period {
+	padding: 0.3rem 0.65rem;
+	border: 1px solid #dcdcde;
+	border-radius: 999px;
+	background: #f6f7f7;
+	color: #50575e;
+	font-size: 12px;
+	line-height: 1.5;
+	text-decoration: none;
+}
+
+.xdwp-report__period:hover,
+.xdwp-report__period:focus {
+	border-color: #2271b1;
+	color: #1d2327;
+}
+
+.xdwp-report__period.is-active {
+	border-color: #1d2733;
+	background: #1d2733;
+	color: #fff;
+}
+
+.xdwp-report__empty {
+	margin: 0;
+	color: #646970;
+	font-size: 12px;
+}
+
+.xdwp-report__figures {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+	gap: 0.75rem;
+	margin: 0 0 1rem;
+}
+
+.xdwp-figure {
+	display: flex;
+	flex-direction: column;
+	gap: 0.1rem;
+	padding: 0.75rem 0.85rem;
+	border: 1px solid #e6e7e8;
+	border-radius: 6px;
+	background: #f9f9fa;
+}
+
+.xdwp-figure__value {
+	font-size: 20px;
+	font-weight: 600;
+	line-height: 1.2;
+	color: #1d2327;
+}
+
+.xdwp-figure__label {
+	font-size: 12px;
+	font-weight: 600;
+	color: #1d2327;
+}
+
+.xdwp-figure__hint {
+	font-size: 11px;
+	color: #787c82;
+}
+
+.xdwp-report__scroll {
+	overflow-x: auto;
+}
+
+.xdwp-report__table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 12px;
+}
+
+.xdwp-report__table th,
+.xdwp-report__table td {
+	padding: 0.5rem 0.6rem;
+	text-align: left;
+	border-bottom: 1px solid #f0f0f1;
+	white-space: nowrap;
+}
+
+.xdwp-report__table thead th {
+	color: #646970;
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+}
+
+.xdwp-report__table tbody tr:last-child th,
+.xdwp-report__table tbody tr:last-child td {
+	border-bottom: 0;
+}
+
+.xdwp-report__note {
+	margin: 0.75rem 0 0;
+	color: #646970;
+	font-size: 12px;
+}
+
+@media (max-width: 782px) {
+	/* One card per coin, each figure labelled, rather than a table sliding sideways. */
+	.xdwp-report__table,
+	.xdwp-report__table tbody,
+	.xdwp-report__table tr,
+	.xdwp-report__table th,
+	.xdwp-report__table td {
+		display: block;
+		white-space: normal;
+	}
+
+	.xdwp-report__table thead {
+		display: none;
+	}
+
+	.xdwp-report__table tbody tr {
+		margin: 0 0 0.6rem;
+		padding: 0.6rem 0.75rem;
+		border: 1px solid #dcdcde;
+		border-radius: 6px;
+	}
+
+	.xdwp-report__table tbody tr th[scope="row"] {
+		padding: 0 0 0.4rem;
+		border: 0;
+		font-size: 13px;
+	}
+
+	.xdwp-report__table td {
+		display: grid;
+		grid-template-columns: 8.5rem 1fr;
+		gap: 0.5rem;
+		padding: 0.25rem 0;
+		border: 0;
+	}
+
+	.xdwp-report__table td::before {
+		content: attr(data-label);
+		color: #646970;
+		font-size: 11px;
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+	}
+}

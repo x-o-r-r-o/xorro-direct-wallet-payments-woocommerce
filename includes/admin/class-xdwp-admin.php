@@ -778,6 +778,7 @@ class Xdwp_Admin {
 		$filter = isset( $_GET['xdwp_filter'] ) ? sanitize_key( wp_unslash( $_GET['xdwp_filter'] ) ) : 'all';
 		$coin   = isset( $_GET['xdwp_coin'] ) ? sanitize_text_field( wp_unslash( $_GET['xdwp_coin'] ) ) : '';
 		$paged  = isset( $_GET['paged'] ) ? max( 1, absint( wp_unslash( $_GET['paged'] ) ) ) : 1;
+		$period = isset( $_GET['xdwp_days'] ) ? absint( wp_unslash( $_GET['xdwp_days'] ) ) : 30;
 		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 
 		if ( ! in_array( $filter, array( 'all', 'awaiting', 'underpaid', 'paid', 'expired', 'attention' ), true ) ) {
@@ -797,6 +798,10 @@ class Xdwp_Admin {
 		);
 		$summary = Xdwp_Payments_Admin::summary();
 		$coins   = Xdwp_Payments_Admin::used_coins();
+		if ( ! array_key_exists( $period, Xdwp_Payments_Admin::report_periods() ) ) {
+			$period = 30;
+		}
+		$report = Xdwp_Payments_Admin::report( $period );
 
 		settings_errors( 'xdwp' );
 

@@ -11,6 +11,7 @@
  * @var array  $results See Xdwp_Payments_Admin::query().
  * @var array  $summary See Xdwp_Payments_Admin::summary().
  * @var array  $coins   Coin ID => label.
+ * @var array  $report  See Xdwp_Payments_Admin::report().
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -74,6 +75,11 @@ $cards = array(
 					</div>
 					<div class="cc-panel-content">
 
+				<?php $xdwp_action_notice = Xdwp_Payments_Admin::row_action_notice(); ?>
+				<?php if ( '' !== $xdwp_action_notice ) : ?>
+					<div class="notice notice-info inline xdwp-action-notice"><p><?php echo esc_html( $xdwp_action_notice ); ?></p></div>
+				<?php endif; ?>
+
 				<?php $xdwp_store_checks = Xdwp_Selftest::store_checks(); ?>
 				<?php
 				$xdwp_bad = array_filter(
@@ -116,6 +122,125 @@ $cards = array(
 						</a>
 					<?php endforeach; ?>
 				</div>
+
+				<section class="xdwp-report" aria-labelledby="xdwp-report-title">
+					<div class="xdwp-report__head">
+						<h3 class="xdwp-report__title" id="xdwp-report-title"><?php esc_html_e( 'How payments are going', 'xorro-direct-wallet-payments-woocommerce' ); ?></h3>
+						<div class="xdwp-report__periods">
+							<?php foreach ( Xdwp_Payments_Admin::report_periods() as $xdwp_days => $xdwp_days_label ) : ?>
+								<a class="xdwp-report__period <?php echo (int) $report['days'] === (int) $xdwp_days ? 'is-active' : ''; ?>"
+									href="<?php echo esc_url( add_query_arg( array( 'xdwp_days' => $xdwp_days, 'xdwp_filter' => $filter, 'xdwp_coin' => $coin ), $base ) ); ?>"
+									<?php echo (int) $report['days'] === (int) $xdwp_days ? 'aria-current="true"' : ''; ?>><?php echo esc_html( $xdwp_days_label ); ?></a>
+							<?php endforeach; ?>
+						</div>
+					</div>
+
+					<?php if ( 0 === (int) $report['quoted'] ) : ?>
+						<p class="xdwp-report__empty"><?php esc_html_e( 'No crypto orders in this period yet. Figures appear here as soon as one is quoted.', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
+					<?php else : ?>
+						<div class="xdwp-report__figures">
+							<div class="xdwp-figure">
+								<span class="xdwp-figure__value"><?php echo wp_kses_post( wc_price( (float) $report['value'] ) ); ?></span>
+								<span class="xdwp-figure__label"><?php esc_html_e( 'Taken', 'xorro-direct-wallet-payments-woocommerce' ); ?></span>
+								<span class="xdwp-figure__hint">
+									<?php
+									printf(
+										/* translators: %s: number of paid orders */
+										esc_html__( 'across %s paid orders', 'xorro-direct-wallet-payments-woocommerce' ),
+										esc_html( number_format_i18n( (int) $report['paid'] ) )
+									);
+									?>
+								</span>
+							</div>
+							<div class="xdwp-figure">
+								<span class="xdwp-figure__value"><?php echo esc_html( Xdwp_Payments_Admin::duration( $report['settle'] ) ); ?></span>
+								<span class="xdwp-figure__label"><?php esc_html_e( 'Typical wait', 'xorro-direct-wallet-payments-woocommerce' ); ?></span>
+								<span class="xdwp-figure__hint"><?php esc_html_e( 'from quote to confirmed', 'xorro-direct-wallet-payments-woocommerce' ); ?></span>
+							</div>
+							<div class="xdwp-figure">
+								<span class="xdwp-figure__value"><?php echo esc_html( Xdwp_Payments_Admin::rate( (int) $report['expired'], (int) $report['quoted'] ) ); ?></span>
+								<span class="xdwp-figure__label"><?php esc_html_e( 'Walked away', 'xorro-direct-wallet-payments-woocommerce' ); ?></span>
+								<span class="xdwp-figure__hint"><?php esc_html_e( 'quoted, then never paid', 'xorro-direct-wallet-payments-woocommerce' ); ?></span>
+							</div>
+							<div class="xdwp-figure">
+								<span class="xdwp-figure__value"><?php echo esc_html( Xdwp_Payments_Admin::rate( (int) $report['short'], (int) $report['quoted'] ) ); ?></span>
+								<span class="xdwp-figure__label"><?php esc_html_e( 'Sent too little', 'xorro-direct-wallet-payments-woocommerce' ); ?></span>
+								<span class="xdwp-figure__hint"><?php esc_html_e( 'had to be asked for the rest', 'xorro-direct-wallet-payments-woocommerce' ); ?></span>
+							</div>
+						</div>
+
+						<div class="xdwp-report__scroll">
+							<table class="xdwp-report__table">
+								<caption class="screen-reader-text"><?php esc_html_e( 'Payments by coin', 'xorro-direct-wallet-payments-woocommerce' ); ?></caption>
+								<thead>
+									<tr>
+										<th scope="col"><?php esc_html_e( 'Coin', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
+										<th scope="col"><?php esc_html_e( 'Paid', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
+										<th scope="col"><?php esc_html_e( 'Received', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
+										<th scope="col"><?php esc_html_e( 'Value', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
+										<th scope="col"><?php esc_html_e( 'Typical wait', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
+										<th scope="col"><?php esc_html_e( 'Walked away', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
+										<th scope="col"><?php esc_html_e( 'Sent too little', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
+									</tr>
+								</thead>
+								<tbody>
+									<?php
+									// Ten is a glance; a shop with forty coins enabled gets the
+									// busiest ten and a count of the rest, not a page of zeroes.
+									$xdwp_shown  = array_slice( $report['coins'], 0, 10, true );
+									$xdwp_hidden = count( $report['coins'] ) - count( $xdwp_shown );
+									?>
+									<?php foreach ( $xdwp_shown as $xdwp_coin_id => $xdwp_row ) : ?>
+										<tr>
+											<th scope="row" data-label="<?php esc_attr_e( 'Coin', 'xorro-direct-wallet-payments-woocommerce' ); ?>">
+												<a href="<?php echo esc_url( add_query_arg( array( 'xdwp_coin' => $xdwp_coin_id ), $base ) ); ?>"><?php echo esc_html( $xdwp_row['label'] ); ?></a>
+											</th>
+											<td data-label="<?php esc_attr_e( 'Paid', 'xorro-direct-wallet-payments-woocommerce' ); ?>">
+												<?php
+												printf(
+													/* translators: 1: paid orders, 2: orders quoted in this coin */
+													esc_html__( '%1$s of %2$s', 'xorro-direct-wallet-payments-woocommerce' ),
+													esc_html( number_format_i18n( (int) $xdwp_row['paid'] ) ),
+													esc_html( number_format_i18n( (int) $xdwp_row['quoted'] ) )
+												);
+												?>
+											</td>
+											<td data-label="<?php esc_attr_e( 'Received', 'xorro-direct-wallet-payments-woocommerce' ); ?>">
+												<bdi dir="ltr"><?php echo esc_html( Xdwp_Coins::format_amount( $xdwp_row['amount'], $xdwp_coin_id ) . ' ' . $xdwp_row['symbol'] ); ?></bdi>
+											</td>
+											<td data-label="<?php esc_attr_e( 'Value', 'xorro-direct-wallet-payments-woocommerce' ); ?>"><?php echo wp_kses_post( wc_price( (float) $xdwp_row['value'] ) ); ?></td>
+											<td data-label="<?php esc_attr_e( 'Typical wait', 'xorro-direct-wallet-payments-woocommerce' ); ?>"><?php echo esc_html( Xdwp_Payments_Admin::duration( $xdwp_row['settle'] ) ); ?></td>
+											<td data-label="<?php esc_attr_e( 'Walked away', 'xorro-direct-wallet-payments-woocommerce' ); ?>"><?php echo esc_html( Xdwp_Payments_Admin::rate( (int) $xdwp_row['expired'], (int) $xdwp_row['quoted'] ) ); ?></td>
+											<td data-label="<?php esc_attr_e( 'Sent too little', 'xorro-direct-wallet-payments-woocommerce' ); ?>"><?php echo esc_html( Xdwp_Payments_Admin::rate( (int) $xdwp_row['short'], (int) $xdwp_row['quoted'] ) ); ?></td>
+										</tr>
+									<?php endforeach; ?>
+								</tbody>
+							</table>
+						</div>
+
+						<p class="xdwp-report__note">
+							<?php
+							esc_html_e( 'A coin quoted often and paid rarely is costing you checkouts — it may be worth turning off. Figures are refreshed hourly.', 'xorro-direct-wallet-payments-woocommerce' );
+							if ( $xdwp_hidden > 0 ) {
+								echo ' ';
+								printf(
+									/* translators: %s: number of coins */
+									esc_html( _n( '%s quieter coin is not shown.', '%s quieter coins are not shown.', $xdwp_hidden, 'xorro-direct-wallet-payments-woocommerce' ) ),
+									esc_html( number_format_i18n( $xdwp_hidden ) )
+								);
+							}
+							if ( ! empty( $report['capped'] ) ) {
+								echo ' ';
+								printf(
+									/* translators: %s: number of orders */
+									esc_html__( 'Based on the most recent %s orders in this period.', 'xorro-direct-wallet-payments-woocommerce' ),
+									esc_html( number_format_i18n( Xdwp_Payments_Admin::REPORT_MAX ) )
+								);
+							}
+							?>
+						</p>
+					<?php endif; ?>
+				</section>
 
 				<form method="get" action="" class="xdwp-filters">
 					<input type="hidden" name="page" value="xorro-direct-wallet-payments-woocommerce-payments" />
@@ -184,6 +309,12 @@ $cards = array(
 								<tr>
 									<td class="xdwp-col-order" data-label="<?php esc_attr_e( 'Order', 'xorro-direct-wallet-payments-woocommerce' ); ?>">
 										<a href="<?php echo esc_url( $order->get_edit_order_url() ); ?>"><strong>#<?php echo esc_html( $order->get_order_number() ); ?></strong></a>
+										<?php if ( in_array( $row_status, array( 'awaiting', 'underpaid', 'expired' ), true ) ) : ?>
+											<div class="xdwp-row-actions">
+												<a href="<?php echo esc_url( Xdwp_Payments_Admin::row_action_url( $order, 'recheck' ) ); ?>"><?php esc_html_e( 'Check now', 'xorro-direct-wallet-payments-woocommerce' ); ?></a>
+												<a href="<?php echo esc_url( Xdwp_Payments_Admin::row_action_url( $order, 'extend' ) ); ?>"><?php esc_html_e( '+1 hour', 'xorro-direct-wallet-payments-woocommerce' ); ?></a>
+											</div>
+										<?php endif; ?>
 										<div class="xdwp-payments-table__sub"><?php echo wp_kses_post( $order->get_formatted_order_total() ); ?></div>
 										<?php if ( $order->get_date_created() ) : ?>
 											<div class="xdwp-payments-table__sub xdwp-payments-table__date"><?php echo esc_html( $order->get_date_created()->date_i18n( get_option( 'date_format' ) ) ); ?><br /><?php echo esc_html( $order->get_date_created()->date_i18n( get_option( 'time_format' ) ) ); ?></div>

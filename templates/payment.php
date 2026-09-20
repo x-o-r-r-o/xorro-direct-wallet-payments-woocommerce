@@ -151,7 +151,11 @@ defined( 'ABSPATH' ) || exit;
 			<?php endif; ?>
 			<div class="xdwp-box__field">
 				<span class="xdwp-box__label"><?php esc_html_e( 'Network', 'xorro-direct-wallet-payments-woocommerce' ); ?></span>
-				<span class="xdwp-box__value"><?php echo esc_html( $coin['network'] . ' · ' . $coin['type'] ); ?></span>
+				<span class="xdwp-box__value"><?php
+					// The name a wallet or an exchange uses, not the internal one: a customer
+					// choosing a network in Binance looks for "TRON (TRC-20)", never "TRX · trc20".
+					echo esc_html( '' !== $network_label ? $network_label : $coin['network'] . ' · ' . $coin['type'] );
+				?></span>
 			</div>
 		</div>
 

@@ -161,6 +161,49 @@
 	}
 
 	/**
+	 * The clock, in units that suit how long is left.
+	 *
+	 * A stablecoin order has a day to pay, and "1431:41" is not a time anybody reads — it has
+	 * to become "23h 51m". Under an hour, the familiar mm:ss is what people expect.
+	 *
+	 * @param {number} left Seconds remaining.
+	 * @return {string}
+	 */
+	function formatLeft(left) {
+		var days = Math.floor(left / 86400);
+		var hours = Math.floor((left % 86400) / 3600);
+		var minutes = Math.floor((left % 3600) / 60);
+		var seconds = left % 60;
+
+		if (days > 0) {
+			return days + (data.i18n.unitDay || 'd') + ' ' + hours + (data.i18n.unitHour || 'h');
+		}
+		if (hours > 0) {
+			return hours + (data.i18n.unitHour || 'h') + ' ' + pad(minutes) + (data.i18n.unitMinute || 'm');
+		}
+		return pad(minutes) + ':' + pad(seconds);
+	}
+
+	/**
+	 * The same thing in words, for a screen reader.
+	 *
+	 * @param {number} left Seconds remaining.
+	 * @return {string}
+	 */
+	function spokenLeft(left) {
+		if (left >= 86400 && data.i18n.timeLeftDays) {
+			return data.i18n.timeLeftDays.replace('%d', String(Math.round(left / 86400)));
+		}
+		if (left >= 3600 && data.i18n.timeLeftHours) {
+			return data.i18n.timeLeftHours.replace('%d', String(Math.round(left / 3600)));
+		}
+		if (data.i18n.timeLeft) {
+			return data.i18n.timeLeft.replace('%d', String(Math.max(1, Math.ceil(left / 60))));
+		}
+		return '';
+	}
+
+	/**
 	 * Minutes at which the remaining time is worth saying out loud. A per-second live region
 	 * would make the page unusable with a screen reader.
 	 */
@@ -214,21 +257,17 @@
 			}
 			return;
 		}
-		var m = Math.floor(left / 60);
-		var s = left % 60;
-		visual.textContent = pad(m) + ':' + pad(s);
+		visual.textContent = formatLeft(left);
 
 		var label = document.getElementById('xdwp-timer-label');
-		if (label && data.i18n.timeLeft) {
-			label.textContent = data.i18n.timeLeft.replace('%d', String(m + (s > 0 ? 1 : 0)));
+		if (label) {
+			label.textContent = spokenLeft(left);
 		}
 
 		var remaining = Math.ceil(left / 60);
-		if (announceAt.indexOf(remaining) !== -1 && !announced[remaining] && s === 0) {
+		if (announceAt.indexOf(remaining) !== -1 && !announced[remaining] && 0 === left % 60) {
 			announced[remaining] = true;
-			if (data.i18n.timeLeft) {
-				announce(data.i18n.timeLeft.replace('%d', String(remaining)));
-			}
+			announce(spokenLeft(left));
 		}
 	}
 

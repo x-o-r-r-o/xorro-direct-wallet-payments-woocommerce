@@ -581,6 +581,24 @@ xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-
 xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-ajax.php' ), 'function wallet_sent' ), 'a wallet transaction can be recorded' );
 // A hash from a wallet proves nothing: the chain still decides.
 xdwp_assert( false === strpos( file_get_contents( $root . '/includes/class-xdwp-ajax.php' ), "update_meta_data( '_xdwp_txid'" ), 'a wallet hash never marks an order paid' );
+// Release 1.18: finding a payment again, and knowing how payments are going.
+$xdwp_payments_admin = file_get_contents( $root . '/includes/admin/class-xdwp-payments-admin.php' );
+xdwp_assert( false !== strpos( $xdwp_payments_admin, 'function search_fields' ), 'orders can be found by transaction id or address' );
+xdwp_assert( false !== strpos( $xdwp_payments_admin, 'function handle_row_action' ), 'a payment can be re-checked or given longer' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-order.php' ), 'function log_event' ), 'what happened to a payment is recorded' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-order.php' ), 'TIMELINE_MAX' ), 'the timeline cannot grow without limit' );
+xdwp_assert( false !== strpos( $xdwp_payments_admin, 'function report' ), 'payments are summarised over a period' );
+// Reporting reads order meta directly, so every part of that query must be prepared, bounded,
+// and counted once even when HPOS mirrors its meta into the post table.
+xdwp_assert( false !== strpos( $xdwp_payments_admin, '$wpdb->prepare' ), 'the report query is prepared' );
+xdwp_assert( false !== strpos( $xdwp_payments_admin, 'REPORT_MAX' ), 'the report reads a bounded number of orders' );
+xdwp_assert( false !== strpos( $xdwp_payments_admin, "\$rows[ (int) \$row['order_id'] ]" ), 'an order is counted once across both storage layouts' );
+xdwp_assert( false !== strpos( $xdwp_payments_admin, 'set_transient( $key' ), 'the report is cached rather than recounted on every page load' );
+xdwp_assert( false !== strpos( $xdwp_payments_admin, 'function median' ), 'the typical wait is a median, not a mean' );
+$xdwp_payments_view = file_get_contents( $root . '/includes/admin/views/payments-page.php' );
+xdwp_assert( false !== strpos( $xdwp_payments_view, 'xdwp-report' ), 'the report is on the Payments screen' );
+xdwp_assert( false === strpos( $xdwp_payments_view, '<?php echo $report' ), 'report values are escaped before they are printed' );
+
 xdwp_assert( false !== strpos( $readme, '== External services ==' ), 'readme external services section present' );
 xdwp_assert( false !== strpos( $readme, 'XRPSCan' ), 'readme documents XRPSCan' );
 xdwp_assert( false !== strpos( $readme, 'Subscan' ), 'readme documents Subscan' );

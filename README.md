@@ -173,9 +173,16 @@ The plugin never contacts the author's servers. It calls public price and blockc
 
 ## Development
 
+[`docs/DEVELOPMENT-HISTORY.md`](docs/DEVELOPMENT-HISTORY.md) is the engineering record: what every
+release put into the code, which planned work is still outstanding and why, where each piece of
+machinery lives, and the invariants a change must not break. Read it before adding a feature —
+several things that look missing were decided against for a stated reason.
+
 ```bash
 # Offline smoke tests (PHP CLI; not shipped in the release ZIP)
 php tests/smoke-test.php
+php tests/matching-tests.php
+php tests/hd-tests.php
 
 # Build a release ZIP
 bin/build-zip.sh
@@ -193,6 +200,15 @@ Pushing a `vX.Y.Z` tag runs the Release workflow, which builds the ZIP, its SHA-
 ## Changelog
 
 Full details for every release are in [`readme.txt`](readme.txt).
+
+### 1.18.0 — find any payment, and see how crypto is doing
+
+- Orders can be searched by transaction id or receiving address, in WooCommerce's own order search
+- Every order keeps a timeline of what happened to its payment, shown on the order screen
+- "Check now" and "Give another hour" actions beside each payment on the Payments screen
+- A summary of the last 7, 30 or 90 days: taken, typical wait, walked away, sent too little — overall and per coin
+- Fixed: the countdown read "1431:41" on a stablecoin order with a day to pay; long windows now read "23h 51m"
+- Fixed: the payment page named the network "TRX · trc20" where it should have said "TRON (TRC-20)"
 
 ### 1.17.0 — pay from a wallet in the browser
 

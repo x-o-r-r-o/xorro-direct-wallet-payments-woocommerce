@@ -61,6 +61,57 @@ class Xdwp_Order {
 		return $memo;
 	}
 
+	/** Most timeline entries kept per order. */
+	const TIMELINE_MAX = 40;
+
+	/**
+	 * Record one thing that happened to this payment.
+	 *
+	 * Order notes already carry the prose, but they are mixed in with every other note
+	 * WooCommerce and other plugins write. This is the payment's own history in one place, in
+	 * order, including *why* a payment was matched — which is the question asked whenever a
+	 * customer disputes one.
+	 *
+	 * @param WC_Order $order   Order.
+	 * @param string   $key     Short event key.
+	 * @param string   $message What happened, in words.
+	 */
+	public static function log_event( $order, $key, $message ) {
+		if ( ! $order instanceof WC_Order ) {
+			return;
+		}
+		$log = $order->get_meta( '_xdwp_timeline' );
+		$log = is_array( $log ) ? $log : array();
+
+		$log[] = array(
+			't' => time(),
+			'k' => (string) $key,
+			'm' => (string) $message,
+		);
+
+		// Bounded: a long-lived order should not grow its own meta without limit.
+		if ( count( $log ) > self::TIMELINE_MAX ) {
+			$log = array_slice( $log, -self::TIMELINE_MAX );
+		}
+
+		$order->update_meta_data( '_xdwp_timeline', $log );
+		$order->save();
+	}
+
+	/**
+	 * This payment's history, oldest first.
+	 *
+	 * @param WC_Order $order Order.
+	 * @return array<int, array{t:int,k:string,m:string}>
+	 */
+	public static function timeline( $order ) {
+		if ( ! $order instanceof WC_Order ) {
+			return array();
+		}
+		$log = $order->get_meta( '_xdwp_timeline' );
+		return is_array( $log ) ? $log : array();
+	}
+
 	/**
 	 * Record what is unusual about this payment, alongside its status.
 	 *
@@ -259,6 +310,7 @@ class Xdwp_Order {
 		if ( 'on-hold' !== $order->get_status() ) {
 			$order->update_status( 'on-hold', __( 'Customer requested a new crypto payment quote.', 'xorro-direct-wallet-payments-woocommerce' ) );
 		}
+		self::log_event( $order, 'requoted', __( 'The customer asked for a new amount at the current rate', 'xorro-direct-wallet-payments-woocommerce' ) );
 		do_action( 'xdwp_payment_renewed', $order );
 		return true;
 	}
@@ -406,6 +458,18 @@ class Xdwp_Order {
 		$order->update_meta_data( '_xdwp_status', 'awaiting' );
 		$order->save();
 
+		self::log_event(
+			$order,
+			'quoted',
+			sprintf(
+				/* translators: 1: amount, 2: coin, 3: address */
+				__( 'Quoted %1$s %2$s to %3$s', 'xorro-direct-wallet-payments-woocommerce' ),
+				$amount,
+				$coin_id,
+				$address
+			)
+		);
+
 		$order->update_status(
 			'on-hold',
 			sprintf(
@@ -542,6 +606,18 @@ class Xdwp_Order {
 				self::set_flag( $order, 'overpaid' );
 				do_action( 'xdwp_order_overpaid', $order, $overpaid );
 			}
+			self::log_event(
+				$order,
+				'paid',
+				sprintf(
+					/* translators: 1: amount received, 2: coin, 3: transaction id */
+					__( 'Confirmed on chain: %1$s %2$s, transaction %3$s', 'xorro-direct-wallet-payments-woocommerce' ),
+					(string) self::meta( $order, 'received' ) !== '' ? (string) self::meta( $order, 'received' ) : (string) self::meta( $order, 'amount' ),
+					(string) self::meta( $order, 'coin' ),
+					(string) self::meta( $order, 'txid' )
+				)
+			);
+
 			// Remember how far the wallet needs to have scanned for this payment to be visible.
 			$paid_index = self::meta( $order, 'hd_index' );
 			if ( '' !== (string) $paid_index ) {
@@ -627,6 +703,7 @@ class Xdwp_Order {
 				__( 'Crypto payment window expired. Contact the store if you already sent funds.', 'xorro-direct-wallet-payments-woocommerce' )
 			);
 		}
+		self::log_event( $order, 'expired', __( 'The payment window closed', 'xorro-direct-wallet-payments-woocommerce' ) );
 		do_action( 'xdwp_order_expired', $order, $xdwp_status );
 	}
 
@@ -801,6 +878,16 @@ class Xdwp_Order {
 					'walletAddChain'     => __( 'Your wallet does not have %s set up yet. Add that network in your wallet, then try again.', 'xorro-direct-wallet-payments-woocommerce' ),
 					/* translators: %d: whole minutes remaining */
 					'timeLeft' => __( '%d minutes left to pay', 'xorro-direct-wallet-payments-woocommerce' ),
+					/* translators: %d: whole hours remaining */
+					'timeLeftHours' => __( '%d hours left to pay', 'xorro-direct-wallet-payments-woocommerce' ),
+					/* translators: %d: whole days remaining */
+					'timeLeftDays'  => __( '%d days left to pay', 'xorro-direct-wallet-payments-woocommerce' ),
+					/* translators: short unit for days, shown on the countdown */
+					'unitDay'       => _x( 'd', 'short for days', 'xorro-direct-wallet-payments-woocommerce' ),
+					/* translators: short unit for hours, shown on the countdown */
+					'unitHour'      => _x( 'h', 'short for hours', 'xorro-direct-wallet-payments-woocommerce' ),
+					/* translators: short unit for minutes, shown on the countdown */
+					'unitMinute'    => _x( 'm', 'short for minutes', 'xorro-direct-wallet-payments-woocommerce' ),
 					'expired'  => __( 'Payment window expired.', 'xorro-direct-wallet-payments-woocommerce' ),
 					'paid'     => __( 'Payment confirmed! Thank you.', 'xorro-direct-wallet-payments-woocommerce' ),
 					'checking' => __( 'Checking…', 'xorro-direct-wallet-payments-woocommerce' ),
@@ -915,6 +1002,21 @@ class Xdwp_Order {
 				echo '<br><a href="' . esc_url( $explorer ) . '" target="_blank" rel="noopener noreferrer">' . esc_html__( 'View on explorer', 'xorro-direct-wallet-payments-woocommerce' ) . '</a>';
 			}
 			echo '</p>';
+		}
+
+		$history = self::timeline( $order );
+		if ( ! empty( $history ) ) {
+			echo '<p><strong>' . esc_html__( 'What happened:', 'xorro-direct-wallet-payments-woocommerce' ) . '</strong></p>';
+			echo '<ol class="xdwp-timeline">';
+			foreach ( array_reverse( $history ) as $entry ) {
+				$when = isset( $entry['t'] ) ? (int) $entry['t'] : 0;
+				echo '<li><span class="xdwp-timeline__when">'
+					. esc_html( $when ? wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $when ) : '' )
+					. '</span><span class="xdwp-timeline__what">'
+					. esc_html( isset( $entry['m'] ) ? (string) $entry['m'] : '' )
+					. '</span></li>';
+			}
+			echo '</ol>';
 		}
 
 		$partials = Xdwp_Verifier::partial_txids( $order );
