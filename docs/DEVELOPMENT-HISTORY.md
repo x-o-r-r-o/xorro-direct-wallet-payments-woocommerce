@@ -93,10 +93,17 @@ refund goes is a credential, and mailing it automatically to whatever address is
 a worse default than letting the shop use the channel it already trusts for that customer.
 
 **Some strings stay in English in every locale.** The bundled translations were refreshed in
-1.19.0 to cover everything added since 1.12.1. A handful of strings per locale are deliberately
-left untranslated: where a machine translation dropped or reordered a `%s`, `%1$d` or an HTML
-tag, the English is kept, because a translation that loses a placeholder prints a broken
-sentence. They are still machine translations and a native speaker's corrections are welcome.
+1.19.0 and now cover 95–99.9% of the 799 strings, against roughly 40% before. What is left is
+deliberate: where a machine translation dropped or reordered a `%s`, `%1$d` or an HTML tag, the
+English is kept, because a translation that loses a placeholder prints a broken sentence.
+
+Three attempts were made at each of those: the string as written, then with placeholders hidden
+behind `{0}` tokens, then behind `«1»` tokens. The third recovered most of them — Russian went
+from 28 unusable to 4. Two locales resist it because the model corrupts the string itself rather
+than the token: Arabic rewrites `«1»` as `"١"` and drops the surrounding words, and Vietnamese
+turns `%1$d` into `% 1$`, losing the `d`. No token scheme fixes that, so Arabic (32) and
+Vietnamese (43) keep the most English. These are machine translations throughout and a native
+speaker's corrections are welcome.
 
 **`wallet_addEthereumChain` with a default RPC.** Deliberately never sent. Adding a chain means
 handing a customer's wallet a third-party node chosen by this plugin. A shop that wants it can
