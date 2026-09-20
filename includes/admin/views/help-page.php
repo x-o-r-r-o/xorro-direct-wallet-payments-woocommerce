@@ -44,6 +44,8 @@ $xdwp_sections = array(
 	'wallets'  => __( 'Wallets and addresses', 'xorro-direct-wallet-payments-woocommerce' ),
 	'prices'   => __( 'Prices and API keys', 'xorro-direct-wallet-payments-woocommerce' ),
 	'payments' => __( 'The Payments screen', 'xorro-direct-wallet-payments-woocommerce' ),
+	'refunds'  => __( 'Refunds', 'xorro-direct-wallet-payments-woocommerce' ),
+	'alerts'   => __( 'Alerts and webhooks', 'xorro-direct-wallet-payments-woocommerce' ),
 	'customer' => __( 'What the customer sees', 'xorro-direct-wallet-payments-woocommerce' ),
 	'emails'   => __( 'Emails', 'xorro-direct-wallet-payments-woocommerce' ),
 	'problems' => __( 'When something looks wrong', 'xorro-direct-wallet-payments-woocommerce' ),
@@ -236,6 +238,7 @@ $xdwp_sections = array(
 							<!-- ------------------------------------------------ coins -->
 						<section id="xdwp-help-coins" class="xdwp-help__section">
 							<h3><?php echo esc_html( $xdwp_sections['coins'] ); ?></h3>
+							<p><strong><?php esc_html_e( 'Price adjustment', 'xorro-direct-wallet-payments-woocommerce' ); ?></strong> — <?php esc_html_e( 'a percentage off or on an order paid in that coin. Enter -2 to take 2% off, 1.5 to add 1.5%. It appears on the order as its own line, so the total the customer sees is the total they pay, and the crypto amount is worked out from that same total.', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
 							<p><?php esc_html_e( 'Every coin and network the plugin knows is listed here, grouped by chain. Ticking one offers it at checkout, as long as it has somewhere to receive.', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
 							<table class="xdwp-help__table">
 								<tbody>
@@ -313,6 +316,8 @@ $xdwp_sections = array(
 								?>
 								</tbody>
 							</table>
+													<p><strong><?php esc_html_e( 'Confirmations by order value', 'xorro-direct-wallet-payments-woocommerce' ); ?></strong> — <?php esc_html_e( 'wait less on small orders and longer on large ones. A £10 order held for six blocks costs you the customer; a £10,000 order released on one costs you £10,000. The higher tier can only raise the number a coin already waits for, never lower it. Accepting an order "as soon as it is seen" means accepting it before the chain has settled it, which is a risk you are choosing to carry.', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
+							<p><strong><?php esc_html_e( 'Backup and restore', 'xorro-direct-wallet-payments-woocommerce' ); ?></strong> — <?php esc_html_e( 'at the bottom of General. Downloads every setting as one file: coins, addresses, extended keys, limits, confirmations and prices. API keys are left out unless you tick the box, so a file you email or keep in a repository carries no secrets; there is never a private key in it, because this plugin does not hold one. Restoring puts everything through the same checks as typing it in by hand.', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
 						</section>
 
 							<!-- ------------------------------------------------ payments screen -->
@@ -335,6 +340,40 @@ $xdwp_sections = array(
 								<li><strong><?php esc_html_e( 'Expired', 'xorro-direct-wallet-payments-woocommerce' ); ?></strong> — <?php esc_html_e( 'the window closed with nothing received. The customer can still ask for a new amount.', 'xorro-direct-wallet-payments-woocommerce' ); ?></li>
 							</ul>
 							<p><?php esc_html_e( 'On each order itself you also get the coin, amount, address, any tag or memo, the transaction, and a "Mark payment received" button for payments you confirmed yourself.', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
+						</section>
+
+							<!-- ------------------------------------------------ refunds -->
+						<section id="xdwp-help-refunds" class="xdwp-help__section">
+							<h3><?php echo esc_html( $xdwp_sections['refunds'] ); ?></h3>
+							<p><?php esc_html_e( 'A card refund goes back the way it came. A crypto payment cannot: the address it arrived from is often an exchange\'s wallet, or a contract, and money sent back there is usually gone for good. So the customer is asked where to send it.', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
+							<ol class="xdwp-help__list">
+								<li><?php esc_html_e( 'Open the order and choose "Create a refund link". The link is shown once, for fifteen minutes — it is never written into the order or its notes, because anyone holding it can name the address your money goes to.', 'xorro-direct-wallet-payments-woocommerce' ); ?></li>
+								<li><?php esc_html_e( 'Send that link to the customer however you normally talk to them.', 'xorro-direct-wallet-payments-woocommerce' ); ?></li>
+								<li><?php esc_html_e( 'They open it and give an address on the same network. It is checked as they type it, so an address for the wrong chain is refused rather than saved.', 'xorro-direct-wallet-payments-woocommerce' ); ?></li>
+								<li><?php esc_html_e( 'The order moves into "Needs you" and shows the address. You send the money from your own wallet — this plugin never holds or moves it.', 'xorro-direct-wallet-payments-woocommerce' ); ?></li>
+								<li><?php esc_html_e( 'Paste the transaction id back into the order. The link stops working, and the customer can see the transaction on the chain.', 'xorro-direct-wallet-payments-woocommerce' ); ?></li>
+							</ol>
+							<p><?php esc_html_e( 'A link lasts fourteen days. Making a new one replaces the old one. Repeated guesses at a link from one visitor are slowed down after ten tries.', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
+						</section>
+
+							<!-- ------------------------------------------------ alerts -->
+						<section id="xdwp-help-alerts" class="xdwp-help__section">
+							<h3><?php echo esc_html( $xdwp_sections['alerts'] ); ?></h3>
+							<p>
+								<?php
+								printf(
+									/* translators: %s: link to the Alerts screen */
+									esc_html__( '%s sends what happens to a payment somewhere you will see it: a webhook of your own, a Telegram chat, or both. Nothing there changes an order — it only reports.', 'xorro-direct-wallet-payments-woocommerce' ),
+									'<a href="' . esc_url( admin_url( 'admin.php?page=xorro-direct-wallet-payments-woocommerce-alerts' ) ) . '">' . esc_html__( 'Alerts', 'xorro-direct-wallet-payments-woocommerce' ) . '</a>'
+								);
+								?>
+							</p>
+							<ul class="xdwp-help__list">
+								<li><strong><?php esc_html_e( 'Webhook', 'xorro-direct-wallet-payments-woocommerce' ); ?></strong> — <?php esc_html_e( 'each event is POSTed as JSON. With a signing secret set, the request carries X-Xdwp-Signature (sha256 HMAC of the timestamp, a full stop, and the exact body) and X-Xdwp-Timestamp. Check both: the signature proves it came from this shop, and the timestamp is what stops somebody replaying an old request at you.', 'xorro-direct-wallet-payments-woocommerce' ); ?></li>
+								<li><strong><?php esc_html_e( 'Telegram', 'xorro-direct-wallet-payments-woocommerce' ); ?></strong> — <?php esc_html_e( 'message @BotFather to make a bot, paste its token, then message the bot once and read the chat id from getUpdates. For a group, add the bot to the group first.', 'xorro-direct-wallet-payments-woocommerce' ); ?></li>
+								<li><strong><?php esc_html_e( 'Daily summary', 'xorro-direct-wallet-payments-woocommerce' ); ?></strong> — <?php esc_html_e( 'one message a day: what was paid, what it came to, and how many orders still need you.', 'xorro-direct-wallet-payments-woocommerce' ); ?></li>
+							</ul>
+							<p><?php esc_html_e( 'Messages go out on a scheduled event of their own, so a slow endpoint never holds up a customer at checkout. A refused message is tried again after one minute, five, then twenty-five, and then given up on. Expired orders are off by default because a busy shop produces a lot of them.', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
 						</section>
 
 							<!-- ------------------------------------------------ customer -->

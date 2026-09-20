@@ -136,20 +136,30 @@ class Xdwp_Verifier {
 		}
 
 		$band = self::match_band( $target, $coin );
-		// Exact remainder: search from the order start so a top-up sent before the partial was
-		// detected still counts; if that finds the partial itself (remainder == partial), look
-		// again from detection time only.
-		$exact_since = $underpaid ? max( 0, $started - 30 ) : $since;
-		$memo        = (string) Xdwp_Order::meta( $order, 'memo' );
-		$hit         = self::find_payment_detailed( $coin, $address, $band['min'], $band['max'], $exact_since, $memo );
-		if ( $hit && $underpaid && self::is_own_partial( $order, $hit['txid'] ) ) {
-			$hit = self::find_payment_detailed( $coin, $address, $band['min'], $band['max'], $since, $memo );
-		}
-		if ( $hit && ! self::is_own_partial( $order, $hit['txid'] ) ) {
-			return self::record_final_payment( $order, $hit['txid'], $underpaid, $hit['amount'] );
-		}
 
-		return self::scan_partial_or_overpayment( $order, $coin, $address, $target, $band, $since );
+		// How deep this order's payment must be buried can depend on what it is worth, so the
+		// number is resolved once, here, and every lookup below is held to it.
+		$previous                     = self::$confirmations_override;
+		self::$confirmations_override = Xdwp_Coins::confirmations_for_order( $coin, $order );
+
+		try {
+			// Exact remainder: search from the order start so a top-up sent before the partial
+			// was detected still counts; if that finds the partial itself (remainder ==
+			// partial), look again from detection time only.
+			$exact_since = $underpaid ? max( 0, $started - 30 ) : $since;
+			$memo        = (string) Xdwp_Order::meta( $order, 'memo' );
+			$hit         = self::find_payment_detailed( $coin, $address, $band['min'], $band['max'], $exact_since, $memo );
+			if ( $hit && $underpaid && self::is_own_partial( $order, $hit['txid'] ) ) {
+				$hit = self::find_payment_detailed( $coin, $address, $band['min'], $band['max'], $since, $memo );
+			}
+			if ( $hit && ! self::is_own_partial( $order, $hit['txid'] ) ) {
+				return self::record_final_payment( $order, $hit['txid'], $underpaid, $hit['amount'] );
+			}
+
+			return self::scan_partial_or_overpayment( $order, $coin, $address, $target, $band, $since );
+		} finally {
+			self::$confirmations_override = $previous;
+		}
 	}
 
 	/**
@@ -549,7 +559,7 @@ class Xdwp_Verifier {
 		}
 		// Only useful when this coin actually waits for confirmations; otherwise a match is
 		// already paid by the time it is visible.
-		if ( Xdwp_Coins::confirmations_for( $coin ) < 1 ) {
+		if ( Xdwp_Coins::confirmations_for_order( $coin, $order ) < 1 ) {
 			return false;
 		}
 		$throttle = 'xdwp_detect_' . $order->get_id();
@@ -587,7 +597,7 @@ class Xdwp_Verifier {
 				/* translators: 1: transaction id, 2: confirmations required */
 				__( 'Seen on chain (%1$s), waiting for %2$d confirmations', 'xorro-direct-wallet-payments-woocommerce' ),
 				$hit['txid'],
-				Xdwp_Coins::confirmations_for( $coin )
+				Xdwp_Coins::confirmations_for_order( $coin, $order )
 			)
 		);
 		do_action( 'xdwp_payment_detected', $order, $hit['txid'], $hit['amount'] );

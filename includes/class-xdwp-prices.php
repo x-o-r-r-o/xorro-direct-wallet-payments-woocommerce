@@ -37,6 +37,45 @@ class Xdwp_Prices {
 	 * @param bool   $unique_amount Whether to apply unique dust (order creation only).
 	 * @return string Crypto amount string, or empty on failure.
 	 */
+	/**
+	 * The percentage this shop adds to, or takes off, an order paid in this coin.
+	 *
+	 * A shop may want to pass on what a chain costs it, or to nudge customers towards the coin
+	 * it would rather hold. Negative is a discount, positive a surcharge.
+	 *
+	 * @param string $coin_id Coin ID.
+	 * @return float Percentage, 0 when the shop has set none.
+	 */
+	public static function coin_adjustment( $coin_id ) {
+		$all = Xdwp_Settings::get( 'coin_adjustments', array() );
+		if ( ! is_array( $all ) || ! isset( $all[ $coin_id ] ) ) {
+			return 0.0;
+		}
+		/**
+		 * The discount or surcharge for paying in this coin.
+		 *
+		 * @param float  $percent Percentage from the settings.
+		 * @param string $coin_id Coin ID.
+		 */
+		$percent = (float) apply_filters( 'xdwp_coin_adjustment', (float) $all[ $coin_id ], $coin_id );
+		return max( -50.0, min( 50.0, $percent ) );
+	}
+
+	/**
+	 * An order total with this coin's discount or surcharge applied.
+	 *
+	 * @param float  $fiat    Order total in shop currency.
+	 * @param string $coin_id Coin ID.
+	 * @return float
+	 */
+	public static function adjusted_fiat( $fiat, $coin_id ) {
+		$percent = self::coin_adjustment( $coin_id );
+		if ( 0.0 === $percent ) {
+			return (float) $fiat;
+		}
+		return max( 0.0, round( (float) $fiat * ( 1 + ( $percent / 100 ) ), wc_get_price_decimals() ) );
+	}
+
 	public static function fiat_to_crypto( $fiat_amount, $coin_id, $currency = '', $unique_amount = false ) {
 		$coin = Xdwp_Coins::get( $coin_id );
 		if ( ! $coin ) {
@@ -57,7 +96,9 @@ class Xdwp_Prices {
 			return '';
 		}
 
-		$amount = (float) $fiat_amount / $rate;
+		// The coin's discount or surcharge is applied here and nowhere else, so a quote, a
+		// re-quote and the fee line written onto the order can never disagree.
+		$amount = self::adjusted_fiat( $fiat_amount, $coin_id ) / $rate;
 
 		if ( $unique_amount && 'yes' === Xdwp_Settings::get( 'unique_amounts', 'yes' ) ) {
 			$amount = self::apply_unique_dust( $amount, $coin_id );

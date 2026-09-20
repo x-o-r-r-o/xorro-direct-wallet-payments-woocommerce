@@ -148,15 +148,21 @@ Found a vulnerability? Please open a private [security advisory](https://github.
 | `xdwp_send_payment_reminder` ( `$order` ) | action | The pre-expiry reminder is due |
 | `xdwp_payment_detected` ( `$order, $txid, $amount` ) | action | A matching transfer is seen on chain, before it has the confirmations required |
 | `xdwp_payment_renewed` ( `$order` ) | action | A customer re-quotes an expired order |
+| `xdwp_refund_address_given` ( `$order, $address` ) | action | A customer gives an address for their refund |
+| `xdwp_refund_sent` ( `$order, $txid` ) | action | The shop records the refund it sent |
 | `xdwp_coins` | filter | The coin list is built |
 | `xdwp_payment_window_minutes` ( `$minutes, $order, $coin` ) | filter | The payment window is set for an order |
 | `xdwp_confirmations_required` ( `$confirmations, $coin` ) | filter | Confirmations for a coin are resolved |
+| `xdwp_order_confirmations_required` ( `$confirmations, $coin, $order` ) | filter | Confirmations are resolved for one order, after any value tier |
+| `xdwp_coin_adjustment` ( `$percent, $coin_id` ) | filter | A coin's discount or surcharge is read |
+| `xdwp_notification_payload` ( `$payload, $event, $order` ) | filter | An alert is about to be queued |
+| `xdwp_wallet_add_chain` ( `$params, $coin, $chain_id` ) | filter | A browser wallet does not know the chain (empty by default: no RPC is supplied) |
 | `xdwp_coin_allowed_for_total` ( `$allowed, $coin_id, $total` ) | filter | A coin is offered (or hidden) for an order total |
 | `xdwp_order_memo` ( `$memo, $order, $coin` ) | filter | A destination tag / memo is generated |
 | `xdwp_payment_uri` ( `$uri, $coin_id, $address, $amount, $memo` ) | filter | The wallet link / QR code is built |
 | `xdwp_rate_limit_client_ip` | filter | Rate limiting identifies the client IP |
 
-Email templates can be overridden in your theme under `woocommerce/emails/` (`xdwp-payment-details.php`, `xdwp-payment-reminder.php`, `xdwp-partial-payment.php`, `xdwp-payment-alert.php`, plus `plain/` versions).
+The refund claim page can be overridden at `yourtheme/xorro-direct-wallet-payments-woocommerce/xdwp-refund-claim.php`. Email templates can be overridden in your theme under `woocommerce/emails/` (`xdwp-payment-details.php`, `xdwp-payment-reminder.php`, `xdwp-partial-payment.php`, `xdwp-payment-alert.php`, plus `plain/` versions).
 
 ## External services
 
@@ -200,6 +206,16 @@ Pushing a `vX.Y.Z` tag runs the Release workflow, which builds the ZIP, its SHA-
 ## Changelog
 
 Full details for every release are in [`readme.txt`](readme.txt).
+
+### 1.19.0 — refunds, alerts, and settings you can carry
+
+- Refunds by claim link: the customer gives an address they control, you send it from your own wallet, the plugin records it. Nothing is ever sent by the plugin itself
+- Signed webhooks (HMAC-SHA256 over timestamp + body) and Telegram alerts for part payments, overpayments, late money, vanished payments and refunds waiting to go out
+- A daily summary of what was paid and what still needs you
+- Settings export and restore, with API keys held back unless you ask for them
+- A discount or surcharge per coin, shown on the order as its own line
+- Confirmations tiered by order value — quick on small orders, careful on large ones
+- Bundled translations refreshed across all sixteen locales
 
 ### 1.18.0 — find any payment, and see how crypto is doing
 

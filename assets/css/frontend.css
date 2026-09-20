@@ -685,3 +685,95 @@
 .xdwp-wallet-status.is-error {
 	color: #b42318;
 }
+
+/* ---- Refund claim page ------------------------------------------------- */
+
+.xdwp-claim-wrap {
+	display: flex;
+	justify-content: center;
+	padding: 2rem 1rem;
+}
+
+.xdwp-claim {
+	width: 100%;
+	max-width: 32rem;
+}
+
+.xdwp-claim__title {
+	margin: 0 0 0.75rem;
+}
+
+.xdwp-claim__lead {
+	margin: 0 0 1rem;
+	line-height: 1.6;
+}
+
+.xdwp-claim__facts {
+	display: grid;
+	grid-template-columns: auto 1fr;
+	gap: 0.3rem 1rem;
+	margin: 0 0 1.25rem;
+	padding: 0.9rem 1rem;
+	border: 1px solid rgba(127, 127, 127, 0.3);
+	border-radius: 8px;
+}
+
+.xdwp-claim__facts dt {
+	margin: 0;
+	font-weight: 600;
+}
+
+.xdwp-claim__facts dd {
+	margin: 0;
+}
+
+.xdwp-claim__form {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+}
+
+.xdwp-claim__label {
+	font-weight: 600;
+}
+
+.xdwp-claim__form input[type="text"] {
+	width: 100%;
+	padding: 0.6rem 0.7rem;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	font-size: 0.95rem;
+}
+
+.xdwp-claim__button {
+	align-self: flex-start;
+	min-height: 2.75rem;
+}
+
+.xdwp-claim__hint {
+	margin: 0;
+	font-size: 0.85rem;
+	opacity: 0.75;
+}
+
+.xdwp-claim__error,
+.xdwp-claim__notice {
+	margin: 0 0 1rem;
+	padding: 0.7rem 0.85rem;
+	border-radius: 6px;
+	border-left: 3px solid currentColor;
+}
+
+.xdwp-claim__error {
+	color: #8a1f11;
+	background: rgba(138, 31, 17, 0.08);
+}
+
+.xdwp-claim__notice {
+	color: #1a6a32;
+	background: rgba(26, 106, 50, 0.08);
+}
+
+.xdwp-claim__txid {
+	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	overflow-wrap: anywhere;
+}

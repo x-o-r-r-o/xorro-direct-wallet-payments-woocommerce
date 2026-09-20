@@ -152,6 +152,11 @@ class Xdwp_Order {
 		if ( '' !== (string) self::meta( $order, 'overpaid' ) ) {
 			return true;
 		}
+		// A customer who has given an address for their refund is waiting on a person to send
+		// it; nothing else in this plugin can move that along.
+		if ( '' !== (string) self::meta( $order, 'refund_address' ) && '' === (string) self::meta( $order, 'refund_txid' ) ) {
+			return true;
+		}
 		$status = (string) self::meta( $order, 'status' );
 		return ( 'expired' === $status && '' !== (string) self::meta( $order, 'received' ) );
 	}
@@ -358,6 +363,75 @@ class Xdwp_Order {
 	}
 
 	/**
+	 * Put this coin's discount or surcharge onto the order as a line of its own.
+	 *
+	 * The crypto amount is worked out from the order total, so if a shop takes 2% off for paying
+	 * in Bitcoin the order total has to say so too. Anything else leaves the shop's books
+	 * disagreeing with what arrived, and the customer looking at a total they were not charged.
+	 *
+	 * The line is ours and is replaced, never stacked: re-quoting into another coin swaps it.
+	 *
+	 * @param WC_Order $order   Order.
+	 * @param string   $coin_id Coin ID, or '' to remove the line and leave the total alone.
+	 * @return void
+	 */
+	public static function apply_coin_adjustment( $order, $coin_id ) {
+		if ( ! $order instanceof WC_Order ) {
+			return;
+		}
+
+		$existing = 0;
+		foreach ( $order->get_items( 'fee' ) as $item_id => $item ) {
+			if ( $item->get_meta( '_xdwp_adjustment' ) ) {
+				$order->remove_item( $item_id );
+				++$existing;
+			}
+		}
+
+		$percent = '' === $coin_id ? 0.0 : Xdwp_Prices::coin_adjustment( $coin_id );
+		if ( 0.0 === $percent && ! $existing ) {
+			return; // Nothing to add and nothing was removed: leave the order untouched.
+		}
+
+		if ( 0.0 !== $percent ) {
+			// The base is the order without any line of ours, which is what removing the old one
+			// above leaves behind.
+			$base   = 0.0;
+			foreach ( $order->get_items( array( 'line_item', 'shipping', 'fee', 'coupon' ) ) as $item ) {
+				$base += (float) $item->get_total();
+			}
+			$base  += (float) $order->get_total_tax();
+			$amount = round( $base * ( $percent / 100 ), wc_get_price_decimals() );
+
+			if ( abs( $amount ) >= ( 1 / pow( 10, wc_get_price_decimals() ) ) ) {
+				$coin = Xdwp_Coins::get( $coin_id );
+				$name = $coin ? $coin['name'] : $coin_id;
+				$fee  = new WC_Order_Item_Fee();
+				$fee->set_name(
+					$amount < 0
+						/* translators: 1: coin name, 2: percentage */
+						? sprintf( __( '%1$s discount (%2$s%%)', 'xorro-direct-wallet-payments-woocommerce' ), $name, number_format_i18n( abs( $percent ), 2 ) )
+						/* translators: 1: coin name, 2: percentage */
+						: sprintf( __( '%1$s surcharge (%2$s%%)', 'xorro-direct-wallet-payments-woocommerce' ), $name, number_format_i18n( $percent, 2 ) )
+				);
+				$fee->set_amount( (string) $amount );
+				$fee->set_total( (string) $amount );
+				// No tax on the line: whether a crypto discount is taxable depends on the shop's
+				// jurisdiction, and guessing wrong is worse than leaving it to the shop's own
+				// accounting.
+				$fee->set_tax_status( 'none' );
+				$fee->set_tax_class( '' );
+				$fee->update_meta_data( '_xdwp_adjustment', 1 );
+				$order->add_item( $fee );
+			}
+		}
+
+		// Totals only; taxes are deliberately left as the order already has them.
+		$order->calculate_totals( false );
+		$order->save();
+	}
+
+	/**
 	 * Assign payment details to order.
 	 *
 	 * @param WC_Order $order   Order.
@@ -374,6 +448,11 @@ class Xdwp_Order {
 		$address  = '';
 		$amount   = '';
 		$reserved = false;
+
+		// Any line left by a previous coin comes off first, so the quote below is worked out
+		// from the order's own total and never from one already adjusted.
+		self::apply_coin_adjustment( $order, '' );
+		$order = wc_get_order( $order_id );
 
 		// A new payment attempt (e.g. paying a failed order again) starts clean.
 		foreach ( array( 'txid', 'received', 'partial_received', 'remainder', 'partial_txids', 'partial_since', 'overpaid', 'late_txid', 'late_amount', 'late_checked', 'reminder_sent', 'seen_txid', 'seen_at', 'sent_at' ) as $stale ) {
@@ -480,6 +559,11 @@ class Xdwp_Order {
 				$address
 			)
 		);
+
+		// Last, once every meta write above has been saved: the line that makes the order total
+		// agree with the amount just quoted. It works on its own copy of the order, so it cannot
+		// be undone by a stale save from this function.
+		self::apply_coin_adjustment( wc_get_order( $order_id ), $coin_id );
 
 		return true;
 	}
@@ -847,9 +931,10 @@ class Xdwp_Order {
 				'wallet'    => ( 'awaiting' === $status || 'underpaid' === $status )
 					? Xdwp_Coins::wallet_payment( $coin, $address, $amount )
 					: null,
-				'confirmations' => Xdwp_Coins::confirmations_for( $coin ),
+				'confirmations' => Xdwp_Coins::confirmations_for_order( $coin, $order ),
 				'i18n'      => array(
 					'detected' => __( 'Payment detected — waiting for network confirmations…', 'xorro-direct-wallet-payments-woocommerce' ),
+					/* translators: %d: number of network confirmations still needed */
 					'detectedWith' => __( 'Payment detected — waiting for %d network confirmations. You do not need to send anything else.', 'xorro-direct-wallet-payments-woocommerce' ),
 					'checkingNow' => __( 'Thanks — we are checking the network now. This page updates itself.', 'xorro-direct-wallet-payments-woocommerce' ),
 					'checkFail' => __( 'We could not check just now. This page keeps looking on its own.', 'xorro-direct-wallet-payments-woocommerce' ),
@@ -914,7 +999,7 @@ class Xdwp_Order {
 				'memo'      => (string) self::meta( $order, 'memo' ),
 				'memo_kind' => Xdwp_Coins::memo_kind( $coin ),
 				'network_label' => Xdwp_Coins::network_label( $coin ),
-				'confirmations' => Xdwp_Coins::confirmations_for( $coin ),
+				'confirmations' => Xdwp_Coins::confirmations_for_order( $coin, $order ),
 				'wait_estimate' => Xdwp_Coins::wait_estimate( $coin ),
 			),
 			'xorro-direct-wallet-payments-woocommerce/',
@@ -947,6 +1032,94 @@ class Xdwp_Order {
 			'side',
 			'default'
 		);
+	}
+
+	/**
+	 * The refund panel on the order screen.
+	 *
+	 * Deliberately a series of small, explicit steps rather than one "Refund" button: this
+	 * plugin cannot send the money, and pretending otherwise would be the one thing a merchant
+	 * must not believe.
+	 *
+	 * @param WC_Order $order Order.
+	 */
+	public static function render_refund_panel( $order ) {
+		if ( ! class_exists( 'Xdwp_Refunds' ) || ! Xdwp_Refunds::refundable( $order ) ) {
+			return;
+		}
+
+		$state  = Xdwp_Refunds::state( $order );
+		$symbol = Xdwp_Refunds::symbol( $order );
+		$amount = (string) self::meta( $order, 'refund_amount' );
+		$action = admin_url( 'admin-post.php' );
+		$link   = get_transient( 'xdwp_refund_link_' . $order->get_id() . '_' . get_current_user_id() );
+
+		echo '<div class="xdwp-refund">';
+		echo '<p><strong>' . esc_html__( 'Refund', 'xorro-direct-wallet-payments-woocommerce' ) . '</strong></p>';
+
+		if ( 'sent' === $state ) {
+			echo '<p>' . esc_html(
+				sprintf(
+					/* translators: 1: amount and coin, 2: address */
+					__( 'Sent %1$s to %2$s.', 'xorro-direct-wallet-payments-woocommerce' ),
+					trim( $amount . ' ' . $symbol ),
+					(string) self::meta( $order, 'refund_address' )
+				)
+			) . '</p>';
+			echo '<p><code style="word-break:break-all;">' . esc_html( (string) self::meta( $order, 'refund_txid' ) ) . '</code></p>';
+			echo '</div>';
+			return;
+		}
+
+		if ( 'none' === $state ) {
+			echo '<p class="description">' . esc_html__( 'A crypto payment cannot be sent back the way it came — the address it arrived from is often an exchange, not the customer. Create a link instead, and they will tell you where to send it.', 'xorro-direct-wallet-payments-woocommerce' ) . '</p>';
+		}
+
+		if ( 'ready' === $state ) {
+			echo '<p>' . esc_html__( 'The customer asked for their refund to go to:', 'xorro-direct-wallet-payments-woocommerce' ) . '</p>';
+			echo '<p><code style="word-break:break-all;">' . esc_html( (string) self::meta( $order, 'refund_address' ) ) . '</code></p>';
+			echo '<p class="description">' . esc_html(
+				sprintf(
+					/* translators: 1: amount and coin, 2: network name */
+					__( 'Send %1$s on %2$s from your own wallet, then record the transaction id below.', 'xorro-direct-wallet-payments-woocommerce' ),
+					trim( $amount . ' ' . $symbol ),
+					Xdwp_Coins::network_label( (string) self::meta( $order, 'coin' ) )
+				)
+			) . '</p>';
+
+			echo '<form method="post" action="' . esc_url( $action ) . '" class="xdwp-refund__form">';
+			wp_nonce_field( 'xdwp_refund_' . $order->get_id() );
+			echo '<input type="hidden" name="action" value="xdwp_refund_action" />';
+			echo '<input type="hidden" name="order_id" value="' . esc_attr( (string) $order->get_id() ) . '" />';
+			echo '<input type="hidden" name="do" value="sent" />';
+			echo '<label class="screen-reader-text" for="xdwp-refund-txid">' . esc_html__( 'Refund transaction id', 'xorro-direct-wallet-payments-woocommerce' ) . '</label>';
+			echo '<input type="text" id="xdwp-refund-txid" name="txid" placeholder="' . esc_attr__( 'Transaction id', 'xorro-direct-wallet-payments-woocommerce' ) . '" />';
+			echo '<button type="submit" class="button">' . esc_html__( 'Record refund sent', 'xorro-direct-wallet-payments-woocommerce' ) . '</button>';
+			echo '</form>';
+		}
+
+		if ( 'waiting' === $state ) {
+			echo '<p>' . esc_html__( 'Waiting for the customer to give an address. Send them the link.', 'xorro-direct-wallet-payments-woocommerce' ) . '</p>';
+		}
+
+		if ( $link ) {
+			echo '<p class="description">' . esc_html__( 'Send this link to the customer. It is shown here once, for fifteen minutes — anyone holding it can name the address your refund goes to.', 'xorro-direct-wallet-payments-woocommerce' ) . '</p>';
+			echo '<p><input type="text" class="widefat xdwp-refund__link" readonly value="' . esc_attr( (string) $link ) . '" onfocus="this.select();" /></p>';
+		}
+
+		echo '<form method="post" action="' . esc_url( $action ) . '" class="xdwp-refund__form">';
+		wp_nonce_field( 'xdwp_refund_' . $order->get_id() );
+		echo '<input type="hidden" name="action" value="xdwp_refund_action" />';
+		echo '<input type="hidden" name="order_id" value="' . esc_attr( (string) $order->get_id() ) . '" />';
+		echo '<input type="hidden" name="do" value="create" />';
+		echo '<button type="submit" class="button">' . esc_html(
+			'none' === $state
+				? __( 'Create a refund link', 'xorro-direct-wallet-payments-woocommerce' )
+				: __( 'Create a new link', 'xorro-direct-wallet-payments-woocommerce' )
+		) . '</button>';
+		echo '</form>';
+
+		echo '</div>';
 	}
 
 	/**
@@ -1018,6 +1191,8 @@ class Xdwp_Order {
 			}
 			echo '</ol>';
 		}
+
+		self::render_refund_panel( $order );
 
 		$partials = Xdwp_Verifier::partial_txids( $order );
 		if ( $partials ) {

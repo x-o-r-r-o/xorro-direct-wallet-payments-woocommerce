@@ -599,6 +599,39 @@ $xdwp_payments_view = file_get_contents( $root . '/includes/admin/views/payments
 xdwp_assert( false !== strpos( $xdwp_payments_view, 'xdwp-report' ), 'the report is on the Payments screen' );
 xdwp_assert( false === strpos( $xdwp_payments_view, '<?php echo $report' ), 'report values are escaped before they are printed' );
 
+// Release 1.19: refunds, alerts, and settings a shop can carry with it.
+$xdwp_refunds = file_get_contents( $root . '/includes/class-xdwp-refunds.php' );
+xdwp_assert( is_readable( $root . '/includes/class-xdwp-refunds.php' ), 'refunds present' );
+xdwp_assert( false !== strpos( $xdwp_refunds, 'random_bytes' ), 'a refund link is unguessable' );
+xdwp_assert( false !== strpos( $xdwp_refunds, 'hash_hmac' ) && false !== strpos( $xdwp_refunds, 'hash_equals' ), 'a refund token is stored hashed and compared in constant time' );
+xdwp_assert( false !== strpos( $xdwp_refunds, 'is_plausible_address' ), 'a refund address is checked against the coin it is for' );
+xdwp_assert( false !== strpos( $xdwp_refunds, 'MAX_ATTEMPTS' ), 'guessing at refund links is rate limited' );
+// The plugin must never appear to move money by itself.
+xdwp_assert( false === strpos( $xdwp_refunds, 'eth_sendTransaction' ) && false === strpos( $xdwp_refunds, 'sendTransaction' ), 'a refund is never sent by the plugin' );
+xdwp_assert( is_readable( $root . '/templates/xdwp-refund-claim.php' ), 'the claim page is a template a theme can override' );
+
+$xdwp_notify = file_get_contents( $root . '/includes/class-xdwp-notify.php' );
+xdwp_assert( is_readable( $root . '/includes/class-xdwp-notify.php' ), 'alerts present' );
+xdwp_assert( false !== strpos( $xdwp_notify, "hash_hmac( 'sha256'" ), 'webhooks are signed' );
+xdwp_assert( false !== strpos( $xdwp_notify, 'X-Xdwp-Timestamp' ), 'and carry a timestamp a receiver can check for replay' );
+xdwp_assert( false !== strpos( $xdwp_notify, 'wp_schedule_single_event' ), 'a slow endpoint never holds up a checkout' );
+xdwp_assert( false !== strpos( $xdwp_notify, 'wp_safe_remote_post' ), 'alerts use the safe HTTP helper' );
+xdwp_assert( false === strpos( $xdwp_notify, 'billing_email' ), 'a customer email address is never sent to a third party' );
+
+$xdwp_backup = file_get_contents( $root . '/includes/class-xdwp-backup.php' );
+xdwp_assert( is_readable( $root . '/includes/class-xdwp-backup.php' ), 'settings backup present' );
+xdwp_assert( false !== strpos( $xdwp_backup, 'function secret_keys' ), 'secrets are named, so they can be held back' );
+xdwp_assert( false !== strpos( $xdwp_backup, 'Xdwp_Settings::sanitize' ), 'a restored file goes through the same checks as the form' );
+xdwp_assert( false !== strpos( $xdwp_backup, 'is_uploaded_file' ), 'only a real upload is read' );
+
+$xdwp_coins_src = file_get_contents( $root . '/includes/class-xdwp-coins.php' );
+xdwp_assert( false !== strpos( $xdwp_coins_src, 'function confirmations_for_order' ), 'confirmations can depend on what an order is worth' );
+xdwp_assert( false !== strpos( $xdwp_coins_src, 'max( $base,' ), 'a high-value tier can only raise the number, never lower it' );
+$xdwp_prices_src = file_get_contents( $root . '/includes/class-xdwp-prices.php' );
+xdwp_assert( false !== strpos( $xdwp_prices_src, 'function adjusted_fiat' ), 'a coin can carry a discount or a surcharge' );
+xdwp_assert( 1 === substr_count( $xdwp_prices_src, 'adjusted_fiat( $fiat_amount, $coin_id )' ), 'and it is applied in exactly one place' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-order.php' ), 'function apply_coin_adjustment' ), 'the order total says so too' );
+
 xdwp_assert( false !== strpos( $readme, '== External services ==' ), 'readme external services section present' );
 xdwp_assert( false !== strpos( $readme, 'XRPSCan' ), 'readme documents XRPSCan' );
 xdwp_assert( false !== strpos( $readme, 'Subscan' ), 'readme documents Subscan' );

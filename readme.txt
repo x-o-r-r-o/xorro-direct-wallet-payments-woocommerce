@@ -4,7 +4,7 @@ Tags: woocommerce, cryptocurrency, bitcoin, ethereum, payments, usdt, crypto che
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.18.0
+Stable tag: 1.19.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -35,7 +35,14 @@ This plugin contacts public price and blockchain APIs to quote amounts and (opti
 * Checkout branding: custom title, upload/replace icon, icon width & height, show icon and/or text
 * WooCommerce Checkout Blocks + HPOS compatible
 * Compatible with WordPress 7.1 and WooCommerce 11.x
-* Dedicated admin menu: General, Payments, Coins, Wallets, Prices & APIs
+* Refunds by claim link — the customer names an address they control, you send it from your own wallet
+* Signed webhooks and Telegram alerts, plus a daily summary of what was paid and what needs you
+* Reports by coin: taken, typical wait, abandonment, underpayment
+* Per-coin discount or surcharge, shown on the order as its own line
+* Confirmations by order value — quick on small orders, careful on large ones
+* Settings backup and restore, with API keys held back unless you ask for them
+* Search your orders by transaction id or receiving address, and a timeline on every order
+* Dedicated admin menu: General, Payments, Coins, Wallets, Prices & APIs, Alerts, Help
 
 = Requirements =
 
@@ -337,6 +344,16 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 * QR Code generator (`assets/js/qrcode.min.js`) — MIT-licensed library by davidshimjs (https://github.com/davidshimjs/qrcodejs). Source is publicly available; the bundled file is minified for production use.
 
 == Changelog ==
+
+= 1.19.0 =
+Refunds that actually work in crypto, alerts on your phone, and your settings in one file.
+* New: refunds. A crypto payment cannot be sent back the way it came — the address it arrived from is usually an exchange, and money returned there is gone. Instead you create a link, the customer opens it and gives an address they control on the right network, and you send it from your own wallet. The plugin carries the address and records the transaction; it never holds or moves your money
+* New: alerts. Send what happens to a payment to a webhook of your own or a Telegram chat — part payments, overpayments, late money, a payment that vanished, a refund waiting to go out. Webhook requests are signed (HMAC-SHA256 over a timestamp and the exact body) so your endpoint can prove they came from your shop and reject an old one replayed at it
+* New: a daily summary — what was paid, what it came to, and how many orders still need you
+* New: backup and restore. Every setting in one file: coins, addresses, extended keys, limits, confirmations, prices. API keys are left out unless you ask for them, and a restored file is checked exactly as if you had typed it in
+* New: a discount or surcharge per coin. Enter -2 on Bitcoin to take 2% off orders paid in it. It shows on the order as its own line, so the total the customer sees is the total they pay
+* New: confirmations by order value. Take a small order as soon as it is seen, and hold a large one for longer. The higher tier can only ever raise the number a coin already waits for, never lower it
+* Sixteen bundled translations brought up to date — everything added since 1.12.1, including the setup checks, the wallet buttons, the accessibility wording and the new screens
 
 = 1.18.0 =
 Find any payment again, see what happened to it, and know how crypto is actually doing.

@@ -16,6 +16,9 @@ wordpress.org, BTCPay, BitPay, CoinGate, OpenNode, CoinPayments, GoUrl, MyCrypto
 CryptoWoo) and against merchant complaints about those products. That produced 25 items, grouped
 as correctness (A), customer experience (B) and administration (C). This is their status.
 
+As of 1.19.0, 24 of the 25 are built. The one that is not — Solana Pay `reference` matching — is
+an improvement on something that already works, not a gap; §2 says why it was left.
+
 ### A — Correctness
 
 | # | Item | Status | Where |
@@ -48,11 +51,11 @@ as correctness (A), customer experience (B) and administration (C). This is thei
 | C2 | "Test this coin" — address, rate, chain reachability, confirmations | **Done** 1.14.0 | `includes/class-xdwp-selftest.php` |
 | C3 | Health panel, and the same facts in WooCommerce → Status | **Done** 1.14.0 | `Xdwp_Selftest::store_checks()`, `Xdwp_Admin::system_status_report()` |
 | C4 | A timeline per order, including why a payment matched | **Done** 1.18.0 | `Xdwp_Order::log_event()` / `timeline()` |
-| C5 | Refunds by claim link, the only non-custodial model | **Not done** — planned 1.19 | — |
+| C5 | Refunds by claim link, the only non-custodial model | **Done** 1.19.0 | `includes/class-xdwp-refunds.php`, `templates/xdwp-refund-claim.php` |
 | C6 | Row actions: check now, extend the window | **Done** 1.18.0 | `Xdwp_Payments_Admin::handle_row_action()` |
 | C7 | Reporting: volume by coin, time to settle, abandonment, underpayment rate | **Done** 1.18.0 | `Xdwp_Payments_Admin::report()` |
-| C8 | Webhooks (HMAC-SHA256), Telegram/Slack alerts, daily digest | **Not done** — planned 1.19 | — |
-| C9 | Settings backup/restore, per-coin discount or markup, risk-tiered confirmations | **Not done** — planned 1.19 | — |
+| C8 | Webhooks (HMAC-SHA256), Telegram alerts, daily digest | **Done** 1.19.0 | `includes/class-xdwp-notify.php` |
+| C9 | Settings backup/restore, per-coin discount or markup, risk-tiered confirmations | **Done** 1.19.0 | `Xdwp_Backup`, `Xdwp_Prices::adjusted_fiat()`, `Xdwp_Coins::confirmations_for_order()` |
 | C10 | Show the next derived addresses so they can be checked against the wallet | **Done** 1.14.0 | `includes/admin/views/wallets-ui.php` |
 | C11 | Coins tab weight: lazy icons, and grouping | **Done** 1.14.0 (lazy icons) | `includes/admin/views/settings-page.php` |
 
@@ -80,13 +83,20 @@ paired by QR, needs a WalletConnect relay and a project id from a third party �
 merchant does not currently need. Mobile customers use the `Open in wallet app` deep link instead,
 which works without any of that.
 
-**C5, C8, C9.** Queued for 1.19, in that order.
+**Slack alerts.** 1.19.0 does webhooks and Telegram. Slack needs no code of its own — a Slack
+incoming webhook is an ordinary HTTPS endpoint — but it expects `{"text": "…"}` rather than this
+plugin's JSON, so it needs a few lines in between. Worth adding as a first-class option if anyone
+asks for it.
 
-**Translations for everything added since 1.12.0.** Sixteen locales are bundled, but the strings
-introduced by 1.14.0 through 1.18.0 — the setup checks, the network warning, the accessibility
-copy, the wallet buttons, the reports — are not in any of the `.po` files, so those screens fall
-back to English in a translated shop. The bundled translations were machine-generated; refreshing
-them is a job on its own and has not been done since 1.12.1.
+**Emailing the refund link to the customer.** The shop sends it. A link that names where a
+refund goes is a credential, and mailing it automatically to whatever address is on the order is
+a worse default than letting the shop use the channel it already trusts for that customer.
+
+**Some strings stay in English in every locale.** The bundled translations were refreshed in
+1.19.0 to cover everything added since 1.12.1. A handful of strings per locale are deliberately
+left untranslated: where a machine translation dropped or reordered a `%s`, `%1$d` or an HTML
+tag, the English is kept, because a translation that loses a placeholder prints a broken
+sentence. They are still machine translations and a native speaker's corrections are welcome.
 
 **`wallet_addEthereumChain` with a default RPC.** Deliberately never sent. Adding a chain means
 handing a customer's wallet a third-party node chosen by this plugin. A shop that wants it can
@@ -119,7 +129,7 @@ Full user-facing notes are in `readme.txt`. This is what each release put into t
 | 1.16.0 | Amounts that can be sent | Payable decimals per coin; unique dust spaced by one payable unit and capped at 1% of the order; vanished-transfer handling; the `flag` field; a day to pay for pegged coins |
 | 1.17.0 | Pay from a wallet | EIP-6963 and TIP-6963 discovery, chain switch **and re-read**, balance pre-flight, plain-language errors, ERC-20 `transfer` only — never `approve` |
 | 1.18.0 | Reconciliation | Order search by txid/address; per-order timeline; row actions (check now, extend); a period report read straight from order meta, bounded and cached. Countdown fixed for windows longer than an hour |
-| 1.19 *(planned)* | Operations | Claim-link refunds (C5), webhooks and Telegram (C8), settings backup/restore, per-coin pricing, risk-tiered confirmations (C9) |
+| 1.19.0 | Operations | Claim-link refunds: a hashed, expiring, rate-limited token, a front-end claim page, and an order panel that never sends money itself. Signed webhooks and Telegram alerts, queued out of band with backoff. Settings export/import with secrets held back. Per-coin discount or surcharge, applied once in pricing and mirrored as an order fee line. Confirmations tiered by order value. Bundled translations refreshed |
 
 ---
 
@@ -136,6 +146,9 @@ Full user-facing notes are in `readme.txt`. This is what each release put into t
 | `includes/class-xdwp-hd.php` | xpub/ypub/zpub/Ltub/dgub derivation — a new address per order |
 | `includes/class-xdwp-selftest.php` | The checks behind "Test this coin" and the health panel |
 | `includes/class-xdwp-cron.php` | Scheduled verification, expiry, reminders |
+| `includes/class-xdwp-notify.php` | Webhooks, Telegram, the daily summary |
+| `includes/class-xdwp-refunds.php` | Claim links, and recording a refund the shop sent by hand |
+| `includes/class-xdwp-backup.php` | Exporting and restoring the settings |
 | `includes/class-xdwp-updater.php` | Update checks, and Ed25519 signature enforcement |
 | `includes/admin/` | Settings, Wallets, Coins, Prices & APIs, Payments and Help screens |
 | `templates/payment.php` | What the customer sees after placing the order |
@@ -160,7 +173,10 @@ These hold across every release above. Breaking one is a defect, however good th
    An order is confirmed only by reading the blockchain.
 5. **The manual route always stays.** Every convenience — wallet buttons, deep links, QR codes — is
    in addition to a visible address and amount that can be copied.
-6. **Address allocation is atomic.** Slots are claimed with `INSERT IGNORE` / `LAST_INSERT_ID`, so
+6. **A refund is sent by a person.** The plugin collects the address and records the
+   transaction. It has no code path that moves money, and `tests/smoke-test.php` asserts that the
+   refund code contains none.
+7. **Address allocation is atomic.** Slots are claimed with `INSERT IGNORE` / `LAST_INSERT_ID`, so
    two simultaneous orders cannot be handed the same address and amount.
 
 ---

@@ -107,6 +107,43 @@ $active  = isset( $tabs[ $tab ] ) ? $tabs[ $tab ] : $tabs['general'];
 										</td>
 									</tr>
 									<tr>
+										<th scope="row"><?php esc_html_e( 'Confirmations by order value', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
+										<td>
+											<label>
+												<input type="checkbox" name="xdwp[risk_tiers]" value="yes" <?php checked( ( $settings['risk_tiers'] ?? 'no' ), 'yes' ); ?> />
+												<?php esc_html_e( 'Wait less on small orders and longer on large ones', 'xorro-direct-wallet-payments-woocommerce' ); ?>
+											</label>
+											<p class="cc-risk-row">
+												<label class="cc-inline">
+													<?php
+													printf(
+														/* translators: %s: store currency symbol */
+														esc_html__( 'Accept as soon as it is seen, up to (%s)', 'xorro-direct-wallet-payments-woocommerce' ),
+														esc_html( get_woocommerce_currency_symbol() )
+													);
+													?>
+													<input type="number" min="0" step="0.01" name="xdwp[risk_low_value]" value="<?php echo esc_attr( (string) ( $settings['risk_low_value'] ?? 0 ) ); ?>" class="small-text cc-input" />
+												</label>
+												<label class="cc-inline">
+													<?php
+													printf(
+														/* translators: %s: store currency symbol */
+														esc_html__( 'Wait longer from (%s)', 'xorro-direct-wallet-payments-woocommerce' ),
+														esc_html( get_woocommerce_currency_symbol() )
+													);
+													?>
+													<input type="number" min="0" step="0.01" name="xdwp[risk_high_value]" value="<?php echo esc_attr( (string) ( $settings['risk_high_value'] ?? 0 ) ); ?>" class="small-text cc-input" />
+												</label>
+												<label class="cc-inline">
+													<?php esc_html_e( 'and require', 'xorro-direct-wallet-payments-woocommerce' ); ?>
+													<input type="number" min="0" max="64" name="xdwp[risk_high_confirmations]" value="<?php echo esc_attr( (string) ( $settings['risk_high_confirmations'] ?? 0 ) ); ?>" class="small-text cc-input" />
+													<?php esc_html_e( 'confirmations', 'xorro-direct-wallet-payments-woocommerce' ); ?>
+												</label>
+											</p>
+											<p class="description"><?php esc_html_e( 'A £10 order held for six blocks costs you the customer; a £10,000 order released on one costs you £10,000. Leave a box at 0 to turn that tier off. The higher tier can only ever raise the number a coin already waits for, never lower it — and accepting a payment the moment it is seen means accepting it before the chain has settled it.', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
+										</td>
+									</tr>
+									<tr>
 										<th scope="row"><?php esc_html_e( 'Expiry grace (minutes)', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
 										<td>
 											<input type="number" min="0" max="1440" name="xdwp[expiry_grace_minutes]" value="<?php echo esc_attr( (string) ( $settings['expiry_grace_minutes'] ?? 30 ) ); ?>" class="small-text cc-input" />
@@ -239,6 +276,7 @@ $active  = isset( $tabs[ $tab ] ) ? $tabs[ $tab ] : $tabs['general'];
 							<?php elseif ( 'coins' === $tab ) : ?>
 								<p class="cc-lead"><?php esc_html_e( 'Leave min / max empty for no limit. Coins outside the limits are hidden at checkout — useful where network fees make small orders impractical.', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
 												<p class="cc-lead"><?php esc_html_e( 'Confirmations shown in grey are what this coin waits for now. Type a number to require your own instead — higher is safer and slower.', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
+								<p class="cc-lead"><?php esc_html_e( 'A price adjustment is a percentage off (or on) an order paid in that coin — enter -2 to take 2% off, 1.5 to add 1.5%. It appears on the order as its own line, so the total the customer sees is the total they pay.', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
 								<p class="cc-lead"><?php esc_html_e( 'Auto-verify uses public blockchain APIs. Coins marked Manual (such as Monero) have no free way to detect payments — confirm those with “Mark payment received” on the order.', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
 								<?php
 								$sections = array(
@@ -275,6 +313,7 @@ $active  = isset( $tabs[ $tab ] ) ? $tabs[ $tab ] : $tabs['general'];
 														?>
 													</th>
 													<th><?php esc_html_e( 'Confirmations', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
+													<th title="<?php esc_attr_e( 'Minus for a discount, plus for a surcharge. Shown to the customer as its own line on the order.', 'xorro-direct-wallet-payments-woocommerce' ); ?>"><?php esc_html_e( 'Price adjustment', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
 												</tr>
 											</thead>
 											<tbody>
@@ -286,6 +325,7 @@ $active  = isset( $tabs[ $tab ] ) ? $tabs[ $tab ] : $tabs['general'];
 													$coin_conf   = ( is_array( $coin_confs ) && ! empty( $coin_confs[ $id ] ) ) ? (int) $coin_confs[ $id ] : 0;
 													$conf_now    = Xdwp_Coins::confirmations_for( $coin );
 													$conf_depth  = Xdwp_Coins::reports_depth( $coin );
+													$coin_adjust = Xdwp_Prices::coin_adjustment( $id );
 													?>
 													<tr>
 														<td>
@@ -323,12 +363,112 @@ $active  = isset( $tabs[ $tab ] ) ? $tabs[ $tab ] : $tabs['general'];
 																<span class="cc-coin-confs__note" title="<?php esc_attr_e( 'This network settles a payment the moment it is validated, so there is no depth to wait for.', 'xorro-direct-wallet-payments-woocommerce' ); ?>"><?php esc_html_e( 'final on validation', 'xorro-direct-wallet-payments-woocommerce' ); ?></span>
 															<?php endif; ?>
 														</td>
+														<td class="cc-coin-adjust">
+															<input type="number" min="-50" max="50" step="0.01" class="small-text" name="xdwp[coin_adjustments][<?php echo esc_attr( $id ); ?>]" value="<?php echo esc_attr( 0.0 !== $coin_adjust ? (string) $coin_adjust : '' ); ?>" placeholder="0" aria-label="<?php echo esc_attr( sprintf( /* translators: %s: coin name */ __( 'Discount or surcharge for paying in %s, as a percentage', 'xorro-direct-wallet-payments-woocommerce' ), $coin['name'] ) ); ?>" />
+															<span class="cc-coin-adjust__unit" aria-hidden="true">%</span>
+														</td>
 													</tr>
 												<?php endforeach; ?>
 											</tbody>
 										</table>
 									</div>
 								<?php endforeach; ?>
+
+							<?php elseif ( 'alerts' === $tab ) : ?>
+								<?php
+								// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- display only.
+								$xdwp_test = isset( $_GET['xdwp_alert_test'] ) ? sanitize_key( wp_unslash( $_GET['xdwp_alert_test'] ) ) : '';
+								$xdwp_chosen = Xdwp_Settings::get( 'notify_events', null );
+								if ( ! is_array( $xdwp_chosen ) ) {
+									$xdwp_chosen = Xdwp_Notify::default_events();
+								}
+								?>
+								<p class="cc-lead"><?php esc_html_e( 'A payment that arrives short, or two days late, needs a person. This sends those events somewhere you will actually see them. Nothing here changes an order — it only reports.', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
+
+								<?php if ( 'sent' === $xdwp_test ) : ?>
+									<div class="notice notice-success inline"><p><?php esc_html_e( 'Test alert sent. If nothing arrived, check the address and the secret.', 'xorro-direct-wallet-payments-woocommerce' ); ?></p></div>
+								<?php elseif ( 'failed' === $xdwp_test ) : ?>
+									<div class="notice notice-error inline"><p><?php esc_html_e( 'The test alert could not be delivered. The endpoint refused it, or this site could not reach it.', 'xorro-direct-wallet-payments-woocommerce' ); ?></p></div>
+								<?php elseif ( 'none' === $xdwp_test ) : ?>
+									<div class="notice notice-warning inline"><p><?php esc_html_e( 'Nothing is set up to receive alerts yet. Add a webhook address or a Telegram bot below, save, then test.', 'xorro-direct-wallet-payments-woocommerce' ); ?></p></div>
+								<?php endif; ?>
+
+								<table class="form-table cc-table">
+									<tr>
+										<th scope="row"><?php esc_html_e( 'Webhook address', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
+										<td>
+											<input type="url" class="regular-text cc-input" name="xdwp[webhook_url]" value="<?php echo esc_attr( (string) Xdwp_Settings::get( 'webhook_url', '' ) ); ?>" placeholder="https://example.com/hooks/crypto" />
+											<p class="description"><?php esc_html_e( 'Every event is POSTed there as JSON. Your endpoint should answer 2xx; anything else is retried after one minute, five, then twenty-five, and then given up on.', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
+										</td>
+									</tr>
+									<tr>
+										<th scope="row"><?php esc_html_e( 'Signing secret', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
+										<td>
+											<input type="password" class="regular-text cc-input" name="xdwp[webhook_secret]" value="" autocomplete="new-password" placeholder="<?php echo esc_attr( Xdwp_Settings::api_key_input_placeholder( 'webhook_secret' ) ); ?>" />
+											<p class="description">
+												<?php esc_html_e( 'With a secret set, each request carries X-Xdwp-Signature: sha256=HMAC(secret, timestamp + "." + body) and X-Xdwp-Timestamp. Check both before you trust a request — the timestamp is what stops an old one being replayed at you. Leave blank to keep the current secret, or type a single hyphen to clear it.', 'xorro-direct-wallet-payments-woocommerce' ); ?>
+											</p>
+										</td>
+									</tr>
+									<tr>
+										<th scope="row"><?php esc_html_e( 'Telegram bot token', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
+										<td>
+											<input type="password" class="regular-text cc-input" name="xdwp[telegram_token]" value="" autocomplete="new-password" placeholder="<?php echo esc_attr( Xdwp_Settings::api_key_input_placeholder( 'telegram_token' ) ); ?>" />
+											<p class="description"><?php esc_html_e( 'Create a bot by messaging @BotFather on Telegram; it gives you a token. Leave blank to keep the current one, or type a single hyphen to clear it.', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
+										</td>
+									</tr>
+									<tr>
+										<th scope="row"><?php esc_html_e( 'Telegram chat ID', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
+										<td>
+											<input type="text" class="regular-text cc-input" name="xdwp[telegram_chat]" value="<?php echo esc_attr( (string) Xdwp_Settings::get( 'telegram_chat', '' ) ); ?>" placeholder="-1001234567890" />
+											<p class="description"><?php esc_html_e( 'Message your bot once, then open api.telegram.org/bot<token>/getUpdates to find the chat id. For a group, add the bot to it first.', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
+										</td>
+									</tr>
+									<tr>
+										<th scope="row"><?php esc_html_e( 'What to report', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
+										<td>
+											<input type="hidden" name="xdwp[notify_events_present]" value="1" />
+											<fieldset class="xdwp-events">
+												<legend class="screen-reader-text"><?php esc_html_e( 'Events to report', 'xorro-direct-wallet-payments-woocommerce' ); ?></legend>
+												<?php foreach ( Xdwp_Notify::events() as $xdwp_event => $xdwp_label ) : ?>
+													<label class="xdwp-events__item">
+														<input type="checkbox" name="xdwp[notify_events][]" value="<?php echo esc_attr( $xdwp_event ); ?>" <?php checked( in_array( $xdwp_event, $xdwp_chosen, true ) ); ?> />
+														<?php echo esc_html( $xdwp_label ); ?>
+													</label>
+												<?php endforeach; ?>
+											</fieldset>
+											<p class="description"><?php esc_html_e( 'Expired orders are noisy on a busy shop, which is why they are off to begin with.', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
+										</td>
+									</tr>
+									<tr>
+										<th scope="row"><?php esc_html_e( 'Daily summary', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
+										<td>
+											<label>
+												<input type="checkbox" name="xdwp[digest_daily]" value="yes" <?php checked( Xdwp_Settings::get( 'digest_daily', 'no' ), 'yes' ); ?> />
+												<?php esc_html_e( 'Send one message a day: what was paid, what it came to, and what still needs you', 'xorro-direct-wallet-payments-woocommerce' ); ?>
+											</label>
+											<?php
+											$xdwp_next = wp_next_scheduled( 'xdwp_daily_digest' );
+											if ( $xdwp_next ) :
+												?>
+												<p class="description">
+													<?php
+													printf(
+														/* translators: %s: date and time */
+														esc_html__( 'Next summary: %s', 'xorro-direct-wallet-payments-woocommerce' ),
+														esc_html( wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $xdwp_next ) )
+													);
+													?>
+												</p>
+											<?php endif; ?>
+										</td>
+									</tr>
+								</table>
+
+								<p class="description cc-footnote">
+									<?php esc_html_e( 'Save your changes first — the test uses what is stored, not what is on screen.', 'xorro-direct-wallet-payments-woocommerce' ); ?>
+									<a class="cc-btn cc-btn-secondary" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=xdwp_test_alert' ), 'xdwp_test_alert' ) ); ?>"><?php esc_html_e( 'Send a test alert', 'xorro-direct-wallet-payments-woocommerce' ); ?></a>
+								</p>
 
 							<?php elseif ( 'wallets' === $tab ) : ?>
 								<?php include XDWP_PATH . 'includes/admin/views/wallets-ui.php'; ?>
@@ -565,5 +705,49 @@ $active  = isset( $tabs[ $tab ] ) ? $tabs[ $tab ] : $tabs['general'];
 				</div>
 			</div>
 		</form>
+
+	<?php if ( 'general' === $tab ) : ?>
+		<?php
+		// Its own forms, outside the settings form: a form cannot contain another, and a file
+		// upload needs a different encoding from the rest of this page.
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- display only.
+		$xdwp_restored = isset( $_GET['xdwp_restore'] ) ? sanitize_key( wp_unslash( $_GET['xdwp_restore'] ) ) : '';
+		$xdwp_message  = '' !== $xdwp_restored ? Xdwp_Backup::message( $xdwp_restored ) : '';
+		?>
+		<div class="xdwp-backup">
+			<h3 class="xdwp-backup__title"><?php esc_html_e( 'Backup and restore', 'xorro-direct-wallet-payments-woocommerce' ); ?></h3>
+			<p class="xdwp-backup__lead">
+				<?php esc_html_e( 'Everything on these screens — coins, wallet addresses, extended keys, limits, confirmations and prices — in one file. Keep a copy before a big change, or use it to set up a second shop without doing it all again.', 'xorro-direct-wallet-payments-woocommerce' ); ?>
+			</p>
+
+			<?php if ( '' !== $xdwp_message ) : ?>
+				<div class="notice notice-<?php echo 'done' === $xdwp_restored ? 'success' : 'error'; ?> inline">
+					<p><?php echo esc_html( $xdwp_message ); ?></p>
+				</div>
+			<?php endif; ?>
+
+			<div class="xdwp-backup__row">
+				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="xdwp-backup__form">
+					<input type="hidden" name="action" value="xdwp_export_settings" />
+					<?php wp_nonce_field( 'xdwp_export_settings' ); ?>
+					<button type="submit" class="cc-btn cc-btn-secondary"><?php esc_html_e( 'Download settings', 'xorro-direct-wallet-payments-woocommerce' ); ?></button>
+					<label class="xdwp-backup__check">
+						<input type="checkbox" name="secrets" value="1" />
+						<?php esc_html_e( 'Include API keys', 'xorro-direct-wallet-payments-woocommerce' ); ?>
+					</label>
+					<p class="description"><?php esc_html_e( 'API keys are left out unless you tick the box, so a file you email or store in a repository carries no secrets. There is never a private key in this file — this plugin does not hold one.', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
+				</form>
+
+				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" enctype="multipart/form-data" class="xdwp-backup__form">
+					<input type="hidden" name="action" value="xdwp_import_settings" />
+					<?php wp_nonce_field( 'xdwp_import_settings' ); ?>
+					<label for="xdwp-settings-file" class="screen-reader-text"><?php esc_html_e( 'Settings file', 'xorro-direct-wallet-payments-woocommerce' ); ?></label>
+					<input type="file" name="xdwp_settings_file" id="xdwp-settings-file" accept="application/json,.json" required />
+					<button type="submit" class="cc-btn cc-btn-secondary"><?php esc_html_e( 'Restore from file', 'xorro-direct-wallet-payments-woocommerce' ); ?></button>
+					<p class="description"><?php esc_html_e( 'Restoring replaces the settings on this site with the ones in the file. Addresses and keys are checked again on the way in, exactly as if you had typed them.', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
+				</form>
+			</div>
+		</div>
+	<?php endif; ?>
 	</div>
 </div>

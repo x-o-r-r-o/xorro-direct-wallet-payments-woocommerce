@@ -20,6 +20,8 @@ delete_option( 'woocommerce_xdwp_payment_alert_settings' );
 
 wp_clear_scheduled_hook( 'xdwp_check_payments' );
 wp_clear_scheduled_hook( 'xdwp_refresh_prices' );
+wp_clear_scheduled_hook( 'xdwp_daily_digest' );
+wp_clear_scheduled_hook( 'xdwp_send_notification' );
 
 global $wpdb;
 

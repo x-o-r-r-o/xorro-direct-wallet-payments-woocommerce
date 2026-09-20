@@ -157,6 +157,21 @@ class Xdwp_Settings {
 			$clean['min_confirmations'] = max( 0, min( 64, absint( $input['min_confirmations'] ) ) );
 		}
 
+		// Risk-tiered confirmations: wait less on a small order, more on a large one. Both are
+		// order totals in the shop's own currency; 0 turns that tier off.
+		if ( isset( $input['risk_low_value'] ) ) {
+			$clean['risk_low_value'] = max( 0, min( 1000000, (float) $input['risk_low_value'] ) );
+		}
+		if ( isset( $input['risk_high_value'] ) ) {
+			$clean['risk_high_value'] = max( 0, min( 1000000, (float) $input['risk_high_value'] ) );
+		}
+		if ( isset( $input['risk_high_confirmations'] ) ) {
+			$clean['risk_high_confirmations'] = max( 0, min( 64, absint( $input['risk_high_confirmations'] ) ) );
+		}
+		if ( isset( $input['risk_tiers'] ) ) {
+			$clean['risk_tiers'] = ( 'yes' === $input['risk_tiers'] || 1 === (int) $input['risk_tiers'] || true === $input['risk_tiers'] ) ? 'yes' : 'no';
+		}
+
 		if ( isset( $input['expiry_grace_minutes'] ) ) {
 			$clean['expiry_grace_minutes'] = max( 0, min( 1440, absint( $input['expiry_grace_minutes'] ) ) );
 		}
@@ -168,6 +183,8 @@ class Xdwp_Settings {
 		}
 
 		foreach ( array(
+			'webhook_secret',
+			'telegram_token',
 			'coingecko_api_key',
 			'etherscan_api_key',
 			'trongrid_api_key',
@@ -189,6 +206,43 @@ class Xdwp_Settings {
 				continue;
 			}
 			$clean[ $text_key ] = $submitted;
+		}
+
+		if ( isset( $input['webhook_url'] ) ) {
+			$url = trim( sanitize_text_field( wp_unslash( $input['webhook_url'] ) ) );
+			// Only somewhere this site can actually POST to. An unparseable or non-HTTP address
+			// would fail on every event for ever without ever saying why.
+			if ( '' === $url ) {
+				$clean['webhook_url'] = '';
+			} else {
+				$valid = wp_http_validate_url( $url );
+				if ( $valid ) {
+					$clean['webhook_url'] = esc_url_raw( $valid );
+				} else {
+					add_settings_error(
+						'xdwp',
+						'xdwp_webhook',
+						__( 'That webhook address was not saved: it must be a full http:// or https:// address this site is allowed to reach.', 'xorro-direct-wallet-payments-woocommerce' ),
+						'error'
+					);
+				}
+			}
+		}
+
+		if ( isset( $input['telegram_chat'] ) ) {
+			$clean['telegram_chat'] = sanitize_text_field( wp_unslash( $input['telegram_chat'] ) );
+		}
+
+		if ( isset( $input['notify_events'] ) && is_array( $input['notify_events'] ) ) {
+			$known                  = array_keys( Xdwp_Notify::events() );
+			$clean['notify_events'] = array_values( array_intersect( array_map( 'sanitize_key', $input['notify_events'] ), $known ) );
+		} elseif ( isset( $input['notify_events_present'] ) ) {
+			// The form was shown and every box was cleared, which is not the same as never asked.
+			$clean['notify_events'] = array();
+		}
+
+		if ( isset( $input['digest_daily'] ) ) {
+			$clean['digest_daily'] = ( 'yes' === $input['digest_daily'] || 1 === (int) $input['digest_daily'] || true === $input['digest_daily'] ) ? 'yes' : 'no';
 		}
 
 		if ( isset( $input['description'] ) ) {
@@ -234,6 +288,24 @@ class Xdwp_Settings {
 				}
 			}
 			$clean['coin_limits'] = $limits;
+		}
+
+		if ( isset( $input['coin_adjustments'] ) && is_array( $input['coin_adjustments'] ) ) {
+			$valid_coins = array_keys( Xdwp_Coins::all() );
+			$adjustments = array();
+			foreach ( $input['coin_adjustments'] as $coin_id => $value ) {
+				$coin_id = sanitize_text_field( $coin_id );
+				if ( ! in_array( $coin_id, $valid_coins, true ) || '' === trim( (string) $value ) ) {
+					continue;
+				}
+				// A discount deeper than half the order, or a surcharge larger than it, is far
+				// more likely to be a typo than an intention.
+				$percent = round( max( -50, min( 50, (float) $value ) ), 2 );
+				if ( abs( $percent ) >= 0.01 ) {
+					$adjustments[ $coin_id ] = $percent;
+				}
+			}
+			$clean['coin_adjustments'] = $adjustments;
 		}
 
 		if ( isset( $input['coin_confirmations'] ) && is_array( $input['coin_confirmations'] ) ) {

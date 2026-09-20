@@ -18,6 +18,7 @@ class Xdwp_Admin {
 	public static function init() {
 		add_action( 'wp_ajax_xdwp_selftest', array( __CLASS__, 'handle_selftest' ) );
 		add_action( 'woocommerce_system_status_report', array( __CLASS__, 'system_status_report' ) );
+		add_action( 'admin_post_xdwp_test_alert', array( __CLASS__, 'handle_test_alert' ) );
 		add_action( 'admin_menu', array( __CLASS__, 'register_menu' ) );
 		add_action( 'admin_init', array( __CLASS__, 'handle_save' ) );
 		add_action( 'admin_notices', array( __CLASS__, 'setup_notice' ) );
@@ -234,12 +235,43 @@ class Xdwp_Admin {
 
 		add_submenu_page(
 			'xorro-direct-wallet-payments-woocommerce',
+			__( 'Alerts', 'xorro-direct-wallet-payments-woocommerce' ),
+			__( 'Alerts', 'xorro-direct-wallet-payments-woocommerce' ),
+			'manage_woocommerce',
+			'xorro-direct-wallet-payments-woocommerce-alerts',
+			array( __CLASS__, 'render_page' )
+		);
+
+		add_submenu_page(
+			'xorro-direct-wallet-payments-woocommerce',
 			__( 'Help', 'xorro-direct-wallet-payments-woocommerce' ),
 			__( 'Help', 'xorro-direct-wallet-payments-woocommerce' ),
 			'manage_woocommerce',
 			'xorro-direct-wallet-payments-woocommerce-help',
 			array( __CLASS__, 'render_help_page' )
 		);
+	}
+
+	/**
+	 * Send one alert now, so the shop can see whether it arrives.
+	 */
+	public static function handle_test_alert() {
+		if ( ! current_user_can( 'manage_woocommerce' ) ) {
+			wp_die( esc_html__( 'You are not allowed to do that.', 'xorro-direct-wallet-payments-woocommerce' ), 403 );
+		}
+		check_admin_referer( 'xdwp_test_alert' );
+
+		$result = Xdwp_Notify::send_test();
+		$code   = 'none';
+		if ( null !== $result['webhook'] || null !== $result['telegram'] ) {
+			$failed = ( false === $result['webhook'] ) || ( false === $result['telegram'] );
+			$code   = $failed ? 'failed' : 'sent';
+		}
+
+		$back = wp_get_referer();
+		$back = $back ? $back : admin_url( 'admin.php?page=xorro-direct-wallet-payments-woocommerce-alerts' );
+		wp_safe_redirect( add_query_arg( 'xdwp_alert_test', $code, $back ) );
+		exit;
 	}
 
 	/**
@@ -255,6 +287,7 @@ class Xdwp_Admin {
 			'xorro-direct-wallet-payments-woocommerce-wallets' => 'wallets',
 			'xorro-direct-wallet-payments-woocommerce-prices'  => 'prices',
 			'xorro-direct-wallet-payments-woocommerce-payments' => 'payments',
+			'xorro-direct-wallet-payments-woocommerce-alerts'  => 'alerts',
 			'xorro-direct-wallet-payments-woocommerce-help'   => 'help',
 		);
 		return isset( $map[ $page ] ) ? $map[ $page ] : 'general';
@@ -645,6 +678,13 @@ class Xdwp_Admin {
 				'icon'  => 'dashicons-chart-area',
 				'title' => __( 'Prices & APIs', 'xorro-direct-wallet-payments-woocommerce' ),
 				'desc'  => __( 'Exchange rates and blockchain API keys for quotes and auto-verification.', 'xorro-direct-wallet-payments-woocommerce' ),
+			),
+			'alerts'  => array(
+				'label' => __( 'Alerts', 'xorro-direct-wallet-payments-woocommerce' ),
+				'url'   => admin_url( 'admin.php?page=xorro-direct-wallet-payments-woocommerce-alerts' ),
+				'icon'  => 'dashicons-megaphone',
+				'title' => __( 'Alerts', 'xorro-direct-wallet-payments-woocommerce' ),
+				'desc'  => __( 'Send what happens to a payment somewhere you will see it — a webhook, a Telegram chat, or both.', 'xorro-direct-wallet-payments-woocommerce' ),
 			),
 			'help'    => array(
 				'label' => __( 'Help', 'xorro-direct-wallet-payments-woocommerce' ),

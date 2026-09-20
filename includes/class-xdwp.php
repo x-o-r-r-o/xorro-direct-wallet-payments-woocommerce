@@ -58,9 +58,12 @@ final class Xdwp {
 		require_once XDWP_PATH . 'includes/class-xdwp-ajax.php';
 		require_once XDWP_PATH . 'includes/class-xdwp-compat.php';
 		require_once XDWP_PATH . 'includes/class-xdwp-emails.php';
+		require_once XDWP_PATH . 'includes/class-xdwp-notify.php';
+		require_once XDWP_PATH . 'includes/class-xdwp-refunds.php';
 		require_once XDWP_PATH . 'includes/class-xdwp-gateway.php';
 
 		if ( is_admin() ) {
+			require_once XDWP_PATH . 'includes/class-xdwp-backup.php';
 			require_once XDWP_PATH . 'includes/admin/class-xdwp-admin.php';
 			require_once XDWP_PATH . 'includes/admin/class-xdwp-payments-admin.php';
 		}
@@ -85,12 +88,15 @@ final class Xdwp {
 		Xdwp_Ajax::init();
 		Xdwp_Compat::init();
 		Xdwp_Emails::init();
+		Xdwp_Notify::init();
+		Xdwp_Refunds::init();
 		Xdwp_Order::init();
 		Xdwp_Privacy::init();
 
 		if ( is_admin() ) {
 			Xdwp_Admin::init();
 			Xdwp_Payments_Admin::init();
+			Xdwp_Backup::init();
 		}
 	}
 

@@ -66,6 +66,19 @@ class Xdwp_Install {
 		if ( ! wp_next_scheduled( 'xdwp_refresh_prices' ) ) {
 			wp_schedule_event( time() + 120, 'hourly', 'xdwp_refresh_prices' );
 		}
+
+		self::schedule_digest();
+	}
+
+	/**
+	 * The daily summary, at a quiet hour rather than whenever the plugin happened to be turned on.
+	 */
+	public static function schedule_digest() {
+		if ( wp_next_scheduled( 'xdwp_daily_digest' ) ) {
+			return;
+		}
+		$next = strtotime( 'tomorrow 07:00' );
+		wp_schedule_event( $next ? $next : ( time() + DAY_IN_SECONDS ), 'daily', 'xdwp_daily_digest' );
 	}
 
 	/**
@@ -74,6 +87,8 @@ class Xdwp_Install {
 	public static function deactivate() {
 		wp_clear_scheduled_hook( 'xdwp_check_payments' );
 		wp_clear_scheduled_hook( 'xdwp_refresh_prices' );
+		wp_clear_scheduled_hook( 'xdwp_daily_digest' );
+		wp_clear_scheduled_hook( 'xdwp_send_notification' );
 	}
 
 	/**
@@ -172,5 +187,6 @@ class Xdwp_Install {
 		if ( ! wp_next_scheduled( 'xdwp_refresh_prices' ) ) {
 			wp_schedule_event( time() + 120, 'hourly', 'xdwp_refresh_prices' );
 		}
+		self::schedule_digest();
 	}
 }

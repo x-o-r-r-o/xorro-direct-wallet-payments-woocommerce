@@ -979,6 +979,50 @@ class Xdwp_Coins {
 	}
 
 	/**
+	 * Confirmations for this coin on this particular order.
+	 *
+	 * Waiting six blocks on a £4 order costs the shop a customer; waiting one on a £4,000 order
+	 * costs it £4,000. A shop that turns tiers on says where those lines are, and this is the
+	 * only place that decides which side of them an order falls.
+	 *
+	 * A high-value tier can only ever raise the number — a tier set below what the chain needs
+	 * would quietly weaken every large order, which is the opposite of the point.
+	 *
+	 * @param array|string  $coin  Coin definition or ID.
+	 * @param WC_Order|null $order Order, when there is one.
+	 * @return int
+	 */
+	public static function confirmations_for_order( $coin, $order = null ) {
+		$base = self::confirmations_for( $coin );
+
+		if ( ! $order instanceof WC_Order || 'yes' !== Xdwp_Settings::get( 'risk_tiers', 'no' ) ) {
+			return $base;
+		}
+
+		$total = (float) $order->get_total();
+		$low   = (float) Xdwp_Settings::get( 'risk_low_value', 0 );
+		$high  = (float) Xdwp_Settings::get( 'risk_high_value', 0 );
+
+		$confirmations = $base;
+		if ( $high > 0 && $total >= $high ) {
+			$confirmations = max( $base, (int) Xdwp_Settings::get( 'risk_high_confirmations', $base ) );
+		} elseif ( $low > 0 && $total <= $low ) {
+			// The shop has said it will carry the risk on an order this small: accept the
+			// payment as soon as the chain has it, without waiting for depth.
+			$confirmations = 0;
+		}
+
+		/**
+		 * Confirmations this order's payment must reach.
+		 *
+		 * @param int      $confirmations Resolved number.
+		 * @param array    $coin          Coin definition.
+		 * @param WC_Order $order         Order.
+		 */
+		return max( 0, min( 64, (int) apply_filters( 'xdwp_order_confirmations_required', $confirmations, $coin, $order ) ) );
+	}
+
+	/**
 	 * Order-total limits a merchant set for a coin, in store currency.
 	 *
 	 * @param string $coin_id Coin ID.
