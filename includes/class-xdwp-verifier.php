@@ -1939,6 +1939,8 @@ class Xdwp_Verifier {
 				return self::check_cardano( $address, $min, $max, $since );
 			case 'apt':
 				return self::check_aptos( $address, $min, $max, $since );
+			case 'kaia':
+				return self::check_kaia( $address, $min, $max, $since );
 			case 'kas':
 				return self::check_kaspa( $address, $min, $max, $since );
 			case 'btg':
@@ -3542,6 +3544,106 @@ class Xdwp_Verifier {
 		}
 		$data = json_decode( wp_remote_retrieve_body( $response ), true );
 		return is_array( $data ) ? $data : null;
+	}
+
+	/**
+	 * Kaia — Kaiascan's open API, which needs a free key of the shop's own.
+	 *
+	 * Kaia is EVM-compatible but runs no Blockscout and its public node has no address index,
+	 * so there is no key-less way to ask "what arrived at this address". Kaiascan will answer
+	 * that, and its free tier covers an ordinary shop. Without a key this returns false and the
+	 * coin stays manual, which is what it was before.
+	 *
+	 * Amounts come back as a decimal number of KAIA rather than the usual integer of the
+	 * smallest unit, so they are formatted to the chain's precision before comparing rather
+	 * than compared as floats.
+	 *
+	 * @param string $address Receiving address.
+	 * @param float  $min     Minimum amount.
+	 * @param float  $max     Maximum amount.
+	 * @param int    $since   Earliest transfer time.
+	 * @return string|false
+	 */
+	private static function check_kaia( $address, $min, $max, $since ) {
+		$api_key = trim( (string) Xdwp_Settings::get( 'kaiascan_api_key', '' ) );
+		if ( '' === $api_key ) {
+			return false;
+		}
+		if ( ! preg_match( '/^0x[a-fA-F0-9]{40}$/', (string) $address ) ) {
+			return false;
+		}
+
+		$url = sprintf(
+			'https://mainnet-oapi.kaiascan.io/api/v1/accounts/%s/transactions?page=1&size=25&directions=To',
+			rawurlencode( strtolower( $address ) )
+		);
+		$body = self::http_get( $url, array( 'Authorization' => 'Bearer ' . $api_key ) );
+		if ( ! is_array( $body ) || empty( $body['results'] ) || ! is_array( $body['results'] ) ) {
+			return false;
+		}
+
+		foreach ( $body['results'] as $tx ) {
+			if ( ! is_array( $tx ) ) {
+				continue;
+			}
+			// Only a plain value transfer credits an order; a contract call that happens to
+			// carry value is not what the customer was asked to send.
+			$type = isset( $tx['transaction_type'] ) ? (string) $tx['transaction_type'] : '';
+			if ( '' !== $type && false === stripos( $type, 'ValueTransfer' ) && 'TxTypeLegacyTransaction' !== $type ) {
+				continue;
+			}
+			// Fail closed: only an explicit Success counts.
+			$status = isset( $tx['status']['status'] ) ? (string) $tx['status']['status'] : '';
+			if ( 'Success' !== $status ) {
+				continue;
+			}
+			$to = isset( $tx['to'] ) ? (string) $tx['to'] : '';
+			if ( '' === $to || 0 !== strcasecmp( $to, $address ) ) {
+				continue;
+			}
+			$time = isset( $tx['datetime'] ) ? (int) strtotime( (string) $tx['datetime'] ) : 0;
+			if ( ! $time || $time < $since ) {
+				continue;
+			}
+			if ( ! isset( $tx['amount'] ) || ! is_numeric( $tx['amount'] ) ) {
+				continue;
+			}
+			// Back to the chain's own smallest unit so the comparison is the same integer one
+			// every other chain gets, rather than a float compare.
+			$raw = self::to_raw_units( (string) $tx['amount'], 18 );
+			if ( '' === $raw || ! self::raw_amount_in_band( $raw, 18, $min, $max ) ) {
+				continue;
+			}
+			$hash = isset( $tx['transaction_hash'] ) ? (string) $tx['transaction_hash'] : '';
+			if ( '' !== $hash ) {
+				return $hash;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * A decimal amount as an integer count of the smallest unit, without touching a float.
+	 *
+	 * @param string $amount   Decimal amount, e.g. "1.25".
+	 * @param int    $decimals Units per whole coin, as a power of ten.
+	 * @return string Digits only, or '' when the input is not a plain decimal.
+	 */
+	private static function to_raw_units( $amount, $decimals ) {
+		$amount = trim( (string) $amount );
+		if ( ! preg_match( '/^[0-9]+(\.[0-9]+)?$/', $amount ) ) {
+			return '';
+		}
+		$parts = explode( '.', $amount );
+		$whole = $parts[0];
+		$frac  = isset( $parts[1] ) ? $parts[1] : '';
+		if ( strlen( $frac ) > $decimals ) {
+			$frac = substr( $frac, 0, $decimals );
+		}
+		$frac = str_pad( $frac, $decimals, '0' );
+		$raw  = ltrim( $whole . $frac, '0' );
+		return '' === $raw ? '0' : $raw;
 	}
 
 	/**

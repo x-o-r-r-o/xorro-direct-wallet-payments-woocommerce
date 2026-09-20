@@ -156,6 +156,8 @@ class Xdwp_Wallets {
 				return (bool) preg_match( '/^G[A-Z2-7]{55}$/', $address );
 			case 'xmr':
 				return $len >= 95 && $len <= 110;
+			case 'dot':
+				return (bool) preg_match( '/^[1-9A-HJ-NP-Za-km-z]{46,50}$/', $address );
 			case 'atom':
 				return (bool) preg_match( '/^cosmos1[a-z0-9]{38,58}$/', $address );
 			case 'scrt':

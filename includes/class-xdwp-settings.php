@@ -55,6 +55,7 @@ class Xdwp_Settings {
 			'helius_api_key'    => 'XDWP_HELIUS_API_KEY',
 			'aptos_api_key'     => 'XDWP_APTOS_API_KEY',
 			'blockchair_api_key' => 'XDWP_BLOCKCHAIR_API_KEY',
+			'kaiascan_api_key'  => 'XDWP_KAIASCAN_API_KEY',
 		);
 	}
 
@@ -185,6 +186,7 @@ class Xdwp_Settings {
 			'webhook_secret',
 			'telegram_token',
 			'blockchair_api_key',
+			'kaiascan_api_key',
 			'coingecko_api_key',
 			'etherscan_api_key',
 			'trongrid_api_key',

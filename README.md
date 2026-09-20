@@ -1,6 +1,6 @@
 # Xorro Direct Wallet Payments for WooCommerce
 
-Accept cryptocurrency in WooCommerce **straight into your own wallets** — no payment processor, no custody, no license keys, no phone-home. 233 coins and tokens across 74 blockchains, with automatic on-chain payment detection.
+Accept cryptocurrency in WooCommerce **straight into your own wallets** — no payment processor, no custody, no license keys, no phone-home. 234 coins and tokens across 75 blockchains, with automatic on-chain payment detection.
 
 [![Release](https://img.shields.io/github/v/release/x-o-r-r-o/xorro-direct-wallet-payments-woocommerce)](https://github.com/x-o-r-r-o/xorro-direct-wallet-payments-woocommerce/releases/latest)
 [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](LICENSE)
@@ -19,7 +19,7 @@ Each order gets a slightly unique amount (usually a few base units, e.g. 10 sato
 
 ## Features
 
-- **233 coins and tokens** — 69 native coins plus ERC-20, BEP-20, TRC-20, SPL (Solana) and TON jetton tokens
+- **234 coins and tokens** — 70 native coins plus ERC-20, BEP-20, TRC-20, SPL (Solana) and TON jetton tokens
 - **USDT and USDC on 9 networks each** — Ethereum, Arbitrum, Optimism, BNB Chain, Polygon, Avalanche, Base, Solana, TRON — plus DAI on 5
 - **Automatic payment detection** on every coin except three manual-only ones (see below), with confirmations you can tune per coin, or by order value
 - **Classic and block checkout** (WooCommerce Checkout Blocks) and **HPOS** compatible
@@ -49,17 +49,21 @@ Each order gets a slightly unique amount (usually a few base units, e.g. 10 sato
 
 ### Supported coins
 
-**Native coins (69):** BTC, BCH, ETH, LTC, DOGE, DASH, ZEC, XEC, BNB, SOL, TRX, XMR, XRP, POL (MATIC), AVAX, XLM, ATOM, SCRT, SEI, INJ, EOS, ETC, FIL, ALGO, HBAR, CRO, FTM, EGLD, NEAR, ADA, APT, KAS, TON, BTG, FIRO, RVN, PIVX, NEO, GAS, THETA, TFUEL, DGB, KMD, QTUM, ARK, AE, ICX, ONT, KLV, TET, XEM, XYM, RUNE, IOTX, STRAX, IOTA, ONE, PLS, SYS (NEVM), BRISE, XDC, XTZ, XNO, WAVES, KAIA and more.
+**Native coins (70):** BTC, BCH, ETH, LTC, DOGE, DASH, ZEC, XEC, BNB, SOL, TRX, XMR, XRP, POL (MATIC), AVAX, XLM, DOT, ATOM, SCRT, SEI, INJ, EOS, ETC, FIL, ALGO, HBAR, CRO, FTM, EGLD, NEAR, ADA, APT, KAS, TON, BTG, FIRO, RVN, PIVX, NEO, GAS, THETA, TFUEL, DGB, KMD, QTUM, ARK, AE, ICX, ONT, KLV, TET, XEM, XYM, RUNE, IOTX, STRAX, IOTA, ONE, PLS, SYS (NEVM), BRISE, XDC, XTZ, XNO, WAVES, KAIA and more.
 
 **Tokens (164):** stablecoins (USDT, USDC, DAI, TUSD, USDP, GUSD, PYUSD, USDe, USDD, EURT, XAUT…) and popular tokens such as LINK, UNI, AAVE, SHIB, PEPE, FLOKI, APE, LDO, GRT, 1INCH, CAKE, Notcoin, DOGS, Hamster Kombat and LayerZero.
 
 The full list, with each coin's network and auto-verify status, is on **Xorro Wallet Payments → Coins**.
 
-**Manual-only coins:** Monero (XMR), IoTeX (IOTX) and Kaia (KAIA) have no free, key-less way to detect
-incoming payments. You can still accept them; confirm each payment with **Mark payment received** on
-the order. Monero is a property of the protocol — incoming payments are visible only to the holder of
-the private view key, which this plugin will never ask for. IoTeX and Kaia are waiting on an API key:
-both have explorers that require one.
+**Manual-only coins:** Monero (XMR), Polkadot (DOT) and IoTeX (IOTX) are payable but confirmed by
+hand with **Mark payment received** on the order. Each for its own reason: Monero because of the
+protocol — incoming payments are visible only to the holder of the private view key, which this
+plugin will never ask for; Polkadot because Subscan is the only service that will list an address's
+transfers and its key is a paid product; IoTeX because its only address-history API answers HTTP 500
+in production, even to its own block explorer.
+
+**Kaia (KAIA)** is confirmed automatically once you add a free [Kaiascan](https://kaiascan.io) key
+under Prices & APIs. Without one it behaves as a manual coin, and the Coins tab says so.
 
 ## Requirements
 
@@ -92,9 +96,10 @@ Everything works without keys, but free keys raise rate limits and some chains n
 | TronGrid | Higher TRON limits | [trongrid.io](https://www.trongrid.io/) |
 | Helius | Solana and SPL tokens | [helius.dev](https://www.helius.dev/) |
 | Aptos | Aptos (APT) — must be a **mainnet** key; a devnet key is refused by the mainnet API | [aptoslabs.com](https://aptoslabs.com/developers) |
+| Kaiascan | Kaia (KAIA). Kaia runs no free public index of its own, so without this key Kaia payments must be confirmed by hand. | [kaiascan.io](https://kaiascan.io) |
 | Blockchair | Optional. Dogecoin, Bitcoin Cash, Zcash, Dash and eCash are read through Blockchair, which stops answering once the day's free allowance is used. Only worth it on a busy shop. | [blockchair.com/api/plans](https://blockchair.com/api/plans) |
 
-Keys can also be set in `wp-config.php` so they are never stored in the database: `XDWP_COINGECKO_API_KEY`, `XDWP_ETHERSCAN_API_KEY`, `XDWP_TRONGRID_API_KEY`, `XDWP_HELIUS_API_KEY`, `XDWP_APTOS_API_KEY`, `XDWP_BLOCKCHAIR_API_KEY`.
+Keys can also be set in `wp-config.php` so they are never stored in the database: `XDWP_COINGECKO_API_KEY`, `XDWP_ETHERSCAN_API_KEY`, `XDWP_TRONGRID_API_KEY`, `XDWP_HELIUS_API_KEY`, `XDWP_APTOS_API_KEY`, `XDWP_BLOCKCHAIR_API_KEY`, `XDWP_KAIASCAN_API_KEY`.
 
 ### Updates
 
@@ -137,7 +142,7 @@ security-heavy (Wordfence + Solid Security + Shield + Limit Login Attempts), bui
 Add-ons + AutomateWoo + CartFlows), and translation + multi-currency (Polylang + TranslatePress +
 CURCY + FOX). A 30-plugin stack was also run on Woodmart, Divi, Betheme and Flatsome.
 
-**Coins — all 235 priced and quoted** against live market data, and 44 coins were driven against
+**Coins — all 234 priced and quoted** against live market data, and 44 coins were driven against
 their real explorers with real addresses to confirm a payment in that coin is actually detected —
 including USDT on TRON, Ethereum and BNB Chain, and USDC on Solana.
 
@@ -265,6 +270,12 @@ Pushing a `vX.Y.Z` tag runs the Release workflow, which builds the ZIP, its SHA-
 ## Changelog
 
 Full details for every release are in [`readme.txt`](readme.txt).
+
+### 1.19.5 — Kaia confirmed automatically, Polkadot back as a manual coin
+
+- New: Kaia (KAIA) is confirmed on chain with a free Kaiascan key. Without a key it stays manual and says so
+- Polkadot (DOT) returns as a payable coin, confirmed by hand — Subscan, the only service that lists an address's transfers, is a paid product
+- IoTeX stays manual: its only address-history API answers HTTP 500 in production, to us and to its own explorer
 
 ### 1.19.4 — Payments table columns, and the payment page buttons
 

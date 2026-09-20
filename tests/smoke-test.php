@@ -92,7 +92,7 @@ xdwp_assert( Xdwp_Coins::supports_auto_verify( 'HBAR' ), 'HBAR auto-verify' );
 xdwp_assert( Xdwp_Coins::supports_auto_verify( 'NEAR' ), 'NEAR auto-verify' );
 xdwp_assert( Xdwp_Coins::supports_auto_verify( 'ATOM' ), 'ATOM auto-verify' );
 
-// Coins added across the three most recent batches (219 -> 233 coins) — a
+// Coins added across the three most recent batches (219 -> 234 coins) — a
 // representative sample per new verifier family, not an exhaustive list.
 $recent_required = array(
 	'BTG', 'FIRO', 'XZC', 'RVN', 'PIVX', 'NEO', 'GAS', 'THETA', 'TFUEL',
@@ -102,7 +102,7 @@ $recent_required = array(
 foreach ( $recent_required as $id ) {
 	xdwp_assert( isset( $all[ $id ] ), "recently-added coin present: {$id}" );
 }
-xdwp_assert( count( $all ) >= 233, 'coin catalog size >= 233 (got ' . count( $all ) . ')' );
+xdwp_assert( count( $all ) >= 234, 'coin catalog size >= 234 (got ' . count( $all ) . ')' );
 
 // One coin per newly-added auto-verified verifier group should report true;
 // the deliberately manual-only groups (no free/keyless verification API)
@@ -111,7 +111,7 @@ xdwp_assert( count( $all ) >= 233, 'coin catalog size >= 233 (got ' . count( $al
 foreach ( array( 'BTG', 'NEO', 'THETA', 'DGB', 'KMD', 'QTUM', 'ARK', 'AE', 'ICX', 'ONT', 'KLV', 'TET', 'XEM', 'XYM', 'RUNE', 'LGCY', 'LSK', 'STRAX', 'IOTA' ) as $id ) {
 	xdwp_assert( Xdwp_Coins::supports_auto_verify( $id ), "{$id} auto-verify" );
 }
-foreach ( array( 'XMR', 'KAIA', 'IOTX' ) as $id ) {
+foreach ( array( 'XMR', 'IOTX', 'DOT' ) as $id ) {
 	xdwp_assert( ! Xdwp_Coins::supports_auto_verify( $id ), "{$id} is manual (no viable keyless auto-verify API)" );
 }
 
@@ -629,7 +629,7 @@ xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-
 
 // Casper and Starknet were removed in 1.19.1: neither has a payment-detection API that does
 // not need a paid or registered key, so they could only ever be confirmed by hand.
-foreach ( array( 'CSPR', 'STRK', 'XVG', 'DOT', 'ZIL' ) as $xdwp_gone ) {
+foreach ( array( 'CSPR', 'STRK', 'XVG', 'ZIL' ) as $xdwp_gone ) {
 	xdwp_assert( ! isset( $all[ $xdwp_gone ] ), $xdwp_gone . ' was withdrawn and is gone from the registry' );
 }
 
@@ -644,6 +644,17 @@ $xdwp_payment_tpl = file_get_contents( $root . '/templates/payment.php' );
 xdwp_assert( strpos( $xdwp_payment_tpl, 'xdwp-box__row' ) < strpos( $xdwp_payment_tpl, 'xdwp-box__steps' ), 'the amount comes before the instructions' );
 xdwp_assert( strpos( $xdwp_payment_tpl, 'xdwp-box__actions' ) < strpos( $xdwp_payment_tpl, 'xdwp-box__steps' ), 'and so do the buttons' );
 xdwp_assert( false !== strpos( $xdwp_payment_tpl, "'paid', 'expired', 'cancelled'" ), 'a settled order shows no countdown' );
+
+// Kaia reads through Kaiascan, which needs a key of the shop's own: the key must travel in a
+// header, never a query string, so it cannot end up in an access log or a diagnostic URL.
+$xdwp_verifier_src = file_get_contents( $root . '/includes/class-xdwp-verifier.php' );
+xdwp_assert( false !== strpos( $xdwp_verifier_src, 'function check_kaia' ), 'Kaia can be checked on chain' );
+xdwp_assert( false !== strpos( $xdwp_verifier_src, "'Authorization' => 'Bearer ' . $api_key" ), 'the Kaiascan key is sent as a header, not in the URL' );
+xdwp_assert( false === strpos( $xdwp_verifier_src, 'kaiascan.io/api/v1/accounts/%s/transactions?key=' ), 'and never as a query parameter' );
+xdwp_assert( false !== strpos( $xdwp_verifier_src, 'function to_raw_units' ), 'decimal amounts are converted without a float' );
+// Polkadot is payable but confirmed by hand: it must not claim automatic verification.
+xdwp_assert( isset( $all['DOT'] ), 'Polkadot is offered again' );
+xdwp_assert( ! Xdwp_Coins::supports_auto_verify( 'DOT' ), 'Polkadot is manual, not automatic' );
 
 xdwp_assert( false !== strpos( $readme, '== External services ==' ), 'readme external services section present' );
 xdwp_assert( false !== strpos( $readme, 'XRP Ledger public cluster' ), 'readme documents the XRP data source' );

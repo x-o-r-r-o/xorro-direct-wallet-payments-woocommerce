@@ -4,7 +4,7 @@ Tags: woocommerce, cryptocurrency, bitcoin, ethereum, payments, usdt, crypto che
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.19.4
+Stable tag: 1.19.5
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -329,6 +329,11 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 * QR Code generator (`assets/js/qrcode.min.js`) — MIT-licensed library by davidshimjs (https://github.com/davidshimjs/qrcodejs). Source is publicly available; the bundled file is minified for production use.
 
 == Changelog ==
+
+= 1.19.5 =
+* New: Kaia (KAIA) payments are confirmed on chain automatically once you add a free Kaiascan API key under Prices & APIs. Kaia publishes no free index of its own, so without a key it stays a manual coin — and the Coins tab and "Test this coin" both say which key is missing rather than failing quietly
+* New: Polkadot (DOT) is payable again, confirmed by hand with "Mark payment received" like Monero. Subscan is the only service that will list an address's transfers and its key is a paid product, so it is offered honestly as manual rather than left out
+* IoTeX stays manual. Its only address-history API answers HTTP 500 in production — to this plugin and to IoTeX's own block explorer — so no key would help
 
 = 1.19.4 =
 * Fixed: pressing Copy beside the address made the address appear to change. The button grew as it said "Copied!", which squeezed the box next to it and re-wrapped the address across its two lines. Copy buttons now keep their width while they confirm — on the payment page, the Wallets tab and the Payments screen

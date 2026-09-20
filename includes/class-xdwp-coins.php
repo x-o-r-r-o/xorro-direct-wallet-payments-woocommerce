@@ -45,6 +45,12 @@ class Xdwp_Coins {
 			'MATIC'=> self::def( 'MATIC', 'Polygon (POL)', 'polygon-pos', 'polygon-ecosystem-token', 'native', 18, 'matic' ),
 			'AVAX' => self::def( 'AVAX', 'Avalanche', 'avalanche', 'avalanche-2', 'native', 18, 'avax' ),
 			'XLM'  => self::def( 'XLM', 'Stellar', 'stellar', 'stellar', 'native', 7, 'xlm' ),
+			// Polkadot — manual confirmation only, like Monero. Subscan is the only service
+			// that will list an address's transfers, and its key is a paid product; the public
+			// RPC has no address index at all. Customers can still pay in DOT and the shop
+			// confirms each one with "Mark payment received".
+			'DOT'  => self::def( 'DOT', 'Polkadot', 'polkadot', 'polkadot', 'native', 10, 'dot' ),
+
 			'ATOM' => self::def( 'ATOM', 'Cosmos', 'cosmos', 'cosmos', 'native', 6, 'atom' ),
 			'SCRT' => self::def( 'SCRT', 'Secret', 'secret', 'secret', 'native', 6, 'scrt' ),
 			'SEI'  => self::def( 'SEI', 'Sei', 'sei', 'sei-network', 'native', 6, 'sei' ),
@@ -523,6 +529,7 @@ class Xdwp_Coins {
 			'algo'       => 'https://allo.info/tx/%s',
 			'hbar'       => 'https://hashscan.io/mainnet/transaction/%s',
 			'near'       => 'https://nearblocks.io/txns/%s',
+			'dot'        => 'https://polkadot.subscan.io/extrinsic/%s',
 			'atom'       => 'https://www.mintscan.io/cosmos/tx/%s',
 			'scrt'       => 'https://www.mintscan.io/secret/tx/%s',
 			'sei'        => 'https://www.mintscan.io/sei/tx/%s',
@@ -810,7 +817,7 @@ class Xdwp_Coins {
 	public static function instant_finality_chains() {
 		return array(
 			'xrp', 'xlm', 'hbar', 'near', 'atom', 'scrt', 'sei', 'inj_native', 'ton', 'eos',
-			'apt', 'egld', 'fil', 'xno', 'theta', 'tfuel', 'iota', 'icx',
+			'dot', 'apt', 'egld', 'fil', 'xno', 'theta', 'tfuel', 'iota', 'icx',
 			'ont', 'klv', 'tet', 'rune',
 		);
 	}
@@ -1692,7 +1699,7 @@ class Xdwp_Coins {
 			'xtz', 'xno', 'waves',
 			'btg', 'firo', 'xzc', 'rvn', 'pivx', 'neo', 'gas', 'theta', 'tfuel',
 			'dgb', 'kmd', 'qtum', 'ark', 'ae', 'icx', 'ont', 'klv', 'tet', 'xem', 'xym', 'rune',
-			'lsk', 'strax', 'iota',
+			'lsk', 'strax', 'iota', 'kaia',
 		);
 		return in_array( $coin['verifier'], $supported, true );
 	}

@@ -500,6 +500,24 @@ $active  = isset( $tabs[ $tab ] ) ? $tabs[ $tab ] : $tabs['general'];
 										</td>
 									</tr>
 									<tr>
+										<th scope="row"><?php esc_html_e( 'Kaiascan API key', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
+										<td>
+											<input type="password" class="regular-text cc-input" name="xdwp[kaiascan_api_key]" value="" placeholder="<?php echo esc_attr( Xdwp_Settings::api_key_input_placeholder( 'kaiascan_api_key' ) ); ?>" autocomplete="new-password" />
+											<p class="description">
+												<?php
+												echo wp_kses(
+													sprintf(
+														/* translators: %s: URL */
+														__( 'Needed to confirm Kaia (KAIA) payments automatically. Kaia runs no free public index of its own, so without this key payments in Kaia must be confirmed by hand. Free tier at %s', 'xorro-direct-wallet-payments-woocommerce' ),
+														'<a href="https://kaiascan.io" target="_blank" rel="noopener noreferrer">kaiascan.io</a>'
+													),
+													array( 'a' => array( 'href' => array(), 'target' => array(), 'rel' => array() ) )
+												);
+												?>
+											</p>
+										</td>
+									</tr>
+									<tr>
 										<th scope="row"><?php esc_html_e( 'Blockchair API key', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
 										<td>
 											<input type="password" class="regular-text cc-input" name="xdwp[blockchair_api_key]" value="" placeholder="<?php echo esc_attr( Xdwp_Settings::api_key_input_placeholder( 'blockchair_api_key' ) ); ?>" autocomplete="new-password" />

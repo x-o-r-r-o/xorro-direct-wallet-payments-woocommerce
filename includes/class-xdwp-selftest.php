@@ -408,6 +408,15 @@ class Xdwp_Selftest {
 		if ( in_array( $verifier, $evm, true ) && '' === trim( (string) Xdwp_Settings::get( 'etherscan_api_key', '' ) ) ) {
 			return 'Etherscan';
 		}
+		// Chains with no free public index of their own: without the key the checker can do
+		// nothing at all, so say which one is missing rather than report a silent failure.
+		$keyed = array(
+			'kaia' => array( 'kaiascan_api_key', 'Kaiascan' ),
+			'apt'  => array( 'aptos_api_key', 'Aptos' ),
+		);
+		if ( isset( $keyed[ $verifier ] ) && '' === trim( (string) Xdwp_Settings::get( $keyed[ $verifier ][0], '' ) ) ) {
+			return $keyed[ $verifier ][1];
+		}
 		return '';
 	}
 
