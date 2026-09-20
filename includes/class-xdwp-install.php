@@ -15,6 +15,33 @@ class Xdwp_Install {
 	/**
 	 * Run on plugin activation.
 	 */
+	/**
+	 * Mark orders that already needed attention before the flag existed, so nothing that was
+	 * waiting for the store owner disappears from the Payments screen at this upgrade.
+	 */
+	private static function backfill_attention_flags() {
+		if ( ! function_exists( 'wc_get_orders' ) ) {
+			return;
+		}
+		$orders = wc_get_orders(
+			array(
+				'limit'      => 500,
+				'status'     => 'any',
+				'orderby'    => 'date',
+				'order'      => 'DESC',
+				'meta_query' => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+					array(
+						'key'     => '_xdwp_coin',
+						'compare' => 'EXISTS',
+					),
+				),
+			)
+		);
+		foreach ( is_array( $orders ) ? $orders : array() as $order ) {
+			Xdwp_Order::flag_attention( $order );
+		}
+	}
+
 	public static function activate() {
 		self::maybe_upgrade();
 
@@ -54,6 +81,9 @@ class Xdwp_Install {
 	 */
 	public static function maybe_upgrade() {
 		$stored = (string) get_option( 'xdwp_version', '' );
+		if ( '' !== $stored && version_compare( $stored, '1.13.0', '<' ) ) {
+			self::backfill_attention_flags();
+		}
 		$existing = get_option( 'xdwp_settings', null );
 		$needs_write = ( XDWP_VERSION !== $stored ) || ! is_array( $existing );
 

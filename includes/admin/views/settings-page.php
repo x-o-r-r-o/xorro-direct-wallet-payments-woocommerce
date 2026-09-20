@@ -285,6 +285,7 @@ $active  = isset( $tabs[ $tab ] ) ? $tabs[ $tab ] : $tabs['general'];
 													$coin_confs  = Xdwp_Settings::get( 'coin_confirmations', array() );
 													$coin_conf   = ( is_array( $coin_confs ) && ! empty( $coin_confs[ $id ] ) ) ? (int) $coin_confs[ $id ] : 0;
 													$conf_now    = Xdwp_Coins::confirmations_for( $coin );
+													$conf_depth  = Xdwp_Coins::reports_depth( $coin );
 													?>
 													<tr>
 														<td>
@@ -317,7 +318,10 @@ $active  = isset( $tabs[ $tab ] ) ? $tabs[ $tab ] : $tabs['general'];
 															<input type="number" min="0" step="0.01" class="small-text" name="xdwp[coin_limits][<?php echo esc_attr( $id ); ?>][max]" value="<?php echo esc_attr( $coin_limits['max'] > 0 ? (string) $coin_limits['max'] : '' ); ?>" placeholder="<?php esc_attr_e( 'max', 'xorro-direct-wallet-payments-woocommerce' ); ?>" aria-label="<?php echo esc_attr( sprintf( /* translators: %s: coin name */ __( 'Maximum order total for %s', 'xorro-direct-wallet-payments-woocommerce' ), $coin['name'] ) ); ?>" />
 														</td>
 														<td class="cc-coin-confs">
-															<input type="number" min="0" max="64" step="1" class="small-text" name="xdwp[coin_confirmations][<?php echo esc_attr( $id ); ?>]" value="<?php echo esc_attr( $coin_conf > 0 ? (string) $coin_conf : '' ); ?>" placeholder="<?php echo esc_attr( (string) $conf_now ); ?>" aria-label="<?php echo esc_attr( sprintf( /* translators: %s: coin name */ __( 'Confirmations required for %s', 'xorro-direct-wallet-payments-woocommerce' ), $coin['name'] ) ); ?>" />
+															<input type="number" min="0" max="<?php echo esc_attr( $conf_depth ? '64' : '1' ); ?>" step="1" class="small-text" name="xdwp[coin_confirmations][<?php echo esc_attr( $id ); ?>]" value="<?php echo esc_attr( $coin_conf > 0 ? (string) $coin_conf : '' ); ?>" placeholder="<?php echo esc_attr( (string) $conf_now ); ?>" aria-label="<?php echo esc_attr( sprintf( /* translators: %s: coin name */ __( 'Confirmations required for %s', 'xorro-direct-wallet-payments-woocommerce' ), $coin['name'] ) ); ?>" />
+															<?php if ( ! $conf_depth ) : ?>
+																<span class="cc-coin-confs__note" title="<?php esc_attr_e( 'This network settles a payment the moment it is validated, so there is no depth to wait for.', 'xorro-direct-wallet-payments-woocommerce' ); ?>"><?php esc_html_e( 'final on validation', 'xorro-direct-wallet-payments-woocommerce' ); ?></span>
+															<?php endif; ?>
 														</td>
 													</tr>
 												<?php endforeach; ?>

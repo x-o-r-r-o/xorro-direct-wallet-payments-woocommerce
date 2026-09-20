@@ -1591,6 +1591,43 @@ class Xdwp_Verifier {
 
 
 	/**
+	 * Is another open order on this address already using this reference?
+	 *
+	 * @param string $coin_id  Coin ID.
+	 * @param string $address  Receiving address.
+	 * @param string $memo     Destination tag / memo.
+	 * @param int    $order_id Order to ignore (the one being set up).
+	 * @return bool
+	 */
+	public static function memo_taken( $coin_id, $address, $memo, $order_id = 0 ) {
+		$memo = trim( (string) $memo );
+		if ( '' === $memo || '' === (string) $address ) {
+			return false;
+		}
+		$orders = wc_get_orders(
+			array(
+				'limit'          => 20,
+				'return'         => 'ids',
+				'exclude'        => array( absint( $order_id ) ),
+				'payment_method' => XDWP_GATEWAY_ID,
+				'status'         => array( 'pending', 'on-hold', 'failed' ),
+				'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+					'relation' => 'AND',
+					array(
+						'key'   => '_xdwp_memo',
+						'value' => $memo,
+					),
+					array(
+						'key'   => '_xdwp_address',
+						'value' => (string) $address,
+					),
+				),
+			)
+		);
+		return ! empty( $orders );
+	}
+
+	/**
 	 * Check if a txid is already claimed by another Xorro Wallet Payments order.
 	 *
 	 * @param string $txid          Transaction id.

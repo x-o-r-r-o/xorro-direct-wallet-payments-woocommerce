@@ -30,11 +30,7 @@ class Xdwp_Payments_Admin {
 
 		add_action( 'admin_post_xdwp_export_payments', array( __CLASS__, 'export_csv' ) );
 		// The count on the menu is recalculated when an order's payment state changes.
-		add_action( 'xdwp_order_paid', array( __CLASS__, 'forget_attention_count' ) );
-		add_action( 'xdwp_order_underpaid', array( __CLASS__, 'forget_attention_count' ) );
-		add_action( 'xdwp_order_overpaid', array( __CLASS__, 'forget_attention_count' ) );
-		add_action( 'xdwp_order_expired', array( __CLASS__, 'forget_attention_count' ) );
-		add_action( 'xdwp_late_payment_detected', array( __CLASS__, 'forget_attention_count' ) );
+		// The flag itself is kept up to date by Xdwp_Order, which runs during cron too.
 	}
 
 	/**
@@ -120,9 +116,7 @@ class Xdwp_Payments_Admin {
 			}
 			foreach ( $result['orders'] as $order ) {
 				$coin_def = Xdwp_Coins::get( (string) Xdwp_Order::meta( $order, 'coin' ) );
-				fputcsv(
-					$out,
-					array(
+				$row      = array(
 						$order->get_order_number(),
 						$order->get_date_created() ? $order->get_date_created()->date( 'Y-m-d H:i:s' ) : '',
 						$order->get_status(),
@@ -139,8 +133,8 @@ class Xdwp_Payments_Admin {
 						(string) Xdwp_Order::meta( $order, 'address' ),
 						(string) Xdwp_Order::meta( $order, 'memo' ),
 						(string) Xdwp_Order::meta( $order, 'txid' ),
-					)
 				);
+				fputcsv( $out, array_map( array( __CLASS__, 'csv_cell' ), $row ) );
 			}
 			if ( $page >= (int) $result['pages'] ) {
 				break;
@@ -148,6 +142,25 @@ class Xdwp_Payments_Admin {
 		}
 		fclose( $out );
 		exit;
+	}
+
+	/**
+	 * One cell, safe to open in a spreadsheet.
+	 *
+	 * Excel, LibreOffice and Numbers run a cell beginning with =, +, - or @ as a formula.
+	 * Customer names and memos come from whoever placed the order, so a name like
+	 * =HYPERLINK(...) would otherwise execute on the merchant's machine, with the rest of
+	 * this export — every customer's email, address and transaction — in reach.
+	 *
+	 * @param mixed $value Cell value.
+	 * @return string
+	 */
+	private static function csv_cell( $value ) {
+		$value = (string) $value;
+		if ( '' !== $value && false !== strpos( "=+-@\t\r", $value[0] ) ) {
+			return "'" . $value;
+		}
+		return $value;
 	}
 
 	/**
@@ -239,19 +252,15 @@ class Xdwp_Payments_Admin {
 	 * @param WC_Order $order Order.
 	 * @return bool
 	 */
+	/**
+	 * Orders the store owner still has to look at: money arrived late, more than was due, or a
+	 * transfer that could belong to more than one order.
+	 *
+	 * @param WC_Order $order Order.
+	 * @return bool
+	 */
 	public static function needs_attention( $order ) {
-		if ( ! $order instanceof WC_Order ) {
-			return false;
-		}
-		if ( '' !== (string) Xdwp_Order::meta( $order, 'late_txid' ) ) {
-			return true;
-		}
-		if ( '' !== (string) Xdwp_Order::meta( $order, 'overpaid' ) ) {
-			return true;
-		}
-		$status = (string) Xdwp_Order::meta( $order, 'status' );
-		// A part-paid order whose window has closed will not complete on its own.
-		return ( 'expired' === $status && '' !== (string) Xdwp_Order::meta( $order, 'received' ) );
+		return Xdwp_Order::needs_attention( $order );
 	}
 
 	/**
@@ -289,9 +298,16 @@ class Xdwp_Payments_Admin {
 			);
 		}
 
-		// "Needs attention" is three separate marks, so fetch the recent set and sift in PHP —
-		// a meta_query OR across them would not cover the expired-with-part-payment case.
-		$attention = ( 'attention' === $args['filter'] );
+		// Orders needing attention carry a flag of their own, so one from months ago is still
+		// found. (Before 1.13.0 this sifted the 200 most recent orders in PHP, which meant a
+		// late payment on a busy shop could scroll out of sight and never be seen.)
+		if ( 'attention' === $args['filter'] ) {
+			$meta_query[] = array(
+				'key'   => '_xdwp_attention',
+				'value' => '1',
+			);
+		}
+		$attention = false;
 		$paged     = max( 1, (int) $args['paged'] );
 		$query     = array(
 			'limit'      => $attention ? 200 : self::PER_PAGE,

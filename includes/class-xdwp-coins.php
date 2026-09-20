@@ -674,6 +674,41 @@ class Xdwp_Coins {
 	}
 
 	/**
+	 * Chains whose explorers report no depth, because a transaction there is final the moment
+	 * it is validated.
+	 *
+	 * Asking for more than one confirmation on these does not make anything safer — the
+	 * verifier has no depth to check against, so it would refuse every payment instead. The
+	 * settings screen uses this to stop a merchant setting a number that would quietly turn
+	 * verification off for that coin.
+	 *
+	 * @return array<int, string> Verifier slugs.
+	 */
+	public static function instant_finality_chains() {
+		return array(
+			'xrp', 'xlm', 'hbar', 'near', 'atom', 'scrt', 'sei', 'inj_native', 'ton', 'eos',
+			'dot', 'zil', 'apt', 'egld', 'fil', 'xno', 'theta', 'tfuel', 'iota', 'icx',
+			'ont', 'klv', 'tet', 'rune', 'cspr',
+		);
+	}
+
+	/**
+	 * Can this coin's payments be checked for depth at all?
+	 *
+	 * @param array|string $coin Coin definition or ID.
+	 * @return bool
+	 */
+	public static function reports_depth( $coin ) {
+		if ( ! is_array( $coin ) ) {
+			$coin = self::get( (string) $coin );
+		}
+		if ( ! is_array( $coin ) || empty( $coin['verifier'] ) ) {
+			return true;
+		}
+		return ! in_array( (string) $coin['verifier'], self::instant_finality_chains(), true );
+	}
+
+	/**
 	 * Confirmations that suit each chain, for stores that would otherwise use one number
 	 * everywhere. Keyed by the coin's verifier, because that is what decides how a payment is
 	 * read on chain.

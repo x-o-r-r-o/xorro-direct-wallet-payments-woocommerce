@@ -4,7 +4,7 @@ Tags: woocommerce, cryptocurrency, bitcoin, ethereum, payments, usdt, crypto che
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.12.1
+Stable tag: 1.13.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -336,6 +336,18 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 * QR Code generator (`assets/js/qrcode.min.js`) — MIT-licensed library by davidshimjs (https://github.com/davidshimjs/qrcodejs). Source is publicly available; the bundled file is minified for production use.
 
 == Changelog ==
+
+= 1.13.0 =
+Fixes from an independent security audit of everything added since 1.6.1.
+* Fixed: a Bitcoin-style extended key (xpub) saved for Litecoin or Dogecoin produced Bitcoin addresses. Each coin now writes its own addresses, and the derivation tests cover all three coins
+* Fixed: a wallet's master key was accepted where an account key was expected, which would have sent customers to a branch your wallet never scans. Only account-level keys are accepted now, and the Wallets tab shows the exact next address to check against your wallet
+* Fixed: setting confirmations above 1 for a chain that settles on validation (XRP, Stellar, Cosmos, TON, EOS, Hedera and others) silently stopped verification for that coin. Those numbers are now refused with an explanation
+* Fixed: a customer name containing a spreadsheet formula could run when the payments CSV was opened. Exported cells are neutralised
+* Fixed: re-quoting an expired order could abandon a payment already on its way. An order whose payment has been seen on chain can no longer be re-quoted, the new quote forgets the old one's detection marks, and the previous address is recorded on the order
+* Fixed: orders needing attention are now marked when it happens, so one from months ago is still listed instead of dropping off the end of the recent orders
+* Fixed: abandoned orders no longer march an extended key's addresses past the point your wallet scans — an expired order gives its address back, and the Wallets tab warns when the gap grows
+* Fixed: two orders on one address can no longer be given the same destination tag
+* Payment detection now shares the store-wide limit on explorer lookups, and quote rate limiting no longer treats every shopper behind a proxy as one visitor
 
 = 1.12.1 =
 * Help now sits last in the menu, after Prices & APIs

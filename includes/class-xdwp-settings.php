@@ -245,6 +245,22 @@ class Xdwp_Settings {
 					continue;
 				}
 				$value = max( 0, min( 64, (int) $value ) );
+				// Asking for depth on a chain that reports none would refuse every payment in
+				// that coin instead of making anything safer, so it is refused here with an
+				// explanation rather than saved and silently breaking verification.
+				if ( $value > 1 && ! Xdwp_Coins::reports_depth( $coin_id ) ) {
+					add_settings_error(
+						'xdwp',
+						'xdwp_confirmations',
+						sprintf(
+							/* translators: %s: coin ID */
+							__( '%s settles a payment the moment it is validated, so it cannot wait for more confirmations. That number was not saved — leave it at 1 or empty.', 'xorro-direct-wallet-payments-woocommerce' ),
+							$coin_id
+						),
+						'error'
+					);
+					continue;
+				}
 				// 0 means "no number of my own" — fall back to the chain's recommendation.
 				if ( $value > 0 ) {
 					$confirmations[ $coin_id ] = $value;

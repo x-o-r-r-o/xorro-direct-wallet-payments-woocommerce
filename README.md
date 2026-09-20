@@ -184,6 +184,20 @@ Pushing a `vX.Y.Z` tag runs the Release workflow, which builds the ZIP, its SHA-
 
 Full details for every release are in [`readme.txt`](readme.txt).
 
+### 1.13.0 — fixes from an independent security audit
+
+Audit of everything added since 1.6.1. Two critical, one high and several medium findings, all fixed and covered by tests:
+
+- **Litecoin/Dogecoin addresses from an `xpub`** were written with Bitcoin's version byte. Address encoding is now decided by the coin, not the key
+- **Master keys were accepted** where an account key was expected; only depth-3 account keys are taken now, and the Wallets tab shows the next address to check against your wallet
+- **Confirmations above 1 on instant-finality chains** silently disabled verification for that coin; those values are refused with an explanation
+- **CSV formula injection** through customer names in the payments export
+- **Re-quoting an expired order** could orphan a payment already in flight, and left stale "payment detected" state behind
+- **"Needs you" only searched recent orders**, so an old late payment could disappear; the flag is now written when it happens
+- **HD addresses could run past a wallet's gap limit** through abandoned orders; expired orders give their address back and the gap is surfaced
+- **Destination-tag collisions** could credit one customer's payment to another's order
+- Detection now shares the store-wide explorer budget; quote rate limiting is scoped per shopper, not per proxy IP
+
 ### 1.12.1 — Help, tidied
 
 - Help moved to the end of the menu, after Prices & APIs

@@ -530,6 +530,15 @@ xdwp_assert( file_exists( $root . '/includes/admin/views/help-page.php' ), 'help
 xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/admin/class-xdwp-admin.php' ), 'render_help_page' ), 'help screen is registered' );
 xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/admin/views/help-page.php' ), 'xdwp-help-devs' ), 'help covers the developer hooks' );
 xdwp_assert( count( glob( $root . '/languages/*.mo' ) ) >= 10, 'translations shipped for the common locales' );
+// Release 1.13.0: fixes from the security audit.
+xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-hd.php' ), 'function address_encodings' ), 'addresses are written the way each coin writes them' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-hd.php' ), '3 !== $depth' ), 'a master key cannot be used as an account key' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-coins.php' ), 'function reports_depth' ), 'chains that report no depth are known' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/admin/class-xdwp-payments-admin.php' ), 'function csv_cell' ), 'exported cells cannot run as formulas' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-order.php' ), "'seen_txid', 'seen_at', 'sent_at'" ), 'a new attempt forgets the previous one' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-order.php' ), 'function flag_attention' ), 'orders needing attention are marked, not searched for' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-wallets.php' ), 'function recycled_index' ), 'abandoned orders give their address back' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-verifier.php' ), 'function memo_taken' ), 'references are checked for collisions' );
 xdwp_assert( false !== strpos( $readme, '== External services ==' ), 'readme external services section present' );
 xdwp_assert( false !== strpos( $readme, 'XRPSCan' ), 'readme documents XRPSCan' );
 xdwp_assert( false !== strpos( $readme, 'Subscan' ), 'readme documents Subscan' );

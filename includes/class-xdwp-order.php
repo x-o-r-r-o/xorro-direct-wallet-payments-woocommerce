@@ -26,6 +26,82 @@ class Xdwp_Order {
 		add_filter( 'woocommerce_get_price_html', array( __CLASS__, 'maybe_append_crypto_price' ), 20, 2 );
 		add_action( 'woocommerce_order_status_changed', array( __CLASS__, 'on_status_changed' ), 10, 4 );
 		add_action( 'woocommerce_trash_order', array( __CLASS__, 'on_order_terminal' ), 10, 1 );
+
+		// Keep the "needs attention" mark current. These run during cron as well as in the
+		// admin, which is where most of them actually fire.
+		foreach ( array( 'xdwp_order_paid', 'xdwp_order_underpaid', 'xdwp_order_overpaid', 'xdwp_order_expired', 'xdwp_late_payment_detected', 'xdwp_ambiguous_payment', 'xdwp_payment_renewed' ) as $event ) {
+			add_action( $event, array( __CLASS__, 'flag_attention' ) );
+		}
+	}
+
+	/**
+	 * A reference no other open order on this address is already using.
+	 *
+	 * A destination tag is only a 32-bit number, and a matching reference is treated as proof
+	 * that the transfer belongs to this order — so a collision would credit one customer's
+	 * payment to another's order with no ambiguity warning. Drawing again on a clash costs
+	 * nothing and removes that case.
+	 *
+	 * @param array  $coin     Coin definition.
+	 * @param string $address  Receiving address.
+	 * @param int    $order_id Order being set up.
+	 * @return string
+	 */
+	private static function mint_memo( $coin, $address, $order_id ) {
+		$memo = Xdwp_Coins::make_memo( $coin );
+		if ( '' === $memo ) {
+			return '';
+		}
+		for ( $attempt = 0; $attempt < 5; $attempt++ ) {
+			if ( ! Xdwp_Verifier::memo_taken( $coin['id'], $address, $memo, $order_id ) ) {
+				return $memo;
+			}
+			$memo = Xdwp_Coins::make_memo( $coin );
+		}
+		return $memo;
+	}
+
+	/**
+	 * Orders the store owner still has to look at: money arrived late, more than was due, or a
+	 * part payment left behind when the window closed.
+	 *
+	 * @param WC_Order $order Order.
+	 * @return bool
+	 */
+	public static function needs_attention( $order ) {
+		if ( ! $order instanceof WC_Order ) {
+			return false;
+		}
+		if ( '' !== (string) self::meta( $order, 'late_txid' ) ) {
+			return true;
+		}
+		if ( '' !== (string) self::meta( $order, 'overpaid' ) ) {
+			return true;
+		}
+		$status = (string) self::meta( $order, 'status' );
+		return ( 'expired' === $status && '' !== (string) self::meta( $order, 'received' ) );
+	}
+
+	/**
+	 * Record that mark on the order, so the Payments screen can find it however old it is.
+	 *
+	 * @param WC_Order|int $order Order.
+	 */
+	public static function flag_attention( $order ) {
+		$order = ( $order instanceof WC_Order ) ? $order : wc_get_order( $order );
+		if ( ! $order instanceof WC_Order || ! self::is_ours( $order ) ) {
+			return;
+		}
+		$needed  = self::needs_attention( $order );
+		$current = (string) $order->get_meta( '_xdwp_attention' );
+		if ( $needed && '1' !== $current ) {
+			$order->update_meta_data( '_xdwp_attention', '1' );
+			$order->save();
+		} elseif ( ! $needed && '' !== $current ) {
+			$order->delete_meta_data( '_xdwp_attention' );
+			$order->save();
+		}
+		delete_transient( 'xdwp_attention_count' );
 	}
 
 	/**
@@ -118,6 +194,11 @@ class Xdwp_Order {
 		if ( '' !== (string) self::meta( $order, 'received' ) || '' !== (string) self::meta( $order, 'late_txid' ) ) {
 			return false;
 		}
+		// A transfer already seen on chain belongs to the amount and address quoted now.
+		// Re-quoting would move the goalposts and orphan money that is already in flight.
+		if ( '' !== (string) self::meta( $order, 'seen_txid' ) ) {
+			return false;
+		}
 		if ( ! in_array( $order->get_status(), array( 'failed', 'pending', 'on-hold' ), true ) ) {
 			return false;
 		}
@@ -134,10 +215,20 @@ class Xdwp_Order {
 		if ( ! self::can_renew( $order ) ) {
 			return false;
 		}
-		$coin_id = (string) self::meta( $order, 'coin' );
+		$coin_id  = (string) self::meta( $order, 'coin' );
+		$previous = sprintf(
+			/* translators: 1: amount, 2: coin symbol, 3: address, 4: destination tag or memo, or "none" */
+			__( 'Customer asked for a new quote. The previous one was %1$s %2$s to %3$s (reference: %4$s) — if anything was sent to it, credit this order by hand.', 'xorro-direct-wallet-payments-woocommerce' ),
+			(string) self::meta( $order, 'amount' ),
+			$coin_id,
+			(string) self::meta( $order, 'address' ),
+			'' !== (string) self::meta( $order, 'memo' ) ? (string) self::meta( $order, 'memo' ) : __( 'none', 'xorro-direct-wallet-payments-woocommerce' )
+		);
+
 		if ( ! self::assign_payment( $order, $coin_id ) ) {
 			return false;
 		}
+		$order->add_order_note( $previous );
 		$order = wc_get_order( $order->get_id() );
 		if ( ! $order ) {
 			return false;
@@ -210,7 +301,7 @@ class Xdwp_Order {
 		$reserved = false;
 
 		// A new payment attempt (e.g. paying a failed order again) starts clean.
-		foreach ( array( 'txid', 'received', 'partial_received', 'remainder', 'partial_txids', 'partial_since', 'overpaid', 'late_txid', 'late_amount', 'late_checked', 'reminder_sent' ) as $stale ) {
+		foreach ( array( 'txid', 'received', 'partial_received', 'remainder', 'partial_txids', 'partial_since', 'overpaid', 'late_txid', 'late_amount', 'late_checked', 'reminder_sent', 'seen_txid', 'seen_at', 'sent_at' ) as $stale ) {
 			$order->delete_meta_data( '_xdwp_' . $stale );
 		}
 
@@ -254,6 +345,7 @@ class Xdwp_Order {
 		$started = time();
 		$expires = $started + ( $window * MINUTE_IN_SECONDS );
 
+		$memo = self::mint_memo( $coin, $address, $order_id );
 		/**
 		 * The destination tag / memo this order asks the customer to include.
 		 *
@@ -261,10 +353,18 @@ class Xdwp_Order {
 		 * @param WC_Order $order Order.
 		 * @param array    $coin  Coin definition.
 		 */
-		$memo = (string) apply_filters( 'xdwp_order_memo', Xdwp_Coins::make_memo( $coin ), $order, $coin );
+		$memo = (string) apply_filters( 'xdwp_order_memo', $memo, $order, $coin );
+
+		$hd_index = Xdwp_Wallets::last_derived_index();
 
 		$order->update_meta_data( '_xdwp_coin', $coin_id );
 		$order->update_meta_data( '_xdwp_address', $address );
+		if ( null !== $hd_index ) {
+			$order->update_meta_data( '_xdwp_hd_index', (int) $hd_index );
+			$order->delete_meta_data( '_xdwp_hd_recycled' );
+		} else {
+			$order->delete_meta_data( '_xdwp_hd_index' );
+		}
 		$order->update_meta_data( '_xdwp_amount', $amount );
 		if ( '' !== $memo ) {
 			$order->update_meta_data( '_xdwp_memo', $memo );
@@ -411,6 +511,12 @@ class Xdwp_Order {
 				);
 				do_action( 'xdwp_order_overpaid', $order, $overpaid );
 			}
+			// Remember how far the wallet needs to have scanned for this payment to be visible.
+			$paid_index = self::meta( $order, 'hd_index' );
+			if ( '' !== (string) $paid_index ) {
+				Xdwp_Wallets::note_paid_index( (string) self::meta( $order, 'coin' ), (int) $paid_index );
+			}
+
 			do_action( 'xdwp_order_paid', $order, (string) self::meta( $order, 'txid' ) );
 		} finally {
 			// Release only our own lock: after a stale takeover, a slow earlier worker must not

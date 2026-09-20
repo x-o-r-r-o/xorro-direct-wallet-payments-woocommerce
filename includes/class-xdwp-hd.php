@@ -49,37 +49,76 @@ class Xdwp_Hd {
 			'xpub' => array(
 				'version' => '0488b21e',
 				'type'    => 'p2pkh',
-				'prefix'  => 0x00,
-				'hrp'     => '',
-				'label'   => 'Bitcoin (addresses starting 1)',
+				'label'   => 'Legacy (addresses starting 1, L or D)',
 			),
 			'ypub' => array(
 				'version' => '049d7cb2',
 				'type'    => 'p2sh-p2wpkh',
-				'prefix'  => 0x05,
-				'hrp'     => '',
-				'label'   => 'Bitcoin (addresses starting 3)',
+				'label'   => 'Wrapped SegWit (addresses starting 3)',
 			),
 			'zpub' => array(
 				'version' => '04b24746',
 				'type'    => 'p2wpkh',
-				'prefix'  => 0,
-				'hrp'     => 'bc',
-				'label'   => 'Bitcoin (addresses starting bc1)',
+				'label'   => 'Native SegWit (addresses starting bc1)',
 			),
 			'Ltub' => array(
 				'version' => '019da462',
 				'type'    => 'p2pkh',
-				'prefix'  => 0x30,
-				'hrp'     => '',
-				'label'   => 'Litecoin (addresses starting L)',
+				'label'   => 'Litecoin legacy (addresses starting L)',
 			),
 			'dgub' => array(
 				'version' => '02facafd',
 				'type'    => 'p2pkh',
-				'prefix'  => 0x1e,
-				'hrp'     => '',
-				'label'   => 'Dogecoin (addresses starting D)',
+				'label'   => 'Dogecoin legacy (addresses starting D)',
+			),
+		);
+	}
+
+	/**
+	 * How each coin writes an address down.
+	 *
+	 * The key's version bytes say which *script* to build; the coin says how to encode it.
+	 * Litecoin and Dogecoin wallets often export a Bitcoin-style "xpub", so the coin has to
+	 * decide the version byte — deriving from an LTC key with Bitcoin's 0x00 would hand
+	 * customers a Bitcoin address that the merchant's Litecoin wallet can never see.
+	 *
+	 * @return array<string, array<string, array{prefix:int,hrp:string}>> Coin => script type.
+	 */
+	public static function address_encodings() {
+		return array(
+			'BTC'  => array(
+				'p2pkh'       => array(
+					'prefix' => 0x00,
+					'hrp'    => '',
+				),
+				'p2sh-p2wpkh' => array(
+					'prefix' => 0x05,
+					'hrp'    => '',
+				),
+				'p2wpkh'      => array(
+					'prefix' => 0,
+					'hrp'    => 'bc',
+				),
+			),
+			'LTC'  => array(
+				'p2pkh'       => array(
+					'prefix' => 0x30,
+					'hrp'    => '',
+				),
+				'p2sh-p2wpkh' => array(
+					'prefix' => 0x32,
+					'hrp'    => '',
+				),
+				'p2wpkh'      => array(
+					'prefix' => 0,
+					'hrp'    => 'ltc',
+				),
+			),
+			'DOGE' => array(
+				'p2pkh' => array(
+					'prefix' => 0x1e,
+					'hrp'    => '',
+				),
 			),
 		);
 	}
@@ -92,6 +131,8 @@ class Xdwp_Hd {
 	public static function supported_coins() {
 		return array(
 			'BTC'  => array( 'xpub', 'ypub', 'zpub' ),
+			// Litecoin wallets export either form; both mean the same legacy addresses, and
+			// the coin — not the key — decides how they are written.
 			'LTC'  => array( 'Ltub', 'xpub' ),
 			'DOGE' => array( 'dgub', 'xpub' ),
 		);
@@ -146,6 +187,7 @@ class Xdwp_Hd {
 			}
 		}
 
+		$depth      = ord( $raw[4] );
 		$chain_code = substr( $raw, 13, 32 );
 		$point      = substr( $raw, 45, 33 );
 		$first      = ord( $point[0] );
@@ -155,10 +197,25 @@ class Xdwp_Hd {
 			return null;
 		}
 
+		// An account key sits three levels down (m/purpose'/coin'/account'). A master key
+		// looks perfectly valid but would put every customer on a branch the merchant's
+		// wallet never scans, so it is refused rather than quietly derived from.
+		if ( 3 !== $depth ) {
+			return null;
+		}
+
+		// A key can carry 33 well-formed bytes that are not a point on the curve at all.
+		// Reject it here, so a key the settings page accepts is always one an address can
+		// actually be derived from.
+		if ( ! function_exists( 'bcadd' ) || null === self::decompress( $point ) ) {
+			return null;
+		}
+
 		return array(
 			'kind'       => $kind,
 			'chain_code' => $chain_code,
 			'point'      => $point,
+			'depth'      => $depth,
 		);
 	}
 
@@ -168,12 +225,13 @@ class Xdwp_Hd {
 	 * Follows the usual account layout: the key is the account's own node, so the address is
 	 * at change 0, index n — the same addresses the merchant's wallet shows as "receive".
 	 *
-	 * @param string $key   Extended public key.
-	 * @param int    $index Address index (0-based).
+	 * @param string $key     Extended public key.
+	 * @param int    $index   Address index (0-based).
+	 * @param string $coin_id Coin the address is for — it decides how the address is written.
 	 * @return string
 	 */
-	public static function address( $key, $index ) {
-		$parsed = self::parse( $key );
+	public static function address( $key, $index, $coin_id = 'BTC' ) {
+		$parsed = self::parse( $key, $coin_id );
 		$index  = (int) $index;
 		if ( null === $parsed || $index < 0 || $index > 0x7fffffff ) {
 			return '';
@@ -191,11 +249,18 @@ class Xdwp_Hd {
 			return '';
 		}
 
-		$kinds = self::key_kinds();
-		$spec  = $kinds[ $parsed['kind'] ];
-		$hash  = self::hash160( $node['point'] );
+		$kinds     = self::key_kinds();
+		$type      = $kinds[ $parsed['kind'] ]['type'];
+		$encodings = self::address_encodings();
+		$coin_id   = isset( $encodings[ $coin_id ] ) ? $coin_id : 'BTC';
+		// A coin that cannot write this script type down has no address to offer.
+		if ( ! isset( $encodings[ $coin_id ][ $type ] ) ) {
+			return '';
+		}
+		$spec = $encodings[ $coin_id ][ $type ];
+		$hash = self::hash160( $node['point'] );
 
-		switch ( $spec['type'] ) {
+		switch ( $type ) {
 			case 'p2wpkh':
 				return self::bech32_address( $spec['hrp'], $hash );
 
@@ -419,6 +484,11 @@ class Xdwp_Hd {
 		}
 		$sign = ord( $point[0] );
 		$x    = self::hex_to_dec( bin2hex( substr( $point, 1 ) ) );
+		// x must be a field element; anything larger is a different spelling of the same
+		// number, and accepting both would let two keys derive one address.
+		if ( bccomp( $x, self::P ) >= 0 ) {
+			return null;
+		}
 		// y² = x³ + 7
 		$y2 = self::modp( bcadd( bcpowmod( $x, '3', self::P ), '7' ) );
 		$y  = bcpowmod( $y2, bcdiv( bcadd( self::P, '1' ), '4', 0 ), self::P );

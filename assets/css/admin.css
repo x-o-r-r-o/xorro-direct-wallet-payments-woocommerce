@@ -1812,3 +1812,11 @@ body.xdwp-admin-page #wpbody-content > .wrap > h1.wp-heading-inline {
 		padding-top: 0.75rem;
 	}
 }
+
+.cc-coin-confs__note {
+	display: block;
+	margin-top: 2px;
+	color: #787c82;
+	font-size: 10.5px;
+	line-height: 1.3;
+}

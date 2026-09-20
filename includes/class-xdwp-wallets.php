@@ -264,6 +264,100 @@ class Xdwp_Wallets {
 		}
 	}
 
+	/** Index used by the most recent derivation, so the order can record it. */
+	private static $last_index = null;
+
+	/**
+	 * The index the last derived address came from, or null.
+	 *
+	 * @return int|null
+	 */
+	public static function last_derived_index() {
+		return self::$last_index;
+	}
+
+	/**
+	 * An index from an order that expired or was cancelled without paying, or null.
+	 *
+	 * @param string $coin_id Coin ID.
+	 * @return int|null
+	 */
+	private static function recycled_index( $coin_id ) {
+		$orders = wc_get_orders(
+			array(
+				'limit'          => 5,
+				'return'         => 'objects',
+				'payment_method' => XDWP_GATEWAY_ID,
+				'status'         => array( 'cancelled', 'failed' ),
+				'orderby'        => 'date',
+				'order'          => 'ASC',
+				'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+					'relation' => 'AND',
+					array(
+						'key'   => '_xdwp_coin',
+						'value' => $coin_id,
+					),
+					array(
+						'key'     => '_xdwp_hd_index',
+						'compare' => 'EXISTS',
+					),
+					array(
+						'key'     => '_xdwp_hd_recycled',
+						'compare' => 'NOT EXISTS',
+					),
+				),
+			)
+		);
+
+		foreach ( is_array( $orders ) ? $orders : array() as $order ) {
+			// Never take back an index that has money on it, or one whose order might still
+			// be paid late.
+			if ( '' !== (string) $order->get_meta( '_xdwp_received' ) || '' !== (string) $order->get_meta( '_xdwp_txid' ) ) {
+				continue;
+			}
+			if ( '' !== (string) $order->get_meta( '_xdwp_seen_txid' ) || '' !== (string) $order->get_meta( '_xdwp_late_txid' ) ) {
+				continue;
+			}
+			$index = (int) $order->get_meta( '_xdwp_hd_index' );
+			if ( $index < 0 ) {
+				continue;
+			}
+			$order->update_meta_data( '_xdwp_hd_recycled', 1 );
+			$order->save();
+			return $index;
+		}
+		return null;
+	}
+
+	/**
+	 * How far the handed-out addresses have run ahead of the last one that was actually paid.
+	 *
+	 * Wallets only scan a little way past their last used address, so a large gap means the
+	 * merchant's wallet may have stopped showing new payments.
+	 *
+	 * @param string $coin_id Coin ID.
+	 * @return int
+	 */
+	public static function hd_gap( $coin_id ) {
+		$handed = (int) get_option( 'xdwp_hd_idx_' . sanitize_key( $coin_id ), 0 );
+		$paid   = (int) get_option( 'xdwp_hd_paid_idx_' . sanitize_key( $coin_id ), -1 );
+		return max( 0, $handed - ( $paid + 1 ) );
+	}
+
+	/**
+	 * Remember the furthest index a payment has actually arrived on.
+	 *
+	 * @param string $coin_id Coin ID.
+	 * @param int    $index   Index that was paid.
+	 */
+	public static function note_paid_index( $coin_id, $index ) {
+		$option  = 'xdwp_hd_paid_idx_' . sanitize_key( $coin_id );
+		$current = (int) get_option( $option, -1 );
+		if ( (int) $index > $current ) {
+			update_option( $option, (int) $index, false );
+		}
+	}
+
 	/**
 	 * The extended public key a merchant saved for a coin, or '' when there is none.
 	 *
@@ -296,8 +390,16 @@ class Xdwp_Wallets {
 			return '';
 		}
 
-		$index   = self::next_wallet_index( 'xdwp_hd_idx_' . sanitize_key( $coin_id ), 0x7fffffff );
-		$address = Xdwp_Hd::address( $key, $index );
+		// Wallets stop looking a fixed distance past their last used address, so indexes are
+		// not simply handed out forever: one belonging to an order that expired without
+		// payment is taken back first. Without that, abandoned checkouts would march the
+		// counter past the merchant's wallet and new payments would stop showing up there.
+		$index = self::recycled_index( $coin_id );
+		if ( null === $index ) {
+			$index = self::next_wallet_index( 'xdwp_hd_idx_' . sanitize_key( $coin_id ), 0x7fffffff );
+		}
+		self::$last_index = $index;
+		$address          = Xdwp_Hd::address( $key, $index, $coin_id );
 		if ( '' === $address ) {
 			// Deriving failed (no bcmath, say) — fall back to the fixed addresses rather than
 			// leaving the customer with no address at all.

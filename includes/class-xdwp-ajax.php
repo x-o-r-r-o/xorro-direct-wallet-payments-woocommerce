@@ -115,6 +115,21 @@ class Xdwp_Ajax {
 	 * @param int        $limit  Requests allowed per minute.
 	 * @return bool True when over the limit.
 	 */
+	/**
+	 * Something stable that distinguishes one shopper from another behind a shared IP.
+	 *
+	 * @return string
+	 */
+	private static function client_scope() {
+		if ( function_exists( 'WC' ) && WC()->session && WC()->session->get_customer_id() ) {
+			return (string) WC()->session->get_customer_id();
+		}
+		if ( is_user_logged_in() ) {
+			return 'u' . get_current_user_id();
+		}
+		return '';
+	}
+
 	private static function rate_limited( $prefix, $scope, $limit ) {
 		$ip = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : 'unknown';
 		/**
@@ -144,6 +159,7 @@ class Xdwp_Ajax {
 
 		if ( ! $order_id ) {
 			$deny();
+			return;
 		}
 
 		// Explicit $die=false so an invalid nonce falls through to the same
@@ -154,6 +170,7 @@ class Xdwp_Ajax {
 		// per-order secret, but keeping the shape consistent regardless).
 		if ( ! check_ajax_referer( 'xdwp_status_' . $order_id, 'nonce', false ) ) {
 			$deny();
+			return;
 		}
 
 		if ( self::rate_limited( 'xdwp_status_', $order_id, 120 ) ) {
@@ -165,6 +182,7 @@ class Xdwp_Ajax {
 		// Uniform denial — avoid leaking whether an order ID is a Xorro Wallet Payments order.
 		if ( ! $order || ! Xdwp_Order::is_ours( $order ) ) {
 			$deny();
+			return;
 		}
 
 		// Allow order owner or guests with matching order key.
@@ -180,6 +198,7 @@ class Xdwp_Ajax {
 
 		if ( ! $allowed ) {
 			$deny();
+			return;
 		}
 
 		Xdwp_Order::maybe_expire( $order );
@@ -217,7 +236,17 @@ class Xdwp_Ajax {
 		// has the confirmations needed to mark the order paid, so they don't send it twice.
 		$detected = false;
 		if ( in_array( $status, array( 'awaiting', 'underpaid' ), true ) && 'yes' === Xdwp_Settings::get( 'auto_verify', 'yes' ) ) {
-			$detected = Xdwp_Verifier::detect_incoming( $order );
+			// Detection makes its own explorer calls, so it shares the store-wide budget with
+			// verification: a few hundred abandoned orders being polled must not burn through
+			// the merchant's API quota and stop real payments being confirmed.
+			$budget_key  = 'xdwp_ajax_verify_budget';
+			$budget_used = (int) get_transient( $budget_key );
+			if ( $budget_used < 30 ) {
+				set_transient( $budget_key, $budget_used + 1, MINUTE_IN_SECONDS );
+				$detected = Xdwp_Verifier::detect_incoming( $order );
+			} else {
+				$detected = '' !== (string) Xdwp_Order::meta( $order, 'seen_txid' );
+			}
 		}
 
 		wp_send_json_success(
@@ -248,6 +277,7 @@ class Xdwp_Ajax {
 		};
 		if ( ! $order_id || ! check_ajax_referer( 'xdwp_status_' . $order_id, 'nonce', false ) ) {
 			$deny();
+			return;
 		}
 		if ( self::rate_limited( 'xdwp_sent_', $order_id, 3 ) ) {
 			wp_send_json_error( array( 'message' => __( 'Thanks — we are already looking. Please give it a moment.', 'xorro-direct-wallet-payments-woocommerce' ) ), 429 );
@@ -256,6 +286,7 @@ class Xdwp_Ajax {
 		$order = wc_get_order( $order_id );
 		if ( ! $order || ! Xdwp_Order::is_ours( $order ) ) {
 			$deny();
+			return;
 		}
 		$order_key = isset( $_POST['order_key'] ) ? sanitize_text_field( wp_unslash( $_POST['order_key'] ) ) : '';
 		$allowed   = ( is_user_logged_in() && (int) $order->get_user_id() === get_current_user_id() )
@@ -263,6 +294,7 @@ class Xdwp_Ajax {
 			|| current_user_can( 'manage_woocommerce' );
 		if ( ! $allowed ) {
 			$deny();
+			return;
 		}
 
 		$status = (string) Xdwp_Order::meta( $order, 'status' );
@@ -277,9 +309,9 @@ class Xdwp_Ajax {
 			$order->save();
 		}
 
+		// Only the ordinary check is brought forward. The wide scan and the detection probe
+		// keep their own throttles, so this button cannot be used to multiply explorer calls.
 		delete_transient( 'xdwp_ajax_verify_' . $order_id );
-		delete_transient( 'xdwp_detect_' . $order_id );
-		delete_transient( 'xdwp_wide_scan_' . $order_id );
 
 		wp_send_json_success( array( 'checking' => true ) );
 	}
@@ -294,6 +326,7 @@ class Xdwp_Ajax {
 		};
 		if ( ! $order_id || ! check_ajax_referer( 'xdwp_status_' . $order_id, 'nonce', false ) ) {
 			$deny();
+			return;
 		}
 		if ( self::rate_limited( 'xdwp_renew_', $order_id, 10 ) ) {
 			wp_send_json_error( array( 'message' => __( 'Too many requests. Please wait a moment.', 'xorro-direct-wallet-payments-woocommerce' ) ), 429 );
@@ -302,6 +335,7 @@ class Xdwp_Ajax {
 		$order = wc_get_order( $order_id );
 		if ( ! $order || ! Xdwp_Order::is_ours( $order ) ) {
 			$deny();
+			return;
 		}
 		$order_key = isset( $_POST['order_key'] ) ? sanitize_text_field( wp_unslash( $_POST['order_key'] ) ) : '';
 		$allowed   = ( is_user_logged_in() && (int) $order->get_user_id() === get_current_user_id() )
@@ -309,6 +343,7 @@ class Xdwp_Ajax {
 			|| current_user_can( 'manage_woocommerce' );
 		if ( ! $allowed ) {
 			$deny();
+			return;
 		}
 
 		if ( ! Xdwp_Order::renew_payment( $order ) ) {
@@ -326,7 +361,9 @@ class Xdwp_Ajax {
 	public static function quote() {
 		check_ajax_referer( 'xdwp_checkout', 'nonce' );
 
-		if ( self::rate_limited( 'xdwp_quote_', '', 60 ) ) {
+		// Scoped by cart as well as IP: behind a proxy or CDN every shopper can share one
+		// address, and an unscoped bucket would take quotes down for the whole shop.
+		if ( self::rate_limited( 'xdwp_quote_', self::client_scope(), 60 ) ) {
 			wp_send_json_error( array( 'message' => __( 'Too many requests. Please wait a moment.', 'xorro-direct-wallet-payments-woocommerce' ) ), 429 );
 		}
 

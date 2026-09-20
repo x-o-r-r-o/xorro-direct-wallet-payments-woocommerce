@@ -273,27 +273,33 @@ $render_row = static function ( $id, $addr = '' ) {
 												echo esc_html(
 													sprintf(
 														/* translators: %s: a derived receiving address */
-														__( 'Next addresses look like: %s', 'xorro-direct-wallet-payments-woocommerce' ),
-														Xdwp_Hd::address( $xdwp_key, 0 )
+														__( 'The next order will be sent to: %s — check this against your wallet before taking payments.', 'xorro-direct-wallet-payments-woocommerce' ),
+														Xdwp_Hd::address( $xdwp_key, (int) get_option( 'xdwp_hd_idx_' . sanitize_key( $id ), 0 ), $id )
 													)
 												);
 												?>
 											</p>
 											<?php
 											$xdwp_used = (int) get_option( 'xdwp_hd_idx_' . sanitize_key( $id ), 0 );
+											$xdwp_gap  = Xdwp_Wallets::hd_gap( $id );
 											?>
 											<?php if ( $xdwp_used > 0 ) : ?>
-												<p class="xdwp-wallet-card__hd-hint">
+												<p class="<?php echo $xdwp_gap >= 15 ? 'xdwp-wallet-card__warning' : 'xdwp-wallet-card__hd-hint'; ?>">
 													<?php
 													echo esc_html(
 														sprintf(
-															/* translators: %d: number of addresses handed out */
-															_n( '%d address has been handed out from this key so far.', '%d addresses have been handed out from this key so far.', $xdwp_used, 'xorro-direct-wallet-payments-woocommerce' ),
-															$xdwp_used
+															/* translators: 1: addresses handed out, 2: addresses ahead of the last payment */
+															__( '%1$d addresses handed out, %2$d of them ahead of your last received payment.', 'xorro-direct-wallet-payments-woocommerce' ),
+															$xdwp_used,
+															$xdwp_gap
 														)
 													);
 													?>
-													<?php esc_html_e( 'Unpaid orders still use one up, so if your wallet stops showing new payments, rescan it (most wallets only look twenty addresses ahead).', 'xorro-direct-wallet-payments-woocommerce' ); ?>
+													<?php if ( $xdwp_gap >= 15 ) : ?>
+														<?php esc_html_e( 'Most wallets only look twenty addresses ahead, so yours may be about to stop showing new payments. Rescan it (or raise its gap limit) and check nothing has been missed.', 'xorro-direct-wallet-payments-woocommerce' ); ?>
+													<?php else : ?>
+														<?php esc_html_e( 'Unpaid orders use one up, though an expired order gives its address back. If your wallet ever stops showing new payments, rescan it.', 'xorro-direct-wallet-payments-woocommerce' ); ?>
+													<?php endif; ?>
 												</p>
 											<?php endif; ?>
 										<?php endif; ?>
