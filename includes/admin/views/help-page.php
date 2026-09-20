@@ -141,7 +141,7 @@ $xdwp_sections = array(
 									<?php esc_html_e( 'Buy something cheap from your own shop and pay it from your phone wallet. You will see exactly what a customer sees, and the order should confirm itself within a few minutes.', 'xorro-direct-wallet-payments-woocommerce' ); ?>
 								</li>
 							</ol>
-							<p class="xdwp-help__note"><?php esc_html_e( 'Most coins confirm payments automatically. Five coins have no free way to check the chain — Monero, IoTeX, Casper, Kaia and Starknet — so for those you confirm the payment yourself with "Mark payment received" on the order. The Coins tab says which is which.', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
+							<p class="xdwp-help__note"><?php esc_html_e( 'Most coins confirm payments automatically. Three have no free way to check the chain — Monero, IoTeX and Kaia — so for those you confirm the payment yourself with "Mark payment received" on the order. The Coins tab says which is which.', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
 						</section>
 
 							<!-- ------------------------------------------------ matching -->

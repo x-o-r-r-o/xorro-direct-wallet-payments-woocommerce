@@ -22,9 +22,9 @@ tomoerc20 (tomo).
 From web3icons (https://github.com/0xa3k5/web3icons, @web3icons/core 4.0.56),
 MIT License, Copyright (c) 0xa3k5 — "background" variant, clipped to a circle:
 aitech, apt, arpa, ava, avabsc, bel, boba, brgbsc, brise, brisebsc, c98, cgpt, chr,
-coti, cspr, ctsi, cudos, cult, dao, eurt, feg, fitfi, front, g, gala, gari, gt, id,
+coti, ctsi, cudos, cult, dao, eurt, feg, fitfi, front, g, gala, gari, gt, id,
 ilv, inj, jasmy, jst, kaia, kas, klv, ldo, leash, lgcy, mx, ocean, pepe, pls, poolx,
-pyusd, rjv, rune, scrt, sei, sfund, shib, shibbsc, srk, strax, strk, sun, sxp, tet,
+pyusd, rjv, rune, scrt, sei, sfund, shib, shibbsc, srk, strax, sun, sxp, tet,
 tfuel, tko, tlos, ton, trvl, usdd, usde, verse, win, xaut, xcad, xdc, xec, xyo, zbc,
 zk.
 

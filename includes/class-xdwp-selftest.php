@@ -351,6 +351,24 @@ class Xdwp_Selftest {
 				)
 			);
 		}
+		// On XRP, Stellar and other chains with an account-reserve, an address does not exist
+		// on chain until something is sent to it, and the explorer answers 404. For a shop
+		// testing a brand-new receiving address that is the normal state of affairs, not a
+		// fault — saying "could not reach the explorer" would send them hunting for a problem
+		// that is not there.
+		if ( 404 === (int) $http['code'] ) {
+			return self::result(
+				'chain',
+				$label,
+				self::WARN,
+				sprintf(
+					/* translators: %s: explorer host */
+					__( '%s has no record of this address yet. That is normal for an address nothing has ever been sent to — some chains only create an account once it receives its first payment. It will be found as soon as money arrives.', 'xorro-direct-wallet-payments-woocommerce' ),
+					wp_parse_url( $http['url'], PHP_URL_HOST )
+				)
+			);
+		}
+
 		if ( $http['code'] < 200 || $http['code'] >= 300 ) {
 			return self::result(
 				'chain',

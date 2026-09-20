@@ -264,8 +264,15 @@ function xdwp_fixture( $name ) {
 	// fall outside every payment window, so the times are filled in when the fixture is read.
 	$raw = file_get_contents( $path );
 	$raw = str_replace(
-		array( '"@RECENT@"', '"@ISO_RECENT@"', '"@MS_RECENT@"', '"@NOW@"' ),
-		array( (string) ( time() - 120 ), '"' . gmdate( 'c', time() - 120 ) . '"', (string) ( ( time() - 120 ) * 1000 ), (string) time() ),
+		array( '"@RECENT@"', '"@ISO_RECENT@"', '"@MS_RECENT@"', '"@NOW@"', '"@RIPPLE_RECENT@"' ),
+		array(
+			(string) ( time() - 120 ),
+			'"' . gmdate( 'c', time() - 120 ) . '"',
+			(string) ( ( time() - 120 ) * 1000 ),
+			(string) time(),
+			// The XRP Ledger counts from 2000-01-01, not 1970.
+			(string) ( time() - 120 - 946684800 ),
+		),
 		$raw
 	);
 	return json_decode( $raw, true );

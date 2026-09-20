@@ -290,10 +290,9 @@ class Xdwp_Coins {
 			'TFUEL' => self::def( 'TFUEL', 'Theta Fuel', 'theta', 'theta-fuel', 'native', 18, 'theta' ),
 
 			// Esplora/Insight/bespoke UTXO explorers, each with a distinct API
-			// shape — see check_esplora(), check_insight(), check_verge_explorer().
+			// shape — see check_esplora() and check_insight().
 			'DGB' => self::def( 'DGB', 'DigiByte', 'digibyte', 'digibyte', 'native', 8, 'digibyte' ),
 			'KMD' => self::def( 'KMD', 'Komodo', 'komodo', 'komodo', 'native', 8, 'komodo' ),
-			'XVG' => self::def( 'XVG', 'Verge', 'verge', 'verge', 'native', 8, 'verge' ),
 
 			// Qtum — UTXO+EVM hybrid, verified via its own Insight-derived API
 			// (field names differ from check_insight()); see check_qtum().
@@ -342,12 +341,6 @@ class Xdwp_Coins {
 			// check_iota().
 			'IOTA' => self::def( 'IOTA', 'IOTA', 'iota', 'iota', 'native', 9, 'iota' ),
 
-			// Casper — manual confirmation only (like XMR). No free/keyless
-			// "list address transactions" API exists: CSPR.cloud (which has one)
-			// requires a registered API key on every request (confirmed live via
-			// 401), and the public node RPC has no address-history index at all.
-			'CSPR' => self::def( 'CSPR', 'Casper', 'casper-network', 'casper-network', 'native', 9, 'cspr' ),
-
 			// Small EVM chains not covered by Etherscan V2 — verified via a keyless
 			// "legacy Etherscan-clone" API (Blockscout, or Routescan for Boba) that
 			// serves the same field shape; see check_evm_clone().
@@ -376,15 +369,6 @@ class Xdwp_Coins {
 			// checkout-poll + cron-sweep pattern wasn't worth it. Not wiring up
 			// auto-verify against an uncertain quota.
 			'KAIA' => self::def( 'KAIA', 'Kaia', 'kaia', 'kaia', 'native', 18, 'kaia' ),
-
-			// Starknet — manual confirmation only (like XMR). Detecting an incoming
-			// transfer requires Voyager's block-explorer API (Starknet's own
-			// JSON-RPC can't filter transfer events by recipient — the standard
-			// Cairo ERC-20's Transfer event doesn't index from/to as filterable
-			// keys), and Voyager has no free tier. Not wiring up a paid-only
-			// auto-verify dependency; customers can still pay, merchant confirms
-			// via the existing manual "mark paid" flow.
-			'STRK' => self::def( 'STRK', 'Starknet', 'starknet', 'starknet', 'native', 18, 'strk' ),
 
 			// TON (The Open Network) — toncenter v3 public API. Native TON and
 			// Jetton (TON's token standard) transfers both route through the
@@ -510,7 +494,6 @@ class Xdwp_Coins {
 			'pivx'       => 'https://explorer.pivx.link/tx/%s',
 			'dgb'        => 'https://chainz.cryptoid.info/dgb/tx.dws?%s',
 			'kmd'        => 'https://kmdexplorer.io/tx/%s',
-			'xvg'        => 'https://verge-blockchain.info/tx/%s',
 			'qtum'       => 'https://qtum.info/tx/%s',
 			'strax'      => 'https://chainz.cryptoid.info/strax/tx.dws?%s',
 			'lsk'        => 'https://liskscan.com/transaction/%s',
@@ -569,10 +552,8 @@ class Xdwp_Coins {
 			'klv'        => 'https://kleverscan.org/transaction/%s',
 			'xem'        => 'https://explorer.nemtool.com/#/s_tx?hash=%s',
 			'xym'        => 'https://symbol.fyi/transactions/%s',
-			'cspr'        => 'https://cspr.live/deploy/%s',
 			'ae'         => 'https://aescan.io/transactions/%s',
 			'ark'        => 'https://explorer.ark.io/transaction/%s',
-			'strk'       => 'https://starkscan.co/tx/%s',
 		);
 	}
 
@@ -682,7 +663,7 @@ class Xdwp_Coins {
 		$block_times = array(
 			'btc' => 600, 'bch' => 600, 'btg' => 600, 'ltc' => 150, 'doge' => 60,
 			'dash' => 150, 'zec' => 75, 'xec' => 600, 'firo' => 300, 'xzc' => 300,
-			'dgb' => 15, 'kmd' => 60, 'rvn' => 60, 'pivx' => 60, 'xvg' => 30, 'qtum' => 150,
+			'dgb' => 15, 'kmd' => 60, 'rvn' => 60, 'pivx' => 60, 'qtum' => 150,
 			'eth' => 12, 'ethereum' => 12, 'etc' => 13, 'matic' => 2, 'bsc' => 3,
 			'arbitrum' => 1, 'optimism' => 2, 'base' => 2, 'avax' => 2, 'ftm' => 1,
 			'cro' => 6, 'one' => 2, 'pls' => 10, 'sysevm' => 60, 'boba' => 2, 'xdc' => 2,
@@ -834,7 +815,7 @@ class Xdwp_Coins {
 		return array(
 			'xrp', 'xlm', 'hbar', 'near', 'atom', 'scrt', 'sei', 'inj_native', 'ton', 'eos',
 			'dot', 'zil', 'apt', 'egld', 'fil', 'xno', 'theta', 'tfuel', 'iota', 'icx',
-			'ont', 'klv', 'tet', 'rune', 'cspr',
+			'ont', 'klv', 'tet', 'rune',
 		);
 	}
 
@@ -885,7 +866,6 @@ class Xdwp_Coins {
 			'kmd'   => 5,
 			'rvn'   => 10,
 			'pivx'  => 6,
-			'xvg'   => 10,
 			'qtum'  => 10,
 			// Ethereum and its clones: a minute or two of blocks.
 			'eth'      => 12,
@@ -1373,9 +1353,6 @@ class Xdwp_Coins {
 		if ( 'kmd' === $verifier || 'kmd' === $scheme ) {
 			return self::bip21_uri( 'komodo', $address, $amount );
 		}
-		if ( 'xvg' === $verifier || 'xvg' === $scheme ) {
-			return self::bip21_uri( 'verge', $address, $amount );
-		}
 		if ( 'bch' === $verifier || 'bch' === $scheme ) {
 			// CashAddr often includes bitcoincash: already — avoid double scheme.
 			if ( 0 === stripos( $address, 'bitcoincash:' ) ) {
@@ -1720,7 +1697,7 @@ class Xdwp_Coins {
 			'ton', 'ada', 'apt', 'kas', 'one', 'pls', 'sysevm', 'boba', 'brise', 'xdc',
 			'xtz', 'xno', 'waves',
 			'btg', 'firo', 'xzc', 'rvn', 'pivx', 'neo', 'gas', 'theta', 'tfuel',
-			'dgb', 'kmd', 'xvg', 'qtum', 'ark', 'ae', 'icx', 'ont', 'klv', 'tet', 'xem', 'xym', 'rune',
+			'dgb', 'kmd', 'qtum', 'ark', 'ae', 'icx', 'ont', 'klv', 'tet', 'xem', 'xym', 'rune',
 			'lsk', 'strax', 'iota',
 		);
 		return in_array( $coin['verifier'], $supported, true );

@@ -1,20 +1,32 @@
 {
-  "transactions": [
-    {
-      "hash": "F1B2C3D4E5F60718293A4B5C6D7E8F9012A3B4C5D6E7F8091A2B3C4D5E6F7081",
-      "date": "@ISO_RECENT@",
-      "validated": true,
-      "DestinationTag": 3927730452,
-      "Destination": "rMdG3ju8pgyVh29ELPWaDuA74CpWW6Fxns",
-      "meta": { "TransactionResult": "tesSUCCESS", "delivered_amount": "6737659" }
-    },
-    {
-      "hash": "0099AABBCCDDEEFF00112233445566778899AABBCCDDEEFF0011223344556677",
-      "date": "@ISO_RECENT@",
-      "validated": true,
-      "DestinationTag": 111111111,
-      "Destination": "rMdG3ju8pgyVh29ELPWaDuA74CpWW6Fxns",
-      "meta": { "TransactionResult": "tesSUCCESS", "delivered_amount": "6737659" }
-    }
-  ]
+  "result": {
+    "status": "success",
+    "account": "rMdG3ju8pgyVh29ELPWaDuA74CpWW6Fxns",
+    "transactions": [
+      {
+        "validated": true,
+        "meta": { "TransactionResult": "tesSUCCESS", "delivered_amount": "6737659" },
+        "tx": {
+          "TransactionType": "Payment",
+          "hash": "F1B2C3D4E5F60718293A4B5C6D7E8F9012A3B4C5D6E7F8091A2B3C4D5E6F7081",
+          "date": "@RIPPLE_RECENT@",
+          "DestinationTag": 3927730452,
+          "Destination": "rMdG3ju8pgyVh29ELPWaDuA74CpWW6Fxns",
+          "Amount": "6737659"
+        }
+      },
+      {
+        "validated": true,
+        "meta": { "TransactionResult": "tesSUCCESS", "delivered_amount": "6737659" },
+        "tx": {
+          "TransactionType": "Payment",
+          "hash": "0099AABBCCDDEEFF00112233445566778899AABBCCDDEEFF0011223344556677",
+          "date": "@RIPPLE_RECENT@",
+          "DestinationTag": 111111111,
+          "Destination": "rMdG3ju8pgyVh29ELPWaDuA74CpWW6Fxns",
+          "Amount": "6737659"
+        }
+      }
+    ]
+  }
 }

@@ -43,13 +43,17 @@ Each order gets a slightly unique amount (usually a few base units, e.g. 10 sato
 
 ### Supported coins
 
-**Native coins (74):** BTC, BCH, ETH, LTC, DOGE, DASH, ZEC, XEC, BNB, SOL, TRX, XMR, XRP, POL (MATIC), AVAX, XLM, DOT, ATOM, SCRT, SEI, INJ, EOS, ETC, ZIL, FIL, ALGO, HBAR, CRO, FTM, EGLD, NEAR, ADA, APT, KAS, TON, BTG, FIRO, RVN, PIVX, NEO, GAS, THETA, TFUEL, DGB, KMD, XVG, QTUM, ARK, AE, ICX, ONT, KLV, TET, XEM, XYM, RUNE, IOTX, STRAX, IOTA, CSPR, ONE, PLS, SYS (NEVM), BRISE, XDC, XTZ, XNO, WAVES, KAIA, STRK and more.
+**Native coins (71):** BTC, BCH, ETH, LTC, DOGE, DASH, ZEC, XEC, BNB, SOL, TRX, XMR, XRP, POL (MATIC), AVAX, XLM, DOT, ATOM, SCRT, SEI, INJ, EOS, ETC, ZIL, FIL, ALGO, HBAR, CRO, FTM, EGLD, NEAR, ADA, APT, KAS, TON, BTG, FIRO, RVN, PIVX, NEO, GAS, THETA, TFUEL, DGB, KMD, QTUM, ARK, AE, ICX, ONT, KLV, TET, XEM, XYM, RUNE, IOTX, STRAX, IOTA, ONE, PLS, SYS (NEVM), BRISE, XDC, XTZ, XNO, WAVES, KAIA and more.
 
 **Tokens (164):** stablecoins (USDT, USDC, DAI, TUSD, USDP, GUSD, PYUSD, USDe, USDD, EURT, XAUT…) and popular tokens such as LINK, UNI, AAVE, SHIB, PEPE, FLOKI, APE, LDO, GRT, 1INCH, CAKE, Notcoin, DOGS, Hamster Kombat and LayerZero.
 
 The full list, with each coin's network and auto-verify status, is on **Xorro Wallet Payments → Coins**.
 
-**Manual-only coins:** Monero (XMR), IoTeX (IOTX), Casper (CSPR), Kaia (KAIA) and Starknet (STRK) have no free, key-less way to detect incoming payments. You can still accept them; confirm each payment with **Mark payment received** on the order.
+**Manual-only coins:** Monero (XMR), IoTeX (IOTX) and Kaia (KAIA) have no free, key-less way to detect
+incoming payments. You can still accept them; confirm each payment with **Mark payment received** on
+the order. Monero is a property of the protocol — incoming payments are visible only to the holder of
+the private view key, which this plugin will never ask for. IoTeX and Kaia are waiting on an API key:
+both have explorers that require one.
 
 ## Requirements
 

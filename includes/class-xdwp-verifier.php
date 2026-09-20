@@ -442,6 +442,26 @@ class Xdwp_Verifier {
 	const DROPPED_AFTER = 900;
 
 	/**
+	 * Seconds between the Unix epoch and the XRP Ledger's own (2000-01-01).
+	 */
+	const XRP_EPOCH_OFFSET = 946684800;
+
+	/**
+	 * The most any explorer answer may be allowed to weigh, in bytes.
+	 *
+	 * An address lookup returns a page of transactions — tens of kilobytes. A reply orders of
+	 * magnitude larger than that is not an answer to the question asked, and reading it to the
+	 * end is how one badly-behaved explorer stalls a customer's payment page. XRPScan did
+	 * exactly that: it answered an unknown account with a redirect to a bulk data file.
+	 */
+	const MAX_RESPONSE_BYTES = 8388608;
+
+	/**
+	 * How many redirects an explorer may send us through.
+	 */
+	const MAX_REDIRECTS = 2;
+
+	/**
 	 * Has a transfer we already saw disappeared from the chain?
 	 *
 	 * Checked sparingly: a transfer is only questioned once it has been missing for a while,
@@ -1845,7 +1865,20 @@ class Xdwp_Verifier {
 			case 'bch':
 				return self::check_blockchair( 'bitcoin-cash', $address, $min, $max, $since );
 			case 'ltc':
-				return self::check_blockchair( 'litecoin', $address, $min, $max, $since );
+				$found = self::check_blockchair( 'litecoin', $address, $min, $max, $since );
+				if ( $found ) {
+					return $found;
+				}
+				// Blockchair's free tier answers 430 once a shop has used its allowance, and
+				// Litecoin had no second source at all — a busy shop would simply stop seeing
+				// payments. Litecoin Space speaks the same Esplora API as the Bitcoin fallback
+				// and needs no key. It is only asked when Blockchair did not actually answer,
+				// so the ordinary "nothing yet" poll still costs one request, not two.
+				$http = self::last_http();
+				if ( 200 !== (int) $http['code'] ) {
+					return self::check_esplora( 'https://litecoinspace.org', $address, $min, $max, $since );
+				}
+				return false;
 			case 'doge':
 				return self::check_blockchair( 'dogecoin', $address, $min, $max, $since );
 			case 'dash':
@@ -1960,12 +1993,6 @@ class Xdwp_Verifier {
 			case 'xmr':
 				// Monero requires a private view key for inbound detection — kept manual.
 				return false;
-			case 'strk':
-				// Starknet's own JSON-RPC can't filter Transfer events by recipient
-				// (not an indexed key on the standard Cairo ERC-20), and the block
-				// explorer API that can (Voyager) has no free tier — kept manual
-				// rather than wiring up a paid-only auto-verify dependency.
-				return false;
 			case 'kaia':
 				// Kaia's only explorer API (Kaiascan) is credit-metered with an
 				// unconfirmed free daily allowance — kept manual rather than risk
@@ -1975,8 +2002,6 @@ class Xdwp_Verifier {
 				return self::check_esplora( 'https://digiexplorer.info', $address, $min, $max, $since );
 			case 'kmd':
 				return self::check_insight( 'https://kmdexplorer.io/insight-api-komodo', $address, $min, $max, $since );
-			case 'xvg':
-				return self::check_verge_explorer( $address, $min, $max, $since );
 			case 'qtum':
 				return self::check_qtum( $address, $min, $max, $since );
 			case 'ark':
@@ -2010,13 +2035,6 @@ class Xdwp_Verifier {
 				return self::check_blockscout_v2_native( 'https://explorer.xertra.com', $address, $min, $max, $since );
 			case 'iota':
 				return self::check_iota( $address, $min, $max, $since );
-			case 'cspr':
-				// No free/keyless "list address transactions" API exists for Casper —
-				// CSPR.cloud (the one that has it) requires a registered API key on
-				// every request (confirmed live via 401), and the public node RPC has
-				// no address-history index at all. Kept manual rather than wire up a
-				// paid-only dependency or a customer-facing deploy-hash-paste flow.
-				return false;
 			default:
 				return false;
 		}
@@ -3207,21 +3225,55 @@ class Xdwp_Verifier {
 	 * @return string|false
 	 */
 	private static function check_xrp( $address, $min, $max, $since ) {
-		$url      = sprintf( 'https://api.xrpscan.com/api/v1/account/%s/transactions?type=Payment&limit=25', rawurlencode( $address ) );
-		$response = self::http_get( $url );
-		if ( ! is_array( $response ) ) {
+		// The XRP Ledger's own public JSON-RPC, rather than a third-party explorer. The one
+		// used before answered an unknown account with a 302 to a bulk data file, and since
+		// WordPress follows redirects every check downloaded a hundred megabytes and then timed
+		// out — on a customer's payment page, every few seconds. This is the authoritative
+		// source, needs no key, and answers an empty account in under 200 bytes.
+		$response = self::http_post_json(
+			'https://xrplcluster.com/',
+			array(
+				'method' => 'account_tx',
+				'params' => array(
+					array(
+						'account'          => $address,
+						'limit'            => 25,
+						'ledger_index_min' => -1,
+						'ledger_index_max' => -1,
+					),
+				),
+			)
+		);
+		if ( ! is_array( $response ) || empty( $response['result'] ) || ! is_array( $response['result'] ) ) {
 			return false;
 		}
-		$list = isset( $response['transactions'] ) ? $response['transactions'] : $response;
+		$result = $response['result'];
+		// actNotFound simply means nothing has ever been sent to this address.
+		if ( ! empty( $result['error'] ) ) {
+			return false;
+		}
+		$list = isset( $result['transactions'] ) ? $result['transactions'] : array();
 		if ( ! is_array( $list ) ) {
 			return false;
 		}
 		foreach ( $list as $tx ) {
 			$time = 0;
-			if ( ! empty( $tx['date'] ) ) {
-				$time = is_numeric( $tx['date'] ) ? (int) $tx['date'] : strtotime( $tx['date'] );
-			} elseif ( ! empty( $tx['close_time_iso'] ) ) {
-				$time = strtotime( $tx['close_time_iso'] );
+			$stamp = null;
+			foreach ( array( $tx, isset( $tx['tx'] ) && is_array( $tx['tx'] ) ? $tx['tx'] : array() ) as $where ) {
+				if ( null === $stamp && ! empty( $where['date'] ) ) {
+					$stamp = $where['date'];
+				}
+				if ( 0 === $time && ! empty( $where['close_time_iso'] ) ) {
+					$time = (int) strtotime( $where['close_time_iso'] );
+				}
+			}
+			if ( null !== $stamp ) {
+				$time = is_numeric( $stamp ) ? (int) $stamp : (int) strtotime( (string) $stamp );
+				// The XRP Ledger counts seconds from 2000-01-01, not 1970. Left unconverted
+				// every payment looks thirty years old and is skipped as too old to match.
+				if ( $time > 0 && $time < self::XRP_EPOCH_OFFSET ) {
+					$time += self::XRP_EPOCH_OFFSET;
+				}
 			}
 			if ( ! $time || $time < $since ) {
 				continue;
@@ -3351,8 +3403,10 @@ class Xdwp_Verifier {
 		$response = wp_remote_get(
 			$url,
 			array(
-				'timeout' => 20,
-				'headers' => $headers,
+				'timeout'             => 20,
+				'headers'             => $headers,
+				'redirection'         => self::MAX_REDIRECTS,
+				'limit_response_size' => self::MAX_RESPONSE_BYTES,
 			)
 		);
 		if ( is_wp_error( $response ) ) {
@@ -3456,9 +3510,11 @@ class Xdwp_Verifier {
 		$response = wp_remote_post(
 			$url,
 			array(
-				'timeout' => 20,
-				'headers' => $headers,
-				'body'    => wp_json_encode( $body ),
+				'timeout'             => 20,
+				'headers'             => $headers,
+				'body'                => wp_json_encode( $body ),
+				'redirection'         => self::MAX_REDIRECTS,
+				'limit_response_size' => self::MAX_RESPONSE_BYTES,
 			)
 		);
 		// Recorded for the same reason a GET is: "Test this coin" reports what the last lookup
@@ -5147,68 +5203,6 @@ class Xdwp_Verifier {
 	}
 
 	/**
-	 * Verge (XVG) — verge-blockchain.info's custom explorer API (not
-	 * Blockbook/Insight/Esplora-shaped). The address-history endpoint
-	 * returns only {txid,time,type,value}; full vout/confirmations require
-	 * a separate per-tx call. Live-verified before coding.
-	 *
-	 * @param string $address Address.
-	 * @param float  $min     Min.
-	 * @param float  $max     Max.
-	 * @param int    $since   Since.
-	 * @return string|false
-	 */
-	private static function check_verge_explorer( $address, $min, $max, $since ) {
-		$list = self::http_get( 'https://verge-blockchain.info/api/address/txs/' . rawurlencode( $address ) . '/0/20' );
-		if ( ! is_array( $list ) || empty( $list['data'] ) || ! is_array( $list['data'] ) ) {
-			return false;
-		}
-
-		foreach ( $list['data'] as $row ) {
-			$txid = isset( $row['txid'] ) ? (string) $row['txid'] : '';
-			if ( '' === $txid ) {
-				continue;
-			}
-			$tx = self::http_get( 'https://verge-blockchain.info/api/tx/' . rawurlencode( $txid ) );
-			if ( ! is_array( $tx ) || empty( $tx['data'] ) || ! is_array( $tx['data'] ) ) {
-				continue;
-			}
-			$tx   = $tx['data'];
-			$time = isset( $tx['blocktime'] ) ? (int) $tx['blocktime'] : ( isset( $tx['time'] ) ? (int) $tx['time'] : 0 );
-			if ( ! $time || $time < $since ) {
-				continue;
-			}
-			if ( ! self::confirmations_ok( isset( $tx['confirmations'] ) ? $tx['confirmations'] : null ) ) {
-				continue;
-			}
-			if ( empty( $tx['vout'] ) || ! is_array( $tx['vout'] ) ) {
-				continue;
-			}
-			$sum = 0.0;
-			foreach ( $tx['vout'] as $vout ) {
-				$addrs   = ( ! empty( $vout['scriptPubKey']['addresses'] ) && is_array( $vout['scriptPubKey']['addresses'] ) )
-					? $vout['scriptPubKey']['addresses']
-					: array();
-				$matched = false;
-				foreach ( $addrs as $a ) {
-					if ( hash_equals( $address, (string) $a ) ) {
-						$matched = true;
-						break;
-					}
-				}
-				if ( ! $matched ) {
-					continue;
-				}
-				$sum += (float) ( isset( $vout['value'] ) ? $vout['value'] : 0 );
-			}
-			if ( self::amount_in_band( $sum, $min, $max ) ) {
-				return $txid;
-			}
-		}
-		return false;
-	}
-
-	/**
 	 * Qtum (QTUM) — qtum.info's Insight-derived REST API. UTXO-shaped like
 	 * check_insight(), but field names differ (outputs vs vout, address vs
 	 * addresses[]) so it isn't a drop-in reuse. `confirmations` is returned
@@ -5867,9 +5861,11 @@ class Xdwp_Verifier {
 		$response = wp_remote_post(
 			$url,
 			array(
-				'timeout' => 20,
-				'headers' => $headers,
-				'body'    => wp_json_encode( $body ),
+				'timeout'             => 20,
+				'headers'             => $headers,
+				'body'                => wp_json_encode( $body ),
+				'redirection'         => self::MAX_REDIRECTS,
+				'limit_response_size' => self::MAX_RESPONSE_BYTES,
 			)
 		);
 		if ( is_wp_error( $response ) ) {

@@ -93,26 +93,26 @@ xdwp_assert( Xdwp_Coins::supports_auto_verify( 'NEAR' ), 'NEAR auto-verify' );
 xdwp_assert( Xdwp_Coins::supports_auto_verify( 'ATOM' ), 'ATOM auto-verify' );
 xdwp_assert( Xdwp_Coins::supports_auto_verify( 'DOT' ), 'DOT auto-verify' );
 
-// Coins added across the three most recent batches (219 -> 238 coins) — a
+// Coins added across the three most recent batches (219 -> 235 coins) — a
 // representative sample per new verifier family, not an exhaustive list.
 $recent_required = array(
 	'BTG', 'FIRO', 'XZC', 'RVN', 'PIVX', 'NEO', 'GAS', 'THETA', 'TFUEL',
-	'DGB', 'KMD', 'XVG', 'QTUM', 'ARK', 'AE', 'ICX', 'ONT', 'KLV', 'TET', 'XEM', 'XYM', 'RUNE', 'LGCY', 'IOTX', 'CSPR',
+	'DGB', 'KMD', 'QTUM', 'ARK', 'AE', 'ICX', 'ONT', 'KLV', 'TET', 'XEM', 'XYM', 'RUNE', 'LGCY', 'IOTX',
 	'LSK', 'STRAX', 'IOTA',
 );
 foreach ( $recent_required as $id ) {
 	xdwp_assert( isset( $all[ $id ] ), "recently-added coin present: {$id}" );
 }
-xdwp_assert( count( $all ) >= 238, 'coin catalog size >= 238 (got ' . count( $all ) . ')' );
+xdwp_assert( count( $all ) >= 235, 'coin catalog size >= 235 (got ' . count( $all ) . ')' );
 
 // One coin per newly-added auto-verified verifier group should report true;
 // the deliberately manual-only groups (no free/keyless verification API)
 // must report false, or a merchant would see "auto-verify: yes" for a coin
 // that silently never gets marked paid automatically.
-foreach ( array( 'BTG', 'NEO', 'THETA', 'DGB', 'KMD', 'XVG', 'QTUM', 'ARK', 'AE', 'ICX', 'ONT', 'KLV', 'TET', 'XEM', 'XYM', 'RUNE', 'LGCY', 'LSK', 'STRAX', 'IOTA' ) as $id ) {
+foreach ( array( 'BTG', 'NEO', 'THETA', 'DGB', 'KMD', 'QTUM', 'ARK', 'AE', 'ICX', 'ONT', 'KLV', 'TET', 'XEM', 'XYM', 'RUNE', 'LGCY', 'LSK', 'STRAX', 'IOTA' ) as $id ) {
 	xdwp_assert( Xdwp_Coins::supports_auto_verify( $id ), "{$id} auto-verify" );
 }
-foreach ( array( 'XMR', 'STRK', 'KAIA', 'IOTX', 'CSPR' ) as $id ) {
+foreach ( array( 'XMR', 'KAIA', 'IOTX' ) as $id ) {
 	xdwp_assert( ! Xdwp_Coins::supports_auto_verify( $id ), "{$id} is manual (no viable keyless auto-verify API)" );
 }
 
@@ -180,7 +180,7 @@ xdwp_assert( false !== strpos( $verifier, 'contractAddress' ), 'EVM token matche
 // silently falling through to a stub/default case.
 $recent_verifier_functions = array(
 	'check_blockbook', 'check_neo', 'check_theta',
-	'check_esplora', 'check_insight', 'check_verge_explorer', 'check_qtum',
+	'check_esplora', 'check_insight', 'check_qtum',
 	'check_ark', 'check_aeternity', 'check_icon', 'check_ontology', 'check_klever',
 	'check_tectum', 'check_nem', 'check_symbol', 'check_thorchain',
 	'check_blockscout_v2_token', 'check_iota', 'hex_to_decimal_string',
@@ -190,7 +190,7 @@ foreach ( $recent_verifier_functions as $fn ) {
 }
 // Manual-only coins from recent batches must each have an explicit case
 // (with a reason) rather than silently relying on the switch's default.
-foreach ( array( 'iotx', 'cspr' ) as $manual_case ) {
+foreach ( array( 'iotx' ) as $manual_case ) {
 	xdwp_assert( false !== strpos( $verifier, "case '{$manual_case}':" ), "find_payment has an explicit case for manual-only '{$manual_case}'" );
 }
 $prices_src = file_get_contents( $root . '/includes/class-xdwp-prices.php' );
@@ -361,7 +361,7 @@ xdwp_assert( is_file( $root . '/assets/svg/coins/base.svg' ), 'Base icon present
 xdwp_assert( is_file( $root . '/assets/svg/coins/dai.svg' ), 'DAI icon present' );
 xdwp_assert( is_file( $root . '/assets/svg/coins/wbtc.svg' ), 'WBTC icon present' );
 xdwp_assert( is_file( $root . '/assets/svg/coins/aave.svg' ), 'AAVE icon present' );
-foreach ( array( 'btg', 'neo', 'theta', 'dgb', 'kmd', 'xvg', 'qtum', 'ark', 'icx', 'xem', 'lsk', 'iota', 'strax', 'tfuel' ) as $ticker ) {
+foreach ( array( 'btg', 'neo', 'theta', 'dgb', 'kmd', 'qtum', 'ark', 'icx', 'xem', 'lsk', 'iota', 'strax', 'tfuel' ) as $ticker ) {
 	xdwp_assert( is_file( $root . "/assets/svg/coins/{$ticker}.svg" ), strtoupper( $ticker ) . ' icon present' );
 }
 xdwp_assert( false !== strpos( $verifier, "case 'bch'" ), 'verifier BCH case' );
@@ -631,6 +631,12 @@ $xdwp_prices_src = file_get_contents( $root . '/includes/class-xdwp-prices.php' 
 xdwp_assert( false !== strpos( $xdwp_prices_src, 'function adjusted_fiat' ), 'a coin can carry a discount or a surcharge' );
 xdwp_assert( 1 === substr_count( $xdwp_prices_src, 'adjusted_fiat( $fiat_amount, $coin_id )' ), 'and it is applied in exactly one place' );
 xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-order.php' ), 'function apply_coin_adjustment' ), 'the order total says so too' );
+
+// Casper and Starknet were removed in 1.19.1: neither has a payment-detection API that does
+// not need a paid or registered key, so they could only ever be confirmed by hand.
+foreach ( array( 'CSPR', 'STRK', 'XVG' ) as $xdwp_gone ) {
+	xdwp_assert( ! isset( $all[ $xdwp_gone ] ), $xdwp_gone . ' was withdrawn and is gone from the registry' );
+}
 
 xdwp_assert( false !== strpos( $readme, '== External services ==' ), 'readme external services section present' );
 xdwp_assert( false !== strpos( $readme, 'XRPSCan' ), 'readme documents XRPSCan' );

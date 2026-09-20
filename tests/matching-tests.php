@@ -120,7 +120,7 @@ t( 'TRON: a barely-confirmed transfer waits', false === $hit, wp_json_encode( $h
 // ---------------------------------------------------------------- XRP destination tags
 
 settings( array( 'min_confirmations' => 1 ) );
-xdwp_stub_http( array( 'xrpscan.com' => xdwp_fixture( 'xrp-payments' ) ) );
+xdwp_stub_http( array( 'xrplcluster.com' => xdwp_fixture( 'xrp-payments' ) ) );
 $xrp   = Xdwp_Coins::get( 'XRP' );
 $xaddr = 'rMdG3ju8pgyVh29ELPWaDuA74CpWW6Fxns';
 $hit   = Xdwp_Verifier::find_payment_detailed( $xrp, $xaddr, '6.737658', '6.73766', time() - 3600, '3927730452' );

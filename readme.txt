@@ -4,7 +4,7 @@ Tags: woocommerce, cryptocurrency, bitcoin, ethereum, payments, usdt, crypto che
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.19.0
+Stable tag: 1.19.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -344,6 +344,20 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 * QR Code generator (`assets/js/qrcode.min.js`) — MIT-licensed library by davidshimjs (https://github.com/davidshimjs/qrcodejs). Source is publicly available; the bundled file is minified for production use.
 
 == Changelog ==
+
+= 1.19.1 =
+Fixes found while auditing 1.19.0 against live chains, with every coin tested.
+* Fixed: Algorand payments were never confirmed automatically. The plugin asked the indexer for a node-only endpoint, got a 404, and gave up before looking at a single transaction
+* Fixed: XRP payment checks downloaded up to a hundred megabytes and timed out. The explorer answered an unknown address with a redirect to a bulk data file. XRP now uses the XRP Ledger's own public API — no key, and an empty address answers in under 200 bytes
+* Fixed: "Test this coin" wrongly reported that the explorer "was not contacted" for Solana, TON, Cardano and Nano. Those chains answer over JSON-RPC, and the plugin was not recording what those calls did
+* Fixed: "Test this coin" reported a failure for a brand-new receiving address on XRP and Stellar. Those chains have no record of an address until something is sent to it, which is normal, and it now says so
+* Fixed: a paid CoinGecko key was sent to the free host and refused. Demo and Pro keys look identical, so the plugin now reads CoinGecko's own answer, uses the right host, and remembers it
+* Fixed: Litecoin had a single source of chain data with no fallback, so a busy shop stopped seeing payments once that service's free allowance ran out. It now falls back to a second, key-less source — and only when the first does not answer
+* Fixed: no exchange rate was available for Polygon when the main price source was unreachable. It was never misquoted; there was simply no backup. Now covered
+* Fixed: an order screen action answered "500 server error" where it meant "you are not allowed to do that"
+* Every explorer answer is now size-limited and redirect-limited, so no third-party service can stall a customer's payment page again
+* Removed: Casper and Starknet. Neither has any way to detect an incoming payment without a paid or registered key, so they could only ever be confirmed by hand. Verge is removed too — its explorer no longer exists at any address we could find
+* Monero, IoTeX and Kaia stay, and stay manual. Monero's is a property of the protocol; the other two are waiting on a free API key
 
 = 1.19.0 =
 Refunds that actually work in crypto, alerts on your phone, and your settings in one file.
