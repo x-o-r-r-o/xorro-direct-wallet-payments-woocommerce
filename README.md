@@ -93,14 +93,26 @@ The plugin checks this repository's [Releases](https://github.com/x-o-r-r-o/xorr
 
 ## Compatibility
 
-Version 1.6.0 was tested end to end — guest checkout on both classic and block checkout, live quote, order, payment page, status polling and a PHP error-log check — on WordPress 7.1 and WooCommerce 11.1 with:
+Version 1.13.0 was tested end to end on WordPress 7.1 and WooCommerce 11.1 — guest checkout on both classic and block checkout, live quote, order placement, payment page, status polling, the "I have sent the payment" path, and a PHP error-log check on every run.
 
-- **Themes (20):** Divi, Woodmart, Betheme, The7, Flatsome, Porto, Martfury, Dokan, Astra, OceanWP, GeneratePress, Kadence, Blocksy, Hello Elementor, Neve, Storefront, Twenty Twenty-One / Three / Four / Five.
-- **Cache and speed:** WP Rocket, Perfmatters, W3 Total Cache (page cache + minify), WP Super Cache, LiteSpeed Cache (including "delay JS"), WP Fastest Cache, Autoptimize, WP-Optimize, Breeze, Cache Enabler, Hummingbird, Jetpack Boost, SiteGround Optimizer, RabbitLoader.
-- **Security:** Wordfence (firewall and rate limiting), Solid Security / iThemes Security Pro, All-In-One Security (6G firewall), Sucuri, Shield, Defender, Limit Login Attempts Reloaded, WPS Hide Login.
-- **Store and site:** WooCommerce Subscriptions, WooCommerce Bookings, Product Add-ons, AutomateWoo, Stripe, PayPal Payments, CartFlows, Dokan (Lite + Pro), Checkout Field Editor, Flexible Checkout Fields, CURCY and FOX currency switchers, YITH Wishlist, Variation Swatches, Elementor + Pro, Element Pack, WPBakery, Revolution Slider, LayerSlider, ACF Pro, Yoast SEO (Premium + WooCommerce SEO), Rank Math Pro, TranslatePress, Polylang, Gravity Forms, Contact Form 7, ARMember, Indeed Membership Pro, Ultimate Affiliate, Real Estate Manager Pro, Ajax Search Pro, Redirection, WP Mail SMTP, UpdraftPlus, Duplicator Pro, All-in-One WP Migration, Query Monitor — each alone, plus a 30-plugin stack on Woodmart, Divi, Betheme and Flatsome.
+**Themes — 20 of 20 clean, on both checkouts:** Divi, Woodmart, Betheme, The7, Flatsome, Porto, Martfury, Dokan, Astra, OceanWP, GeneratePress, Kadence, Blocksy, Hello Elementor, Neve, Storefront, Twenty Twenty-One / Three / Four / Five.
 
-Known issues found in other products while testing: Dokan Pro's Booking module crashes WordPress on its own (missing class in the package); Ultimate Affiliate needs its installer to create its tables; a 30-plugin stack on Woodmart needs more than 256 MB of PHP memory (with or without this plugin).
+**Plugins — 74 tested one at a time, 73 clean:**
+
+- *Cache and speed:* WP Rocket, Perfmatters, W3 Total Cache, WP Super Cache, LiteSpeed Cache, WP Fastest Cache, Autoptimize, WP-Optimize, Breeze, Cache Enabler, Hummingbird, Jetpack Boost, SiteGround Optimizer, RabbitLoader.
+- *Security:* Wordfence, Solid Security (iThemes Security Pro), All-In-One Security, Sucuri, Shield, Defender, Limit Login Attempts Reloaded, WPS Hide Login.
+- *Store:* WooCommerce Subscriptions, Bookings, Product Add-ons, AutomateWoo, Stripe, PayPal Payments, CartFlows, Checkout Field Editor, Flexible Checkout Fields, CURCY and FOX currency switchers, YITH Wishlist, Variation Swatches, WooCommerce Deals.
+- *Marketplace:* Dokan Lite and Dokan Pro — including a two-vendor cart, which splits into vendor sub-orders: paying the parent in crypto moves the parent and both sub-orders to processing together.
+- *Builders and site:* Elementor and Elementor Pro (including a checkout page built with Elementor Pro's own WooCommerce Checkout widget), Element Pack, WPBakery, Slider Revolution, LayerSlider, Kirki, ACF Pro, Yoast SEO (Premium + WooCommerce SEO), Rank Math Pro, TranslatePress, Polylang, Gravity Forms, Contact Form 7, ARMember, Indeed Membership Pro, Real Estate Manager Pro, Ajax Search Pro, Redirection, WP Mail SMTP, UpdraftPlus, Duplicator Pro, All-in-One WP Migration, Query Monitor.
+
+**Stacks — all clean:** cache-heavy (WP Rocket + Perfmatters + Autoptimize + WP-Optimize), security-heavy (Wordfence + Solid Security + Shield + Limit Login Attempts), builder-heavy (Elementor + WPBakery + Slider Revolution + LayerSlider + Kirki), store-heavy (Subscriptions + Bookings + Product Add-ons + AutomateWoo + CartFlows), and translation + multi-currency (Polylang + TranslatePress + CURCY + FOX). A 30-plugin stack was also run on Woodmart, Divi, Betheme and Flatsome.
+
+Problems found in other products while testing, none of them caused by this plugin:
+
+- **Dokan Pro's Booking module** takes the whole site down with a fatal error (`DependencyNotice` class missing from the package). Verified with this plugin fully deactivated — the site still fails. Keep that module off until Dokan fix it.
+- **Ultimate Affiliate** queries a `wp_uap_referrals` table its own installer never created, logging a database error on every order from any gateway.
+- **LiteSpeed Cache "JS Combine"**, and **Autoptimize with "Also optimize for checkout"**, break WooCommerce's own block checkout. Leave both off on checkout pages.
+- A 30-plugin stack on Woodmart needs more than 256 MB of PHP memory, with or without this plugin.
 
 Built-in compatibility handling:
 
@@ -109,8 +121,6 @@ Built-in compatibility handling:
 - The checkout script stays out of combined JS bundles, so an error in another plugin's script can't break the coin picker.
 - Customer-facing requests use WooCommerce's `?wc-ajax=` endpoint, which security plugins and admin redirects don't interfere with.
 - No inline event handlers — works with strict Content-Security-Policy headers.
-
-Known issues outside this plugin: LiteSpeed's **"JS Combine"** option, and Autoptimize with **"Also optimize for checkout"** turned on, break WooCommerce's own block checkout. Leave those off on checkout pages.
 
 ## Security
 
