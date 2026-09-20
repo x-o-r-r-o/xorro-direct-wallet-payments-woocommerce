@@ -281,7 +281,7 @@ class Xdwp_Wallets {
 	 * @return int|null
 	 */
 	private static function recycled_index( $coin_id ) {
-		$orders = wc_get_orders(
+		$orders = Xdwp_Order_Query::get(
 			array(
 				'limit'          => 5,
 				'return'         => 'objects',
@@ -316,10 +316,14 @@ class Xdwp_Wallets {
 			if ( '' !== (string) $order->get_meta( '_xdwp_seen_txid' ) || '' !== (string) $order->get_meta( '_xdwp_late_txid' ) ) {
 				continue;
 			}
-			$index = (int) $order->get_meta( '_xdwp_hd_index' );
-			if ( $index < 0 ) {
+			// An order that never held an index has nothing to lend back, and its empty meta
+			// would read as index 0 — the very first address, handed out a second time. So the
+			// index has to be there and be a number before it is believed.
+			$raw = (string) $order->get_meta( '_xdwp_hd_index' );
+			if ( '' === $raw || ! ctype_digit( $raw ) ) {
 				continue;
 			}
+			$index = (int) $raw;
 			$order->update_meta_data( '_xdwp_hd_recycled', 1 );
 			$order->save();
 			return $index;

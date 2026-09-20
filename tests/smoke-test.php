@@ -663,6 +663,32 @@ xdwp_assert( false !== strpos( $readme, 'Filfox' ), 'readme documents Filfox' );
 xdwp_assert( false !== strpos( $readme, 'AlgoNode' ), 'readme documents AlgoNode' );
 xdwp_assert( false !== strpos( $readme, 'Greymass' ), 'readme documents Greymass' );
 
+// Release 1.19.6: WooCommerce honours meta_query in wc_get_orders() only under HPOS. On a shop
+// still storing orders as posts it drops the filter without applying it, and the query answers a
+// far wider question while still returning rows — so every meta filter goes through
+// Xdwp_Order_Query, which puts it where the post store will actually read it.
+xdwp_assert( is_readable( $root . '/includes/class-xdwp-order-query.php' ), 'the order-query wrapper is present' );
+xdwp_assert( file_exists( $root . '/tests/order-query-tests.php' ), 'both order stores are covered by tests' );
+$xdwp_direct_meta_query = array();
+$xdwp_query_scan        = new RecursiveIteratorIterator( new RecursiveDirectoryIterator( $root, FilesystemIterator::SKIP_DOTS ) );
+foreach ( $xdwp_query_scan as $xdwp_file ) {
+	if ( ! $xdwp_file->isFile() || 'php' !== strtolower( $xdwp_file->getExtension() ) ) {
+		continue;
+	}
+	// Forward slashes so the exclusions below match on Windows too.
+	$xdwp_path = str_replace( '\\', '/', $xdwp_file->getPathname() );
+	if ( false !== strpos( $xdwp_path, '/.git/' ) || false !== strpos( $xdwp_path, '/releases/' ) || false !== strpos( $xdwp_path, '/tests/' ) ) {
+		continue;
+	}
+	if ( false !== strpos( $xdwp_path, 'includes/class-xdwp-order-query.php' ) ) {
+		continue;
+	}
+	$xdwp_src = (string) file_get_contents( $xdwp_path );
+	if ( false !== strpos( $xdwp_src, 'wc_get_orders(' ) && false !== strpos( $xdwp_src, "'meta_query'" ) ) {
+		$xdwp_direct_meta_query[] = str_replace( $root . '/', '', $xdwp_path );
+	}
+}
+xdwp_assert( array() === $xdwp_direct_meta_query, 'no meta_query is handed straight to wc_get_orders(): ' . implode( ', ', $xdwp_direct_meta_query ) );
 
 echo "\n";
 if ( $fail > 0 ) {

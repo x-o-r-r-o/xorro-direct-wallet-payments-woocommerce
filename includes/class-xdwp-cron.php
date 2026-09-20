@@ -75,14 +75,11 @@ class Xdwp_Cron {
 		}
 
 		try {
-			// A separate top-level meta_key/orderby=meta_value_num combined with
-			// meta_query triggers WooCommerce's "not supported on the current
-			// order datastore" doing_it_wrong notice under HPOS (harmless today
-			// — verified the filter still applies correctly — but signals a
-			// compatibility shim that could be removed later). Ordering by a
-			// named meta_query clause is the officially-supported form for
-			// both the legacy and HPOS order data stores.
-			$orders = wc_get_orders(
+			// Ordering by a named meta_query clause rather than by a top-level
+			// meta_key/orderby=meta_value_num pair: the named form is what both
+			// order data stores understand. (Xdwp_Order_Query is what makes the
+			// meta_query itself reach a shop still storing orders as posts.)
+			$orders = Xdwp_Order_Query::get(
 				array(
 					'limit'          => 100,
 					'status'         => array( 'on-hold', 'pending' ),
@@ -193,7 +190,7 @@ class Xdwp_Cron {
 		if ( 'yes' !== Xdwp_Settings::get( 'late_payment_scan', 'yes' ) ) {
 			return;
 		}
-		$orders = wc_get_orders(
+		$orders = Xdwp_Order_Query::get(
 			array(
 				'limit'          => 30,
 				'status'         => array( 'failed' ),

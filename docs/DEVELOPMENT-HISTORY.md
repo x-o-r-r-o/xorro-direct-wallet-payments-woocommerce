@@ -146,6 +146,10 @@ Full user-facing notes are in `readme.txt`. This is what each release put into t
 | 1.18.0 | Reconciliation | Order search by txid/address; per-order timeline; row actions (check now, extend); a period report read straight from order meta, bounded and cached. Countdown fixed for windows longer than an hour |
 | 1.19.2 | The payment page as a customer reads it | A settled, cancelled or refunded order stops asking for payment — it was still showing a countdown and an address for orders the shop had completed itself, and a customer could pay twice. Amount, address and buttons moved above the instructions. "Dealt with" clears an order from the "Needs you" queue, which could previously only grow |
 | 1.19.1 | Every coin against its live chain | Algorand's tip endpoint (it confirmed nothing at all), XRP's 100 MB redirect loop (moved to the XRP Ledger's own API), JSON-RPC calls not being recorded (four chains wrongly reported as unreachable), CoinGecko Demo/Pro host detection, a Litecoin fallback, size and redirect caps on every explorer request. Casper, Starknet and Verge withdrawn |
+| 1.19.6 | Both order stores | `Xdwp_Order_Query`. WooCommerce only honours `meta_query` in `wc_get_orders()` on HPOS; the post store drops it, so on a shop not yet migrated every order lookup was unfiltered — `txid_already_used()` answered "does this shop have any other order?" and no payment could confirm. The meta filter is now put into the WP_Query arguments through `woocommerce_order_data_store_cpt_get_orders_query`. A recycled wallet index also has to be present and numeric before it is believed (an absent one read as index 0) |
+| 1.19.5 | Kaia, and Polkadot back | Kaia confirmed through Kaiascan's documented API with a free key, value transfers only, decimal amounts converted to base units by string; Polkadot restored as a manual coin; IoTeX proven unimplementable (its address-history API answers HTTP 500 to everyone, including IoTeX's own explorer) |
+| 1.19.4 | Widths that stay put | Copy buttons keep their width while they say "Copied!" — growing mid-click squeezed the address box and re-wrapped the address, which read as the address changing. Payments and reports tables scroll inside their own panel instead of dragging the admin page sideways |
+| 1.19.3 | Honest coverage | Polkadot and Zilliqa withdrawn: neither can be read on chain without a key that is not freely available. Their key fields removed with them |
 | 1.19.0 | Operations | Claim-link refunds: a hashed, expiring, rate-limited token, a front-end claim page, and an order panel that never sends money itself. Signed webhooks and Telegram alerts, queued out of band with backoff. Settings export/import with secrets held back. Per-coin discount or surcharge, applied once in pricing and mirrored as an order fee line. Confirmations tiered by order value. Bundled translations refreshed |
 
 ---
@@ -167,11 +171,12 @@ Full user-facing notes are in `readme.txt`. This is what each release put into t
 | `includes/class-xdwp-refunds.php` | Claim links, and recording a refund the shop sent by hand |
 | `includes/class-xdwp-backup.php` | Exporting and restoring the settings |
 | `includes/class-xdwp-updater.php` | Update checks, and Ed25519 signature enforcement |
+| `includes/class-xdwp-order-query.php` | The one way the plugin asks the database about orders, so a `meta_query` means the same on HPOS and on the post store |
 | `includes/admin/` | Settings, Wallets, Coins, Prices & APIs, Payments and Help screens |
 | `templates/payment.php` | What the customer sees after placing the order |
 | `assets/js/frontend.js` | Countdown, status polling, QR, copy buttons |
 | `assets/js/wallet.js` | Paying from a wallet in the browser |
-| `tests/` | `smoke-test.php`, `matching-tests.php`, `hd-tests.php`, fixtures |
+| `tests/` | `smoke-test.php`, `matching-tests.php`, `hd-tests.php`, `order-query-tests.php`, fixtures |
 
 ---
 
@@ -195,6 +200,11 @@ These hold across every release above. Breaking one is a defect, however good th
    refund code contains none.
 7. **Address allocation is atomic.** Slots are claimed with `INSERT IGNORE` / `LAST_INSERT_ID`, so
    two simultaneous orders cannot be handed the same address and amount.
+8. **An order lookup means the same on both order stores.** Orders are queried through
+   `Xdwp_Order_Query::get()`, never `wc_get_orders()` directly, whenever the question involves
+   order meta. WooCommerce honours `meta_query` only under HPOS; the post store drops it without
+   a word, which turns a narrow question into a wide one that still returns rows.
+   `tests/order-query-tests.php` runs the plugin's own query shapes against a model of each store.
 
 ---
 

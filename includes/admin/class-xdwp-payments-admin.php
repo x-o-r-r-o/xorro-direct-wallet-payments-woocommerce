@@ -462,7 +462,7 @@ class Xdwp_Payments_Admin {
 		);
 
 		if ( $attention ) {
-			$orders = wc_get_orders( $query );
+			$orders = Xdwp_Order_Query::get( $query );
 			$orders = is_array( $orders ) ? array_values( array_filter( $orders, array( __CLASS__, 'needs_attention' ) ) ) : array();
 			$total  = count( $orders );
 			$offset = ( $paged - 1 ) * self::PER_PAGE;
@@ -473,7 +473,7 @@ class Xdwp_Payments_Admin {
 			);
 		}
 
-		$result = wc_get_orders( $query );
+		$result = Xdwp_Order_Query::get( $query );
 		return array(
 			'orders' => isset( $result->orders ) ? $result->orders : array(),
 			'total'  => isset( $result->total ) ? (int) $result->total : 0,

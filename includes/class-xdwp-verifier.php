@@ -1177,7 +1177,7 @@ class Xdwp_Verifier {
 		);
 
 		do {
-			$batch = wc_get_orders( array_merge( $base_args, array( 'page' => $page ) ) );
+			$batch = Xdwp_Order_Query::get( array_merge( $base_args, array( 'page' => $page ) ) );
 			if ( empty( $batch ) ) {
 				break;
 			}
@@ -1769,7 +1769,7 @@ class Xdwp_Verifier {
 		if ( '' === $memo || '' === (string) $address ) {
 			return false;
 		}
-		$orders = wc_get_orders(
+		$orders = Xdwp_Order_Query::get(
 			array(
 				'limit'          => 20,
 				'return'         => 'ids',
@@ -1800,7 +1800,11 @@ class Xdwp_Verifier {
 	 * @return bool
 	 */
 	private static function txid_already_used( $txid, $exclude_order = 0 ) {
-		$orders = wc_get_orders(
+		// Without this, an empty txid would ask "which order has no txid?" and answer yes.
+		if ( '' === (string) $txid ) {
+			return false;
+		}
+		$orders = Xdwp_Order_Query::get(
 			array(
 				'limit'      => 1,
 				'return'     => 'ids',

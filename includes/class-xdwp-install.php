@@ -23,7 +23,9 @@ class Xdwp_Install {
 		if ( ! function_exists( 'wc_get_orders' ) ) {
 			return;
 		}
-		$orders = wc_get_orders(
+		// Activation can reach this before the plugin's own bootstrap has run.
+		require_once XDWP_PATH . 'includes/class-xdwp-order-query.php';
+		$orders = Xdwp_Order_Query::get(
 			array(
 				'limit'      => 500,
 				'status'     => 'any',

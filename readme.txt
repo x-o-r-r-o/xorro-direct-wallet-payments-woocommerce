@@ -4,7 +4,7 @@ Tags: woocommerce, cryptocurrency, bitcoin, ethereum, payments, usdt, crypto che
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.19.5
+Stable tag: 1.19.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -329,6 +329,12 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 * QR Code generator (`assets/js/qrcode.min.js`) — MIT-licensed library by davidshimjs (https://github.com/davidshimjs/qrcodejs). Source is publicly available; the bundled file is minified for production use.
 
 == Changelog ==
+
+= 1.19.6 =
+* Fixed: on a shop that still stores orders as posts rather than in WooCommerce's own order tables, none of the plugin's order lookups were filtered at all. WooCommerce drops the `meta_query` on that store and, since WooCommerce 9.2, logs "Order query argument (meta_query) is not supported on the current order datastore" as it does so. The queries then answered far wider questions than they asked: "has another order already claimed this transaction?" became "does this shop have any other order?", which is true on every real shop, so payments were rejected as duplicates and never confirmed
+* Fixed, same cause: the Payments screen listed every order in the shop instead of the crypto ones, its filters and counts did nothing, and the badge beside the menu counted orders that needed no attention
+* Fixed, same cause: an expired order could lend its wallet address back to a new order even when it had no address to lend — an empty index reads as index 0, the very first address, handed out a second time. The index now has to be present and numeric before it is reused
+* Shops already on High-Performance Order Storage were never affected; HPOS understands these queries natively and is left exactly as it was
 
 = 1.19.5 =
 * New: Kaia (KAIA) payments are confirmed on chain automatically once you add a free Kaiascan API key under Prices & APIs. Kaia publishes no free index of its own, so without a key it stays a manual coin — and the Coins tab and "Test this coin" both say which key is missing rather than failing quietly

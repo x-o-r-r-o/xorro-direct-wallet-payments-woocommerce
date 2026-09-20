@@ -86,6 +86,19 @@ function add_filter( $hook, $callback, $priority = 10, $args = 1 ) {
 	return true;
 }
 
+function remove_filter( $hook, $callback, $priority = 10 ) {
+	if ( ! isset( $GLOBALS['xdwp_stub']['filters'][ $hook ] ) ) {
+		return false;
+	}
+	foreach ( $GLOBALS['xdwp_stub']['filters'][ $hook ] as $index => $registered ) {
+		if ( $registered === $callback ) {
+			unset( $GLOBALS['xdwp_stub']['filters'][ $hook ][ $index ] );
+			return true;
+		}
+	}
+	return false;
+}
+
 function apply_filters( $hook, $value ) {
 	$args = array_slice( func_get_args(), 2 );
 	foreach ( isset( $GLOBALS['xdwp_stub']['filters'][ $hook ] ) ? $GLOBALS['xdwp_stub']['filters'][ $hook ] : array() as $callback ) {

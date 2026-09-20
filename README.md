@@ -271,6 +271,13 @@ Pushing a `vX.Y.Z` tag runs the Release workflow, which builds the ZIP, its SHA-
 
 Full details for every release are in [`readme.txt`](readme.txt).
 
+### 1.19.6 — Order lookups work on shops that still store orders as posts
+
+- Fixed: on a shop not yet on High-Performance Order Storage, WooCommerce silently drops the `meta_query` from `wc_get_orders()`, so none of the plugin's order lookups were filtered. "Has another order already claimed this transaction?" became "does this shop have any other order?" — true on every real shop — and payments were rejected as duplicates and never confirmed
+- Fixed, same cause: the Payments screen listed every order in the shop, its filters and counts did nothing, and the attention badge counted orders that needed none
+- Fixed, same cause: an expired order with no wallet index could still lend one back, and an empty index reads as 0 — the first address, handed out twice
+- HPOS shops were never affected and are unchanged
+
 ### 1.19.5 — Kaia confirmed automatically, Polkadot back as a manual coin
 
 - New: Kaia (KAIA) is confirmed on chain with a free Kaiascan key. Without a key it stays manual and says so

@@ -39,6 +39,9 @@ jobs:
       - name: Address derivation tests (published BIP32/44/49/84 vectors)
         run: php tests/hd-tests.php
 
+      - name: Order-query tests (both WooCommerce order data stores)
+        run: php tests/order-query-tests.php
+
   javascript:
     name: JavaScript
     runs-on: ubuntu-latest

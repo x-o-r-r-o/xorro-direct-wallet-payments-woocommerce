@@ -43,6 +43,7 @@ final class Xdwp {
 	 * Load required files.
 	 */
 	private function includes() {
+		require_once XDWP_PATH . 'includes/class-xdwp-order-query.php';
 		require_once XDWP_PATH . 'includes/class-xdwp-coins.php';
 		require_once XDWP_PATH . 'includes/class-xdwp-settings.php';
 		require_once XDWP_PATH . 'includes/class-xdwp-branding.php';

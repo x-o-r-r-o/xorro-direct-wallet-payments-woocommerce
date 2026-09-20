@@ -159,7 +159,7 @@ class Xdwp_Refunds {
 			return null;
 		}
 
-		$orders = wc_get_orders(
+		$orders = Xdwp_Order_Query::get(
 			array(
 				'limit'      => 2,
 				'status'     => 'any',
