@@ -242,9 +242,14 @@
 			var done = function () {
 				var original = button.getAttribute('data-original') || button.textContent;
 				button.setAttribute('data-original', original);
+				// Held at its current width: the confirmation is a longer word, and this button
+				// sits in a table cell beside the transaction id it copies.
+				var held = button.getBoundingClientRect().width;
+				if (held) { button.style.width = held + 'px'; }
 				button.textContent = button.getAttribute('data-copied') || 'Copied';
 				window.setTimeout(function () {
 					button.textContent = original;
+					button.style.width = '';
 				}, 1500);
 			};
 			if (navigator.clipboard && navigator.clipboard.writeText) {

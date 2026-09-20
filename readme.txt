@@ -4,7 +4,7 @@ Tags: woocommerce, cryptocurrency, bitcoin, ethereum, payments, usdt, crypto che
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.19.3
+Stable tag: 1.19.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -329,6 +329,12 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 * QR Code generator (`assets/js/qrcode.min.js`) — MIT-licensed library by davidshimjs (https://github.com/davidshimjs/qrcodejs). Source is publicly available; the bundled file is minified for production use.
 
 == Changelog ==
+
+= 1.19.4 =
+* Fixed: pressing Copy beside the address made the address appear to change. The button grew as it said "Copied!", which squeezed the box next to it and re-wrapped the address across its two lines. Copy buttons now keep their width while they confirm — on the payment page, the Wallets tab and the Payments screen
+* Fixed: on a phone the "Open in wallet app" button hung past the edge of the payment box and was wider than the button below it. Both are now the same width and sit inside the box
+* Fixed: on a narrower admin window the order date painted over the customer's email address on the Payments screen, and long amounts were cut off. The columns now keep to themselves, and the table scrolls sideways inside its panel rather than dragging the whole admin page with it
+* Fixed: the reports table could stretch the admin page sideways on a narrow window for the same reason
 
 = 1.19.3 =
 * Removed: Polkadot (DOT) and Zilliqa (ZIL). Neither can be checked on chain without a key that is not freely available — Subscan is a paid product and ViewBlock no longer issues keys — so both could only ever be confirmed by hand. The Subscan and ViewBlock key fields are gone with them

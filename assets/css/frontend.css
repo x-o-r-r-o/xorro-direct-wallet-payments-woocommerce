@@ -338,6 +338,7 @@
 
 .xdwp-box .xdwp-open-wallet {
 	display: inline-block;
+	box-sizing: border-box;
 	padding: 0.55rem 1rem;
 	border-radius: 4px;
 	background: #1d2733;
@@ -451,6 +452,9 @@
 
 /* Self-contained button look: themes reset or restyle .button very differently. */
 .xdwp-box .xdwp-copy:not(.button-link) {
+	/* The width is pinned in JS while it says "Copied!", so make that width mean the
+	   whole button however a theme has styled it. */
+	box-sizing: border-box;
 	flex: 0 0 auto;
 	margin: 0;
 	padding: 0.4rem 0.9rem;
@@ -534,6 +538,10 @@
 	.xdwp-box .xdwp-sent {
 		width: 100%;
 		text-align: center;
+		/* A theme's button styles usually set this; a bare <a> does not. Without it `width:
+		   100%` means "100% plus my padding", and the wallet button hung 31px past the edge of
+		   the payment box — wider than the button directly beneath it. */
+		box-sizing: border-box;
 	}
 }
 

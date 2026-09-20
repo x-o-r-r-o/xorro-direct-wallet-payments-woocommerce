@@ -288,8 +288,15 @@
 					if (!text) return;
 					var done = function () {
 						var prev = btn.textContent;
+						// Held at its current width so the confirmation, which is a longer
+						// word, cannot resize the button and shuffle the address beside it.
+						var held = btn.getBoundingClientRect().width;
+						if (held) { btn.style.width = held + 'px'; }
 						btn.textContent = i18n.copied;
-						setTimeout(function () { btn.textContent = prev; }, 1200);
+						setTimeout(function () {
+							btn.textContent = prev;
+							btn.style.width = '';
+						}, 1200);
 					};
 					var fallbackCopy = function (value) {
 						var ta = document.createElement('textarea');

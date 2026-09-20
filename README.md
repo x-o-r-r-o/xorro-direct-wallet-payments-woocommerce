@@ -266,6 +266,13 @@ Pushing a `vX.Y.Z` tag runs the Release workflow, which builds the ZIP, its SHA-
 
 Full details for every release are in [`readme.txt`](readme.txt).
 
+### 1.19.4 — Payments table columns, and the payment page buttons
+
+- Fixed: pressing Copy beside the address made the address look as though it changed — the button grew while it said "Copied!", squeezing the address box and re-wrapping the address
+- Fixed: on a phone the "Open in wallet app" button hung 31px past the edge of the payment box and was wider than the button beneath it
+- Fixed: on a narrower admin window the order date painted over the customer's email address, and long amounts were cut off
+- The table now scrolls sideways inside its own panel instead of dragging the whole admin page with it; the reports table did the same and is fixed too
+
 ### 1.19.3 — Polkadot and Zilliqa withdrawn
 
 - Removed: Polkadot (DOT) and Zilliqa (ZIL). Neither can be checked on chain without a key that is not freely available — Subscan is a paid product and ViewBlock no longer issues keys — so both could only ever be confirmed by hand

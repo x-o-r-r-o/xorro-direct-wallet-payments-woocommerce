@@ -5,6 +5,11 @@
 /* ——— Shell ——— */
 
 .xdwp-options-wrap {
+	/* The payments table is wider than a narrow admin window and scrolls inside its own
+	   wrapper. Without this its width still reaches up through here and drags the whole admin
+	   page sideways. `clip` rather than `hidden`: it contains the width without turning this
+	   into a scroll container, which would strand the table's sticky header. */
+	overflow-x: clip;
 	--cc-ink: #1d2327;
 	--cc-muted: #646970;
 	--cc-line: #dcdcde;
@@ -1254,7 +1259,10 @@ body.xdwp-admin-page #wpbody-content > .wrap > h1.wp-heading-inline {
 
 .xdwp-payments-table {
 	table-layout: fixed;
-	min-width: 480px;
+	/* Wide enough that a date, an amount and a coin ticker each still fit their own column.
+	   Below this the wrapper scrolls sideways, which is honest; squeezing the columns further
+	   only made their contents paint over the column next door. */
+	min-width: 760px;
 	border: 0;
 	box-shadow: none;
 	font-size: 12.5px;
@@ -1284,12 +1292,19 @@ body.xdwp-admin-page #wpbody-content > .wrap > h1.wp-heading-inline {
 }
 
 .xdwp-payments-table__date {
-	white-space: nowrap;
+	/* Deliberately allowed to wrap. With table-layout: fixed a column is exactly its share of
+	   the width, so anything that cannot wrap paints straight over its neighbour — which is how
+	   "September 20, 2026" ended up on top of a customer's email address. */
+	white-space: normal;
 }
 
 .xdwp-payments-table td,
 .xdwp-payments-table th {
 	vertical-align: top;
+	/* A fixed-layout cell does not clip by itself: without this a long email, a big amount or
+	   an unbroken id simply draws outside its column. */
+	overflow: hidden;
+	overflow-wrap: anywhere;
 }
 
 /* Transaction ids are long; wrap them rather than cutting them off. */
@@ -1407,9 +1422,9 @@ body.xdwp-admin-page #wpbody-content > .wrap > h1.wp-heading-inline {
 }
 
 /* Five columns, so the whole row fits a normal admin panel without sideways scrolling. */
-.xdwp-col-order { width: 20%; }
-.xdwp-col-customer { width: 22%; }
-.xdwp-col-amount { width: 20%; }
+.xdwp-col-order { width: 19%; }
+.xdwp-col-customer { width: 21%; }
+.xdwp-col-amount { width: 22%; }
 .xdwp-col-state { width: 13%; }
 .xdwp-col-tx { width: 26%; }
 
@@ -1417,6 +1432,10 @@ body.xdwp-admin-page #wpbody-content > .wrap > h1.wp-heading-inline {
 	display: inline-flex;
 	gap: 0.35rem;
 	align-items: center;
+	/* An amount must never be cut off — a merchant reading a truncated number is worse than a
+	   ticker on its own line. So the row wraps rather than overflowing its column. */
+	flex-wrap: wrap;
+	max-width: 100%;
 }
 
 .xdwp-payments-table .cc-coin-cell code {
@@ -1986,6 +2005,7 @@ body.xdwp-admin-page #wpbody-content > .wrap > h1.wp-heading-inline {
 /* ---- How payments are going ------------------------------------------- */
 
 .xdwp-report {
+	min-width: 0;
 	margin: 0 0 1.25rem;
 	padding: 1rem 1.1rem 1.1rem;
 	border: 1px solid #dcdcde;
@@ -2079,6 +2099,10 @@ body.xdwp-admin-page #wpbody-content > .wrap > h1.wp-heading-inline {
 
 .xdwp-report__scroll {
 	overflow-x: auto;
+	/* Without this the table stretches the whole page instead of scrolling inside its panel:
+	   a grid or flex item refuses to shrink below its content unless it is told it may. */
+	min-width: 0;
+	max-width: 100%;
 }
 
 .xdwp-report__table {

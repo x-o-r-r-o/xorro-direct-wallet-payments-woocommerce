@@ -77,11 +77,23 @@
 	function markCopied(btn) {
 		var original = btn.getAttribute('data-label') || btn.textContent;
 		btn.setAttribute('data-label', original);
+
+		// Hold the button at the width it already has. "Copied!" is a longer word than "Copy"
+		// in English and in most translations, and the button sits beside the address: letting
+		// it grow squeezes the address box, which re-wraps the address across its two lines.
+		// The characters move, and it reads as though the address itself changed — which, on a
+		// page asking someone to send money, is the last thing it should ever look like.
+		var held = btn.getBoundingClientRect().width;
+		if (held) {
+			btn.style.width = held + 'px';
+		}
+
 		btn.textContent = getCopyLabel(btn);
 		btn.classList.add('is-copied');
 		window.setTimeout(function () {
 			btn.textContent = original;
 			btn.classList.remove('is-copied');
+			btn.style.width = '';
 		}, 1600);
 	}
 
