@@ -107,7 +107,7 @@ Impreza, Kadence, Martfury, Neve, Newspaper, OceanWP, Ohio, Porto, Saira, Salien
 Shoptimizer, Storefront, The7, Thrive Theme, Uncode (and child), Vault, Wolmart, Woodmart, X, XStore,
 asri, bb-theme, and Twenty Twenty-One / Three / Four / Five.
 
-**Plugins — 236 tested one at a time, 230 clean.** Every plugin on the test site was activated on its
+**Plugins — 239 tested one at a time, 237 clean.** Every plugin on the test site was activated on its
 own alongside the gateway and taken through a full crypto checkout. The list spans caching and
 performance (WP Rocket, LiteSpeed, W3 Total Cache, WP Super Cache, WP Fastest Cache, Autoptimize,
 Perfmatters, Breeze, Cache Enabler, Hummingbird, SiteGround Optimizer, Jetpack Boost, RabbitLoader,
@@ -132,8 +132,9 @@ security-heavy (Wordfence + Solid Security + Shield + Limit Login Attempts), bui
 Add-ons + AutomateWoo + CartFlows), and translation + multi-currency (Polylang + TranslatePress +
 CURCY + FOX). A 30-plugin stack was also run on Woodmart, Divi, Betheme and Flatsome.
 
-**Coins — all 238 priced and quoted** against live market data, and 50+ of the chain readers were
-driven against their real explorers to confirm a payment in that coin can actually be detected.
+**Coins — all 235 priced and quoted** against live market data, and 44 coins were driven against
+their real explorers with real addresses to confirm a payment in that coin is actually detected —
+including USDT on TRON, Ethereum and BNB Chain, and USDC on Solana.
 
 Problems found in other products while testing, none of them caused by this plugin:
 
@@ -142,17 +143,19 @@ Problems found in other products while testing, none of them caused by this plug
   that module off until Dokan fix it.
 - **Ultimate Affiliate** queries a `wp_uap_referrals` table its own installer never created, logging a
   database error on every order from any gateway.
-- **Essential Addons for Elementor (Lite)** redirects the site's front page on its own, with this
-  plugin deactivated.
+- **WP Reviews Plugin for Google** redirects the site's front page on its own — reproduced with this
+  plugin fully deactivated.
 - **Avada's child theme** enqueues `child-style` against an unregistered `avada-stylesheet`, which
   WordPress 6.9+ logs as an incorrect-usage notice. Present with this plugin deactivated.
 - **LiteSpeed Cache "JS Combine"**, and **Autoptimize with "Also optimize for checkout"**, break
   WooCommerce's own block checkout. Leave both off on checkout pages.
 - A 30-plugin stack on Woodmart needs more than 256 MB of PHP memory, with or without this plugin.
 
-Three plugins could not be tested because their free base plugin is not installed and they refuse to
-activate without it (Bit Integrations Pro, Bit Social Pro, Presto Player Pro), and one (Stellar)
-refuses to activate at all.
+Plugins that need a partner were retested with it and pass: Elementor Pro with Elementor, Dokan Pro
+with Dokan Lite, Bit Integrations Pro, Bit Social Pro and Presto Player Pro with their free base
+plugins, and Essential Addons for Elementor with Elementor. Two could not be activated at all on the
+test site and so could not be exercised: Stellar (refuses activation) and Uncode Wireframes (wants
+the Uncode theme's own framework).
 
 Built-in compatibility handling:
 
