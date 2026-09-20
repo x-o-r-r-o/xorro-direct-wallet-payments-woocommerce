@@ -4,7 +4,7 @@ Tags: woocommerce, cryptocurrency, bitcoin, ethereum, payments, usdt, crypto che
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.10.1
+Stable tag: 1.11.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -27,7 +27,7 @@ This plugin contacts public price and blockchain APIs to quote amounts and (opti
 * "Payment spotted" notice while the network confirms, and a one-click re-quote for expired orders
 * 60-minute payment window (configurable)
 * Automatic on-chain verification via public explorers/RPCs (can be disabled)
-* Wallet rotation across multiple addresses
+* Wallet rotation across multiple addresses, or a fresh address per order from your own extended public key
 * Unique payment amounts for reliable matching
 * Payment details and a pre-expiry reminder in customer emails
 * Partial payments (customer is asked for the remainder), overpayment notes, and late-payment alerts for the store owner
@@ -336,6 +336,13 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 * QR Code generator (`assets/js/qrcode.min.js`) — MIT-licensed library by davidshimjs (https://github.com/davidshimjs/qrcodejs). Source is publicly available; the bundled file is minified for production use.
 
 == Changelog ==
+
+= 1.11.0 =
+A fresh address for every order, if you want one.
+* New: paste your wallet's receiving account key (xpub, ypub or zpub for Bitcoin; Ltub for Litecoin; dgub for Dogecoin) on the Wallets tab and each order is quoted its own address, so two payments can never be confused — no shared address, no guesswork
+* This is a public key. It can only create addresses, never spend, and no private key is ever asked for: a private key (xprv/yprv/zprv) or anything malformed is refused on save with a message
+* Address derivation is checked against the published BIP32, BIP44, BIP49 and BIP84 test vectors on every build
+* Leaving the field empty keeps the existing behaviour (your saved addresses, with rotation)
 
 = 1.10.1 =
 * Fix: the Payments screen is usable on a phone — the tabs move above the content and each order becomes a labelled card instead of a table that scrolls sideways

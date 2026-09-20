@@ -265,6 +265,55 @@ class Xdwp_Wallets {
 	}
 
 	/**
+	 * The extended public key a merchant saved for a coin, or '' when there is none.
+	 *
+	 * @param string $coin_id Coin ID.
+	 * @return string
+	 */
+	public static function get_xpub( $coin_id ) {
+		$keys = Xdwp_Settings::get( 'xpubs', array() );
+		if ( ! is_array( $keys ) || empty( $keys[ $coin_id ] ) ) {
+			return '';
+		}
+		$key = (string) $keys[ $coin_id ];
+		return Xdwp_Hd::is_valid( $key, $coin_id ) ? $key : '';
+	}
+
+	/**
+	 * The next unused address from this coin's extended public key, or '' when none is set.
+	 *
+	 * Indexes are handed out one at a time and never reused, so two orders can never land on
+	 * the same address. Wallets only scan a little way past their last used address (the "gap
+	 * limit", usually twenty), so the store owner is warned on the Wallets tab when unpaid
+	 * orders have pushed the index far ahead of the payments actually seen.
+	 *
+	 * @param string $coin_id Coin ID.
+	 * @return string
+	 */
+	public static function derive_address( $coin_id ) {
+		$key = self::get_xpub( $coin_id );
+		if ( '' === $key ) {
+			return '';
+		}
+
+		$index   = self::next_wallet_index( 'xdwp_hd_idx_' . sanitize_key( $coin_id ), 0x7fffffff );
+		$address = Xdwp_Hd::address( $key, $index );
+		if ( '' === $address ) {
+			// Deriving failed (no bcmath, say) — fall back to the fixed addresses rather than
+			// leaving the customer with no address at all.
+			if ( function_exists( 'wc_get_logger' ) ) {
+				wc_get_logger()->log(
+					'warning',
+					sprintf( 'Could not derive an address from the %s extended public key; using the saved addresses instead.', $coin_id ),
+					array( 'source' => 'xorro-wallet-payments' )
+				);
+			}
+			return '';
+		}
+		return $address;
+	}
+
+	/**
 	 * Get configured addresses for a coin.
 	 *
 	 * @param string $coin_id Coin ID.
@@ -285,6 +334,13 @@ class Xdwp_Wallets {
 	 * @return string
 	 */
 	public static function pick_address( $coin_id ) {
+		// An extended public key gives every order an address of its own, which beats any
+		// rotation across a handful of fixed addresses.
+		$derived = self::derive_address( $coin_id );
+		if ( '' !== $derived ) {
+			return $derived;
+		}
+
 		$addresses = self::get_addresses( $coin_id );
 		if ( empty( $addresses ) ) {
 			return '';

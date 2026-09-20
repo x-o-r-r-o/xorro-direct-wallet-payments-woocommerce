@@ -253,6 +253,38 @@ class Xdwp_Settings {
 			$clean['coin_confirmations'] = $confirmations;
 		}
 
+		if ( isset( $input['xpubs'] ) && is_array( $input['xpubs'] ) ) {
+			$keys     = array();
+			$existing = isset( $clean['xpubs'] ) && is_array( $clean['xpubs'] ) ? $clean['xpubs'] : array();
+			foreach ( $input['xpubs'] as $coin_id => $key ) {
+				$coin_id = sanitize_text_field( $coin_id );
+				$key     = trim( sanitize_text_field( is_string( $key ) ? $key : '' ) );
+				if ( '' === $key ) {
+					continue; // Cleared.
+				}
+				// Anything that is not a usable *public* key for this coin is dropped, with a
+				// message — silently keeping a typo would send customers to nowhere.
+				if ( ! Xdwp_Hd::is_valid( $key, $coin_id ) ) {
+					add_settings_error(
+						'xdwp',
+						'xdwp_xpub',
+						sprintf(
+							/* translators: %s: coin ID */
+							__( 'That extended public key for %s was not saved: it is not a public account key this plugin can use (xpub, ypub, zpub, Ltub or dgub). Never paste a private key.', 'xorro-direct-wallet-payments-woocommerce' ),
+							$coin_id
+						),
+						'error'
+					);
+					if ( isset( $existing[ $coin_id ] ) ) {
+						$keys[ $coin_id ] = $existing[ $coin_id ];
+					}
+					continue;
+				}
+				$keys[ $coin_id ] = $key;
+			}
+			$clean['xpubs'] = $keys;
+		}
+
 		if ( isset( $input['wallets'] ) && is_array( $input['wallets'] ) ) {
 			$submitted = Xdwp_Wallets::sanitize_wallets( $input['wallets'] );
 			$existing  = isset( $clean['wallets'] ) && is_array( $clean['wallets'] ) ? $clean['wallets'] : array();

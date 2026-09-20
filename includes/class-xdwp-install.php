@@ -79,6 +79,7 @@ class Xdwp_Install {
 			'viewblock_api_key'    => '',
 			'enabled_coins'        => array( 'BTC', 'ETH' ),
 			'wallets'              => array(),
+			'xpubs'                => array(),
 			'price_coin_show'      => 'no',
 			'price_coin_ticker'    => 'BTC',
 			'title'                => __( 'Pay with Cryptocurrency', 'xorro-direct-wallet-payments-woocommerce' ),

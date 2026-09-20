@@ -474,8 +474,10 @@ class Xdwp_Coins {
 			if ( ! $coin ) {
 				continue;
 			}
+			// A coin is payable when it has somewhere to receive: saved addresses, or an
+			// extended public key that gives each order its own.
 			$wallets = Xdwp_Wallets::get_addresses( $coin_id );
-			if ( empty( $wallets ) ) {
+			if ( empty( $wallets ) && '' === Xdwp_Wallets::get_xpub( $coin_id ) ) {
 				continue;
 			}
 			$payable[ $coin_id ] = $coin;

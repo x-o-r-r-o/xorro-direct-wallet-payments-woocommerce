@@ -27,7 +27,7 @@ Each order gets a slightly unique amount (usually a few base units, e.g. 10 sato
 - **Backup exchange-rate sources** (Coinbase, Kraken, Binance) when CoinGecko is unavailable, with a 5% agreement check
 - **Stablecoins priced 1:1** with your store currency (optional)
 - Payment window, expiry grace period, underpayment tolerance and minimum confirmations
-- **Wallet rotation** — several addresses per coin, used in turn
+- **Wallet rotation** — several addresses per coin, used in turn, or a **fresh address per order** from your own extended public key (BTC, LTC, DOGE)
 - Optional crypto price next to product prices
 - Checkout branding: title, description, custom icon and size, icon/text/both
 - Manual **"Mark payment received"** on the order screen, with transaction-ID reuse protection
@@ -182,6 +182,13 @@ Pushing a `vX.Y.Z` tag runs the Release workflow, which builds the ZIP, its SHA-
 ## Changelog
 
 Full details for every release are in [`readme.txt`](readme.txt).
+
+### 1.11.0 — a fresh address for every order (optional)
+
+- Paste your wallet's **receiving account key** (xpub / ypub / zpub, Ltub, dgub) on the Wallets tab and every order gets an address of its own, which removes shared-address ambiguity entirely
+- The key is public: it derives addresses and cannot spend. Private keys and malformed keys are refused on save
+- Derivation is verified against the published BIP32 / BIP44 / BIP49 / BIP84 vectors in CI
+- Leave it empty to keep using your saved addresses with rotation
 
 ### 1.10.1 — Payments screen on a phone
 

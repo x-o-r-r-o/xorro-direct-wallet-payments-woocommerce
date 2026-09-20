@@ -518,6 +518,13 @@ xdwp_assert( false !== strpos( file_get_contents( $root . '/templates/payment.ph
 xdwp_assert( false !== strpos( file_get_contents( $root . '/assets/js/frontend.js' ), 'watchClosely' ), 'page watches closely after the customer says they paid' );
 xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/admin/class-xdwp-payments-admin.php' ), 'function export_csv' ), 'payments can be exported' );
 xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/admin/class-xdwp-payments-admin.php' ), 'function attention_count' ), 'menu count available' );
+// Release 1.11.0: addresses from an extended public key.
+xdwp_assert( is_readable( $root . '/includes/class-xdwp-hd.php' ), 'key derivation class present' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-wallets.php' ), 'function derive_address' ), 'wallets can derive an address' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-settings.php' ), "Xdwp_Hd::is_valid" ), 'saved keys are validated' );
+xdwp_assert( file_exists( $root . '/tests/hd-tests.php' ), 'derivation is checked against published vectors' );
+// Nothing here may ever accept or store a private key.
+xdwp_assert( false === strpos( file_get_contents( $root . '/includes/class-xdwp-hd.php' ), '0488ade4' ), 'private-key version bytes are not recognised' );
 xdwp_assert( false !== strpos( $readme, '== External services ==' ), 'readme external services section present' );
 xdwp_assert( false !== strpos( $readme, 'XRPSCan' ), 'readme documents XRPSCan' );
 xdwp_assert( false !== strpos( $readme, 'Subscan' ), 'readme documents Subscan' );

@@ -36,6 +36,9 @@ jobs:
       - name: Payment-matching tests (recorded explorer responses)
         run: php tests/matching-tests.php
 
+      - name: Address derivation tests (published BIP32/44/49/84 vectors)
+        run: php tests/hd-tests.php
+
   javascript:
     name: JavaScript
     runs-on: ubuntu-latest

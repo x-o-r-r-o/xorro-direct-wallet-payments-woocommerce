@@ -43,7 +43,9 @@ foreach ( $sections as $section_key => $section_label ) {
 		$enabled_count++;
 		$addr_count = ( isset( $wallets[ $id ] ) && is_array( $wallets[ $id ] ) ) ? count( $wallets[ $id ] ) : 0;
 		$total     += $addr_count;
-		if ( 0 === $addr_count ) {
+		// A coin set up with an extended public key has somewhere to receive, even with no
+		// address typed in here.
+		if ( 0 === $addr_count && '' === Xdwp_Wallets::get_xpub( $id ) ) {
 			$missing_count++;
 		}
 	}
@@ -231,6 +233,71 @@ $render_row = static function ( $id, $addr = '' ) {
 									<p class="xdwp-wallet-card__note">
 										<?php esc_html_e( 'Each order also gets its own destination tag / memo, shown to the customer and checked against the payment — so an address shared with other orders still tells payments apart.', 'xorro-direct-wallet-payments-woocommerce' ); ?>
 									</p>
+								<?php endif; ?>
+
+								<?php $xdwp_hd_coins = Xdwp_Hd::supported_coins(); ?>
+								<?php if ( isset( $xdwp_hd_coins[ $id ] ) ) : ?>
+									<?php
+									$xdwp_key   = Xdwp_Settings::get( 'xpubs', array() );
+									$xdwp_key   = ( is_array( $xdwp_key ) && isset( $xdwp_key[ $id ] ) ) ? (string) $xdwp_key[ $id ] : '';
+									$xdwp_kinds = implode( ', ', $xdwp_hd_coins[ $id ] );
+									?>
+									<div class="xdwp-wallet-card__hd">
+										<label class="xdwp-wallet-card__hd-label" for="xdwp-xpub-<?php echo esc_attr( $id ); ?>">
+											<?php esc_html_e( 'Extended public key (optional)', 'xorro-direct-wallet-payments-woocommerce' ); ?>
+										</label>
+										<input
+											type="text"
+											class="widefat code"
+											id="xdwp-xpub-<?php echo esc_attr( $id ); ?>"
+											name="xdwp[xpubs][<?php echo esc_attr( $id ); ?>]"
+											value="<?php echo esc_attr( $xdwp_key ); ?>"
+											spellcheck="false"
+											autocomplete="off"
+											placeholder="<?php echo esc_attr( $xdwp_kinds ); ?>"
+										/>
+										<p class="xdwp-wallet-card__hd-hint">
+											<?php
+											echo esc_html(
+												sprintf(
+													/* translators: %s: accepted key prefixes, e.g. "xpub, ypub, zpub" */
+													__( 'Paste the receiving account key from your own wallet (%s) and every order gets an address of its own, so no two payments can be confused. This is a public key: it can only create addresses, never spend. Never paste a private key (xprv, yprv, zprv) or a seed phrase.', 'xorro-direct-wallet-payments-woocommerce' ),
+													$xdwp_kinds
+												)
+											);
+											?>
+										</p>
+										<?php if ( '' !== $xdwp_key && Xdwp_Hd::is_valid( $xdwp_key, $id ) ) : ?>
+											<p class="xdwp-wallet-card__hd-preview">
+												<?php
+												echo esc_html(
+													sprintf(
+														/* translators: %s: a derived receiving address */
+														__( 'Next addresses look like: %s', 'xorro-direct-wallet-payments-woocommerce' ),
+														Xdwp_Hd::address( $xdwp_key, 0 )
+													)
+												);
+												?>
+											</p>
+											<?php
+											$xdwp_used = (int) get_option( 'xdwp_hd_idx_' . sanitize_key( $id ), 0 );
+											?>
+											<?php if ( $xdwp_used > 0 ) : ?>
+												<p class="xdwp-wallet-card__hd-hint">
+													<?php
+													echo esc_html(
+														sprintf(
+															/* translators: %d: number of addresses handed out */
+															_n( '%d address has been handed out from this key so far.', '%d addresses have been handed out from this key so far.', $xdwp_used, 'xorro-direct-wallet-payments-woocommerce' ),
+															$xdwp_used
+														)
+													);
+													?>
+													<?php esc_html_e( 'Unpaid orders still use one up, so if your wallet stops showing new payments, rescan it (most wallets only look twenty addresses ahead).', 'xorro-direct-wallet-payments-woocommerce' ); ?>
+												</p>
+											<?php endif; ?>
+										<?php endif; ?>
+									</div>
 								<?php endif; ?>
 
 								<div class="xdwp-wallet-rows">
