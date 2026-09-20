@@ -375,6 +375,11 @@
 					if (statusEl) {
 						statusEl.textContent = data.i18n.paid;
 					}
+					// The page reloads in a moment without it, but a clock still counting down
+					// beside "Paid" reads as a contradiction for as long as it is there.
+					if (timerEl) {
+						timerEl.hidden = true;
+					}
 					if (pollTimer) {
 						clearInterval(pollTimer);
 					}
@@ -385,6 +390,9 @@
 				}
 				if (res.data.expired) {
 					setStatus(data.i18n.expired);
+					if (timerEl) {
+						timerEl.hidden = true;
+					}
 					if (pollTimer) {
 						clearInterval(pollTimer);
 					}

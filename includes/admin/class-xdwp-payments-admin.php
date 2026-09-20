@@ -131,6 +131,8 @@ class Xdwp_Payments_Admin {
 				} else {
 					$notice = 'cannot';
 				}
+			} elseif ( 'handled' === $do ) {
+				$notice = Xdwp_Order::dismiss_attention( $order ) ? 'handled' : 'cannot';
 			}
 		}
 
@@ -158,6 +160,7 @@ class Xdwp_Payments_Admin {
 			'paid'     => __( 'Checked — the payment was found and the order is now paid.', 'xorro-direct-wallet-payments-woocommerce' ),
 			'nothing'  => __( 'Checked — nothing has arrived for that order yet.', 'xorro-direct-wallet-payments-woocommerce' ),
 			'extended' => __( 'That payment has another hour.', 'xorro-direct-wallet-payments-woocommerce' ),
+			'handled'  => __( 'Taken off the list. It comes back if anything else happens to that payment.', 'xorro-direct-wallet-payments-woocommerce' ),
 			'cannot'   => __( 'That order is finished, so there is nothing to extend.', 'xorro-direct-wallet-payments-woocommerce' ),
 			'unknown'  => __( 'That order could not be found.', 'xorro-direct-wallet-payments-woocommerce' ),
 		);

@@ -309,10 +309,18 @@ $cards = array(
 								<tr>
 									<td class="xdwp-col-order" data-label="<?php esc_attr_e( 'Order', 'xorro-direct-wallet-payments-woocommerce' ); ?>">
 										<a href="<?php echo esc_url( $order->get_edit_order_url() ); ?>"><strong>#<?php echo esc_html( $order->get_order_number() ); ?></strong></a>
-										<?php if ( in_array( $row_status, array( 'awaiting', 'underpaid', 'expired' ), true ) ) : ?>
+										<?php $xdwp_in_queue = '' !== (string) $order->get_meta( '_xdwp_attention' ); ?>
+										<?php if ( in_array( $row_status, array( 'awaiting', 'underpaid', 'expired' ), true ) || $xdwp_in_queue ) : ?>
 											<div class="xdwp-row-actions">
-												<a href="<?php echo esc_url( Xdwp_Payments_Admin::row_action_url( $order, 'recheck' ) ); ?>"><?php esc_html_e( 'Check now', 'xorro-direct-wallet-payments-woocommerce' ); ?></a>
-												<a href="<?php echo esc_url( Xdwp_Payments_Admin::row_action_url( $order, 'extend' ) ); ?>"><?php esc_html_e( '+1 hour', 'xorro-direct-wallet-payments-woocommerce' ); ?></a>
+												<?php if ( in_array( $row_status, array( 'awaiting', 'underpaid', 'expired' ), true ) ) : ?>
+													<a href="<?php echo esc_url( Xdwp_Payments_Admin::row_action_url( $order, 'recheck' ) ); ?>"><?php esc_html_e( 'Check now', 'xorro-direct-wallet-payments-woocommerce' ); ?></a>
+													<a href="<?php echo esc_url( Xdwp_Payments_Admin::row_action_url( $order, 'extend' ) ); ?>"><?php esc_html_e( '+1 hour', 'xorro-direct-wallet-payments-woocommerce' ); ?></a>
+												<?php endif; ?>
+												<?php if ( $xdwp_in_queue ) : ?>
+													<?php // Late money and overpayments never stop being late or over, so without
+													// this the "Needs you" list only ever grows and stops being read. ?>
+													<a href="<?php echo esc_url( Xdwp_Payments_Admin::row_action_url( $order, 'handled' ) ); ?>" title="<?php esc_attr_e( 'Take this off the "Needs you" list. It comes back if anything else happens to the payment.', 'xorro-direct-wallet-payments-woocommerce' ); ?>"><?php esc_html_e( 'Dealt with', 'xorro-direct-wallet-payments-woocommerce' ); ?></a>
+												<?php endif; ?>
 											</div>
 										<?php endif; ?>
 										<div class="xdwp-payments-table__sub"><?php echo wp_kses_post( $order->get_formatted_order_total() ); ?></div>

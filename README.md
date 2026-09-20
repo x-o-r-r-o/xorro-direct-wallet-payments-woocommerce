@@ -254,6 +254,14 @@ Pushing a `vX.Y.Z` tag runs the Release workflow, which builds the ZIP, its SHA-
 
 Full details for every release are in [`readme.txt`](readme.txt).
 
+### 1.19.2 — the payment page as a customer sees it
+
+- Fixed: an order completed in WooCommerce still asked the customer to pay, and they could pay twice
+- Fixed: a confirmed payment kept counting down beside "Payment confirmed"
+- Fixed: after a part payment, the remaining amount was shown beside the full order total
+- The amount, address and buttons now come before the instructions
+- New: "Dealt with" clears an order from the "Needs you" list
+
 ### 1.19.1 — every coin tested against its live chain
 
 - Fixed: Algorand never confirmed a payment automatically (it asked the indexer for a node-only endpoint)

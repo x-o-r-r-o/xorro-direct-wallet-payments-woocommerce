@@ -4,7 +4,7 @@ Tags: woocommerce, cryptocurrency, bitcoin, ethereum, payments, usdt, crypto che
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.19.1
+Stable tag: 1.19.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -344,6 +344,15 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 * QR Code generator (`assets/js/qrcode.min.js`) — MIT-licensed library by davidshimjs (https://github.com/davidshimjs/qrcodejs). Source is publicly available; the bundled file is minified for production use.
 
 == Changelog ==
+
+= 1.19.2 =
+The payment page, read as a customer sees it.
+* Fixed: an order you completed or set to processing in WooCommerce yourself still showed the customer a countdown and an address, and asked them to pay. They could pay a second time for an order you had already finished. Any settled, cancelled or refunded order now says plainly that there is nothing to pay
+* Fixed: a confirmed payment kept counting down beside "Payment confirmed"
+* Fixed: after a part payment the page showed the remaining amount beside the full order total, which read as though the whole order was owed again. It now shows what is left to pay
+* The amount and address now come first, with the buttons beside them — the instructions follow. On a phone the amount used to be more than half a screen below the top of the box
+* A settled order says "Paid with Bitcoin" rather than "Pay with Bitcoin"
+* New: "Dealt with" on the Payments screen takes an order off the "Needs you" list. Late money and overpayments never stop being late or over, so that list could only ever grow. Anything that happens to the payment afterwards puts it back
 
 = 1.19.1 =
 Fixes found while auditing 1.19.0 against live chains, with every coin tested.

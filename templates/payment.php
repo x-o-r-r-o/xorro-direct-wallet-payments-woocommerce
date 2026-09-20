@@ -26,11 +26,24 @@ defined( 'ABSPATH' ) || exit;
 ?>
 <div class="xdwp-box" id="xdwp-box" data-status="<?php echo esc_attr( $status ); ?>">
 	<div class="xdwp-box__header">
-		<h2><?php echo esc_html( sprintf( /* translators: %s: coin name */ __( 'Pay with %s', 'xorro-direct-wallet-payments-woocommerce' ), $coin['name'] ) ); ?></h2>
-		<p class="xdwp-box__timer" id="xdwp-timer" role="timer">
-			<span id="xdwp-timer-text" aria-hidden="true"></span>
-			<span class="screen-reader-text" id="xdwp-timer-label"></span>
-		</p>
+		<h2><?php
+			// "Pay with Bitcoin" over a receipt asks for something that has already happened.
+			echo esc_html(
+				'paid' === $status
+					/* translators: %s: coin name */
+					? sprintf( __( 'Paid with %s', 'xorro-direct-wallet-payments-woocommerce' ), $coin['name'] )
+					/* translators: %s: coin name */
+					: sprintf( __( 'Pay with %s', 'xorro-direct-wallet-payments-woocommerce' ), $coin['name'] )
+			);
+		?></h2>
+		<?php // A confirmed or closed order has nothing left to count down to, and a clock
+		// ticking beside "Payment confirmed" only makes a customer wonder what it means. ?>
+		<?php if ( ! in_array( $status, array( 'paid', 'expired', 'cancelled' ), true ) ) : ?>
+			<p class="xdwp-box__timer" id="xdwp-timer" role="timer">
+				<span id="xdwp-timer-text" aria-hidden="true"></span>
+				<span class="screen-reader-text" id="xdwp-timer-label"></span>
+			</p>
+		<?php endif; ?>
 	</div>
 
 	<?php if ( 'paid' === $status ) : ?>
@@ -79,26 +92,6 @@ defined( 'ABSPATH' ) || exit;
 			</p>
 		<?php endif; ?>
 
-		<ol class="xdwp-box__steps">
-			<li><?php esc_html_e( 'Send exactly the amount below. Network fees are paid on top, by you.', 'xorro-direct-wallet-payments-woocommerce' ); ?></li>
-			<li>
-				<?php
-				if ( '' !== $wait_estimate ) {
-					echo esc_html(
-						sprintf(
-							/* translators: 1: number of confirmations, 2: e.g. "usually about 20 minutes" */
-							_n( 'Your order confirms after %1$d network confirmation — %2$s.', 'Your order confirms after %1$d network confirmations — %2$s.', max( 1, (int) $confirmations ), 'xorro-direct-wallet-payments-woocommerce' ),
-							max( 1, (int) $confirmations ),
-							$wait_estimate
-						)
-					);
-				} else {
-					esc_html_e( 'Your order confirms once the network has confirmed the payment.', 'xorro-direct-wallet-payments-woocommerce' );
-				}
-				?>
-			</li>
-			<li><?php esc_html_e( 'You can close this page — we will email you when it is confirmed.', 'xorro-direct-wallet-payments-woocommerce' ); ?></li>
-		</ol>
 
 		<div class="xdwp-box__row">
 			<div class="xdwp-box__field">
@@ -115,8 +108,23 @@ defined( 'ABSPATH' ) || exit;
 				</span>
 				<span class="xdwp-box__fiat">
 					<?php
-					/* translators: %s: order total in store currency */
-					echo wp_kses_post( sprintf( __( '≈ %s order total', 'xorro-direct-wallet-payments-woocommerce' ), $order->get_formatted_order_total() ) );
+					// After a part payment the figure above is what is left, not the order — so
+					// showing the order total beside it reads as though the whole thing is owed
+					// again. Show what the remainder is worth instead.
+					$xdwp_quoted = (string) Xdwp_Order::meta( $order, 'amount' );
+					if ( 'underpaid' === $status && '' !== $xdwp_quoted && (float) $xdwp_quoted > 0 ) {
+						$xdwp_share = (float) $amount / (float) $xdwp_quoted;
+						echo wp_kses_post(
+							sprintf(
+								/* translators: %s: the part of the order still to pay, in store currency */
+								__( '≈ %s still to pay', 'xorro-direct-wallet-payments-woocommerce' ),
+								wc_price( (float) $order->get_total() * $xdwp_share, array( 'currency' => $order->get_currency() ) )
+							)
+						);
+					} else {
+						/* translators: %s: order total in store currency */
+						echo wp_kses_post( sprintf( __( '≈ %s order total', 'xorro-direct-wallet-payments-woocommerce' ), $order->get_formatted_order_total() ) );
+					}
 					?>
 				</span>
 			</div>
@@ -159,10 +167,8 @@ defined( 'ABSPATH' ) || exit;
 			</div>
 		</div>
 
-		<p class="xdwp-box__assurance">
-			<?php esc_html_e( 'This payment goes straight to this shop\'s own wallet. No third party holds your money.', 'xorro-direct-wallet-payments-woocommerce' ); ?>
-		</p>
-
+		<?php // Paying is the next thing a customer wants to do once they have the address,
+		// so the buttons sit with it rather than after the notes. ?>
 		<div class="xdwp-box__actions">
 			<?php if ( ! empty( $uri ) ) : ?>
 				<a class="xdwp-open-wallet" href="<?php echo esc_url( $uri ); ?>"><?php esc_html_e( 'Open in wallet app', 'xorro-direct-wallet-payments-woocommerce' ); ?></a>
@@ -173,6 +179,34 @@ defined( 'ABSPATH' ) || exit;
 		<?php // Filled in only when a wallet in this browser actually answers. ?>
 		<div class="xdwp-wallet-pay" id="xdwp-wallet-pay"></div>
 		<p class="xdwp-box__hint" id="xdwp-sent-status" role="status"></p>
+
+		<p class="xdwp-box__assurance">
+			<?php esc_html_e( 'This payment goes straight to this shop\'s own wallet. No third party holds your money.', 'xorro-direct-wallet-payments-woocommerce' ); ?>
+		</p>
+
+		<?php // The amount and the address come first: everything else on this page is
+		// something to read once, and those two are what the customer came for. ?>
+		<ol class="xdwp-box__steps">
+			<li><?php esc_html_e( 'Send exactly the amount shown. Network fees are paid on top, by you.', 'xorro-direct-wallet-payments-woocommerce' ); ?></li>
+			<li>
+				<?php
+				if ( '' !== $wait_estimate ) {
+					echo esc_html(
+						sprintf(
+							/* translators: 1: number of confirmations, 2: e.g. "usually about 20 minutes" */
+							_n( 'Your order confirms after %1$d network confirmation — %2$s.', 'Your order confirms after %1$d network confirmations — %2$s.', max( 1, (int) $confirmations ), 'xorro-direct-wallet-payments-woocommerce' ),
+							max( 1, (int) $confirmations ),
+							$wait_estimate
+						)
+					);
+				} else {
+					esc_html_e( 'Your order confirms once the network has confirmed the payment.', 'xorro-direct-wallet-payments-woocommerce' );
+				}
+				?>
+			</li>
+			<li><?php esc_html_e( 'You can close this page — we will email you when it is confirmed.', 'xorro-direct-wallet-payments-woocommerce' ); ?></li>
+		</ol>
+
 
 		<?php // Collapsed on a phone by the script — nobody scans a code on the screen they are holding. ?>
 		<details class="xdwp-box__qr" id="xdwp-qr-details" open>

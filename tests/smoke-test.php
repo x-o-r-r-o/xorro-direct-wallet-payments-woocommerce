@@ -638,6 +638,18 @@ foreach ( array( 'CSPR', 'STRK', 'XVG' ) as $xdwp_gone ) {
 	xdwp_assert( ! isset( $all[ $xdwp_gone ] ), $xdwp_gone . ' was withdrawn and is gone from the registry' );
 }
 
+// A shop that completes an order in WooCommerce itself never touches this plugin's status, so
+// the payment box has to read the order's own status or it keeps asking a customer to pay for
+// something already done.
+$xdwp_order_src = file_get_contents( $root . '/includes/class-xdwp-order.php' );
+xdwp_assert( false !== strpos( $xdwp_order_src, '$order->is_paid()' ), 'a settled order is never asked to pay again' );
+xdwp_assert( false !== strpos( $xdwp_order_src, 'function render_settled_notice' ), 'and is told plainly that there is nothing to pay' );
+xdwp_assert( false !== strpos( $xdwp_order_src, 'function dismiss_attention' ), 'an order can be taken off the "needs you" list' );
+$xdwp_payment_tpl = file_get_contents( $root . '/templates/payment.php' );
+xdwp_assert( strpos( $xdwp_payment_tpl, 'xdwp-box__row' ) < strpos( $xdwp_payment_tpl, 'xdwp-box__steps' ), 'the amount comes before the instructions' );
+xdwp_assert( strpos( $xdwp_payment_tpl, 'xdwp-box__actions' ) < strpos( $xdwp_payment_tpl, 'xdwp-box__steps' ), 'and so do the buttons' );
+xdwp_assert( false !== strpos( $xdwp_payment_tpl, "'paid', 'expired', 'cancelled'" ), 'a settled order shows no countdown' );
+
 xdwp_assert( false !== strpos( $readme, '== External services ==' ), 'readme external services section present' );
 xdwp_assert( false !== strpos( $readme, 'XRPSCan' ), 'readme documents XRPSCan' );
 xdwp_assert( false !== strpos( $readme, 'Subscan' ), 'readme documents Subscan' );

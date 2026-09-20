@@ -162,6 +162,36 @@ class Xdwp_Order {
 	}
 
 	/**
+	 * Take an order out of the "Needs you" queue because a person has dealt with it.
+	 *
+	 * Some of the things that put an order there cannot resolve themselves: money that arrived
+	 * after the window closed is still late tomorrow, and an overpayment stays overpaid however
+	 * it was settled with the customer. Without this the queue only ever grows, which is the
+	 * quickest way to make a shop stop looking at it.
+	 *
+	 * Anything that happens afterwards — a late payment, an overpayment, a refund to send — puts
+	 * the order back, because those call flag_attention() again.
+	 *
+	 * @param WC_Order|int $order Order.
+	 * @return bool Whether anything changed.
+	 */
+	public static function dismiss_attention( $order ) {
+		$order = ( $order instanceof WC_Order ) ? $order : wc_get_order( $order );
+		if ( ! $order instanceof WC_Order || ! self::is_ours( $order ) ) {
+			return false;
+		}
+		if ( '' === (string) $order->get_meta( '_xdwp_attention' ) ) {
+			return false;
+		}
+		$order->delete_meta_data( '_xdwp_attention' );
+		$order->update_meta_data( '_xdwp_attention_done', time() );
+		$order->save();
+		self::log_event( $order, 'handled', __( 'Marked as dealt with by the shop owner', 'xorro-direct-wallet-payments-woocommerce' ) );
+		delete_transient( 'xdwp_attention_count' );
+		return true;
+	}
+
+	/**
 	 * Record that mark on the order, so the Payments screen can find it however old it is.
 	 *
 	 * @param WC_Order|int $order Order.
@@ -175,6 +205,8 @@ class Xdwp_Order {
 		$current = (string) $order->get_meta( '_xdwp_attention' );
 		if ( $needed && '1' !== $current ) {
 			$order->update_meta_data( '_xdwp_attention', '1' );
+			// Something new happened, so a previous "dealt with" no longer covers it.
+			$order->delete_meta_data( '_xdwp_attention_done' );
 			$order->save();
 		} elseif ( ! $needed && '' !== $current ) {
 			$order->delete_meta_data( '_xdwp_attention' );
@@ -826,6 +858,16 @@ class Xdwp_Order {
 	 * @param WC_Order $order Order.
 	 */
 	private static function load_template( $order ) {
+		// A shop that completes the order in WooCommerce itself — the ordinary way to settle one
+		// taken by hand, over the counter, or refunded — never touches this plugin's own status.
+		// Without this the customer is still shown a countdown and an address for an order that
+		// is already done, and can pay for it a second time. Checked here because both the
+		// thank-you page and My Account come through this one function.
+		if ( $order->is_paid() || in_array( $order->get_status(), array( 'cancelled', 'refunded' ), true ) ) {
+			self::render_settled_notice( $order );
+			return;
+		}
+
 		// Expire past-window orders before rendering so QR/amount are not shown.
 		self::maybe_expire( $order );
 		$order = wc_get_order( $order->get_id() );
@@ -1120,6 +1162,28 @@ class Xdwp_Order {
 		echo '</form>';
 
 		echo '</div>';
+	}
+
+	/**
+	 * What the customer sees where the payment box would have been, once there is nothing to pay.
+	 *
+	 * Silence would be worse than a countdown: someone who came back to this page to finish
+	 * paying needs to be told plainly that they do not have to.
+	 *
+	 * @param WC_Order $order Order.
+	 */
+	private static function render_settled_notice( $order ) {
+		$refunded = in_array( $order->get_status(), array( 'cancelled', 'refunded' ), true );
+		printf(
+			'<div class="xdwp-box xdwp-box--settled" data-status="%1$s"><p class="xdwp-box__%2$s">%3$s</p></div>',
+			esc_attr( $refunded ? 'closed' : 'paid' ),
+			esc_attr( $refunded ? 'error' : 'success' ),
+			esc_html(
+				$refunded
+					? __( 'This order has been closed. There is nothing to pay — please do not send anything.', 'xorro-direct-wallet-payments-woocommerce' )
+					: __( 'This order is settled. There is nothing left to pay — please do not send anything.', 'xorro-direct-wallet-payments-woocommerce' )
+			)
+		);
 	}
 
 	/**
