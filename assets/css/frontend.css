@@ -527,3 +527,24 @@
 		text-align: center;
 	}
 }
+
+/* The one mistake that cannot be undone gets the weight it deserves. */
+.xdwp-box__network {
+	margin: 0 0 1rem;
+	padding: 0.7rem 0.9rem;
+	border: 1px solid #f0b429;
+	border-left-width: 4px;
+	border-radius: 4px;
+	background: #fff8e6;
+	color: #7a4b00;
+	font-size: 0.95rem;
+	font-weight: 600;
+	line-height: 1.5;
+}
+
+.xdwp-box__assurance {
+	margin: 1rem 0 0;
+	color: #475467;
+	font-size: 0.88rem;
+	line-height: 1.5;
+}

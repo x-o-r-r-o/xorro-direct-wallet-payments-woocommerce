@@ -74,6 +74,38 @@ $cards = array(
 					</div>
 					<div class="cc-panel-content">
 
+				<?php $xdwp_store_checks = Xdwp_Selftest::store_checks(); ?>
+				<?php
+				$xdwp_bad = array_filter(
+					$xdwp_store_checks,
+					static function ( $check ) {
+						return in_array( $check['status'], array( 'fail', 'warn' ), true );
+					}
+				);
+				?>
+				<?php if ( ! empty( $xdwp_bad ) ) : ?>
+					<div class="xdwp-health">
+						<h3 class="xdwp-health__title"><?php esc_html_e( 'Worth checking', 'xorro-direct-wallet-payments-woocommerce' ); ?></h3>
+						<ul class="xdwp-test-list">
+							<?php foreach ( $xdwp_bad as $xdwp_check ) : ?>
+								<li class="xdwp-test-line xdwp-test-line--<?php echo esc_attr( $xdwp_check['status'] ); ?>">
+									<span class="xdwp-test-mark" aria-hidden="true"><?php echo 'fail' === $xdwp_check['status'] ? '&#10005;' : '!'; ?></span>
+									<span><strong><?php echo esc_html( $xdwp_check['label'] ); ?>:</strong> <?php echo esc_html( $xdwp_check['detail'] ); ?></span>
+								</li>
+							<?php endforeach; ?>
+						</ul>
+						<p class="xdwp-health__hint">
+							<?php
+							printf(
+								/* translators: %s: link to the Wallets tab */
+								esc_html__( 'You can test any single coin end to end on %s.', 'xorro-direct-wallet-payments-woocommerce' ),
+								'<a href="' . esc_url( admin_url( 'admin.php?page=xorro-direct-wallet-payments-woocommerce-wallets' ) ) . '">' . esc_html__( 'Wallets', 'xorro-direct-wallet-payments-woocommerce' ) . '</a>'
+							);
+							?>
+						</p>
+					</div>
+				<?php endif; ?>
+
 				<div class="xdwp-cards">
 					<?php foreach ( $cards as $key => $card ) : ?>
 						<?php $count = isset( $summary[ $key ] ) ? (int) $summary[ $key ] : 0; ?>

@@ -268,17 +268,29 @@ $render_row = static function ( $id, $addr = '' ) {
 											?>
 										</p>
 										<?php if ( '' !== $xdwp_key && Xdwp_Hd::is_valid( $xdwp_key, $id ) ) : ?>
-											<p class="xdwp-wallet-card__hd-preview">
-												<?php
-												echo esc_html(
-													sprintf(
-														/* translators: %s: a derived receiving address */
-														__( 'The next order will be sent to: %s — check this against your wallet before taking payments.', 'xorro-direct-wallet-payments-woocommerce' ),
-														Xdwp_Hd::address( $xdwp_key, (int) get_option( 'xdwp_hd_idx_' . sanitize_key( $id ), 0 ), $id )
-													)
-												);
-												?>
-											</p>
+											<?php
+											$xdwp_next = (int) get_option( 'xdwp_hd_idx_' . sanitize_key( $id ), 0 );
+											$xdwp_list = array();
+											for ( $xdwp_i = 0; $xdwp_i < 3; $xdwp_i++ ) {
+												$xdwp_derived = Xdwp_Hd::address( $xdwp_key, $xdwp_next + $xdwp_i, $id );
+												if ( '' !== $xdwp_derived ) {
+													$xdwp_list[ $xdwp_next + $xdwp_i ] = $xdwp_derived;
+												}
+											}
+											?>
+											<?php if ( ! empty( $xdwp_list ) ) : ?>
+												<p class="xdwp-wallet-card__hd-hint">
+													<?php esc_html_e( 'The next orders will be sent to these addresses. Open your wallet and check the first one appears there — if it does not, the key is for a different account and the money would be unreachable.', 'xorro-direct-wallet-payments-woocommerce' ); ?>
+												</p>
+												<ol class="xdwp-wallet-card__hd-list">
+													<?php foreach ( $xdwp_list as $xdwp_index => $xdwp_derived ) : ?>
+														<li>
+															<code><?php echo esc_html( $xdwp_derived ); ?></code>
+															<span class="xdwp-wallet-card__hd-index"><?php echo esc_html( sprintf( /* translators: %d: address index */ __( 'address %d', 'xorro-direct-wallet-payments-woocommerce' ), $xdwp_index ) ); ?></span>
+														</li>
+													<?php endforeach; ?>
+												</ol>
+											<?php endif; ?>
 											<?php
 											$xdwp_used = (int) get_option( 'xdwp_hd_idx_' . sanitize_key( $id ), 0 );
 											$xdwp_gap  = Xdwp_Wallets::hd_gap( $id );
@@ -316,6 +328,14 @@ $render_row = static function ( $id, $addr = '' ) {
 										}
 									}
 									?>
+								</div>
+
+								<div class="xdwp-wallet-card__test" data-xdwp-test-for="<?php echo esc_attr( $id ); ?>">
+									<button type="button" class="button button-secondary xdwp-test-setup" data-coin="<?php echo esc_attr( $id ); ?>">
+										<?php esc_html_e( 'Test this coin', 'xorro-direct-wallet-payments-woocommerce' ); ?>
+									</button>
+									<span class="xdwp-wallet-card__test-hint"><?php esc_html_e( 'Checks the address, the price and whether we can read this blockchain — no money moves.', 'xorro-direct-wallet-payments-woocommerce' ); ?></span>
+									<div class="xdwp-test-results" role="status" aria-live="polite"></div>
 								</div>
 
 								<div class="xdwp-wallet-card__actions">

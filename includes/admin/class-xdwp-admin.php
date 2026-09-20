@@ -16,6 +16,8 @@ class Xdwp_Admin {
 	 * Init hooks.
 	 */
 	public static function init() {
+		add_action( 'wp_ajax_xdwp_selftest', array( __CLASS__, 'handle_selftest' ) );
+		add_action( 'woocommerce_system_status_report', array( __CLASS__, 'system_status_report' ) );
 		add_action( 'admin_menu', array( __CLASS__, 'register_menu' ) );
 		add_action( 'admin_init', array( __CLASS__, 'handle_save' ) );
 		add_action( 'admin_notices', array( __CLASS__, 'setup_notice' ) );
@@ -119,6 +121,13 @@ class Xdwp_Admin {
 			'mediaTitle'          => __( 'Select checkout icon', 'xorro-direct-wallet-payments-woocommerce' ),
 			'mediaButton'         => __( 'Use this icon', 'xorro-direct-wallet-payments-woocommerce' ),
 			'mediaUnavailable'    => __( 'Media library is not available.', 'xorro-direct-wallet-payments-woocommerce' ),
+			'ajaxUrl'             => admin_url( 'admin-ajax.php' ),
+			'selftestNonce'       => wp_create_nonce( 'xdwp_selftest' ),
+			'testing'             => __( 'Checking…', 'xorro-direct-wallet-payments-woocommerce' ),
+			'testAgain'           => __( 'Test again', 'xorro-direct-wallet-payments-woocommerce' ),
+			'testFailed'          => __( 'The check could not be run. Reload the page and try again.', 'xorro-direct-wallet-payments-woocommerce' ),
+			'testAllGood'         => __( 'Everything needed for this coin is working.', 'xorro-direct-wallet-payments-woocommerce' ),
+			'testProblems'        => __( 'Something here will stop payments working:', 'xorro-direct-wallet-payments-woocommerce' ),
 		);
 		wp_localize_script( 'xdwp-admin', 'xdwpAdmin', $admin_i18n );
 		wp_localize_script( 'xdwp-wallets', 'xdwpAdmin', $admin_i18n );
@@ -644,6 +653,94 @@ class Xdwp_Admin {
 				'title' => __( 'Help', 'xorro-direct-wallet-payments-woocommerce' ),
 				'desc'  => __( 'What every setting does, how a payment is matched, and what to do when something looks wrong.', 'xorro-direct-wallet-payments-woocommerce' ),
 			),
+		);
+	}
+
+	/**
+	 * Add this gateway's state to WooCommerce → Status, which is where every support
+	 * conversation starts.
+	 */
+	public static function system_status_report() {
+		$enabled = Xdwp_Settings::get( 'enabled_coins', array() );
+		$enabled = is_array( $enabled ) ? $enabled : array();
+		$payable = Xdwp_Coins::get_payable();
+		$checks  = Xdwp_Selftest::store_checks();
+		?>
+		<table class="wc_status_table widefat" cellspacing="0">
+			<thead>
+				<tr><th colspan="3" data-export-label="Xorro Wallet Payments"><h2><?php esc_html_e( 'Xorro Wallet Payments', 'xorro-direct-wallet-payments-woocommerce' ); ?></h2></th></tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td data-export-label="Version"><?php esc_html_e( 'Version', 'xorro-direct-wallet-payments-woocommerce' ); ?>:</td>
+					<td class="help">&nbsp;</td>
+					<td><?php echo esc_html( XDWP_VERSION ); ?></td>
+				</tr>
+				<tr>
+					<td data-export-label="Coins enabled"><?php esc_html_e( 'Coins enabled', 'xorro-direct-wallet-payments-woocommerce' ); ?>:</td>
+					<td class="help">&nbsp;</td>
+					<td>
+						<?php
+						echo esc_html(
+							sprintf(
+								/* translators: 1: coins ticked, 2: coins that can actually be paid */
+								__( '%1$d ticked, %2$d with somewhere to receive', 'xorro-direct-wallet-payments-woocommerce' ),
+								count( $enabled ),
+								count( $payable )
+							)
+						);
+						?>
+					</td>
+				</tr>
+				<?php foreach ( $checks as $check ) : ?>
+					<tr>
+						<td data-export-label="<?php echo esc_attr( $check['label'] ); ?>"><?php echo esc_html( $check['label'] ); ?>:</td>
+						<td class="help">&nbsp;</td>
+						<td>
+							<?php if ( 'ok' === $check['status'] ) : ?>
+								<mark class="yes">&#10004;</mark>
+							<?php elseif ( 'fail' === $check['status'] ) : ?>
+								<mark class="error">&#10005;</mark>
+							<?php else : ?>
+								<mark class="yes">&#9888;</mark>
+							<?php endif; ?>
+							<?php echo esc_html( $check['detail'] ); ?>
+						</td>
+					</tr>
+				<?php endforeach; ?>
+			</tbody>
+		</table>
+		<?php
+	}
+
+	/**
+	 * Run the setup checks and return them for the admin screen.
+	 */
+	public static function handle_selftest() {
+		if ( ! current_user_can( 'manage_woocommerce' ) ) {
+			wp_send_json_error( array( 'message' => __( 'You are not allowed to run this.', 'xorro-direct-wallet-payments-woocommerce' ) ), 403 );
+		}
+		check_ajax_referer( 'xdwp_selftest', 'nonce' );
+
+		$coin_id = isset( $_POST['coin'] ) ? sanitize_text_field( wp_unslash( $_POST['coin'] ) ) : '';
+		if ( '' !== $coin_id && ! Xdwp_Coins::get( $coin_id ) ) {
+			wp_send_json_error( array( 'message' => __( 'Unknown coin.', 'xorro-direct-wallet-payments-woocommerce' ) ), 400 );
+		}
+
+		if ( '' === $coin_id ) {
+			wp_send_json_success(
+				array(
+					'store' => Xdwp_Selftest::store_checks(),
+					'coins' => array(),
+				)
+			);
+		}
+
+		wp_send_json_success(
+			array(
+				'store' => array(),
+				'coins' => array( Xdwp_Selftest::run( $coin_id ) ),
+			)
 		);
 	}
 

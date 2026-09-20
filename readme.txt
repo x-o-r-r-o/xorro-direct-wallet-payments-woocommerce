@@ -4,7 +4,7 @@ Tags: woocommerce, cryptocurrency, bitcoin, ethereum, payments, usdt, crypto che
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.13.0
+Stable tag: 1.14.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -336,6 +336,15 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 * QR Code generator (`assets/js/qrcode.min.js`) — MIT-licensed library by davidshimjs (https://github.com/davidshimjs/qrcodejs). Source is publicly available; the bundled file is minified for production use.
 
 == Changelog ==
+
+= 1.14.0 =
+Prove your setup works before a customer pays, and tell them what they need to know.
+* New: "Test this coin" on the Wallets tab checks the receiving address, the price, whether this site can read that blockchain, and the confirmations you are waiting for — and names the step that fails. No money moves
+* New: anything that would stop payments working (gateway off, scheduler not running, no exchange rate, missing API key) is listed on the Payments screen and in WooCommerce → Status, where support looks first
+* New: with an extended public key saved, the Wallets tab shows the next three addresses so you can check them against your own wallet before taking money
+* New: the payment page warns, in plain words, to send on the right network — "Send USDT on TRON (TRC-20) only" — because that mistake cannot be undone
+* New: the payment page says how long confirmation usually takes for that coin, and that the customer can close the page and wait for the email
+* The Coins tab now loads its icons only as you scroll to them
 
 = 1.13.0 =
 Fixes from an independent security audit of everything added since 1.6.1.

@@ -194,6 +194,14 @@ Pushing a `vX.Y.Z` tag runs the Release workflow, which builds the ZIP, its SHA-
 
 Full details for every release are in [`readme.txt`](readme.txt).
 
+### 1.14.0 — prove the setup works before money is involved
+
+- **"Test this coin"** on the Wallets tab: checks the address, the rate, whether this site can read that chain, and the confirmations in force — and names the failing step (including "no Etherscan key saved") rather than failing silently
+- Store-wide problems surface on the Payments screen and in **WooCommerce → Status**
+- With an extended public key, the **next three addresses** are shown to check against your own wallet
+- Payment page now warns which network to send on, says how long confirmation takes for that coin, and tells the customer they can close the page
+- Coins tab loads icons lazily
+
 ### 1.13.0 — fixes from an independent security audit
 
 Audit of everything added since 1.6.1. Two critical, one high and several medium findings, all fixed and covered by tests:

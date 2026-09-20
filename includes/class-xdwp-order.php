@@ -758,6 +758,9 @@ class Xdwp_Order {
 				'can_renew' => self::can_renew( $order ),
 				'memo'      => (string) self::meta( $order, 'memo' ),
 				'memo_kind' => Xdwp_Coins::memo_kind( $coin ),
+				'network_label' => Xdwp_Coins::network_label( $coin ),
+				'confirmations' => Xdwp_Coins::confirmations_for( $coin ),
+				'wait_estimate' => Xdwp_Coins::wait_estimate( $coin ),
 			),
 			'xorro-direct-wallet-payments-woocommerce/',
 			XDWP_PATH . 'templates/'

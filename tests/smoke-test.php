@@ -539,6 +539,15 @@ xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-
 xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-order.php' ), 'function flag_attention' ), 'orders needing attention are marked, not searched for' );
 xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-wallets.php' ), 'function recycled_index' ), 'abandoned orders give their address back' );
 xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-verifier.php' ), 'function memo_taken' ), 'references are checked for collisions' );
+// Release 1.14.0: setup checks and payment-page clarity.
+xdwp_assert( is_readable( $root . '/includes/class-xdwp-selftest.php' ), 'setup checks present' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-selftest.php' ), 'function store_checks' ), 'store-wide checks present' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/admin/class-xdwp-admin.php' ), 'woocommerce_system_status_report' ), 'state reported in WooCommerce Status' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-verifier.php' ), 'function last_http' ), 'lookup outcomes are reportable' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-coins.php' ), 'function network_label' ), 'networks named the way exchanges name them' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-coins.php' ), 'function wait_estimate' ), 'wait estimated per coin' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/templates/payment.php' ), 'xdwp-box__network' ), 'wrong-network warning on the payment page' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/admin/views/settings-page.php' ), 'width="22" height="22" loading="lazy"' ), 'coin icons load lazily' );
 xdwp_assert( false !== strpos( $readme, '== External services ==' ), 'readme external services section present' );
 xdwp_assert( false !== strpos( $readme, 'XRPSCan' ), 'readme documents XRPSCan' );
 xdwp_assert( false !== strpos( $readme, 'Subscan' ), 'readme documents Subscan' );

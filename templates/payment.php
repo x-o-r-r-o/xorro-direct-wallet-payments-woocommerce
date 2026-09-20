@@ -17,6 +17,9 @@
  * @var bool     $can_renew Whether the customer may request a new quote.
  * @var string   $memo      Destination tag / memo the payment must carry, '' when the chain has none.
  * @var string   $memo_kind 'tag' | 'text' | ''.
+ * @var string   $network_label How the customer's wallet or exchange names this network.
+ * @var int      $confirmations Confirmations this coin waits for.
+ * @var string   $wait_estimate Plain-words estimate of the wait, '' when unknown.
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -58,10 +61,40 @@ defined( 'ABSPATH' ) || exit;
 				?>
 			</p>
 		<?php endif; ?>
+		<?php if ( '' !== $network_label ) : ?>
+			<p class="xdwp-box__network" role="note">
+				<?php
+				echo esc_html(
+					sprintf(
+						/* translators: 1: coin symbol, 2: network name as wallets and exchanges write it */
+						__( 'Send %1$s on %2$s only. Sending on any other network will lose the money — it cannot be recovered.', 'xorro-direct-wallet-payments-woocommerce' ),
+						$coin['symbol'],
+						$network_label
+					)
+				);
+				?>
+			</p>
+		<?php endif; ?>
+
 		<ol class="xdwp-box__steps">
-			<li><?php esc_html_e( 'Send exactly the amount below (network fees are extra).', 'xorro-direct-wallet-payments-woocommerce' ); ?></li>
-			<li><?php esc_html_e( 'Use the matching network shown for this coin.', 'xorro-direct-wallet-payments-woocommerce' ); ?></li>
-			<li><?php esc_html_e( 'Wait for automatic confirmation — this page updates itself.', 'xorro-direct-wallet-payments-woocommerce' ); ?></li>
+			<li><?php esc_html_e( 'Send exactly the amount below. Network fees are paid on top, by you.', 'xorro-direct-wallet-payments-woocommerce' ); ?></li>
+			<li>
+				<?php
+				if ( '' !== $wait_estimate ) {
+					echo esc_html(
+						sprintf(
+							/* translators: 1: number of confirmations, 2: e.g. "usually about 20 minutes" */
+							_n( 'Your order confirms after %1$d network confirmation — %2$s.', 'Your order confirms after %1$d network confirmations — %2$s.', max( 1, (int) $confirmations ), 'xorro-direct-wallet-payments-woocommerce' ),
+							max( 1, (int) $confirmations ),
+							$wait_estimate
+						)
+					);
+				} else {
+					esc_html_e( 'Your order confirms once the network has confirmed the payment.', 'xorro-direct-wallet-payments-woocommerce' );
+				}
+				?>
+			</li>
+			<li><?php esc_html_e( 'You can close this page — we will email you when it is confirmed.', 'xorro-direct-wallet-payments-woocommerce' ); ?></li>
 		</ol>
 
 		<div class="xdwp-box__row">
@@ -126,6 +159,10 @@ defined( 'ABSPATH' ) || exit;
 			<button type="button" class="button xdwp-sent" id="xdwp-sent"><?php esc_html_e( 'I have sent the payment', 'xorro-direct-wallet-payments-woocommerce' ); ?></button>
 		</div>
 		<p class="xdwp-box__hint" id="xdwp-sent-status" role="status"></p>
+
+		<p class="xdwp-box__assurance">
+			<?php esc_html_e( 'This payment goes straight to this shop\'s own wallet. No third party holds your money.', 'xorro-direct-wallet-payments-woocommerce' ); ?>
+		</p>
 
 		<div class="xdwp-box__qr">
 			<div id="xdwp-qrcode" aria-hidden="true"></div>

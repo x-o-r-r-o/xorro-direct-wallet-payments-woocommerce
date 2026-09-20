@@ -609,6 +609,110 @@ class Xdwp_Coins {
 	}
 
 	/**
+	 * How a customer should describe this coin's network to their wallet or exchange.
+	 *
+	 * The single most expensive mistake in crypto checkout is sending on the wrong network,
+	 * and it is usually made at an exchange withdrawal screen that asks for a network by name.
+	 * "USDT (TRC-20)" is the phrase that screen shows; "tron" is not.
+	 *
+	 * @param array|string $coin Coin definition or ID.
+	 * @return string
+	 */
+	public static function network_label( $coin ) {
+		if ( ! is_array( $coin ) ) {
+			$coin = self::get( (string) $coin );
+		}
+		if ( ! is_array( $coin ) ) {
+			return '';
+		}
+
+		$names = array(
+			'ethereum'   => 'Ethereum (ERC-20)',
+			'eth'        => 'Ethereum',
+			'bsc'        => 'BNB Chain (BEP-20)',
+			'tron'       => 'TRON (TRC-20)',
+			'trx'        => 'TRON',
+			'matic'      => 'Polygon',
+			'arbitrum'   => 'Arbitrum One',
+			'optimism'   => 'Optimism',
+			'base'       => 'Base',
+			'avax'       => 'Avalanche C-Chain',
+			'sol'        => 'Solana',
+			'solana'     => 'Solana (SPL)',
+			'ton'        => 'TON',
+			'btc'        => 'Bitcoin',
+			'ltc'        => 'Litecoin',
+			'doge'       => 'Dogecoin',
+			'bch'        => 'Bitcoin Cash',
+			'xrp'        => 'XRP Ledger',
+			'xlm'        => 'Stellar',
+			'atom'       => 'Cosmos Hub',
+			'inj_native' => 'Injective',
+			'ftm'        => 'Fantom',
+			'cro'        => 'Cronos',
+			'etc'        => 'Ethereum Classic',
+		);
+
+		$verifier = isset( $coin['verifier'] ) ? (string) $coin['verifier'] : '';
+		if ( isset( $names[ $verifier ] ) ) {
+			return $names[ $verifier ];
+		}
+		// Fall back to the network the coin definition names, which is at least accurate.
+		return isset( $coin['network'] ) ? strtoupper( (string) $coin['network'] ) : '';
+	}
+
+	/**
+	 * Roughly how long a payment in this coin takes to confirm, in plain words.
+	 *
+	 * A customer who knows "usually about ten minutes" waits. One who knows nothing refreshes,
+	 * pays twice, or emails the shop.
+	 *
+	 * @param array|string $coin Coin definition or ID.
+	 * @return string
+	 */
+	public static function wait_estimate( $coin ) {
+		if ( ! is_array( $coin ) ) {
+			$coin = self::get( (string) $coin );
+		}
+		if ( ! is_array( $coin ) ) {
+			return '';
+		}
+
+		// Seconds per block, roughly, for the chains people actually use.
+		$block_times = array(
+			'btc' => 600, 'bch' => 600, 'btg' => 600, 'ltc' => 150, 'doge' => 60,
+			'dash' => 150, 'zec' => 75, 'xec' => 600, 'firo' => 300, 'xzc' => 300,
+			'dgb' => 15, 'kmd' => 60, 'rvn' => 60, 'pivx' => 60, 'xvg' => 30, 'qtum' => 150,
+			'eth' => 12, 'ethereum' => 12, 'etc' => 13, 'matic' => 2, 'bsc' => 3,
+			'arbitrum' => 1, 'optimism' => 2, 'base' => 2, 'avax' => 2, 'ftm' => 1,
+			'cro' => 6, 'one' => 2, 'pls' => 10, 'sysevm' => 60, 'boba' => 2, 'xdc' => 2,
+			'sol' => 1, 'solana' => 1, 'trx' => 3, 'tron' => 3, 'ada' => 20, 'kas' => 1,
+			'neo' => 15, 'gas' => 15, 'xtz' => 15, 'xem' => 60, 'xym' => 30, 'kaia' => 1,
+		);
+
+		$verifier = isset( $coin['verifier'] ) ? (string) $coin['verifier'] : '';
+		$needed   = self::confirmations_for( $coin );
+
+		if ( ! self::reports_depth( $coin ) ) {
+			return __( 'usually a few seconds', 'xorro-direct-wallet-payments-woocommerce' );
+		}
+		if ( ! isset( $block_times[ $verifier ] ) ) {
+			return '';
+		}
+
+		$seconds = $block_times[ $verifier ] * max( 1, $needed );
+		if ( $seconds < 120 ) {
+			return __( 'usually under a minute', 'xorro-direct-wallet-payments-woocommerce' );
+		}
+		$minutes = (int) round( $seconds / 60 );
+		return sprintf(
+			/* translators: %d: minutes */
+			_n( 'usually about %d minute', 'usually about %d minutes', $minutes, 'xorro-direct-wallet-payments-woocommerce' ),
+			$minutes
+		);
+	}
+
+	/**
 	 * Chains where a payment can carry a reference the payer types in — a destination tag on
 	 * XRP, a memo elsewhere — and where this plugin can read it back off the chain.
 	 *

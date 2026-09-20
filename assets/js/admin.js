@@ -72,7 +72,107 @@
 		initIconPicker();
 		initTxidCopy();
 		initHelp();
+		initSelfTest();
 	});
+
+	/**
+	 * "Test this coin" — run the setup checks and show what, if anything, is wrong.
+	 */
+	function initSelfTest() {
+		document.addEventListener('click', function (event) {
+			var button = event.target.closest ? event.target.closest('.xdwp-test-setup') : null;
+			if (!button || !window.xdwpAdmin || !xdwpAdmin.ajaxUrl) {
+				return;
+			}
+			event.preventDefault();
+
+			var panel = button.parentNode.querySelector('.xdwp-test-results');
+			var label = button.textContent;
+			button.disabled = true;
+			button.textContent = xdwpAdmin.testing || 'Checking…';
+			if (panel) {
+				panel.innerHTML = '';
+			}
+
+			var body = new FormData();
+            body.append('action', 'xdwp_selftest');
+			body.append('nonce', xdwpAdmin.selftestNonce);
+			body.append('coin', button.getAttribute('data-coin') || '');
+
+			fetch(xdwpAdmin.ajaxUrl, { method: 'POST', credentials: 'same-origin', body: body })
+				.then(function (r) { return r.json(); })
+				.then(function (res) {
+					button.disabled = false;
+					button.textContent = xdwpAdmin.testAgain || label;
+					if (!res || !res.success || !res.data || !res.data.coins || !res.data.coins.length) {
+						renderTestError(panel, (res && res.data && res.data.message) || xdwpAdmin.testFailed);
+						return;
+					}
+					renderTestResult(panel, res.data.coins[0]);
+				})
+				.catch(function () {
+					button.disabled = false;
+					button.textContent = xdwpAdmin.testAgain || label;
+					renderTestError(panel, xdwpAdmin.testFailed);
+				});
+		});
+	}
+
+	/**
+	 * @param {Element} panel   Where to draw.
+	 * @param {string}  message What went wrong.
+	 */
+	function renderTestError(panel, message) {
+		if (!panel) {
+			return;
+		}
+		panel.innerHTML = '';
+		var p = document.createElement('p');
+		p.className = 'xdwp-test-line xdwp-test-line--fail';
+		p.textContent = message || '';
+		panel.appendChild(p);
+	}
+
+	/**
+	 * @param {Element} panel  Where to draw.
+	 * @param {Object}  result One coin's checks.
+	 */
+	function renderTestResult(panel, result) {
+		if (!panel) {
+			return;
+		}
+		panel.innerHTML = '';
+
+		var heading = document.createElement('p');
+		heading.className = 'xdwp-test-heading ' + (result.ok ? 'is-ok' : 'is-bad');
+		heading.textContent = result.ok
+			? (xdwpAdmin.testAllGood || '')
+			: (xdwpAdmin.testProblems || '');
+		panel.appendChild(heading);
+
+		var list = document.createElement('ul');
+		list.className = 'xdwp-test-list';
+		(result.checks || []).forEach(function (check) {
+			var item = document.createElement('li');
+			item.className = 'xdwp-test-line xdwp-test-line--' + check.status;
+
+			var mark = document.createElement('span');
+			mark.className = 'xdwp-test-mark';
+			mark.setAttribute('aria-hidden', 'true');
+			mark.textContent = check.status === 'ok' ? '✓' : (check.status === 'fail' ? '✕' : (check.status === 'warn' ? '!' : '–'));
+			item.appendChild(mark);
+
+			var text = document.createElement('span');
+			var strong = document.createElement('strong');
+			strong.textContent = check.label + ': ';
+			text.appendChild(strong);
+			text.appendChild(document.createTextNode(check.detail));
+			item.appendChild(text);
+
+			list.appendChild(item);
+		});
+		panel.appendChild(list);
+	}
 
 	/**
 	 * Help screen: filter the sections as you type, and keep the contents list in step with

@@ -48,6 +48,21 @@ class Xdwp_Verifier {
 	private static $current_coin = null;
 
 	/**
+	 * What the last chain lookup did, for the setup check to report on.
+	 *
+	 * http_get() deliberately returns null for every kind of failure so the matching code
+	 * cannot half-trust a bad response. That is right for verification and useless for
+	 * diagnosis, so the detail is kept here instead of being thrown away.
+	 *
+	 * @var array{url:string,code:int,error:string}
+	 */
+	private static $last_http = array(
+		'url'   => '',
+		'code'  => 0,
+		'error' => '',
+	);
+
+	/**
 	 * Reference (destination tag / memo) the order asked the customer to include, if any.
 	 *
 	 * @var string
@@ -3211,14 +3226,47 @@ class Xdwp_Verifier {
 			)
 		);
 		if ( is_wp_error( $response ) ) {
+			self::note_http( $url, 0, $response->get_error_message() );
 			return null;
 		}
 		$code = wp_remote_retrieve_response_code( $response );
+		self::note_http( $url, (int) $code, '' );
 		if ( $code < 200 || $code >= 300 ) {
 			return null;
 		}
 		$body = json_decode( wp_remote_retrieve_body( $response ), true );
 		return is_array( $body ) ? $body : null;
+	}
+
+	/**
+	 * Remember the outcome of one lookup.
+	 *
+	 * @param string $url   URL asked for.
+	 * @param int    $code  HTTP status, 0 when the request never completed.
+	 * @param string $error Transport error, if any.
+	 */
+	private static function note_http( $url, $code, $error ) {
+		self::$last_http = array(
+			'url'   => (string) $url,
+			'code'  => (int) $code,
+			'error' => (string) $error,
+		);
+	}
+
+	/**
+	 * What the last chain lookup did.
+	 *
+	 * @return array{url:string,code:int,error:string}
+	 */
+	public static function last_http() {
+		return self::$last_http;
+	}
+
+	/**
+	 * Forget it, so a check cannot read an outcome from an earlier request.
+	 */
+	public static function forget_last_http() {
+		self::note_http( '', 0, '' );
 	}
 
 	/**
@@ -3239,9 +3287,11 @@ class Xdwp_Verifier {
 			)
 		);
 		if ( is_wp_error( $response ) ) {
+			self::note_http( $url, 0, $response->get_error_message() );
 			return 0;
 		}
 		$code = wp_remote_retrieve_response_code( $response );
+		self::note_http( $url, (int) $code, '' );
 		if ( $code < 200 || $code >= 300 ) {
 			return 0;
 		}
