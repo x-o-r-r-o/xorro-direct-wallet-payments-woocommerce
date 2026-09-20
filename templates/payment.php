@@ -165,6 +165,9 @@ defined( 'ABSPATH' ) || exit;
 			<?php endif; ?>
 			<button type="button" class="button xdwp-sent" id="xdwp-sent"><?php esc_html_e( 'I have sent the payment', 'xorro-direct-wallet-payments-woocommerce' ); ?></button>
 		</div>
+
+		<?php // Filled in only when a wallet in this browser actually answers. ?>
+		<div class="xdwp-wallet-pay" id="xdwp-wallet-pay"></div>
 		<p class="xdwp-box__hint" id="xdwp-sent-status" role="status"></p>
 
 		<?php // Collapsed on a phone by the script — nobody scans a code on the screen they are holding. ?>

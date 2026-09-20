@@ -4,7 +4,7 @@ Tags: woocommerce, cryptocurrency, bitcoin, ethereum, payments, usdt, crypto che
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.16.0
+Stable tag: 1.17.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -22,6 +22,7 @@ This plugin contacts public price and blockchain APIs to quote amounts and (opti
 * BTC, BCH, ETH (incl. Arbitrum/Optimism/Base), LTC, DOGE, SOL, TRX, XMR, XRP, BNB, MATIC/POL, AVAX, ARB, OP, and more
 * USDT, USDC & DAI on multiple networks with separate wallet fields
 * Token support (WBTC, LINK, UNI, AAVE, MKR, LDO, CRV, COMP, APE, SHIB, PEPE, CAKE, and others) including multi-chain variants
+* Pay from a browser wallet (MetaMask, TronLink and others) or by address and QR code
 * Coin picker at checkout with search and coin names + payment page with amount, address, QR code and an "Open in wallet app" button
 * Optional minimum and maximum order value per coin, and confirmations per coin
 * "Payment spotted" notice while the network confirms, and a one-click re-quote for expired orders
@@ -336,6 +337,15 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 * QR Code generator (`assets/js/qrcode.min.js`) — MIT-licensed library by davidshimjs (https://github.com/davidshimjs/qrcodejs). Source is publicly available; the bundled file is minified for production use.
 
 == Changelog ==
+
+= 1.17.0 =
+Pay from MetaMask or TronLink without copying anything.
+* New: when a customer has a wallet in their browser, the payment page offers "Pay with MetaMask" (or whichever wallets they have) and fills in the address, amount and network for them
+* Works with any wallet that announces itself the modern way — MetaMask, Rabby, Coinbase Wallet, Brave and others — on Ethereum, Arbitrum, Optimism, Base, BNB Chain, Polygon, Avalanche, Fantom, Cronos and Ethereum Classic, plus TronLink for TRX and TRC-20 tokens
+* The wallet is put on the right network first, and checked again afterwards rather than trusting it — so a payment cannot go out on the wrong chain
+* Every refusal is explained in plain words: cancelled, wallet already asking you something, not enough for fees, wrong network, network not set up
+* A token payment is always a plain transfer. This plugin will never ask a customer to approve spending, which is what a scam looks like
+* The address and QR code stay on the page throughout, and the transaction a wallet reports is only ever recorded — the order is still confirmed by checking the blockchain, exactly as before
 
 = 1.16.0 =
 Amounts customers can actually send, and honesty about payments that vanish.

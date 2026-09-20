@@ -33,6 +33,9 @@ class Xdwp_Ajax {
 		add_action( 'wp_ajax_xdwp_sent', array( __CLASS__, 'sent' ) );
 		add_action( 'wp_ajax_nopriv_xdwp_sent', array( __CLASS__, 'sent' ) );
 		add_action( 'wc_ajax_xdwp_sent', array( __CLASS__, 'sent' ) );
+		add_action( 'wp_ajax_xdwp_wallet_sent', array( __CLASS__, 'wallet_sent' ) );
+		add_action( 'wp_ajax_nopriv_xdwp_wallet_sent', array( __CLASS__, 'wallet_sent' ) );
+		add_action( 'wc_ajax_xdwp_wallet_sent', array( __CLASS__, 'wallet_sent' ) );
 		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'register_assets' ) );
 	}
 
@@ -263,6 +266,70 @@ class Xdwp_Ajax {
 	/**
 	 * Re-quote an expired order at today's rate, on the customer's request.
 	 */
+	/**
+	 * A browser wallet says it sent a transaction for this order.
+	 *
+	 * The hash is recorded so the customer can see it and the shop owner can trace it — and
+	 * nothing more. A wallet can return a hash for a transaction that never mines, or one
+	 * that pays somebody else entirely, so the order is still only marked paid by the same
+	 * chain verification used for a payment typed in by hand.
+	 */
+	public static function wallet_sent() {
+		$order_id = isset( $_POST['order_id'] ) ? absint( $_POST['order_id'] ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$deny     = static function () {
+			wp_send_json_error( array( 'message' => __( 'Forbidden.', 'xorro-direct-wallet-payments-woocommerce' ) ), 403 );
+		};
+		if ( ! $order_id || ! check_ajax_referer( 'xdwp_status_' . $order_id, 'nonce', false ) ) {
+			$deny();
+			return;
+		}
+		if ( self::rate_limited( 'xdwp_wallet_', $order_id, 10 ) ) {
+			wp_send_json_error( array( 'message' => __( 'Too many requests. Please wait a moment.', 'xorro-direct-wallet-payments-woocommerce' ) ), 429 );
+			return;
+		}
+
+		$order = wc_get_order( $order_id );
+		if ( ! $order || ! Xdwp_Order::is_ours( $order ) ) {
+			$deny();
+			return;
+		}
+		$order_key = isset( $_POST['order_key'] ) ? sanitize_text_field( wp_unslash( $_POST['order_key'] ) ) : '';
+		$allowed   = ( is_user_logged_in() && (int) $order->get_user_id() === get_current_user_id() )
+			|| ( $order_key && hash_equals( $order->get_order_key(), $order_key ) )
+			|| current_user_can( 'manage_woocommerce' );
+		if ( ! $allowed ) {
+			$deny();
+			return;
+		}
+
+		$txid = isset( $_POST['txid'] ) ? sanitize_text_field( wp_unslash( $_POST['txid'] ) ) : '';
+		if ( ! preg_match( '#^(0x)?[A-Fa-f0-9]{32,80}$#', $txid ) ) {
+			wp_send_json_error( array( 'message' => __( 'That does not look like a transaction.', 'xorro-direct-wallet-payments-woocommerce' ) ), 400 );
+			return;
+		}
+
+		$status = (string) Xdwp_Order::meta( $order, 'status' );
+		if ( ! in_array( $status, array( 'awaiting', 'underpaid' ), true ) ) {
+			wp_send_json_success( array( 'recorded' => false ) );
+			return;
+		}
+
+		$order->update_meta_data( '_xdwp_wallet_txid', $txid );
+		$order->save();
+		$order->add_order_note(
+			sprintf(
+				/* translators: %s: transaction id */
+				__( 'The customer paid from a browser wallet, which reported transaction %s. The order will be confirmed once that payment is found on chain, exactly as any other would be.', 'xorro-direct-wallet-payments-woocommerce' ),
+				$txid
+			)
+		);
+
+		// Look now rather than at the next scheduled check.
+		delete_transient( 'xdwp_ajax_verify_' . $order_id );
+
+		wp_send_json_success( array( 'recorded' => true ) );
+	}
+
 	/**
 	 * "I've sent the payment": look now instead of waiting for the next scheduled check.
 	 *

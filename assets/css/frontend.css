@@ -625,3 +625,63 @@
 		transition: none;
 	}
 }
+
+/* ---- Paying from a wallet in this browser ----------------------------- */
+
+.xdwp-wallet-pay:empty {
+	display: none;
+}
+
+.xdwp-wallet-pay {
+	margin: 1rem 0 0;
+	padding: 0.9rem 1rem;
+	border: 1px solid #e4e7ec;
+	border-radius: 6px;
+	background: #fff;
+}
+
+.xdwp-wallet-lead {
+	margin: 0 0 0.6rem;
+	font-size: 0.9rem;
+	color: #475467;
+}
+
+.xdwp-box .xdwp-wallet-button {
+	display: inline-flex;
+	gap: 0.45rem;
+	align-items: center;
+	margin: 0 0.5rem 0.5rem 0;
+	padding: 0.5rem 0.9rem;
+	min-height: 24px;
+	border: 1px solid #1d2733;
+	border-radius: 4px;
+	background: #fff;
+	color: #1d2733 !important;
+	font: inherit;
+	font-weight: 600;
+	font-size: 0.92rem;
+	line-height: 1.2;
+	cursor: pointer;
+}
+
+.xdwp-box .xdwp-wallet-button:hover,
+.xdwp-box .xdwp-wallet-button:focus-visible {
+	background: #f3f5f7;
+}
+
+.xdwp-wallet-button img {
+	width: 20px !important;
+	height: 20px !important;
+	border-radius: 4px;
+}
+
+.xdwp-wallet-status {
+	margin: 0.4rem 0 0;
+	font-size: 0.88rem;
+	line-height: 1.5;
+	color: #475467;
+}
+
+.xdwp-wallet-status.is-error {
+	color: #b42318;
+}

@@ -725,6 +725,17 @@ class Xdwp_Order {
 		wp_enqueue_script( 'xdwp-qrcode' );
 		wp_enqueue_script( 'xdwp-frontend' );
 
+		if ( ! wp_script_is( 'xdwp-wallet', 'registered' ) ) {
+			wp_register_script(
+				'xdwp-wallet',
+				XDWP_URL . 'assets/js/wallet.js',
+				array( 'xdwp-frontend' ),
+				XDWP_VERSION,
+				true
+			);
+		}
+		wp_enqueue_script( 'xdwp-wallet' );
+
 		// Ensure footer prints these even when thank-you runs after the normal enqueue pass.
 		add_action(
 			'wp_footer',
@@ -755,6 +766,10 @@ class Xdwp_Order {
 				'status'    => $status,
 				'renewUrl'  => Xdwp_Ajax::endpoint( 'xdwp_renew' ),
 				'sentUrl'   => Xdwp_Ajax::endpoint( 'xdwp_sent' ),
+				'walletUrl' => Xdwp_Ajax::endpoint( 'xdwp_wallet_sent' ),
+				'wallet'    => ( 'awaiting' === $status || 'underpaid' === $status )
+					? Xdwp_Coins::wallet_payment( $coin, $address, $amount )
+					: null,
 				'confirmations' => Xdwp_Coins::confirmations_for( $coin ),
 				'i18n'      => array(
 					'detected' => __( 'Payment detected — waiting for network confirmations…', 'xorro-direct-wallet-payments-woocommerce' ),
@@ -764,6 +779,26 @@ class Xdwp_Order {
 					'renewing' => __( 'Getting a new amount…', 'xorro-direct-wallet-payments-woocommerce' ),
 					'renewFail' => __( 'Could not get a new amount. Please contact us.', 'xorro-direct-wallet-payments-woocommerce' ),
 					'copied'   => __( 'Copied!', 'xorro-direct-wallet-payments-woocommerce' ),
+					'walletLead'         => __( 'Or pay straight from a wallet in this browser:', 'xorro-direct-wallet-payments-woocommerce' ),
+					/* translators: %s: wallet name, e.g. MetaMask */
+					'walletPayWith'      => __( 'Pay with %s', 'xorro-direct-wallet-payments-woocommerce' ),
+					'walletGeneric'      => __( 'Browser wallet', 'xorro-direct-wallet-payments-woocommerce' ),
+					'walletOpening'      => __( 'Opening your wallet…', 'xorro-direct-wallet-payments-woocommerce' ),
+					'walletConfirm'      => __( 'Confirm the payment in your wallet…', 'xorro-direct-wallet-payments-woocommerce' ),
+					'walletSent'         => __( 'Sent. This page will confirm the payment once the network has.', 'xorro-direct-wallet-payments-woocommerce' ),
+					'walletCancelled'    => __( 'You cancelled in your wallet. Nothing was sent.', 'xorro-direct-wallet-payments-woocommerce' ),
+					'walletPending'      => __( 'Your wallet is already asking you to approve something — open it and finish there.', 'xorro-direct-wallet-payments-woocommerce' ),
+					'walletUnauthorised' => __( 'Your wallet has not allowed this site to ask for a payment.', 'xorro-direct-wallet-payments-woocommerce' ),
+					'walletDisconnected' => __( 'Your wallet is not connected to a network.', 'xorro-direct-wallet-payments-woocommerce' ),
+					'walletFunds'        => __( 'That wallet does not have enough to cover the amount plus the network fee.', 'xorro-direct-wallet-payments-woocommerce' ),
+					'walletNoAccount'    => __( 'No account was shared by your wallet.', 'xorro-direct-wallet-payments-woocommerce' ),
+					'walletFailed'       => __( 'The payment could not be started in your wallet.', 'xorro-direct-wallet-payments-woocommerce' ),
+					/* translators: %s: network name, e.g. "Polygon" */
+					'walletSwitching'    => __( 'Switch to %s in your wallet…', 'xorro-direct-wallet-payments-woocommerce' ),
+					/* translators: %s: network name */
+					'walletWrongChain'   => __( 'Your wallet is still on another network. Switch it to %s and try again.', 'xorro-direct-wallet-payments-woocommerce' ),
+					/* translators: %s: network name */
+					'walletAddChain'     => __( 'Your wallet does not have %s set up yet. Add that network in your wallet, then try again.', 'xorro-direct-wallet-payments-woocommerce' ),
 					/* translators: %d: whole minutes remaining */
 					'timeLeft' => __( '%d minutes left to pay', 'xorro-direct-wallet-payments-woocommerce' ),
 					'expired'  => __( 'Payment window expired.', 'xorro-direct-wallet-payments-woocommerce' ),

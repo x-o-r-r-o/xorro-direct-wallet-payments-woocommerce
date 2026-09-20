@@ -194,6 +194,14 @@ Pushing a `vX.Y.Z` tag runs the Release workflow, which builds the ZIP, its SHA-
 
 Full details for every release are in [`readme.txt`](readme.txt).
 
+### 1.17.0 — pay from a wallet in the browser
+
+- **"Pay with MetaMask"** (or Rabby, Coinbase Wallet, Brave, TronLink…) appears when the customer actually has one — discovered via EIP-6963 / TIP-6963 rather than fighting over `window.ethereum`
+- Chain is switched **and re-checked** before sending, so a payment cannot leave on the wrong network
+- Every wallet refusal is explained: cancelled, already prompting, insufficient gas, wrong network, network not added
+- Token payments use `transfer` only — **never** an approval prompt
+- The address and QR stay visible; a reported transaction hash is recorded, never trusted — the chain still confirms the order
+
 ### 1.16.0 — amounts people can actually send
 
 - **Stablecoins are quoted in cents.** Asking for 17.340010 USDT is asking for a payment most exchanges cannot make; orders are now spaced a cent apart and still told apart

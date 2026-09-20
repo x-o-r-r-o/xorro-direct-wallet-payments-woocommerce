@@ -1431,6 +1431,111 @@ class Xdwp_Coins {
 	}
 
 	/**
+	 * What a browser wallet needs to build this payment itself, or null when the coin has no
+	 * such path.
+	 *
+	 * Everything here is a convenience for the customer: the plugin still confirms the payment
+	 * against the chain exactly as it would for an address typed in by hand. A wallet handing
+	 * back a transaction hash proves nothing on its own, so nothing here is trusted.
+	 *
+	 * @param array  $coin    Coin definition.
+	 * @param string $address Receiving address.
+	 * @param string $amount  Amount in whole coins.
+	 * @return array|null
+	 */
+	public static function wallet_payment( array $coin, $address, $amount ) {
+		$amount = (string) $amount;
+		if ( '' === $amount || '' === (string) $address ) {
+			return null;
+		}
+
+		$chain_id = self::eip155_chain_id( $coin );
+		$decimals = (int) $coin['decimals'];
+
+		// EVM chains: a native transfer, or an ERC-20 transfer(address,uint256) call.
+		if ( $chain_id > 0 ) {
+			$base = self::to_base_units( $amount, $decimals );
+			$data = array(
+				'kind'     => 'evm',
+				'chainId'  => '0x' . dechex( $chain_id ),
+				'chainNum' => $chain_id,
+				'to'       => strtolower( (string) $address ),
+				'value'    => '0x' . self::decimal_to_hex( $base ),
+				'token'    => '',
+				'decimals' => $decimals,
+				'network'  => self::network_label( $coin ),
+				'symbol'   => $coin['symbol'],
+			);
+			/**
+			 * Parameters for wallet_addEthereumChain, when a shop wants unknown chains added
+			 * automatically. Left empty by default: adding a chain means handing the customer's
+			 * wallet an RPC endpoint, which is the shop's decision to make, not this plugin's.
+			 *
+			 * @param array $params   Empty, or an EIP-3085 AddEthereumChainParameter.
+			 * @param array $coin     Coin definition.
+			 * @param int   $chain_id EIP-155 chain id.
+			 */
+			$add_chain = apply_filters( 'xdwp_wallet_add_chain', array(), $coin, $chain_id );
+			if ( ! empty( $add_chain ) ) {
+				$data['addChain'] = $add_chain;
+			}
+
+			if ( ! empty( $coin['contract'] ) && in_array( $coin['type'], array( 'erc20', 'bep20' ), true ) ) {
+				$data['token'] = strtolower( (string) $coin['contract'] );
+				$data['value'] = '0x0';
+				// transfer(address,uint256): selector, then both arguments padded to 32 bytes.
+				// Strip exactly the 0x prefix. ltrim() with a character list would also eat a
+				// leading zero of the address itself, which many addresses have.
+				$bare         = preg_replace( '/^0x/i', '', strtolower( (string) $address ) );
+				$data['data'] = '0xa9059cbb'
+					. str_pad( $bare, 64, '0', STR_PAD_LEFT )
+					. str_pad( self::decimal_to_hex( $base ), 64, '0', STR_PAD_LEFT );
+			}
+			return $data;
+		}
+
+		// Tron: TronLink signs and broadcasts through its own API rather than EIP-1193.
+		if ( 'tron' === $coin['verifier'] || 'trx' === $coin['verifier'] ) {
+			return array(
+				'kind'     => 'tron',
+				'to'       => (string) $address,
+				'amount'   => self::to_base_units( $amount, $decimals ),
+				'token'    => ! empty( $coin['contract'] ) ? (string) $coin['contract'] : '',
+				'decimals' => $decimals,
+				'network'  => self::network_label( $coin ),
+				'symbol'   => $coin['symbol'],
+			);
+		}
+
+		return null;
+	}
+
+	/**
+	 * Decimal integer string to lower-case hex, without a prefix.
+	 *
+	 * The amounts here exceed PHP's integer range on 18-decimal chains, so this works on the
+	 * string rather than converting to a number.
+	 *
+	 * @param string $decimal Integer as a decimal string.
+	 * @return string
+	 */
+	private static function decimal_to_hex( $decimal ) {
+		$decimal = ltrim( preg_replace( '/\D/', '', (string) $decimal ), '0' );
+		if ( '' === $decimal ) {
+			return '0';
+		}
+		if ( function_exists( 'bcdiv' ) ) {
+			$hex = '';
+			while ( bccomp( $decimal, '0' ) > 0 ) {
+				$hex     = dechex( (int) bcmod( $decimal, '16' ) ) . $hex;
+				$decimal = bcdiv( $decimal, '16', 0 );
+			}
+			return $hex;
+		}
+		return dechex( (int) $decimal );
+	}
+
+	/**
 	 * Payment URI, after filtering.
 	 *
 	 * @param string $coin_id Coin ID.

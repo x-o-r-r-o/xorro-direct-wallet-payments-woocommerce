@@ -566,6 +566,21 @@ xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-
 xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-verifier.php' ), 'xdwp_payment_dropped' ), 'a dropped transfer is announced to extensions' );
 xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-order.php' ), 'function set_flag' ), 'what happened to a payment is recorded beside its status' );
 xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-order.php' ), 'Xdwp_Rates::pegged_rate' ), 'a pegged coin is given a longer window' );
+// Release 1.17.0: paying from a wallet in the browser.
+xdwp_assert( is_readable( $root . '/assets/js/wallet.js' ), 'wallet payment script present' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/assets/js/wallet.js' ), 'eip6963:requestProvider' ), 'wallets are discovered, not guessed at' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/assets/js/wallet.js' ), 'TIP6963:requestProvider' ), 'TronLink is discovered the same way' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/assets/js/wallet.js' ), 'wallet_switchEthereumChain' ), 'the wallet is put on the right chain' );
+// An approval prompt on a checkout is what a drainer looks like, so only transfer(address,
+// uint256) — selector 0xa9059cbb — is ever built. approve(address,uint256) is 0x095ea7b3.
+$xdwp_wallet_js = file_get_contents( $root . '/assets/js/wallet.js' );
+$xdwp_coins_php = file_get_contents( $root . '/includes/class-xdwp-coins.php' );
+xdwp_assert( false === strpos( $xdwp_wallet_js, '095ea7b3' ) && false === strpos( $xdwp_coins_php, '095ea7b3' ), 'no token approval is ever requested' );
+xdwp_assert( false !== strpos( $xdwp_coins_php, '0xa9059cbb' ), 'token payments are a plain transfer' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-coins.php' ), 'function wallet_payment' ), 'wallet payment data is built server-side' );
+xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-ajax.php' ), 'function wallet_sent' ), 'a wallet transaction can be recorded' );
+// A hash from a wallet proves nothing: the chain still decides.
+xdwp_assert( false === strpos( file_get_contents( $root . '/includes/class-xdwp-ajax.php' ), "update_meta_data( '_xdwp_txid'" ), 'a wallet hash never marks an order paid' );
 xdwp_assert( false !== strpos( $readme, '== External services ==' ), 'readme external services section present' );
 xdwp_assert( false !== strpos( $readme, 'XRPSCan' ), 'readme documents XRPSCan' );
 xdwp_assert( false !== strpos( $readme, 'Subscan' ), 'readme documents Subscan' );
