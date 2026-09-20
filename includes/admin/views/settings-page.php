@@ -590,54 +590,6 @@ $active  = isset( $tabs[ $tab ] ) ? $tabs[ $tab ] : $tabs['general'];
 										</td>
 									</tr>
 									<tr>
-										<th scope="row"><?php esc_html_e( 'Subscan API key (optional)', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
-										<td>
-											<input type="password" class="regular-text cc-input" name="xdwp[subscan_api_key]" value="" placeholder="<?php echo esc_attr( Xdwp_Settings::api_key_input_placeholder( 'subscan_api_key' ) ); ?>" autocomplete="new-password" />
-											<p class="description">
-												<?php
-												echo wp_kses(
-													sprintf(
-														/* translators: %s: URL */
-														__( 'Improves Polkadot (DOT) auto-verify rate limits. Free at %s', 'xorro-direct-wallet-payments-woocommerce' ),
-														'<a href="https://www.subscan.io/" target="_blank" rel="noopener noreferrer">Subscan</a>'
-													),
-													array(
-														'a' => array(
-															'href'   => true,
-															'target' => true,
-															'rel'    => true,
-														),
-													)
-												);
-												?>
-											</p>
-										</td>
-									</tr>
-									<tr>
-										<th scope="row"><?php esc_html_e( 'ViewBlock API key (optional)', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
-										<td>
-											<input type="password" class="regular-text cc-input" name="xdwp[viewblock_api_key]" value="" placeholder="<?php echo esc_attr( Xdwp_Settings::api_key_input_placeholder( 'viewblock_api_key' ) ); ?>" autocomplete="new-password" />
-											<p class="description">
-												<?php
-												echo wp_kses(
-													sprintf(
-														/* translators: %s: URL */
-														__( 'Improves Zilliqa (ZIL) auto-verify reliability. Free at %s', 'xorro-direct-wallet-payments-woocommerce' ),
-														'<a href="https://viewblock.io/api" target="_blank" rel="noopener noreferrer">ViewBlock</a>'
-													),
-													array(
-														'a' => array(
-															'href'   => true,
-															'target' => true,
-															'rel'    => true,
-														),
-													)
-												);
-												?>
-											</p>
-										</td>
-									</tr>
-									<tr>
 										<th scope="row"><?php esc_html_e( 'Aptos API key', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
 										<td>
 											<input type="password" class="regular-text cc-input" name="xdwp[aptos_api_key]" value="" placeholder="<?php echo esc_attr( Xdwp_Settings::api_key_input_placeholder( 'aptos_api_key' ) ); ?>" autocomplete="new-password" />

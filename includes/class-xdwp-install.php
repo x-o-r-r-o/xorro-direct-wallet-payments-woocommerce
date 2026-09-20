@@ -120,8 +120,6 @@ class Xdwp_Install {
 			'etherscan_api_key'    => '',
 			'trongrid_api_key'     => '',
 			'helius_api_key'       => '',
-			'subscan_api_key'      => '',
-			'viewblock_api_key'    => '',
 			'enabled_coins'        => array( 'BTC', 'ETH' ),
 			'wallets'              => array(),
 			'xpubs'                => array(),

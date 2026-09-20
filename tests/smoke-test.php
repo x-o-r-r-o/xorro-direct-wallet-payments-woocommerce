@@ -67,7 +67,7 @@ $required = array(
 	'USDC_ETH', 'USDC_ARB', 'USDC_OP', 'USDC_BNB', 'USDC_MATIC', 'USDC_AVAX', 'USDC_BASE', 'USDC_SOL', 'USDC_TRX',
 	'DAI_ARB', 'DAI_OP', 'DAI_MATIC', 'DAI_BASE',
 	'WBTC', 'AAVE', 'MKR', 'LDO', 'CRV', 'COMP', 'APE', 'SHIB', 'PEPE', 'AAVE_ARB', 'AAVE_OP',
-	'FTT', 'AVAX', 'LINK', 'DOT', 'CAKE', 'ATOM', 'EOS', 'ETC', 'ZIL', 'FIL', 'ALGO', 'HBAR', 'CRO', 'FTM', 'EGLD', 'NEAR', 'AXS', 'MANA', 'SAND', 'UNI', 'XLM',
+	'FTT', 'AVAX', 'LINK', 'CAKE', 'ATOM', 'EOS', 'ETC', 'FIL', 'ALGO', 'HBAR', 'CRO', 'FTM', 'EGLD', 'NEAR', 'AXS', 'MANA', 'SAND', 'UNI', 'XLM',
 );
 foreach ( $required as $id ) {
 	xdwp_assert( isset( $all[ $id ] ), "required coin present: {$id}" );
@@ -91,9 +91,8 @@ xdwp_assert( Xdwp_Coins::supports_auto_verify( 'ALGO' ), 'ALGO auto-verify' );
 xdwp_assert( Xdwp_Coins::supports_auto_verify( 'HBAR' ), 'HBAR auto-verify' );
 xdwp_assert( Xdwp_Coins::supports_auto_verify( 'NEAR' ), 'NEAR auto-verify' );
 xdwp_assert( Xdwp_Coins::supports_auto_verify( 'ATOM' ), 'ATOM auto-verify' );
-xdwp_assert( Xdwp_Coins::supports_auto_verify( 'DOT' ), 'DOT auto-verify' );
 
-// Coins added across the three most recent batches (219 -> 235 coins) — a
+// Coins added across the three most recent batches (219 -> 233 coins) — a
 // representative sample per new verifier family, not an exhaustive list.
 $recent_required = array(
 	'BTG', 'FIRO', 'XZC', 'RVN', 'PIVX', 'NEO', 'GAS', 'THETA', 'TFUEL',
@@ -103,7 +102,7 @@ $recent_required = array(
 foreach ( $recent_required as $id ) {
 	xdwp_assert( isset( $all[ $id ] ), "recently-added coin present: {$id}" );
 }
-xdwp_assert( count( $all ) >= 235, 'coin catalog size >= 235 (got ' . count( $all ) . ')' );
+xdwp_assert( count( $all ) >= 233, 'coin catalog size >= 233 (got ' . count( $all ) . ')' );
 
 // One coin per newly-added auto-verified verifier group should report true;
 // the deliberately manual-only groups (no free/keyless verification API)
@@ -268,7 +267,6 @@ xdwp_assert( false !== strpos( $verifier, 'xrp_amount_to_xrp' ), 'XRP amount par
 xdwp_assert( false !== strpos( $verifier, "return ( (float) \$raw['value'] ) / 1e6;" ), 'XRP object value is drops not whole XRP' );
 xdwp_assert( false === strpos( $verifier, "isset( \$tx['Amount'] ) ? \$tx['Amount']" ), 'XRP does not credit Amount field' );
 xdwp_assert( false !== strpos( $verifier, "if ( ! \$recipient || 0 !== strcasecmp( \$recipient, \$address ) )" ), 'ATOM requires recipient match' );
-xdwp_assert( false !== strpos( $verifier, "! \$has_receipt || \$tx['receiptSuccess']" ), 'ZIL requires all present success flags' );
 
 $settings_php = file_get_contents( $root . '/includes/class-xdwp-settings.php' );
 xdwp_assert( false !== strpos( $settings_php, 'XDWP_ETHERSCAN_API_KEY' ), 'API keys support wp-config constants' );
@@ -295,9 +293,7 @@ if ( preg_match( '/function soft_finality_ok\s*\([^)]*\)\s*\{(.*?)\n\t\}/s', $ve
 }
 // ZIL amounts always as Qa (12 decimals) near check_zil.
 $zil_pos = strpos( $verifier, 'function check_zil' );
-xdwp_assert( false !== $zil_pos, 'check_zil present' );
 $zil_slice = false !== $zil_pos ? substr( $verifier, $zil_pos, 2500 ) : '';
-xdwp_assert( false !== strpos( $zil_slice, 'raw_amount_in_band( $raw, 12,' ), 'ZIL raw_amount_in_band uses 12 near check_zil' );
 // Helius RPC requires ?api-key= (documented); also send X-Api-Key.
 xdwp_assert( false !== strpos( $verifier, 'api-key=' ), 'Helius uses documented api-key query' );
 xdwp_assert( false !== strpos( $verifier, 'X-Api-Key' ), 'Helius also sends X-Api-Key header' );
@@ -307,7 +303,6 @@ xdwp_assert( false !== strpos( $verifier, 'base58_encode' ), 'base58_encode help
 xdwp_assert( false !== strpos( $verifier, "isset( \$tx['transaction_successful'] ) && \$tx['transaction_successful']" ), 'stellar requires explicit success' );
 xdwp_assert( false !== strpos( $verifier, "isset( \$row['irreversible'] ) && \$row['irreversible']" ), 'eos requires irreversible' );
 xdwp_assert( false !== strpos( $verifier, "isset( \$tx['receipt']['exitCode'] ) && 0 === (int) \$tx['receipt']['exitCode']" ), 'fil requires explicit exitCode 0' );
-xdwp_assert( false !== strpos( $verifier, "empty( \$tx['success'] )" ), 'check_dot rejects empty success' );
 xdwp_assert( false === strpos( $verifier, 'tokenDecimal' ), 'tokenDecimal not preferred over configured decimals' );
 xdwp_assert( false !== strpos( $verifier, '$dec = (int) $decimals' ), 'raw_amount uses configured decimals near contractAddress' );
 xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-updater.php' ), 'xdwp_pkg_sha_' ), 'updater caches package sha256' );
@@ -634,7 +629,7 @@ xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/class-xdwp-
 
 // Casper and Starknet were removed in 1.19.1: neither has a payment-detection API that does
 // not need a paid or registered key, so they could only ever be confirmed by hand.
-foreach ( array( 'CSPR', 'STRK', 'XVG' ) as $xdwp_gone ) {
+foreach ( array( 'CSPR', 'STRK', 'XVG', 'DOT', 'ZIL' ) as $xdwp_gone ) {
 	xdwp_assert( ! isset( $all[ $xdwp_gone ] ), $xdwp_gone . ' was withdrawn and is gone from the registry' );
 }
 
@@ -651,7 +646,7 @@ xdwp_assert( strpos( $xdwp_payment_tpl, 'xdwp-box__actions' ) < strpos( $xdwp_pa
 xdwp_assert( false !== strpos( $xdwp_payment_tpl, "'paid', 'expired', 'cancelled'" ), 'a settled order shows no countdown' );
 
 xdwp_assert( false !== strpos( $readme, '== External services ==' ), 'readme external services section present' );
-xdwp_assert( false !== strpos( $readme, 'XRPSCan' ), 'readme documents XRPSCan' );
+xdwp_assert( false !== strpos( $readme, 'XRP Ledger public cluster' ), 'readme documents the XRP data source' );
 xdwp_assert( false !== strpos( $readme, 'Subscan' ), 'readme documents Subscan' );
 xdwp_assert( false !== strpos( $readme, 'Filfox' ), 'readme documents Filfox' );
 xdwp_assert( false !== strpos( $readme, 'AlgoNode' ), 'readme documents AlgoNode' );

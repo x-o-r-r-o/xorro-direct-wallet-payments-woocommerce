@@ -4,7 +4,7 @@ Tags: woocommerce, cryptocurrency, bitcoin, ethereum, payments, usdt, crypto che
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.19.2
+Stable tag: 1.19.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -57,7 +57,7 @@ This plugin contacts public price and blockchain APIs to quote amounts and (opti
 2. Activate **Xorro Direct Wallet Payments for WooCommerce**.
 3. Go to **Xorro Wallet Payments → Coins** and enable the assets you accept.
 4. Go to **Xorro Wallet Payments → Wallets** and add receiving addresses (use **+ Add address** for multiple / rotation).
-5. Add API keys under **Prices & APIs** (Etherscan V2 recommended; TronGrid/Helius/Subscan/ViewBlock optional).
+5. Add API keys under **Prices & APIs** (Etherscan V2 recommended; TronGrid, Helius, Aptos and Blockchair optional).
 6. Under **Xorro Wallet Payments → General**, set the checkout title, icon, size, and whether to show icon, text, or both.
 7. Enable the gateway under **WooCommerce → Settings → Payments → Xorro Wallet Payments**.
 
@@ -77,8 +77,6 @@ Go to **Xorro Wallet Payments → General**. You can edit the title (e.g. “Pay
 * **CoinGecko** — optional, for higher rate limits on price conversion
 * **TronGrid** — optional, for TRX / USDT-TRC20 reliability
 * **Helius** — optional, for more stable Solana verification
-* **Subscan** — optional, for Polkadot (DOT) rate limits
-* **ViewBlock** — optional, for Zilliqa (ZIL) reliability
 
 Bitcoin uses mempool.space (Blockstream fallback) with no key required. ALGO, HBAR, NEAR, ATOM, EGLD, FIL, EOS use free public endpoints. Monero (XMR) stays manual.
 
@@ -137,13 +135,27 @@ This plugin does **not** phone home to the plugin author. It may contact the fol
 * mempool.space about/privacy: https://mempool.space/about
 * Blockstream: https://blockstream.com/
 
-= Blockchair (Bitcoin Cash / Litecoin / Dogecoin) =
+= Blockchair (Bitcoin Cash / Dogecoin / Zcash / Dash / eCash) =
 
-* Purpose: Detect BCH/LTC/DOGE payments.
-* Data: Addresses / transactions for matching.
-* When: Automatic verification for BCH/LTC/DOGE.
+* Purpose: Detect BCH/DOGE/ZEC/DASH/XEC payments.
+* Data: Addresses / transactions for matching; optional API key.
+* When: Automatic verification for those coins.
 * Site: https://blockchair.com/
 * Privacy: https://blockchair.com/privacy
+
+= Litecoin Space (Litecoin) =
+
+* Purpose: Detect LTC payments when Blockchair is out of free allowance.
+* Data: Addresses / transactions for matching. No key.
+* When: Automatic verification for LTC, only after Blockchair does not answer.
+* Site: https://litecoinspace.org/
+
+= XRP Ledger public cluster (XRP) =
+
+* Purpose: Detect XRP payments.
+* Data: Addresses / transactions for matching. No key.
+* When: Automatic verification for XRP.
+* Site: https://xrplcluster.com/
 
 = TronGrid (TRON) =
 
@@ -164,15 +176,6 @@ This plugin does **not** phone home to the plugin author. It may contact the fol
 * Solana terms: https://solana.com/tos
 * Helius privacy: https://www.helius.dev/privacy-policy
 * Helius terms: https://www.helius.dev/terms-of-service
-
-= XRPSCan (XRP) =
-
-* Purpose: Detect XRP payments.
-* Data: XRP account addresses and payment transaction data.
-* When: Automatic verification for XRP.
-* Site: https://xrpscan.com/
-* Terms: https://docs.xrpscan.com/help/terms-of-service
-* Privacy: https://docs.xrpscan.com/help/privacy-policy
 
 = Stellar Horizon (XLM) =
 
@@ -248,24 +251,6 @@ This plugin does **not** phone home to the plugin author. It may contact the fol
 * Site: https://greymass.com/
 * Endpoint used: https://eos.greymass.com/
 * Privacy: https://greymass.com/en/privacy
-
-= Subscan (Polkadot) =
-
-* Purpose: Detect DOT transfers.
-* Data: Addresses / transfers; optional API key.
-* When: Automatic verification for DOT.
-* Site: https://www.subscan.io/
-* Terms: https://www.subscan.io/privacy
-* Docs: https://support.subscan.io/
-
-= ViewBlock (Zilliqa) =
-
-* Purpose: Detect ZIL payments.
-* Data: Addresses / transactions; optional API key.
-* When: Automatic verification for ZIL.
-* Site: https://viewblock.io/
-* Terms: https://viewblock.io/terms
-* Privacy: https://viewblock.io/privacy
 
 = toncenter.com (TON, native + Jetton tokens) =
 
@@ -344,6 +329,10 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 * QR Code generator (`assets/js/qrcode.min.js`) — MIT-licensed library by davidshimjs (https://github.com/davidshimjs/qrcodejs). Source is publicly available; the bundled file is minified for production use.
 
 == Changelog ==
+
+= 1.19.3 =
+* Removed: Polkadot (DOT) and Zilliqa (ZIL). Neither can be checked on chain without a key that is not freely available — Subscan is a paid product and ViewBlock no longer issues keys — so both could only ever be confirmed by hand. The Subscan and ViewBlock key fields are gone with them
+* If you had either enabled, nothing breaks: the checkout stops offering them, your settings save cleanly, and any old order in one says its details are unavailable rather than failing
 
 = 1.19.2 =
 The payment page, read as a customer sees it.

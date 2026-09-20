@@ -16,7 +16,7 @@ wordpress.org, BTCPay, BitPay, CoinGate, OpenNode, CoinPayments, GoUrl, MyCrypto
 CryptoWoo) and against merchant complaints about those products. That produced 25 items, grouped
 as correctness (A), customer experience (B) and administration (C). This is their status.
 
-As of 1.19.0, 24 of the 25 are built. The one that is not — Solana Pay `reference` matching — is
+As of 1.19.2, 24 of the 25 are built. The one that is not — Solana Pay `reference` matching — is
 an improvement on something that already works, not a gap; §2 says why it was left.
 
 ### A — Correctness
@@ -83,6 +83,14 @@ paired by QR, needs a WalletConnect relay and a project id from a third party �
 merchant does not currently need. Mobile customers use the `Open in wallet app` deep link instead,
 which works without any of that.
 
+**Coins withdrawn.** Casper, Starknet, Verge, Polkadot and Zilliqa were removed in the 1.19.x
+series. None of them could detect an incoming payment without a key that is not freely available —
+Verge's explorer no longer exists at any address that could be found, Subscan (Polkadot) is a paid
+product, and ViewBlock (Zilliqa) no longer issues keys. A coin that can only ever be confirmed by
+hand, with no protocol reason for it, is a support burden rather than a feature. Monero, IoTeX and
+Kaia stay manual: Monero's is a property of the protocol, and the other two are waiting on a free
+key that does exist.
+
 **Slack alerts.** 1.19.0 does webhooks and Telegram. Slack needs no code of its own — a Slack
 incoming webhook is an ordinary HTTPS endpoint — but it expects `{"text": "…"}` rather than this
 plugin's JSON, so it needs a few lines in between. Worth adding as a first-class option if anyone
@@ -136,6 +144,8 @@ Full user-facing notes are in `readme.txt`. This is what each release put into t
 | 1.16.0 | Amounts that can be sent | Payable decimals per coin; unique dust spaced by one payable unit and capped at 1% of the order; vanished-transfer handling; the `flag` field; a day to pay for pegged coins |
 | 1.17.0 | Pay from a wallet | EIP-6963 and TIP-6963 discovery, chain switch **and re-read**, balance pre-flight, plain-language errors, ERC-20 `transfer` only — never `approve` |
 | 1.18.0 | Reconciliation | Order search by txid/address; per-order timeline; row actions (check now, extend); a period report read straight from order meta, bounded and cached. Countdown fixed for windows longer than an hour |
+| 1.19.2 | The payment page as a customer reads it | A settled, cancelled or refunded order stops asking for payment — it was still showing a countdown and an address for orders the shop had completed itself, and a customer could pay twice. Amount, address and buttons moved above the instructions. "Dealt with" clears an order from the "Needs you" queue, which could previously only grow |
+| 1.19.1 | Every coin against its live chain | Algorand's tip endpoint (it confirmed nothing at all), XRP's 100 MB redirect loop (moved to the XRP Ledger's own API), JSON-RPC calls not being recorded (four chains wrongly reported as unreachable), CoinGecko Demo/Pro host detection, a Litecoin fallback, size and redirect caps on every explorer request. Casper, Starknet and Verge withdrawn |
 | 1.19.0 | Operations | Claim-link refunds: a hashed, expiring, rate-limited token, a front-end claim page, and an order panel that never sends money itself. Signed webhooks and Telegram alerts, queued out of band with backoff. Settings export/import with secrets held back. Per-coin discount or surcharge, applied once in pricing and mirrored as an order fee line. Confirmations tiered by order value. Bundled translations refreshed |
 
 ---

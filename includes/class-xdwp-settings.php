@@ -53,8 +53,6 @@ class Xdwp_Settings {
 			'etherscan_api_key' => 'XDWP_ETHERSCAN_API_KEY',
 			'trongrid_api_key'  => 'XDWP_TRONGRID_API_KEY',
 			'helius_api_key'    => 'XDWP_HELIUS_API_KEY',
-			'subscan_api_key'   => 'XDWP_SUBSCAN_API_KEY',
-			'viewblock_api_key' => 'XDWP_VIEWBLOCK_API_KEY',
 			'aptos_api_key'     => 'XDWP_APTOS_API_KEY',
 		);
 	}
@@ -190,8 +188,6 @@ class Xdwp_Settings {
 			'etherscan_api_key',
 			'trongrid_api_key',
 			'helius_api_key',
-			'subscan_api_key',
-			'viewblock_api_key',
 			'aptos_api_key',
 		) as $text_key ) {
 			if ( ! isset( $input[ $text_key ] ) ) {

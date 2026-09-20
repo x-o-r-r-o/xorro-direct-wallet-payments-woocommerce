@@ -42,8 +42,6 @@ class Xdwp_Backup {
 			'etherscan_api_key',
 			'trongrid_api_key',
 			'helius_api_key',
-			'subscan_api_key',
-			'viewblock_api_key',
 			'aptos_api_key',
 			'webhook_secret',
 			'telegram_token',

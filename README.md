@@ -43,7 +43,7 @@ Each order gets a slightly unique amount (usually a few base units, e.g. 10 sato
 
 ### Supported coins
 
-**Native coins (71):** BTC, BCH, ETH, LTC, DOGE, DASH, ZEC, XEC, BNB, SOL, TRX, XMR, XRP, POL (MATIC), AVAX, XLM, DOT, ATOM, SCRT, SEI, INJ, EOS, ETC, ZIL, FIL, ALGO, HBAR, CRO, FTM, EGLD, NEAR, ADA, APT, KAS, TON, BTG, FIRO, RVN, PIVX, NEO, GAS, THETA, TFUEL, DGB, KMD, QTUM, ARK, AE, ICX, ONT, KLV, TET, XEM, XYM, RUNE, IOTX, STRAX, IOTA, ONE, PLS, SYS (NEVM), BRISE, XDC, XTZ, XNO, WAVES, KAIA and more.
+**Native coins (69):** BTC, BCH, ETH, LTC, DOGE, DASH, ZEC, XEC, BNB, SOL, TRX, XMR, XRP, POL (MATIC), AVAX, XLM, ATOM, SCRT, SEI, INJ, EOS, ETC, FIL, ALGO, HBAR, CRO, FTM, EGLD, NEAR, ADA, APT, KAS, TON, BTG, FIRO, RVN, PIVX, NEO, GAS, THETA, TFUEL, DGB, KMD, QTUM, ARK, AE, ICX, ONT, KLV, TET, XEM, XYM, RUNE, IOTX, STRAX, IOTA, ONE, PLS, SYS (NEVM), BRISE, XDC, XTZ, XNO, WAVES, KAIA and more.
 
 **Tokens (164):** stablecoins (USDT, USDC, DAI, TUSD, USDP, GUSD, PYUSD, USDe, USDD, EURT, XAUT…) and popular tokens such as LINK, UNI, AAVE, SHIB, PEPE, FLOKI, APE, LDO, GRT, 1INCH, CAKE, Notcoin, DOGS, Hamster Kombat and LayerZero.
 
@@ -85,8 +85,6 @@ Everything works without keys, but free keys raise rate limits and some chains n
 | Etherscan (API V2) | Automatic detection on Ethereum and other EVM chains. Some chains (e.g. BNB Chain, Base) may need a paid plan; the plugin tells you if Etherscan rejects them. | [etherscan.io/apis](https://etherscan.io/apis) |
 | TronGrid | Higher TRON limits | [trongrid.io](https://www.trongrid.io/) |
 | Helius | Solana and SPL tokens | [helius.dev](https://www.helius.dev/) |
-| Subscan | Polkadot | [subscan.io](https://www.subscan.io/) |
-| ViewBlock | Zilliqa | [viewblock.io](https://viewblock.io/api) |
 | Aptos | Aptos (APT) | [aptoslabs.com](https://aptoslabs.com/developers) |
 
 Keys can also be set in `wp-config.php` so they are never stored in the database: `XDWP_COINGECKO_API_KEY`, `XDWP_ETHERSCAN_API_KEY`, `XDWP_TRONGRID_API_KEY`, `XDWP_HELIUS_API_KEY`, `XDWP_SUBSCAN_API_KEY`, `XDWP_VIEWBLOCK_API_KEY`, `XDWP_APTOS_API_KEY`.

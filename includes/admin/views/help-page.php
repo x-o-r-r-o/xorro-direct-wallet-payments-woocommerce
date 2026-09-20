@@ -309,9 +309,9 @@ $xdwp_sections = array(
 									esc_html__( 'Adds an approximate crypto figure next to your normal prices. It is a rough guide for shoppers, not the amount they will be quoted at checkout.', 'xorro-direct-wallet-payments-woocommerce' )
 								);
 								$xdwp_setting(
-									__( 'Etherscan, TronGrid, Helius, Subscan, ViewBlock and Aptos keys', 'xorro-direct-wallet-payments-woocommerce' ),
+									__( 'Etherscan, TronGrid, Helius, Aptos and Blockchair keys', 'xorro-direct-wallet-payments-woocommerce' ),
 									__( 'Prices & APIs', 'xorro-direct-wallet-payments-woocommerce' ),
-									esc_html__( 'Most chains are read through free public explorers and need nothing from you. A few work better — or at all — with a free key of your own: Etherscan (for Ethereum and the chains it covers), TronGrid, Helius for Solana, Subscan for Polkadot, ViewBlock for Zilliqa. The plugin tells you on screen when a key is missing rather than failing quietly.', 'xorro-direct-wallet-payments-woocommerce' )
+									esc_html__( 'Most chains are read through free public explorers and need nothing from you. A few work better — or at all — with a free key of your own: Etherscan (for Ethereum and the chains it covers), TronGrid, Helius for Solana, Aptos, and Blockchair for Dogecoin, Bitcoin Cash, Zcash, Dash and eCash. The plugin tells you on screen when a key is missing rather than failing quietly.', 'xorro-direct-wallet-payments-woocommerce' )
 								);
 								?>
 								</tbody>

@@ -45,7 +45,6 @@ class Xdwp_Coins {
 			'MATIC'=> self::def( 'MATIC', 'Polygon (POL)', 'polygon-pos', 'polygon-ecosystem-token', 'native', 18, 'matic' ),
 			'AVAX' => self::def( 'AVAX', 'Avalanche', 'avalanche', 'avalanche-2', 'native', 18, 'avax' ),
 			'XLM'  => self::def( 'XLM', 'Stellar', 'stellar', 'stellar', 'native', 7, 'xlm' ),
-			'DOT'  => self::def( 'DOT', 'Polkadot', 'polkadot', 'polkadot', 'native', 10, 'dot' ),
 			'ATOM' => self::def( 'ATOM', 'Cosmos', 'cosmos', 'cosmos', 'native', 6, 'atom' ),
 			'SCRT' => self::def( 'SCRT', 'Secret', 'secret', 'secret', 'native', 6, 'scrt' ),
 			'SEI'  => self::def( 'SEI', 'Sei', 'sei', 'sei-network', 'native', 6, 'sei' ),
@@ -54,7 +53,6 @@ class Xdwp_Coins {
 			'INJ_NATIVE' => self::def( 'INJ_NATIVE', 'Injective', 'injective', 'injective-protocol', 'native', 18, 'inj', '', 'inj_native', 'INJ' ),
 			'EOS'  => self::def( 'EOS', 'EOS', 'eos', 'eos', 'native', 4, 'eos' ),
 			'ETC'  => self::def( 'ETC', 'Ethereum Classic', 'ethereum-classic', 'ethereum-classic', 'native', 18, 'etc' ),
-			'ZIL'  => self::def( 'ZIL', 'Zilliqa', 'zilliqa', 'zilliqa', 'native', 12, 'zil' ),
 			'FIL'  => self::def( 'FIL', 'Filecoin', 'filecoin', 'filecoin', 'native', 18, 'fil' ),
 			'ALGO' => self::def( 'ALGO', 'Algorand', 'algorand', 'algorand', 'native', 6, 'algo' ),
 			'HBAR' => self::def( 'HBAR', 'Hedera', 'hedera-hashgraph', 'hedera-hashgraph', 'native', 8, 'hbar' ),
@@ -544,8 +542,6 @@ class Xdwp_Coins {
 			'egld'       => 'https://explorer.multiversx.com/transactions/%s',
 			'fil'        => 'https://filfox.info/en/message/%s',
 			'eos'        => 'https://bloks.io/transaction/%s',
-			'dot'        => 'https://polkadot.subscan.io/extrinsic/%s',
-			'zil'        => 'https://viewblock.io/zilliqa/tx/%s',
 			'iota'       => 'https://explorer.iota.org/mainnet/search/%s',
 			'icx'        => 'https://tracker.icon.community/transaction/%s',
 			'ont'        => 'https://explorer.ont.io/transaction/%s',
@@ -814,7 +810,7 @@ class Xdwp_Coins {
 	public static function instant_finality_chains() {
 		return array(
 			'xrp', 'xlm', 'hbar', 'near', 'atom', 'scrt', 'sei', 'inj_native', 'ton', 'eos',
-			'dot', 'zil', 'apt', 'egld', 'fil', 'xno', 'theta', 'tfuel', 'iota', 'icx',
+			'apt', 'egld', 'fil', 'xno', 'theta', 'tfuel', 'iota', 'icx',
 			'ont', 'klv', 'tet', 'rune',
 		);
 	}
@@ -1154,11 +1150,9 @@ class Xdwp_Coins {
 			'APE'   => 'ape',
 			'SHIB'  => 'shib',
 			'PEPE'  => 'pepe',
-			'DOT'   => 'dot',
 			'ATOM'  => 'atom',
 			'EOS'   => 'eos',
 			'ETC'   => 'etc',
-			'ZIL'   => 'zil',
 			'FIL'   => 'fil',
 			'ALGO'  => 'algo',
 			'HBAR'  => 'hbar',
@@ -1693,7 +1687,7 @@ class Xdwp_Coins {
 		$supported = array(
 			'btc', 'bch', 'ltc', 'doge', 'dash', 'zec', 'xec', 'eth', 'ethereum', 'arbitrum', 'optimism', 'base', 'bsc', 'matic', 'avax', 'ftm', 'cro', 'etc',
 			'sol', 'solana', 'trx', 'tron', 'xrp', 'xlm',
-			'algo', 'hbar', 'near', 'atom', 'scrt', 'sei', 'inj_native', 'egld', 'fil', 'eos', 'dot', 'zil',
+			'algo', 'hbar', 'near', 'atom', 'scrt', 'sei', 'inj_native', 'egld', 'fil', 'eos',
 			'ton', 'ada', 'apt', 'kas', 'one', 'pls', 'sysevm', 'boba', 'brise', 'xdc',
 			'xtz', 'xno', 'waves',
 			'btg', 'firo', 'xzc', 'rvn', 'pivx', 'neo', 'gas', 'theta', 'tfuel',
