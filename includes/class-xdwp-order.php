@@ -27,6 +27,45 @@ class Xdwp_Order {
 	const LOOK_BUDGET_KEY = 'xdwp_ajax_verify_budget';
 
 	/**
+	 * A way back to an unfinished crypto payment, from the customer's own orders list.
+	 *
+	 * Somebody who closed the tab, or whose window ran out while they were finding their wallet,
+	 * otherwise has to go looking through their email for the link. WooCommerce's own "Pay"
+	 * button sends them back through checkout, which for this gateway would quote them a second
+	 * time rather than showing them the payment they already have.
+	 *
+	 * @param array    $actions Actions WooCommerce already offers.
+	 * @param WC_Order $order   Order.
+	 * @return array
+	 */
+	public static function my_account_actions( $actions, $order ) {
+		if ( ! is_array( $actions ) || ! $order instanceof WC_Order || ! self::is_ours( $order ) ) {
+			return $actions;
+		}
+
+		$status = (string) self::meta( $order, 'status' );
+		if ( ! in_array( $status, array( 'awaiting', 'underpaid', 'expired' ), true ) ) {
+			return $actions;
+		}
+		if ( $order->is_paid() || in_array( $order->get_status(), array( 'cancelled', 'refunded' ), true ) ) {
+			return $actions;
+		}
+
+		// WooCommerce's own pay action would start checkout again and mint a second quote for
+		// an order that already has one, so it is replaced rather than sat beside.
+		unset( $actions['pay'] );
+
+		$actions['xdwp_pay'] = array(
+			'url'  => $order->get_checkout_order_received_url(),
+			'name' => 'expired' === $status
+				? __( 'Get a new amount', 'xorro-direct-wallet-payments-woocommerce' )
+				: __( 'Finish paying', 'xorro-direct-wallet-payments-woocommerce' ),
+		);
+
+		return $actions;
+	}
+
+	/**
 	 * Look now, and say what was found in words a customer can act on.
 	 *
 	 * Someone who has sent money and sees nothing happen will either pay again or email the
@@ -217,6 +256,9 @@ class Xdwp_Order {
 		add_action( 'add_meta_boxes', array( __CLASS__, 'add_order_metabox' ) );
 		add_action( 'woocommerce_admin_order_data_after_billing_address', array( __CLASS__, 'admin_order_info' ), 10, 1 );
 		add_action( 'admin_post_xdwp_mark_paid', array( __CLASS__, 'handle_mark_paid' ) );
+		// An unfinished crypto payment is reachable from the customer's own order list, where
+		// they will look for it — not only from the emailed link, which is easy to lose.
+		add_filter( 'woocommerce_my_account_my_orders_actions', array( __CLASS__, 'my_account_actions' ), 10, 2 );
 		add_action( 'admin_notices', array( __CLASS__, 'mark_paid_notice' ) );
 		add_filter( 'woocommerce_get_price_html', array( __CLASS__, 'maybe_append_crypto_price' ), 20, 2 );
 		add_action( 'woocommerce_order_status_changed', array( __CLASS__, 'on_status_changed' ), 10, 4 );

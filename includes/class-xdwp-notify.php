@@ -331,6 +331,40 @@ class Xdwp_Notify {
 	}
 
 	/**
+	 * Something happened that the shop needs to know about straight away.
+	 *
+	 * Sent now rather than queued, and never through the ordinary event filter a merchant can
+	 * switch off. The one case this exists for is a payout address changing: if somebody has
+	 * taken over an admin account, they have the mailbox too, and an emailed warning that only
+	 * reaches that mailbox warns nobody. A webhook or a Telegram message goes somewhere else.
+	 *
+	 * @param string $message Plain sentence, for Telegram and for a person.
+	 * @param array  $extra   Machine-readable detail for the webhook.
+	 */
+	public static function security_alert( $message, array $extra = array() ) {
+		$payload = array_merge(
+			array(
+				'event'   => 'security',
+				'message' => (string) $message,
+				'site'    => home_url(),
+				'time'    => time(),
+			),
+			$extra
+		);
+
+		$url = trim( (string) Xdwp_Settings::get( 'webhook_url', '' ) );
+		if ( '' !== $url ) {
+			self::post_webhook( $url, $payload );
+		}
+
+		$token = trim( (string) Xdwp_Settings::get( 'telegram_token', '' ) );
+		$chat  = trim( (string) Xdwp_Settings::get( 'telegram_chat', '' ) );
+		if ( '' !== $token && '' !== $chat ) {
+			self::post_telegram( $token, $chat, (string) $message );
+		}
+	}
+
+	/**
 	 * Send one message now, so a shop can see whether it arrives.
 	 *
 	 * @return array{webhook:?bool, telegram:?bool} Null where nothing is configured.

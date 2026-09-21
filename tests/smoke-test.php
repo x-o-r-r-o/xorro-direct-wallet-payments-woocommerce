@@ -714,6 +714,31 @@ xdwp_assert(
 	'and its scheme survives escaping rather than being stripped'
 );
 
+// A payout address changing is the single most dangerous edit on this settings page, and an
+// attacker holding an admin account usually holds the mailbox that account can reset — so the
+// warning has to leave by more than one road, and say where the change came from.
+$xdwp_admin_src = file_get_contents( $root . '/includes/admin/class-xdwp-admin.php' );
+xdwp_assert( false !== strpos( $xdwp_admin_src, 'Xdwp_Notify::security_alert(' ), 'a payout-address change also leaves by webhook and Telegram' );
+xdwp_assert( false !== strpos( $xdwp_admin_src, "\$_SERVER['REMOTE_ADDR']" ), 'and records where the change came from' );
+$xdwp_notify_src = file_get_contents( $root . '/includes/class-xdwp-notify.php' );
+xdwp_assert( false !== strpos( $xdwp_notify_src, 'function security_alert' ), 'security alerts have a channel of their own' );
+// It must not be silenced by the ordinary per-event switches a merchant can turn off.
+xdwp_assert(
+	false === strpos( substr( $xdwp_notify_src, strpos( $xdwp_notify_src, 'function security_alert' ), 1200 ), 'self::wanted(' ),
+	'and cannot be switched off with the ordinary alerts'
+);
+
+// An unfinished payment is reachable from the customer's own orders list, not only the email.
+xdwp_assert( false !== strpos( $xdwp_order_src, 'woocommerce_my_account_my_orders_actions' ), 'an unfinished payment is reachable from My Account' );
+xdwp_assert( false !== strpos( $xdwp_order_src, "unset( \$actions['pay'] );" ), "and WooCommerce's own Pay button is replaced, not sat beside" );
+
+// Two figures shops ask for by name, from numbers already counted.
+$xdwp_report_src = file_get_contents( $root . '/includes/admin/class-xdwp-payments-admin.php' );
+xdwp_assert( false !== strpos( $xdwp_report_src, "\$report['conversion']" ), 'the report works out how many who were quoted actually paid' );
+xdwp_assert( false !== strpos( $xdwp_report_src, '$report[\'average\']' ), 'and what a paid order was worth on average' );
+// A report cached before a figure existed would be read back without it.
+xdwp_assert( false !== strpos( $xdwp_report_src, "'xdwp_report_v2_'" ), 'and the cache key changed so an older cached report is not reused' );
+
 // WooCommerce asks a gateway whether it is ready before offering the enable toggle, and links
 // the transaction id on the order screen only if the gateway says where the link goes.
 $xdwp_gateway_src = file_get_contents( $root . '/includes/class-xdwp-gateway.php' );

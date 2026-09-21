@@ -653,7 +653,9 @@ class Xdwp_Payments_Admin {
 
 		$days  = max( 1, min( 365, (int) $days ) );
 		$since = time() - ( $days * DAY_IN_SECONDS );
-		$key   = 'xdwp_report_' . $days;
+		// The suffix is the shape of the result, not the plugin version: a report cached before
+		// a new figure existed would be read back without it. Bumped when a key is added.
+		$key   = 'xdwp_report_v2_' . $days;
 		$cached = get_transient( $key );
 		if ( is_array( $cached ) ) {
 			return $cached;
@@ -795,6 +797,22 @@ class Xdwp_Payments_Admin {
 			unset( $report['coins'][ $coin_id ]['times'] );
 		}
 		$report['settle'] = self::median( $settle_all );
+
+		// Two figures a shop owner asks for by name, from numbers already counted above. How
+		// many of the people who chose a coin actually paid, and what a paid order was worth on
+		// average — the second deliberately over paid orders only, because dividing takings by
+		// quotes would answer a question nobody asked.
+		$report['conversion'] = $report['quoted'] > 0
+			? round( ( $report['paid'] / $report['quoted'] ) * 100, 1 )
+			: null;
+		// bcmath is not guaranteed, and an average of takings is a display figure rather than an
+		// amount anybody sends — a float is honest here in a way it never is for a payment.
+		$report['average'] = null;
+		if ( $report['paid'] > 0 ) {
+			$report['average'] = function_exists( 'bcdiv' )
+				? bcdiv( (string) $report['value'], (string) $report['paid'], wc_get_price_decimals() )
+				: (string) round( (float) $report['value'] / (int) $report['paid'], wc_get_price_decimals() );
+		}
 
 		// Busiest coin first: the one taking the most money is the one worth looking at.
 		uasort(

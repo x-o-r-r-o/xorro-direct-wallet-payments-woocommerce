@@ -4,7 +4,7 @@ Tags: woocommerce, cryptocurrency, bitcoin, ethereum, payments, usdt, crypto che
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.25.1
+Stable tag: 1.26.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -338,6 +338,11 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 * QR Code generator (`assets/js/qrcode.min.js`) — MIT-licensed library by davidshimjs (https://github.com/davidshimjs/qrcodejs). Source is publicly available; the bundled file is minified for production use.
 
 == Changelog ==
+
+= 1.26.0 =
+* Security: a payout address changing now also goes out by webhook and Telegram, not only by email, and the warning says which IP address the change came from. Somebody who has taken over an admin account usually controls the mailbox that account can reset, so an emailed warning is the one they can be sure of intercepting — this gives it a second road out. It cannot be switched off with the ordinary alerts
+* New: two figures on the Payments report that shops ask for by name — how many of the people quoted a coin actually paid, and what a paid order was worth on average. Both come from numbers already counted, so they cost nothing
+* New: an unfinished crypto payment is now reachable from the customer's own Orders list in My Account, as "Finish paying", or "Get a new amount" once the window has closed. Somebody who closed the tab otherwise has to go hunting through their email. WooCommerce's own Pay button is replaced rather than sat beside it, because that one sends them back through checkout and would quote a second time for an order that already has a quote
 
 = 1.25.1 =
 * Fixed: vendor payouts never activated on Dokan. The function the plugin looked for does not exist — the real one is named differently and returns an object unless you ask it for an id. Because every such call is guarded, the result was that Dokan shops saw the feature do nothing at all rather than break, but it did nothing

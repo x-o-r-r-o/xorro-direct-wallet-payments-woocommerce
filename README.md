@@ -289,6 +289,12 @@ Pushing a `vX.Y.Z` tag runs the Release workflow, which builds the ZIP, its SHA-
 
 Full details for every release are in [`readme.txt`](readme.txt).
 
+### 1.26.0 — a second road out, and two figures worth counting
+
+- **Security:** a payout-address change now also leaves by webhook and Telegram, and names the IP it came from. Whoever takes over an admin account usually controls the mailbox it can reset — email alone is the warning they can intercept. Not switchable off with the ordinary alerts
+- New: **conversion rate** and **average paid order** on the Payments report, from numbers already counted
+- New: an unfinished payment is reachable from **My Account** — "Finish paying", or "Get a new amount" after expiry. Replaces WooCommerce's Pay button, which would re-quote an order that already has a quote
+
 ### 1.25.1 — the marketplace function names, checked against source
 
 - Fixed: vendor payouts **never activated on Dokan** — the function looked for doesn't exist, and the real one returns an object unless asked for an id. Guarded calls meant it did nothing rather than breaking, but it did nothing

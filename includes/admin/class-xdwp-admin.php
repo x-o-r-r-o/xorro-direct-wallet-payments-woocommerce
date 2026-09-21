@@ -476,16 +476,45 @@ class Xdwp_Admin {
 			return;
 		}
 
-		$user = wp_get_current_user();
+		$user  = wp_get_current_user();
+		$who   = ( $user && $user->exists() ) ? $user->user_login : __( 'an unknown user', 'xorro-direct-wallet-payments-woocommerce' );
+		$when  = current_time( 'mysql' );
+		// Where from, as well as who and when. "Was that me, from the office?" is the first
+		// question anybody asks on reading one of these, and a login alone cannot answer it.
+		$where = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
+		$where = '' === $where ? __( 'an unknown address', 'xorro-direct-wallet-payments-woocommerce' ) : $where;
+
 		$body = sprintf(
-			/* translators: 1: site URL, 2: user login, 3: user ID, 4: date/time, 5: list of changed wallets */
-			__( "A Xorro Wallet Payments payout address was changed on %1\$s by %2\$s (user #%3\$d) at %4\$s.\n\nIf this wasn't you, secure this account immediately — this controls where future customer crypto payments are sent, and non-custodial crypto payments cannot be reversed once sent.\n\n%5\$s", 'xorro-direct-wallet-payments-woocommerce' ),
+			/* translators: 1: site URL, 2: user login, 3: user ID, 4: date/time, 5: IP address, 6: list of changed wallets */
+			__( "A Xorro Wallet Payments payout address was changed on %1\$s by %2\$s (user #%3\$d) at %4\$s, from %5\$s.\n\nIf this wasn't you, secure this account immediately — this controls where future customer crypto payments are sent, and non-custodial crypto payments cannot be reversed once sent.\n\n%6\$s", 'xorro-direct-wallet-payments-woocommerce' ),
 			home_url( '/' ),
-			( $user && $user->exists() ) ? $user->user_login : __( 'an unknown user', 'xorro-direct-wallet-payments-woocommerce' ),
+			$who,
 			$user ? (int) $user->ID : 0,
-			current_time( 'mysql' ),
+			$when,
+			$where,
 			implode( "\n\n", $changes )
 		);
+
+		// Also out through the alert channels, if there are any. An attacker who holds an admin
+		// account usually holds the mailbox that account can reset, so an email to that same
+		// mailbox is the one warning they can be sure of intercepting.
+		if ( class_exists( 'Xdwp_Notify' ) ) {
+			Xdwp_Notify::security_alert(
+				sprintf(
+					/* translators: 1: user login, 2: IP address, 3: site URL */
+					__( 'A crypto payout address was just changed by %1$s from %2$s on %3$s. If that was not you, this is where your customers\' payments will now go.', 'xorro-direct-wallet-payments-woocommerce' ),
+					$who,
+					$where,
+					home_url( '/' )
+				),
+				array(
+					'kind' => 'payout_address_changed',
+					'user' => $user ? (int) $user->ID : 0,
+					'ip'   => $where,
+					'at'   => $when,
+				)
+			);
+		}
 
 		wp_mail(
 			get_option( 'admin_email' ),

@@ -157,6 +157,21 @@ $cards = array(
 								<span class="xdwp-figure__label"><?php esc_html_e( 'Typical wait', 'xorro-direct-wallet-payments-woocommerce' ); ?></span>
 								<span class="xdwp-figure__hint"><?php esc_html_e( 'from quote to confirmed', 'xorro-direct-wallet-payments-woocommerce' ); ?></span>
 							</div>
+							<?php // Two figures shops ask for by name. Both are worked out from numbers already counted, so they cost nothing to show. ?>
+							<?php if ( ! empty( $report['conversion'] ) ) : ?>
+								<div class="xdwp-figure">
+									<span class="xdwp-figure__value"><?php echo esc_html( number_format_i18n( (float) $report['conversion'], 1 ) . '%' ); ?></span>
+									<span class="xdwp-figure__label"><?php esc_html_e( 'Chose and paid', 'xorro-direct-wallet-payments-woocommerce' ); ?></span>
+									<span class="xdwp-figure__hint"><?php esc_html_e( 'of everyone quoted a coin', 'xorro-direct-wallet-payments-woocommerce' ); ?></span>
+								</div>
+							<?php endif; ?>
+							<?php if ( ! empty( $report['average'] ) ) : ?>
+								<div class="xdwp-figure">
+									<span class="xdwp-figure__value"><?php echo wp_kses_post( wc_price( (float) $report['average'] ) ); ?></span>
+									<span class="xdwp-figure__label"><?php esc_html_e( 'Average order', 'xorro-direct-wallet-payments-woocommerce' ); ?></span>
+									<span class="xdwp-figure__hint"><?php esc_html_e( 'across the ones that were paid', 'xorro-direct-wallet-payments-woocommerce' ); ?></span>
+								</div>
+							<?php endif; ?>
 							<div class="xdwp-figure">
 								<span class="xdwp-figure__value"><?php echo esc_html( Xdwp_Payments_Admin::rate( (int) $report['expired'], (int) $report['quoted'] ) ); ?></span>
 								<span class="xdwp-figure__label"><?php esc_html_e( 'Walked away', 'xorro-direct-wallet-payments-woocommerce' ); ?></span>
