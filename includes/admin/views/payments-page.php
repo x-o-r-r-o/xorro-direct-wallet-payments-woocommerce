@@ -242,6 +242,14 @@ $cards = array(
 					<?php endif; ?>
 				</section>
 
+				<?php
+				// Only where at least one enabled coin's chain can be read this way; otherwise
+				// the section would exist only to say it cannot do anything.
+				if ( class_exists( 'Xdwp_Reconcile' ) && Xdwp_Reconcile::available() ) {
+					require XDWP_PATH . 'includes/admin/views/reconcile-ui.php';
+				}
+				?>
+
 				<form method="get" action="" class="xdwp-filters">
 					<input type="hidden" name="page" value="xorro-direct-wallet-payments-woocommerce-payments" />
 					<label for="xdwp-filter-status" class="screen-reader-text"><?php esc_html_e( 'Payment state', 'xorro-direct-wallet-payments-woocommerce' ); ?></label>

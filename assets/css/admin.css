@@ -2322,3 +2322,69 @@ body.xdwp-admin-page #wpbody-content > .wrap > h1.wp-heading-inline {
 	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 	font-size: 11px;
 }
+
+/* ---------------------------------------------------------------------------
+   Money with no order.
+   Sits between the report and the table because it is something to act on, not
+   something to read — but it is not the main list, so it stays visually quieter
+   than the payments table itself.
+   --------------------------------------------------------------------------- */
+.xdwp-reconcile {
+	margin: 1.25rem 0;
+	padding: 1rem 1.1rem;
+	border: 1px solid #e6e7e8;
+	border-radius: 8px;
+	background: #fff;
+	overflow-x: clip;
+}
+
+.xdwp-reconcile__head {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.75rem;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.xdwp-reconcile__title {
+	margin: 0;
+	font-size: 14px;
+}
+
+.xdwp-reconcile__lead,
+.xdwp-reconcile__empty,
+.xdwp-reconcile__when,
+.xdwp-reconcile__note {
+	margin: 0.5rem 0 0;
+	font-size: 12px;
+	line-height: 1.55;
+	color: #50575e;
+}
+
+.xdwp-reconcile__clear {
+	margin: 0.75rem 0 0;
+	font-size: 13px;
+	font-weight: 600;
+	color: #17663a;
+}
+
+.xdwp-reconcile__table {
+	margin-top: 0.85rem;
+	table-layout: fixed;
+	width: 100%;
+}
+
+.xdwp-reconcile__table th,
+.xdwp-reconcile__table td {
+	overflow: hidden;
+	overflow-wrap: anywhere;
+	vertical-align: top;
+}
+
+/* An address and a transaction id are long and have no natural break, so they get
+   the room and a smaller face rather than pushing the table sideways. */
+.xdwp-reconcile__addr,
+.xdwp-reconcile__txid {
+	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	font-size: 11px;
+}

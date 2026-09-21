@@ -289,6 +289,13 @@ Pushing a `vX.Y.Z` tag runs the Release workflow, which builds the ZIP, its SHA-
 
 Full details for every release are in [`readme.txt`](readme.txt).
 
+### 1.21.0 — money with no order
+
+- New: a reconciliation screen that reads your receiving addresses and subtracts every transfer the plugin can account for. What's left is money no order explains — invisible to the ordinary check, which only ever asks about one expected amount
+- **It refuses to overstate itself.** BTC, BCH, LTC, DOGE, DASH, ZEC, XEC, all EVM chains, BTG, FIRO, RVN, PIVX, ONE, PLS, SYS, BOBA and BRISE can be listed. The rest are named as unchecked, and an explorer that refused to answer is reported separately — an empty result never reads as an all-clear
+- Reads and reports only: no order is altered by a scan, and it runs only when you ask
+- Integer arithmetic throughout, so an 18-decimal amount beyond PHP's number range stays exact
+
 ### 1.20.0 — tell the customer what actually happened
 
 - New: **"I have sent the payment" now answers**. It reads the chain and reports confirmed / arrived and confirming / part-paid with the exact shortfall / nothing yet. The confirming answer is what stops a second payment

@@ -30,6 +30,7 @@ class Xdwp_Payments_Admin {
 
 		add_action( 'admin_post_xdwp_export_payments', array( __CLASS__, 'export_csv' ) );
 		add_action( 'admin_post_xdwp_row_action', array( __CLASS__, 'handle_row_action' ) );
+		add_action( 'admin_post_xdwp_reconcile', array( __CLASS__, 'handle_reconcile' ) );
 
 		// Legacy order storage and HPOS ask for the same thing in two different filters.
 		add_filter( 'woocommerce_shop_order_search_fields', array( __CLASS__, 'search_fields' ) );
@@ -299,6 +300,28 @@ class Xdwp_Payments_Admin {
 			}
 		}
 		fclose( $out );
+		exit;
+	}
+
+	/**
+	 * Read the shop's addresses and look for money no order accounts for.
+	 *
+	 * Reads chains and writes nothing to any order, but it does spend the merchant's explorer
+	 * quota, so it is a deliberate act behind a capability check and a nonce rather than
+	 * something a page load can trigger.
+	 */
+	public static function handle_reconcile() {
+		if ( ! current_user_can( 'manage_woocommerce' ) ) {
+			wp_die( esc_html__( 'You are not allowed to do that.', 'xorro-direct-wallet-payments-woocommerce' ), 403 );
+		}
+		check_admin_referer( 'xdwp_reconcile' );
+
+		Xdwp_Reconcile::forget();
+		Xdwp_Reconcile::scan();
+
+		$back = wp_get_referer();
+		$back = $back ? $back : admin_url( 'admin.php?page=xorro-direct-wallet-payments-woocommerce-payments' );
+		wp_safe_redirect( add_query_arg( 'xdwp_reconciled', '1', remove_query_arg( 'xdwp_reconciled', $back ) ) );
 		exit;
 	}
 

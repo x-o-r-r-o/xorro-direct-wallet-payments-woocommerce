@@ -4,7 +4,7 @@ Tags: woocommerce, cryptocurrency, bitcoin, ethereum, payments, usdt, crypto che
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.20.0
+Stable tag: 1.21.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -338,6 +338,12 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 * QR Code generator (`assets/js/qrcode.min.js`) — MIT-licensed library by davidshimjs (https://github.com/davidshimjs/qrcodejs). Source is publicly available; the bundled file is minified for production use.
 
 == Changelog ==
+
+= 1.21.0 =
+* New: "Money with no order" on the Payments screen. It reads your receiving addresses and subtracts every transfer the plugin can already account for; what is left is money you have that no order explains — a customer paying from an address they saved, a second payment for an order already settled, or a payment that arrived after an order was cancelled. None of that is visible to the ordinary payment check, which only ever asks whether one expected amount has turned up
+* It will not tell you what it does not know. Bitcoin, Bitcoin Cash, Litecoin, Dogecoin, Dash, Zcash, eCash, Ethereum and every EVM chain, Bitcoin Gold, Firo, Ravencoin, PIVX, Harmony, PulseChain, Syscoin, Boba and Bitgert can be read this way. The rest cannot, and the screen names them rather than letting an empty result read as an all-clear. A coin whose explorer refused to answer is reported separately again, because that is not the same as finding nothing
+* Nothing on that screen changes an order. It reads chains and reports; what an unexplained transfer means is your decision, and a scan only runs when you press the button, because it spends your explorer allowance
+* Amounts are read with integer arithmetic throughout, so an 18-decimal balance larger than PHP can hold as a number is still exact
 
 = 1.20.0 =
 * New: a customer who has paid now gets a straight answer instead of a spinner. Pressing "I have sent the payment" reads the chain and says what was found — confirmed, arrived and waiting for confirmations, part-paid with the exact amount still owed, or nothing yet. The "waiting for confirmations" answer is the one that stops somebody paying a second time

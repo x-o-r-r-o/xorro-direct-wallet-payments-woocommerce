@@ -5877,4 +5877,515 @@ class Xdwp_Verifier {
 		$data = json_decode( wp_remote_retrieve_body( $response ), true );
 		return is_array( $data ) ? $data : null;
 	}
+	// -----------------------------------------------------------------------------------
+	// Listing transfers.
+	//
+	// Everything above answers one question: "is there a payment matching this amount?" That
+	// is all a gateway needs to confirm an order, and it is deliberately narrow — it never has
+	// to decide what an unfamiliar transfer means.
+	//
+	// Reconciling needs the opposite question: "what has arrived here?" Money can reach a
+	// receiving address with no order behind it at all — a customer paying from a saved address,
+	// a second payment for an order already settled, a transfer for an order that was cancelled
+	// weeks ago. None of that is visible to a matcher, because a matcher is only ever asked
+	// about one expected amount.
+	//
+	// These functions are written apart from the matching path and share none of its state, so
+	// nothing here can change whether a payment is credited. Only some chains can be read this
+	// way; can_list() says which, and the reconciliation screen reports the rest as unchecked
+	// rather than implying there was nothing to find.
+	// -----------------------------------------------------------------------------------
+
+	/**
+	 * How far back a reconciliation scan reads, and how many transfers it will take from one
+	 * address before it stops asking.
+	 */
+	const LIST_MAX = 25;
+
+	/**
+	 * Whether transfers to an address on this chain can be listed.
+	 *
+	 * @param string $verifier Coin's verifier key.
+	 * @return bool
+	 */
+	public static function can_list( $verifier ) {
+		// A coin definition can come from a third-party filter, so this is not always a string.
+		if ( ! is_scalar( $verifier ) ) {
+			return false;
+		}
+		return in_array( (string) $verifier, self::listable_verifiers(), true );
+	}
+
+	/**
+	 * The chains whose explorers answer "what has arrived here?", not just "is this amount here?".
+	 *
+	 * @return array<int, string>
+	 */
+	public static function listable_verifiers() {
+		return array(
+			// Esplora-shaped.
+			'btc',
+			// Blockchair.
+			'bch', 'ltc', 'doge', 'dash', 'zec', 'xec',
+			// Etherscan V2, native and ERC-20.
+			'eth', 'ethereum', 'arbitrum', 'optimism', 'base', 'bsc', 'matic', 'avax', 'ftm', 'cro', 'etc',
+			// Blockbook.
+			'btg', 'firo', 'xzc', 'rvn', 'pivx',
+			// Etherscan-compatible clones.
+			'one', 'pls', 'sysevm', 'boba',
+			// Blockscout v2.
+			'brise',
+		);
+	}
+
+	/**
+	 * Every incoming transfer to an address that this plugin can see.
+	 *
+	 * @param array  $coin    Coin definition.
+	 * @param string $address Receiving address.
+	 * @param int    $since   Ignore anything older than this Unix timestamp.
+	 * @return array<int, array{txid:string,amount:string,time:int}>|null Null when this chain
+	 *                                                                   cannot be listed, which
+	 *                                                                   is not the same as none.
+	 */
+	public static function list_transfers( array $coin, $address, $since ) {
+		$verifier = isset( $coin['verifier'] ) ? (string) $coin['verifier'] : '';
+		$address  = is_scalar( $address ) ? (string) $address : '';
+		$since    = max( 0, (int) $since );
+
+		if ( '' === $address || ! self::can_list( $verifier ) ) {
+			return null;
+		}
+
+		$decimals = isset( $coin['decimals'] ) ? (int) $coin['decimals'] : 8;
+
+		switch ( $verifier ) {
+			case 'btc':
+				return self::list_esplora( 'https://blockstream.info/api', $address, $since, 8 );
+			case 'bch':
+				return self::list_blockchair( 'bitcoin-cash', $address, $since, 8 );
+			case 'ltc':
+				return self::list_blockchair( 'litecoin', $address, $since, 8 );
+			case 'doge':
+				return self::list_blockchair( 'dogecoin', $address, $since, 8 );
+			case 'dash':
+				return self::list_blockchair( 'dash', $address, $since, 8 );
+			case 'zec':
+				return self::list_blockchair( 'zcash', $address, $since, 8 );
+			case 'xec':
+				return self::list_blockchair( 'ecash', $address, $since, 2 );
+			case 'eth':
+			case 'ethereum':
+				return self::list_etherscan( 1, $address, $since, $coin );
+			case 'arbitrum':
+				return self::list_etherscan( 42161, $address, $since, $coin );
+			case 'optimism':
+				return self::list_etherscan( 10, $address, $since, $coin );
+			case 'base':
+				return self::list_etherscan( 8453, $address, $since, $coin );
+			case 'bsc':
+				return self::list_etherscan( 56, $address, $since, $coin );
+			case 'matic':
+				return self::list_etherscan( 137, $address, $since, $coin );
+			case 'avax':
+				return self::list_etherscan( 43114, $address, $since, $coin );
+			case 'ftm':
+				return self::list_etherscan( 250, $address, $since, $coin );
+			case 'cro':
+				return self::list_etherscan( 25, $address, $since, $coin );
+			case 'etc':
+				return self::list_etherscan( 61, $address, $since, $coin );
+			case 'btg':
+				return self::list_blockbook( 'https://btgexplorer.com', $address, $since, $decimals );
+			case 'firo':
+			case 'xzc':
+				return self::list_blockbook( 'https://blockbook.firo.org', $address, $since, $decimals );
+			case 'rvn':
+				return self::list_blockbook( 'https://blockbook.ravencoin.org', $address, $since, $decimals );
+			case 'pivx':
+				return self::list_blockbook( 'https://explorer.pivx.org', $address, $since, $decimals );
+			case 'one':
+				return self::list_etherscan_clone( 'https://explorer.harmony.one/api', $address, $since, $coin );
+			case 'pls':
+				return self::list_etherscan_clone( 'https://api.scan.pulsechain.com/api', $address, $since, $coin );
+			case 'sysevm':
+				return self::list_etherscan_clone( 'https://explorer.syscoin.org/api', $address, $since, $coin );
+			case 'boba':
+				return self::list_etherscan_clone( 'https://api.routescan.io/v2/network/mainnet/evm/288/etherscan/api', $address, $since, $coin );
+			case 'brise':
+				return self::list_blockscout( 'https://brisescan.com', $address, $since );
+		}
+
+		return null;
+	}
+
+	/**
+	 * An integer count of the smallest unit, as a decimal string. No float is involved.
+	 *
+	 * @param string $raw      Digits only.
+	 * @param int    $decimals Units per whole coin, as a power of ten.
+	 * @return string
+	 */
+	private static function raw_to_decimal( $raw, $decimals ) {
+		$raw      = preg_replace( '/\D/', '', (string) $raw );
+		$decimals = max( 0, min( 36, (int) $decimals ) );
+		if ( null === $raw || '' === $raw ) {
+			return '0';
+		}
+		if ( 0 === $decimals ) {
+			return ltrim( $raw, '0' ) === '' ? '0' : ltrim( $raw, '0' );
+		}
+		$raw   = str_pad( $raw, $decimals + 1, '0', STR_PAD_LEFT );
+		$whole = substr( $raw, 0, strlen( $raw ) - $decimals );
+		$frac  = substr( $raw, strlen( $raw ) - $decimals );
+		$whole = ltrim( $whole, '0' );
+		$whole = '' === $whole ? '0' : $whole;
+		$frac  = rtrim( $frac, '0' );
+		return '' === $frac ? $whole : $whole . '.' . $frac;
+	}
+
+	/**
+	 * One entry in a listing, in the shape every lister returns.
+	 *
+	 * @param string $txid   Transaction id.
+	 * @param string $amount Decimal amount received.
+	 * @param int    $time   Unix timestamp.
+	 * @return array{txid:string,amount:string,time:int}
+	 */
+	private static function transfer( $txid, $amount, $time ) {
+		return array(
+			'txid'   => (string) $txid,
+			'amount' => (string) $amount,
+			'time'   => (int) $time,
+		);
+	}
+
+	/**
+	 * Esplora — Blockstream, mempool.space and their clones.
+	 *
+	 * @param string $base     API base.
+	 * @param string $address  Address.
+	 * @param int    $since    Oldest timestamp of interest.
+	 * @param int    $decimals Decimals.
+	 * @return array|null
+	 */
+	private static function list_esplora( $base, $address, $since, $decimals = 8 ) {
+		$list = self::http_get( rtrim( $base, '/' ) . '/address/' . rawurlencode( $address ) . '/txs' );
+		if ( ! is_array( $list ) ) {
+			return null;
+		}
+
+		$found = array();
+		foreach ( array_slice( $list, 0, self::LIST_MAX ) as $tx ) {
+			if ( ! is_array( $tx ) || empty( $tx['status']['confirmed'] ) ) {
+				continue;
+			}
+			$time = isset( $tx['status']['block_time'] ) ? (int) $tx['status']['block_time'] : 0;
+			if ( ! $time || $time < $since || empty( $tx['vout'] ) || ! is_array( $tx['vout'] ) ) {
+				continue;
+			}
+			$raw = '0';
+			foreach ( $tx['vout'] as $vout ) {
+				$addr = isset( $vout['scriptpubkey_address'] ) ? (string) $vout['scriptpubkey_address'] : '';
+				if ( '' === $addr || ! hash_equals( $address, $addr ) ) {
+					continue;
+				}
+				$raw = self::add_digits( $raw, (string) ( isset( $vout['value'] ) ? $vout['value'] : 0 ) );
+			}
+			if ( '0' === $raw || ! isset( $tx['txid'] ) ) {
+				continue;
+			}
+			$found[] = self::transfer( $tx['txid'], self::raw_to_decimal( $raw, $decimals ), $time );
+		}
+		return $found;
+	}
+
+	/**
+	 * Blockchair — Bitcoin Cash, Litecoin, Dogecoin, Dash, Zcash and eCash.
+	 *
+	 * @param string $chain    Blockchair chain slug.
+	 * @param string $address  Address.
+	 * @param int    $since    Oldest timestamp of interest.
+	 * @param int    $decimals Decimals.
+	 * @return array|null
+	 */
+	private static function list_blockchair( $chain, $address, $since, $decimals = 8 ) {
+		$lookup = $address;
+		if ( 'bitcoin-cash' === $chain && 0 === stripos( $address, 'bitcoincash:' ) ) {
+			$lookup = substr( $address, strlen( 'bitcoincash:' ) );
+		} elseif ( 'ecash' === $chain && 0 === stripos( $address, 'ecash:' ) ) {
+			$lookup = substr( $address, strlen( 'ecash:' ) );
+		}
+
+		$url = sprintf( 'https://api.blockchair.com/%s/dashboards/address/%s?limit=%d', rawurlencode( $chain ), rawurlencode( $lookup ), self::LIST_MAX );
+		$key = trim( (string) Xdwp_Settings::get( 'blockchair_api_key', '' ) );
+		if ( '' !== $key ) {
+			$url = add_query_arg( 'key', rawurlencode( $key ), $url );
+		}
+		$response = self::http_get( $url );
+		$http     = self::last_http();
+		// Out of allowance is not "nothing arrived"; say so by refusing to answer.
+		if ( in_array( (int) $http['code'], array( 402, 429, 430 ), true ) ) {
+			return null;
+		}
+		if ( ! is_array( $response ) || empty( $response['data'] ) || ! is_array( $response['data'] ) ) {
+			return null;
+		}
+
+		$row = null;
+		if ( isset( $response['data'][ $lookup ] ) && is_array( $response['data'][ $lookup ] ) ) {
+			$row = $response['data'][ $lookup ];
+		} elseif ( isset( $response['data'][ $address ] ) && is_array( $response['data'][ $address ] ) ) {
+			$row = $response['data'][ $address ];
+		}
+		if ( ! $row ) {
+			return null;
+		}
+		if ( empty( $row['transactions'] ) || ! is_array( $row['transactions'] ) ) {
+			return array();
+		}
+
+		$found = array();
+		foreach ( array_slice( $row['transactions'], 0, self::LIST_MAX ) as $txid ) {
+			$tx = self::http_get( sprintf( 'https://api.blockchair.com/%s/dashboards/transaction/%s', rawurlencode( $chain ), rawurlencode( (string) $txid ) ) );
+			if ( ! is_array( $tx ) || empty( $tx['data'][ $txid ] ) ) {
+				continue;
+			}
+			$data = $tx['data'][ $txid ];
+			$time = isset( $data['transaction']['time'] ) ? (int) strtotime( (string) $data['transaction']['time'] ) : 0;
+			if ( ! $time || $time < $since || empty( $data['outputs'] ) || ! is_array( $data['outputs'] ) ) {
+				continue;
+			}
+			$raw = '0';
+			foreach ( $data['outputs'] as $out ) {
+				$recipient = isset( $out['recipient'] ) ? (string) $out['recipient'] : '';
+				if ( '' === $recipient || ( ! hash_equals( $lookup, $recipient ) && ! hash_equals( $address, $recipient ) ) ) {
+					continue;
+				}
+				$raw = self::add_digits( $raw, (string) ( isset( $out['value'] ) ? $out['value'] : 0 ) );
+			}
+			if ( '0' === $raw ) {
+				continue;
+			}
+			$found[] = self::transfer( (string) $txid, self::raw_to_decimal( $raw, $decimals ), $time );
+		}
+		return $found;
+	}
+
+	/**
+	 * Blockbook — Bitcoin Gold, Firo, Ravencoin, PIVX.
+	 *
+	 * @param string $base_api API base.
+	 * @param string $address  Address.
+	 * @param int    $since    Oldest timestamp of interest.
+	 * @param int    $decimals Decimals.
+	 * @return array|null
+	 */
+	private static function list_blockbook( $base_api, $address, $since, $decimals = 8 ) {
+		$base_api = rtrim( $base_api, '/' );
+		$list     = self::http_get( $base_api . '/api/v2/address/' . rawurlencode( $address ) . '?details=txids' );
+		if ( ! is_array( $list ) ) {
+			return null;
+		}
+		if ( empty( $list['txids'] ) || ! is_array( $list['txids'] ) ) {
+			return array();
+		}
+
+		$found = array();
+		foreach ( array_slice( $list['txids'], 0, self::LIST_MAX ) as $txid ) {
+			$tx = self::http_get( $base_api . '/api/v2/tx/' . rawurlencode( (string) $txid ) );
+			if ( ! is_array( $tx ) ) {
+				continue;
+			}
+			$time = isset( $tx['blockTime'] ) ? (int) $tx['blockTime'] : 0;
+			if ( ! $time || $time < $since || empty( $tx['vout'] ) || ! is_array( $tx['vout'] ) ) {
+				continue;
+			}
+			$raw = '0';
+			foreach ( $tx['vout'] as $vout ) {
+				$addrs = ( ! empty( $vout['addresses'] ) && is_array( $vout['addresses'] ) ) ? $vout['addresses'] : array();
+				foreach ( $addrs as $a ) {
+					if ( hash_equals( $address, (string) $a ) ) {
+						$raw = self::add_digits( $raw, (string) ( isset( $vout['value'] ) ? $vout['value'] : 0 ) );
+						break;
+					}
+				}
+			}
+			if ( '0' === $raw ) {
+				continue;
+			}
+			$found[] = self::transfer( isset( $tx['txid'] ) ? (string) $tx['txid'] : (string) $txid, self::raw_to_decimal( $raw, $decimals ), $time );
+		}
+		return $found;
+	}
+
+	/**
+	 * Etherscan V2 — native and ERC-20 transfers on every chain it covers.
+	 *
+	 * @param int    $chain_id Chain id.
+	 * @param string $address  Address.
+	 * @param int    $since    Oldest timestamp of interest.
+	 * @param array  $coin     Coin definition.
+	 * @return array|null
+	 */
+	private static function list_etherscan( $chain_id, $address, $since, array $coin ) {
+		$api_key = self::etherscan_api_key();
+		if ( ! $api_key ) {
+			return null;
+		}
+		$contract = isset( $coin['contract'] ) ? (string) $coin['contract'] : '';
+		$decimals = isset( $coin['decimals'] ) ? (int) $coin['decimals'] : 18;
+
+		$query = array(
+			'chainid' => (int) $chain_id,
+			'module'  => 'account',
+			'action'  => '' !== $contract ? 'tokentx' : 'txlist',
+			'address' => $address,
+			'page'    => 1,
+			'offset'  => self::LIST_MAX,
+			'sort'    => 'desc',
+			'apikey'  => $api_key,
+		);
+		if ( '' !== $contract ) {
+			$query['contractaddress'] = $contract;
+		}
+
+		$response = self::http_get( 'https://api.etherscan.io/v2/api?' . http_build_query( $query ) );
+		if ( ! is_array( $response ) || ! isset( $response['result'] ) || ! is_array( $response['result'] ) ) {
+			return null;
+		}
+
+		return self::collect_etherscan_rows( $response['result'], $address, $since, '' !== $contract ? $decimals : 18 );
+	}
+
+	/**
+	 * An Etherscan-compatible explorer running on its own domain.
+	 *
+	 * @param string $base    API base ending in /api.
+	 * @param string $address Address.
+	 * @param int    $since   Oldest timestamp of interest.
+	 * @param array  $coin    Coin definition.
+	 * @return array|null
+	 */
+	private static function list_etherscan_clone( $base, $address, $since, array $coin ) {
+		$contract = isset( $coin['contract'] ) ? (string) $coin['contract'] : '';
+		$decimals = isset( $coin['decimals'] ) ? (int) $coin['decimals'] : 18;
+
+		$query = array(
+			'module'  => 'account',
+			'action'  => '' !== $contract ? 'tokentx' : 'txlist',
+			'address' => $address,
+			'page'    => 1,
+			'offset'  => self::LIST_MAX,
+			'sort'    => 'desc',
+		);
+		if ( '' !== $contract ) {
+			$query['contractaddress'] = $contract;
+		}
+
+		$response = self::http_get( $base . '?' . http_build_query( $query ) );
+		if ( ! is_array( $response ) || ! isset( $response['result'] ) || ! is_array( $response['result'] ) ) {
+			return null;
+		}
+
+		return self::collect_etherscan_rows( $response['result'], $address, $since, '' !== $contract ? $decimals : 18 );
+	}
+
+	/**
+	 * The rows an Etherscan-shaped answer carries, kept if they paid this address.
+	 *
+	 * @param array  $rows     Result rows.
+	 * @param string $address  Address.
+	 * @param int    $since    Oldest timestamp of interest.
+	 * @param int    $decimals Decimals.
+	 * @return array
+	 */
+	private static function collect_etherscan_rows( array $rows, $address, $since, $decimals ) {
+		$found = array();
+		foreach ( array_slice( $rows, 0, self::LIST_MAX ) as $tx ) {
+			if ( ! is_array( $tx ) || empty( $tx['to'] ) || 0 !== strcasecmp( (string) $tx['to'], $address ) ) {
+				continue;
+			}
+			if ( ! empty( $tx['isError'] ) && '0' !== (string) $tx['isError'] ) {
+				continue;
+			}
+			$time = isset( $tx['timeStamp'] ) ? (int) $tx['timeStamp'] : 0;
+			if ( ! $time || $time < $since || ! isset( $tx['value'] ) || empty( $tx['hash'] ) ) {
+				continue;
+			}
+			$amount = self::raw_to_decimal( (string) $tx['value'], $decimals );
+			if ( '0' === $amount ) {
+				continue;
+			}
+			$found[] = self::transfer( (string) $tx['hash'], $amount, $time );
+		}
+		return $found;
+	}
+
+	/**
+	 * Blockscout v2, for chains that run it rather than an Etherscan clone.
+	 *
+	 * @param string $base    Explorer base.
+	 * @param string $address Address.
+	 * @param int    $since   Oldest timestamp of interest.
+	 * @return array|null
+	 */
+	private static function list_blockscout( $base, $address, $since ) {
+		$url      = rtrim( $base, '/' ) . '/api/v2/addresses/' . rawurlencode( $address ) . '/transactions?filter=to';
+		$response = self::http_get( $url );
+		if ( ! is_array( $response ) || ! isset( $response['items'] ) || ! is_array( $response['items'] ) ) {
+			return null;
+		}
+
+		$found = array();
+		foreach ( array_slice( $response['items'], 0, self::LIST_MAX ) as $tx ) {
+			if ( ! is_array( $tx ) || empty( $tx['hash'] ) ) {
+				continue;
+			}
+			if ( isset( $tx['status'] ) && 'ok' !== strtolower( (string) $tx['status'] ) ) {
+				continue;
+			}
+			$to = isset( $tx['to']['hash'] ) ? (string) $tx['to']['hash'] : '';
+			if ( '' === $to || 0 !== strcasecmp( $to, $address ) ) {
+				continue;
+			}
+			$time = isset( $tx['timestamp'] ) ? (int) strtotime( (string) $tx['timestamp'] ) : 0;
+			if ( ! $time || $time < $since || ! isset( $tx['value'] ) ) {
+				continue;
+			}
+			$amount = self::raw_to_decimal( (string) $tx['value'], 18 );
+			if ( '0' === $amount ) {
+				continue;
+			}
+			$found[] = self::transfer( (string) $tx['hash'], $amount, $time );
+		}
+		return $found;
+	}
+
+	/**
+	 * a + b for two non-negative integer strings, without a float.
+	 *
+	 * @param string $a A.
+	 * @param string $b B.
+	 * @return string
+	 */
+	private static function add_digits( $a, $b ) {
+		$a = ltrim( preg_replace( '/\D/', '', (string) $a ), '0' );
+		$b = ltrim( preg_replace( '/\D/', '', (string) $b ), '0' );
+		$a = '' === $a ? '0' : $a;
+		$b = '' === $b ? '0' : $b;
+		$i = strlen( $a ) - 1;
+		$j = strlen( $b ) - 1;
+		$carry = 0;
+		$out   = '';
+		while ( $i >= 0 || $j >= 0 || $carry ) {
+			$sum   = $carry;
+			$sum  += $i >= 0 ? (int) $a[ $i-- ] : 0;
+			$sum  += $j >= 0 ? (int) $b[ $j-- ] : 0;
+			$out   = ( $sum % 10 ) . $out;
+			$carry = intdiv( $sum, 10 );
+		}
+		$out = ltrim( $out, '0' );
+		return '' === $out ? '0' : $out;
+	}
 }
