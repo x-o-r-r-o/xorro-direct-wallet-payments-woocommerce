@@ -289,6 +289,11 @@ Pushing a `vX.Y.Z` tag runs the Release workflow, which builds the ZIP, its SHA-
 
 Full details for every release are in [`readme.txt`](readme.txt).
 
+### 1.28.0 — who covers the sending fee
+
+- New: absorb a small shortfall instead of asking for it. The usual cause is an exchange taking its withdrawal fee **out of the amount sent** — the customer can't see it and can't prevent it. Off by default
+- Deliberately **not** the underpayment tolerance. Tolerance decides which order a transfer belongs to and stays tight so two customers on one address can't be confused. This applies *after* a payment is already claimed for an order, so it can safely be larger — and **does not widen the matching band by a single unit**, which a test enforces
+
 ### 1.27.0 — a setup wizard that asks three questions
 
 - New: **setup wizard**. Seven tabs of settings, but only three things have no sensible default and block a first payment — pick a coin, give it an address, switch the gateway on. It asks for those and nothing else

@@ -90,6 +90,25 @@ $active  = isset( $tabs[ $tab ] ) ? $tabs[ $tab ] : $tabs['general'];
 										</td>
 									</tr>
 									<tr>
+										<th scope="row"><?php esc_html_e( 'Who covers the sending fee?', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
+										<td>
+											<label class="cc-inline">
+												<?php esc_html_e( 'Absorb a shortfall of up to', 'xorro-direct-wallet-payments-woocommerce' ); ?>
+												<input type="number" step="0.1" min="0" max="25" name="xdwp[fee_allowance_percent]" value="<?php echo esc_attr( (string) ( $settings['fee_allowance_percent'] ?? 0 ) ); ?>" class="small-text cc-input" />
+												<?php esc_html_e( '% of the amount due', 'xorro-direct-wallet-payments-woocommerce' ); ?>
+											</label>
+											<p class="description">
+												<?php esc_html_e( 'On a blockchain the sender always pays the network fee on top, so most customers pay you in full without thinking about it. The exception is somebody paying from an exchange: the exchange takes its withdrawal fee out of the amount sent, so a little less arrives than was asked for. The customer cannot see that happening and cannot do anything about it.', 'xorro-direct-wallet-payments-woocommerce' ); ?>
+											</p>
+											<p class="description">
+												<?php esc_html_e( 'At 0 — the default — you are not covering anything: the order becomes part paid and the customer is asked for the difference. Set a figure and a shortfall that small is treated as paid in full instead, with a note on the order saying what was covered. It is a percentage because an exchange fee is small against a large order and large against a small one.', 'xorro-direct-wallet-payments-woocommerce' ); ?>
+											</p>
+											<p class="description">
+												<?php esc_html_e( 'This is not the same as the underpayment tolerance above, and the two do different jobs. Tolerance decides how close a transfer has to be before it is recognised as this order\'s payment at all — it is kept deliberately tight so two customers paying the same address at the same time can never be confused for each other. This one applies afterwards, once a payment is already known to belong to this order, and can safely be much larger.', 'xorro-direct-wallet-payments-woocommerce' ); ?>
+											</p>
+										</td>
+									</tr>
+									<tr>
 										<th scope="row"><?php esc_html_e( 'Minimum confirmations', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
 										<td>
 											<input type="number" min="0" max="64" name="xdwp[min_confirmations]" value="<?php echo esc_attr( (string) ( $settings['min_confirmations'] ?? 1 ) ); ?>" class="small-text cc-input" />

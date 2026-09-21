@@ -310,6 +310,43 @@ class Xdwp_Verifier {
 		$remainder  = self::amount_sub_ceil( $target, $received, $coin );
 		$window     = max( 5, (int) Xdwp_Settings::get( 'payment_window', 60 ) ) * MINUTE_IN_SECONDS;
 
+		// The shop may have said it will absorb a small shortfall rather than ask for it. The
+		// usual cause is an exchange taking its withdrawal fee out of the amount sent, which the
+		// customer cannot see happening and cannot do anything about.
+		//
+		// This is asked here and not in match_band(), and the difference matters. The band is
+		// what decides *which order* a transfer belongs to, and it is deliberately kept narrower
+		// than half the spacing between two orders' unique amounts so that two orders can never
+		// both accept the same payment. Widening it to swallow a fee would undo exactly that.
+		// By this line the transfer has already been claimed for this order and nothing else can
+		// take it, so forgiving the difference is a decision about settlement rather than about
+		// matching, and introduces no ambiguity at all.
+		if ( self::within_fee_allowance( $target, $total, $coin ) ) {
+			$order->update_meta_data( '_xdwp_partial_txids', implode( ',', array_unique( $partials ) ) );
+			$order->update_meta_data( '_xdwp_partial_received', $total );
+			$order->add_order_note(
+				sprintf(
+					/* translators: 1: amount received, 2: coin symbol, 3: amount that was due, 4: shortfall */
+					__( 'Received %1$s %2$s of %3$s %2$s. The %4$s %2$s difference is within the sending-fee allowance you set, so this order is treated as paid in full and the customer has not been asked for the rest.', 'xorro-direct-wallet-payments-woocommerce' ),
+					$total,
+					$coin['symbol'],
+					$target,
+					self::amount_sub_ceil( $target, $total, $coin )
+				)
+			);
+			$order->save();
+			Xdwp_Order::log_event(
+				$order,
+				'allowance',
+				sprintf(
+					/* translators: %s: the shortfall that was absorbed */
+					__( 'Short by %s, which the shop covers — treated as paid in full', 'xorro-direct-wallet-payments-woocommerce' ),
+					self::amount_sub_ceil( $target, $total, $coin )
+				)
+			);
+			return self::record_final_payment( $order, $txid, $fresh_underpaid, $total );
+		}
+
 		$order->update_meta_data( '_xdwp_partial_txids', implode( ',', array_unique( $partials ) ) );
 		$order->update_meta_data( '_xdwp_received', $total );
 		$order->update_meta_data( '_xdwp_partial_received', $total );
@@ -858,6 +895,47 @@ class Xdwp_Verifier {
 			unset( $notoptions[ $key ] );
 			wp_cache_set( 'notoptions', $notoptions, 'options' );
 		}
+	}
+
+	/**
+	 * Is a shortfall small enough that the shop said it would cover it?
+	 *
+	 * Nothing to do with matching — see the note at the call site. This only ever answers "the
+	 * money is already this order's; is what is missing small enough to let go?"
+	 *
+	 * @param string $target   What was due.
+	 * @param string $received What arrived, in total.
+	 * @param array  $coin     Coin definition.
+	 * @return bool
+	 */
+	private static function within_fee_allowance( $target, $received, array $coin ) {
+		$percent = (float) Xdwp_Settings::get( 'fee_allowance_percent', 0 );
+		/**
+		 * How much of a shortfall the shop absorbs rather than asking the customer for.
+		 *
+		 * @param float  $percent Percentage of the amount due.
+		 * @param array  $coin    Coin definition.
+		 * @param string $target  Amount due.
+		 */
+		$percent = (float) apply_filters( 'xdwp_fee_allowance_percent', $percent, $coin, $target );
+		$percent = max( 0.0, min( 25.0, $percent ) );
+		if ( $percent <= 0 ) {
+			return false;
+		}
+
+		$due  = self::to_e18( $target );
+		$paid = self::to_e18( $received );
+		if ( self::e18_cmp( $paid, $due ) >= 0 ) {
+			// Not short at all; the ordinary path handles this.
+			return false;
+		}
+
+		// Never treat a token gesture as payment. Whatever the allowance is set to, most of the
+		// money still has to have arrived — an allowance is for a fee, not for a discount.
+		$short   = self::e18_sub( $due, $paid );
+		$allowed = self::float_to_e18( (float) $target * ( $percent / 100 ) );
+
+		return self::e18_cmp( $short, $allowed ) <= 0;
 	}
 
 	/**

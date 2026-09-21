@@ -199,6 +199,53 @@ t( 'base units: an absurd decimals count is bounded', '' !== Xdwp_Coins::to_base
 t( 'base units: and allocates nothing much', ( memory_get_usage() - $before ) < ( 1024 * 1024 ) );
 t( 'base units: a real conversion is unchanged', '100000000' === Xdwp_Coins::to_base_units( '1', 8 ) );
 
+// ---------------------------------------------------------------- the sending-fee allowance
+
+// A shop can choose to absorb a small shortfall — usually an exchange's withdrawal fee, taken
+// out of the amount sent. The thing that must stay true is that this never touches matching:
+// the band decides which order a transfer belongs to, and widening it would let two orders
+// paying the same address accept the same payment.
+$allowance = function ( $target, $received, $coin ) {
+	$method = new ReflectionMethod( 'Xdwp_Verifier', 'within_fee_allowance' );
+	if ( PHP_VERSION_ID < 80100 ) {
+		$method->setAccessible( true );
+	}
+	return $method->invoke( null, $target, $received, $coin );
+};
+
+settings( array( 'fee_allowance_percent' => 0 ) );
+t( 'off by default: nothing is absorbed', false === $allowance( '1.00000000', '0.99000000', $btc ) );
+
+settings( array( 'fee_allowance_percent' => 2 ) );
+t( 'a shortfall inside the allowance is absorbed', true === $allowance( '1.00000000', '0.99000000', $btc ) );
+t( 'a shortfall outside it is not', false === $allowance( '1.00000000', '0.90000000', $btc ) );
+t( 'exactly at the limit is absorbed', true === $allowance( '1.00000000', '0.98000000', $btc ) );
+t( 'a hair beyond the limit is not', false === $allowance( '1.00000000', '0.97999999', $btc ) );
+t( 'paying in full is not a shortfall', false === $allowance( '1.00000000', '1.00000000', $btc ) );
+t( 'paying more than asked is not a shortfall either', false === $allowance( '1.00000000', '1.50000000', $btc ) );
+
+// Absurd settings must not become a way to give stock away.
+settings( array( 'fee_allowance_percent' => 100 ) );
+t( 'an absurd allowance is capped, not obeyed', false === $allowance( '1.00000000', '0.50000000', $btc ) );
+
+// The band must be exactly what it was: the allowance is a settlement decision, not a matching
+// one, and this is the assertion that keeps those two apart.
+settings( array( 'fee_allowance_percent' => 0 ) );
+$band_without = $band_of( '0.125', $btc );
+settings( array( 'fee_allowance_percent' => 25 ) );
+$band_with = $band_of( '0.125', $btc );
+t( 'the allowance does not widen the matching band', $band_without === $band_with, wp_json_encode( array( $band_without, $band_with ) ) );
+
+// And it is applied only after a transfer has been claimed for one order.
+$vsrc_fee = file_get_contents( XDWP_PATH . 'includes/class-xdwp-verifier.php' );
+t(
+	'the allowance is asked only after the transfer is claimed',
+	strpos( $vsrc_fee, 'claim_txid( $txid, $order->get_id() )' ) < strpos( $vsrc_fee, 'self::within_fee_allowance(' )
+);
+t( 'and match_band never mentions it', false === strpos( substr( $vsrc_fee, strpos( $vsrc_fee, 'private static function match_band' ), 2600 ), 'fee_allowance' ) );
+
+settings( array( 'fee_allowance_percent' => 0 ) );
+
 echo "\n";
 if ( $fail > 0 ) {
 	echo "FAILED: {$fail} assertion(s), {$pass} passed\n";

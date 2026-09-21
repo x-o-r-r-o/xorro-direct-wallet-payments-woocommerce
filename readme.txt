@@ -4,7 +4,7 @@ Tags: woocommerce, cryptocurrency, bitcoin, ethereum, payments, usdt, crypto che
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.27.0
+Stable tag: 1.28.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -338,6 +338,11 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 * QR Code generator (`assets/js/qrcode.min.js`) — MIT-licensed library by davidshimjs (https://github.com/davidshimjs/qrcodejs). Source is publicly available; the bundled file is minified for production use.
 
 == Changelog ==
+
+= 1.28.0 =
+* New: "Who covers the sending fee?" under General. On a blockchain the sender pays the network fee on top, so most customers pay you in full without thinking about it. The exception is somebody paying from an exchange, which takes its withdrawal fee out of the amount sent — a little less arrives than was asked for, the customer cannot see it happening, and today that makes the order part paid and asks them for the difference
+* Set a percentage and a shortfall that small is treated as paid in full instead, with a note on the order saying exactly what was covered. Left at 0, which is the default, nothing changes
+* It is deliberately not the same control as the underpayment tolerance, and the two do different jobs. Tolerance decides how close a transfer must be before it is recognised as this order's payment at all, and is kept tight on purpose so two customers paying the same address at the same time can never be taken for one another. The allowance applies afterwards, once a payment is already known to belong to one order, which is why it can safely be much larger — and why turning it up does not widen the matching band by a single unit. There is a test that exists to keep that true
 
 = 1.27.0 =
 * New: a setup wizard. There are seven tabs of settings here and almost all of them have a sensible default — exactly three things do not, and a shop cannot take a single payment until all three are done. The wizard asks for those three, in order, and nothing else: pick a coin, give it an address, switch the gateway on

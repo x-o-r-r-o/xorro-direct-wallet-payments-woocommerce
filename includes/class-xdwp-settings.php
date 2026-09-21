@@ -169,6 +169,12 @@ class Xdwp_Settings {
 			$clean['underpayment_percent'] = max( 0, min( 10, (float) $input['underpayment_percent'] ) );
 		}
 
+		if ( isset( $input['fee_allowance_percent'] ) ) {
+			// Capped at 25%: beyond that it stops being a fee and starts being a discount, and
+			// a mistyped figure should not quietly give the shop's stock away.
+			$clean['fee_allowance_percent'] = max( 0, min( 25, (float) $input['fee_allowance_percent'] ) );
+		}
+
 		if ( isset( $input['min_confirmations'] ) ) {
 			$clean['min_confirmations'] = max( 0, min( 64, absint( $input['min_confirmations'] ) ) );
 		}
