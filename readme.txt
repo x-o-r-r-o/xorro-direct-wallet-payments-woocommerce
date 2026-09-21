@@ -4,7 +4,7 @@ Tags: woocommerce, cryptocurrency, bitcoin, ethereum, payments, usdt, crypto che
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.28.0
+Stable tag: 1.28.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -338,6 +338,11 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 * QR Code generator (`assets/js/qrcode.min.js`) — MIT-licensed library by davidshimjs (https://github.com/davidshimjs/qrcodejs). Source is publicly available; the bundled file is minified for production use.
 
 == Changelog ==
+
+= 1.28.1 =
+* Tested against order-export and currency-switcher plugins directly, rather than assumed: WooCommerce Currency Switcher (WOOCS/FOX) 1.5.4, WooCommerce Multi Currency (CURCY) 2.2.16, Advanced Order Export For WooCommerce 4.1.0 and Order Import Export for WooCommerce (WebToffee) 1.6.0 — one at a time and all together, on PHP 8.5.3 with WooCommerce 11.1.1, and on both order storages. No conflicts
+* Both currency switchers work without any integration, because they set the same currency value this plugin already reads. Confirmed by quoting the same order in USD, EUR, GBP, JPY and NGN, and by checking that a quote taken in one currency is never reused for an order created in another — a currency change mid-checkout cannot charge a stale amount
+* The order exporter finds all 36 of this plugin's order fields as exportable columns, so a crypto order exports with its coin, address, amount, rate and transaction alongside everything else
 
 = 1.28.0 =
 * New: "Who covers the sending fee?" under General. On a blockchain the sender pays the network fee on top, so most customers pay you in full without thinking about it. The exception is somebody paying from an exchange, which takes its withdrawal fee out of the amount sent — a little less arrives than was asked for, the customer cannot see it happening, and today that makes the order part paid and asks them for the difference

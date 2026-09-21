@@ -236,6 +236,28 @@ These hold across every release above. Breaking one is a defect, however good th
 
 ---
 
+## 5b. Compatibility testing, how it is actually run
+
+The test site is a Local install (`~/Local Sites/xorro-plugin`) with ~250 plugins and 45 themes,
+running its own PHP 8.5.3 and MySQL socket. wp-cli does not work against it out of the box: it
+needs Local's PHP binary and `mysqli.default_socket` pointed at
+`~/Library/Application Support/Local/run/<id>/mysql/mysqld.sock`.
+
+The useful pattern is a wp-cli `eval-file` harness that creates an order, calls
+`Xdwp_Order::assign_payment()`, renders the payment box and reports the result as JSON, plus a
+truncate-and-read of `wp-content/debug.log` around each run. Two traps worth remembering:
+
+- Grep the log for `plugins/xorro-direct-wallet-payments-woocommerce`, **not** for `xorro` — the
+  site directory is itself called `xorro-plugin`, so the looser pattern matches every other
+  plugin's stack traces and manufactures findings that are not there.
+- `$order->set_payment_method( 'xdwp' )` sets the id but not the title; WooCommerce's own checkout
+  passes the gateway *object*. A harness that passes the string reports an empty
+  `payment_method_title` and looks like an export bug that does not exist.
+- Switching order storage with `wp option update woocommerce_custom_orders_table_enabled` trips
+  WooCommerce's own feature controller and errors; `--skip-plugins --skip-themes` sets it cleanly.
+
+---
+
 ## 6. Verifying a change
 
 Run with a plain PHP binary, not `wp eval-file`:

@@ -163,7 +163,31 @@ CURCY + FOX). A 30-plugin stack was also run on Woodmart, Divi, Betheme and Flat
 their real explorers with real addresses to confirm a payment in that coin is actually detected —
 including USDT on TRON, Ethereum and BNB Chain, and USDC on Solana.
 
+**Order export and currency switchers — tested directly, all clean.** Run on PHP 8.5.3 with
+WooCommerce 11.1.1, against **both order storages**, one plugin at a time and then all of them
+together:
+
+| Plugin | Version | Result |
+|---|---|---|
+| WooCommerce Currency Switcher (WOOCS / FOX) | 1.5.4 | Clean |
+| WooCommerce Multi Currency (CURCY) | 2.2.16 | Clean |
+| Advanced Order Export For WooCommerce | 4.1.0 | Clean — its HPOS extractor finds all 36 `_xdwp_*` fields as exportable columns |
+| Order Import Export for WooCommerce (WebToffee) | 1.5.0 / 1.6.0 | Clean |
+| All four together | — | Clean |
+
+Both switchers hook `woocommerce_currency`, which is the value this plugin reads, so a quote
+follows the active currency without any integration. Verified by quoting the same £25/€25/$25
+order in USD, EUR, GBP, JPY and NGN — each got the right rate for that currency — and, more
+importantly, by taking a quote in USD and then creating the order in EUR: the USD quote is **not**
+reused, so a currency change mid-checkout cannot charge a stale cross-currency amount.
+
 Problems found in other products while testing, none of them caused by this plugin:
+
+- **WooCommerce Multi Currency (CURCY) 2.2.16** logs PHP 8.5 deprecations on every page load —
+  `case` statements followed by `;` in `frontend/shortcode.php` lines 658 and 661. Harmless today,
+  but it will be a fatal error in PHP 9.
+- **Order Import Export for WooCommerce (WebToffee) 1.6.0** logs a PHP 8.5 deprecation — a
+  non-canonical `(boolean)` cast in `helpers/class-wt-import-export-helper.php` line 1048.
 
 - **Dokan Pro's Booking module** takes the whole site down with a fatal error (`DependencyNotice` class
   missing from the package). Verified with this plugin fully deactivated — the site still fails. Keep
