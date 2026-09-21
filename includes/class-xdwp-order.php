@@ -133,9 +133,33 @@ class Xdwp_Order {
 				'detected'      => (bool) Xdwp_Verifier::detect_incoming( $order ),
 				'confirmations' => $coin ? (int) Xdwp_Coins::confirmations_for_order( $coin, $order ) : 0,
 				'memo'          => (string) self::meta( $order, 'memo' ),
-				'network'       => $coin && isset( $coin['network'] ) ? (string) $coin['network'] : '',
+				'network'       => self::network_for_customer( $coin ),
 			)
 		);
+	}
+
+	/**
+	 * The network name a customer is told to send on, everywhere they are told it.
+	 *
+	 * The payment page, the status message and the email must all use this one name. The raw
+	 * coin code ("trx" for USDT on TRON) once reached the status message and the email while the
+	 * page said "TRON (TRC-20)" — two names for one network, on the one step where a customer
+	 * who picks the wrong network loses the money.
+	 *
+	 * @param array|null $coin Coin definition.
+	 * @return string
+	 */
+	public static function network_for_customer( $coin ) {
+		if ( ! is_array( $coin ) ) {
+			return '';
+		}
+		if ( class_exists( 'Xdwp_Testmode' ) && Xdwp_Testmode::active() ) {
+			$testnet = Xdwp_Testmode::network_label( isset( $coin['verifier'] ) ? $coin['verifier'] : '' );
+			if ( '' !== $testnet ) {
+				return $testnet;
+			}
+		}
+		return (string) Xdwp_Coins::network_label( $coin );
 	}
 
 	/**

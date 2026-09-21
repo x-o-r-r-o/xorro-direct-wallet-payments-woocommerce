@@ -82,7 +82,7 @@ class Xdwp_Emails {
 			'due'       => $amount,
 			'received'  => (string) Xdwp_Order::meta( $order, 'received' ),
 			'underpaid' => ( 'underpaid' === $status ),
-			'network'   => $coin['network'] . ( 'native' !== $coin['type'] ? ' (' . strtoupper( $coin['type'] ) . ')' : '' ),
+			'network'   => Xdwp_Order::network_for_customer( $coin ),
 			'expires'   => $expires ? wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $expires ) : '',
 			'pay_url'   => $order->get_checkout_order_received_url(),
 			// A customer reads this on the device their wallet is on, and the payment page's QR

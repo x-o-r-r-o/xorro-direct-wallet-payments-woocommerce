@@ -4,7 +4,7 @@ Tags: woocommerce, cryptocurrency, bitcoin, ethereum, payments, usdt, crypto che
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.28.3
+Stable tag: 1.28.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -338,6 +338,15 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 * QR Code generator (`assets/js/qrcode.min.js`) — MIT-licensed library by davidshimjs (https://github.com/davidshimjs/qrcodejs). Source is publicly available; the bundled file is minified for production use.
 
 == Changelog ==
+
+= 1.28.4 =
+* Found by driving the shop over real web requests rather than WP-CLI, which quietly made every URL absolute and so hid the 1.28.3 bug.
+* Security: the refund link's token no longer leaks to analytics, pixels or session recorders on the page. It is removed from the address bar before any other script runs, and the page sends no referrer and is not indexed.
+* Security: a refund address changed through the link is now reported as a change ("CHANGED from X to Y") in the order note and in webhook/Telegram alerts, and the alert now includes the address at all.
+* Fix: the "check the network" message and the payment email named the network by its internal code (e.g. "trx (TRC20)") while the payment page said "TRON (TRC-20)". All three now use the same name, including in test mode.
+* Fix: the Payments screen no longer calls the site on every visit to test the payment endpoint. The result is kept for 12 hours (15 minutes after a failure), saving about a second per view, or the full 10-second timeout on hosts that drop self-calls. "Run checks" still asks fresh.
+* Fix: sites behind a CDN can now point the refund page's guess limit at the real visitor address using the existing xdwp_rate_limit_client_ip filter.
+* Submitting the same refund address twice no longer adds a second note and alert.
 
 = 1.28.3 =
 * Fix: the "Payment page can reach the shop" check always warned "A valid URL was not provided." on standard WooCommerce shops. WooCommerce gives out its endpoint as a relative address, which browsers accept but a site calling itself does not; the check now resolves it against the shop's own address first. Payment pages themselves were never affected.
@@ -972,6 +981,9 @@ Full audit on a live WordPress 7.1 / WooCommerce 11.1 test store: 13 themes, 53 
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.28.4 =
+Keeps refund links out of analytics, flags changed refund addresses, and makes the Payments screen faster.
 
 = 1.28.3 =
 Fixes a false "could not call its own payment endpoint" warning in the setup checks.

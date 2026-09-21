@@ -220,6 +220,35 @@ t( 'a non-string endpoint comes back empty, not as an array', '' === Xdwp_Selfte
 $src = file_get_contents( XDWP_PATH . 'includes/class-xdwp-selftest.php' );
 t( 'the loopback check resolves its URL before calling', false !== strpos( $src, "self::absolute_url( Xdwp_Ajax::endpoint( 'xdwp_status' ), home_url( '/' ) )" ) );
 
+// ---------------------------------------------------------------- found by real web requests
+
+// Each of these passed every test that ran through WP-CLI and failed only when a browser, a
+// customer or a live host was involved.
+
+// One network name, everywhere a customer is told it.
+t( 'the status message uses the network name the page shows', false !== strpos( file_get_contents( XDWP_PATH . 'includes/class-xdwp-order.php' ), "'network'       => self::network_for_customer( \$coin )" ) );
+t( 'and so does the email', false !== strpos( file_get_contents( XDWP_PATH . 'includes/class-xdwp-emails.php' ), "Xdwp_Order::network_for_customer( \$coin )" ) );
+t( 'the raw coin code is no longer sent to customers', false === strpos( file_get_contents( XDWP_PATH . 'includes/class-xdwp-emails.php' ), "\$coin['network'] . (" ) );
+
+// The refund link is a credential; nothing else on the page may carry it away.
+$refunds = file_get_contents( XDWP_PATH . 'includes/class-xdwp-refunds.php' );
+t( 'the refund page sends no referrer', false !== strpos( $refunds, "header( 'Referrer-Policy: no-referrer' )" ) );
+t( 'the refund page is not indexed', false !== strpos( $refunds, 'X-Robots-Tag: noindex' ) );
+t( 'the token is cleaned from the address bar before other scripts run', false !== strpos( $refunds, 'history.replaceState' ) && false !== strpos( $refunds, '-1000' ) );
+t( 'and the form is pointed back at the real link so it still submits', false !== strpos( $refunds, 'xdwp_claim_submit' ) && false !== strpos( $refunds, 'setAttribute("action",u)' ) );
+t( 'a changed refund address is said to be a change', false !== strpos( $refunds, 'The refund address was CHANGED from' ) );
+t( 'pressing the button twice does not alert the shop twice', false !== strpos( $refunds, 'if ( $previous === $address ) {' ) );
+t( 'the refund page limits guesses by the same visitor address the checkout uses', false !== strpos( $refunds, 'Xdwp_Ajax::client_ip()' ) );
+$notify = file_get_contents( XDWP_PATH . 'includes/class-xdwp-notify.php' );
+t( 'the refund alert says where the refund goes', false !== strpos( $notify, "'refund_address' === \$event" ) );
+t( 'and says when that changed', false !== strpos( $notify, 'CHANGED from %1$s to %2$s' ) );
+
+// The self-call is slow on a good host and the full timeout on a bad one.
+$selftest = file_get_contents( XDWP_PATH . 'includes/class-xdwp-selftest.php' );
+t( 'the loopback answer is reused between page views', false !== strpos( $selftest, "get_transient( \$cache_key )" ) );
+t( 'a failure is only kept briefly, so a fix shows soon', false !== strpos( $selftest, '15 * MINUTE_IN_SECONDS' ) );
+t( 'the explicit re-run always asks again', false !== strpos( file_get_contents( XDWP_PATH . 'includes/admin/class-xdwp-admin.php' ), "Xdwp_Selftest::store_checks( true )" ) );
+
 echo "\n";
 if ( $fail > 0 ) {
 	echo "FAILED: {$fail} assertion(s), {$pass} passed\n";

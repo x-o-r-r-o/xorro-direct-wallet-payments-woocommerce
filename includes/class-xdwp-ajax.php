@@ -106,18 +106,25 @@ class Xdwp_Ajax {
 	}
 
 	/**
-	 * Fixed one-minute-window request limit per client IP.
+	 * The visitor's address, as every limit in this plugin sees it.
 	 *
-	 * The window is part of the key. Re-setting a single transient with a fresh 60s TTL on
-	 * every hit (the previous approach) never let the counter expire under steady traffic,
-	 * so after N requests spread over any length of time every visitor on that IP — all
-	 * customers, behind a CDN or proxy — was refused until traffic stopped for a minute.
+	 * REMOTE_ADDR unless the shop says otherwise. Behind a CDN or proxy that is the proxy's
+	 * address for everyone; a shop in that position filters it to the header its CDN sets.
 	 *
-	 * @param string     $prefix Key prefix.
-	 * @param string|int $scope  Extra key scope (e.g. order ID).
-	 * @param int        $limit  Requests allowed per minute.
-	 * @return bool True when over the limit.
+	 * @return string
 	 */
+	public static function client_ip() {
+		$ip = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : 'unknown';
+		/**
+		 * Filter the client identifier used for rate limiting (e.g. to trust a CDN's
+		 * client-IP header on sites behind a proxy).
+		 *
+		 * @param string $ip Client IP (REMOTE_ADDR by default).
+		 */
+		$ip = apply_filters( 'xdwp_rate_limit_client_ip', $ip );
+		return is_scalar( $ip ) ? (string) $ip : 'unknown';
+	}
+
 	/**
 	 * Something stable that distinguishes one shopper from another behind a shared IP.
 	 *
@@ -133,15 +140,21 @@ class Xdwp_Ajax {
 		return '';
 	}
 
+	/**
+	 * Fixed one-minute-window request limit per client IP.
+	 *
+	 * The window is part of the key. Re-setting a single transient with a fresh 60s TTL on
+	 * every hit (the previous approach) never let the counter expire under steady traffic,
+	 * so after N requests spread over any length of time every visitor on that IP — all
+	 * customers, behind a CDN or proxy — was refused until traffic stopped for a minute.
+	 *
+	 * @param string     $prefix Key prefix.
+	 * @param string|int $scope  Extra key scope (e.g. order ID).
+	 * @param int        $limit  Requests allowed per minute.
+	 * @return bool True when over the limit.
+	 */
 	private static function rate_limited( $prefix, $scope, $limit ) {
-		$ip = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : 'unknown';
-		/**
-		 * Filter the client identifier used for rate limiting (e.g. to trust a CDN's
-		 * client-IP header on sites behind a proxy).
-		 *
-		 * @param string $ip Client IP (REMOTE_ADDR by default).
-		 */
-		$ip    = (string) apply_filters( 'xdwp_rate_limit_client_ip', $ip );
+		$ip    = self::client_ip();
 		$key   = $prefix . md5( $ip . '|' . $scope . '|' . (int) floor( time() / MINUTE_IN_SECONDS ) );
 		$count = (int) get_transient( $key );
 		if ( $count >= $limit ) {
@@ -263,9 +276,6 @@ class Xdwp_Ajax {
 		);
 	}
 
-	/**
-	 * Re-quote an expired order at today's rate, on the customer's request.
-	 */
 	/**
 	 * A browser wallet says it sent a transaction for this order.
 	 *

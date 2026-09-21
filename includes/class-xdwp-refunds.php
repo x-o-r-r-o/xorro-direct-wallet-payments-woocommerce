@@ -251,16 +251,31 @@ class Xdwp_Refunds {
 	 * @param string   $address Receiving address.
 	 */
 	public static function record_address( $order, $address ) {
+		$previous = (string) Xdwp_Order::meta( $order, 'refund_address' );
+		if ( $previous === $address ) {
+			// Pressing the button twice is not news: no second note, and no second alert.
+			return;
+		}
+		$changed = '' !== $previous;
 		$order->update_meta_data( '_xdwp_refund_address', $address );
 		$order->update_meta_data( '_xdwp_refund_address_at', time() );
 		$order->save();
 
+		// A change is said as a change. Whoever holds the link can replace the address, and a
+		// note reading only "send it to Y" hides that it said X a moment ago.
 		$order->add_order_note(
-			sprintf(
-				/* translators: %s: receiving address */
-				__( 'The customer asked for their refund to be sent to %s. Send it from your own wallet, then record the transaction id on this order.', 'xorro-direct-wallet-payments-woocommerce' ),
-				$address
-			)
+			$changed
+				? sprintf(
+					/* translators: 1: address given before, 2: new receiving address */
+					__( 'The refund address was CHANGED from %1$s to %2$s using the refund link. If the customer did not tell you about this change, confirm with them before sending anything.', 'xorro-direct-wallet-payments-woocommerce' ),
+					$previous,
+					$address
+				)
+				: sprintf(
+					/* translators: %s: receiving address */
+					__( 'The customer asked for their refund to be sent to %s. Send it from your own wallet, then record the transaction id on this order.', 'xorro-direct-wallet-payments-woocommerce' ),
+					$address
+				)
 		);
 		Xdwp_Order::log_event(
 			$order,
@@ -280,6 +295,7 @@ class Xdwp_Refunds {
 				array(
 					'refund_address' => $address,
 					'refund_amount'  => (string) Xdwp_Order::meta( $order, 'refund_amount' ),
+					'previous'       => $changed ? $previous : '',
 				)
 			);
 		}
@@ -431,8 +447,41 @@ class Xdwp_Refunds {
 	 * @return string
 	 */
 	private static function client_fingerprint() {
-		$ip = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
+		// The same address the checkout's rate limits use, so a shop behind a CDN that fixes it
+		// once (xdwp_rate_limit_client_ip) fixes it here too. Without that, every visitor shares
+		// the CDN's address, and ten bad guesses by anyone lock every customer out of this page.
+		$ip = class_exists( 'Xdwp_Ajax' ) ? Xdwp_Ajax::client_ip() : ( isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '' );
 		return $ip . '|' . wp_salt( 'auth' );
+	}
+
+	/**
+	 * Keep the link's token out of everything else that loads on this page.
+	 *
+	 * The token is the only credential here: whoever holds it can say where the refund goes. The
+	 * page renders inside the shop's theme, and a theme's analytics, pixels and session recorders
+	 * record the full address of every page they run on — so without this the token ends up in
+	 * someone's Google Analytics report. The address bar is cleaned before any of them runs, the
+	 * form is pointed back at the real URL so it still submits, and no Referer carries it away.
+	 */
+	private static function keep_token_private() {
+		if ( ! headers_sent() ) {
+			header( 'Referrer-Policy: no-referrer' );
+			header( 'X-Robots-Tag: noindex, nofollow', true );
+		}
+		add_filter( 'wp_robots', 'wp_robots_no_robots' );
+		add_action(
+			'wp_head',
+			static function () {
+				$js = '(function(){try{var u=location.href;if(!history.replaceState||u.indexOf(' . wp_json_encode( self::QUERY_VAR . '=' ) . ')<0){return;}'
+					. 'history.replaceState(null,"",location.pathname);'
+					. 'document.addEventListener("DOMContentLoaded",function(){var f=document.querySelectorAll("form");'
+					. 'for(var i=0;i<f.length;i++){if(f[i].querySelector("[name=xdwp_claim_submit]")&&!f[i].getAttribute("action")){f[i].setAttribute("action",u);}}});'
+					. '}catch(e){}})();';
+				wp_print_inline_script_tag( $js );
+				echo '<meta name="referrer" content="no-referrer" />' . "\n";
+			},
+			-1000
+		);
 	}
 
 	/**
@@ -450,6 +499,7 @@ class Xdwp_Refunds {
 
 		status_header( $order ? 200 : 404 );
 		nocache_headers();
+		self::keep_token_private();
 
 		wc_get_template(
 			'xdwp-refund-claim.php',

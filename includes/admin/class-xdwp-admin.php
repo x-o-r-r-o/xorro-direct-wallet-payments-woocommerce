@@ -858,7 +858,7 @@ class Xdwp_Admin {
 		if ( '' === $coin_id ) {
 			wp_send_json_success(
 				array(
-					'store' => Xdwp_Selftest::store_checks(),
+					'store' => Xdwp_Selftest::store_checks( true ),
 					'coins' => array(),
 				)
 			);

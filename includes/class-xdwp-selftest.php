@@ -74,9 +74,10 @@ class Xdwp_Selftest {
 	/**
 	 * Checks that apply to the whole shop rather than one coin.
 	 *
+	 * @param bool $fresh Ask again rather than reuse a recent answer to the slow checks.
 	 * @return array<int, array{key:string,label:string,status:string,detail:string}>
 	 */
-	public static function store_checks() {
+	public static function store_checks( $fresh = false ) {
 		$checks = array();
 
 		// The gateway being switched on in WooCommerce is separate from this plugin's settings,
@@ -159,7 +160,7 @@ class Xdwp_Selftest {
 		}
 
 		$checks[] = self::check_outbound_allowed();
-		$checks[] = self::check_loopback();
+		$checks[] = self::check_loopback( (bool) $fresh );
 
 		return $checks;
 	}
@@ -246,9 +247,32 @@ class Xdwp_Selftest {
 	 * Deliberately never worse than a warning: plenty of hosts block a site from calling itself,
 	 * which breaks this check without breaking anything a real customer does.
 	 *
+	 * @param bool $fresh Ask now instead of reusing the last answer.
 	 * @return array
 	 */
-	private static function check_loopback() {
+	private static function check_loopback( $fresh = false ) {
+		// This runs on every visit to the Payments screen and WooCommerce → Status. A request to
+		// itself costs a second on a good host and the full timeout on one that silently drops
+		// it, so the answer is kept: long when it worked, briefly when it did not, so a fix shows
+		// up soon. The "run the checks" button always asks again.
+		$cache_key = 'xdwp_loopback_check';
+		if ( ! $fresh ) {
+			$cached = get_transient( $cache_key );
+			if ( is_array( $cached ) && isset( $cached['key'], $cached['status'] ) ) {
+				return $cached;
+			}
+		}
+		$result = self::probe_loopback();
+		set_transient( $cache_key, $result, self::OK === $result['status'] ? 12 * HOUR_IN_SECONDS : 15 * MINUTE_IN_SECONDS );
+		return $result;
+	}
+
+	/**
+	 * Ask the site the question a customer's browser asks, right now.
+	 *
+	 * @return array
+	 */
+	private static function probe_loopback() {
 		$label = __( 'Payment page can reach the shop', 'xorro-direct-wallet-payments-woocommerce' );
 		// WooCommerce hands out its endpoint as a relative URL ("/?wc-ajax=…"), which a browser
 		// resolves against the page it is on but wp_remote_post() refuses outright with "A valid

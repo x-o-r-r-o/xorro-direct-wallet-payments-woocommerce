@@ -280,6 +280,22 @@ class Xdwp_Notify {
 		if ( ! empty( $payload['txid'] ) ) {
 			$lines[] = (string) $payload['txid'];
 		}
+		// A refund alert that leaves out where the refund goes is the one alert that cannot be
+		// acted on — and a changed address is the case a shop most needs to notice.
+		if ( 'refund_address' === $event && ! empty( $payload['refund_address'] ) ) {
+			$lines[] = ! empty( $payload['previous'] )
+				? sprintf(
+					/* translators: 1: address given before, 2: new address */
+					__( 'CHANGED from %1$s to %2$s — confirm with the customer before sending.', 'xorro-direct-wallet-payments-woocommerce' ),
+					(string) $payload['previous'],
+					(string) $payload['refund_address']
+				)
+				: sprintf(
+					/* translators: %s: address the customer gave */
+					__( 'Send to %s', 'xorro-direct-wallet-payments-woocommerce' ),
+					(string) $payload['refund_address']
+				);
+		}
 		if ( ! empty( $payload['admin_url'] ) ) {
 			$lines[] = (string) $payload['admin_url'];
 		}
