@@ -204,6 +204,38 @@ class Xdwp_Selftest {
 	}
 
 	/**
+	 * Turn a relative endpoint into one the site can call itself on.
+	 *
+	 * A browser resolves "/?wc-ajax=…" against the page it is on; WordPress's HTTP API has no page
+	 * and refuses it. Already-absolute URLs are returned untouched.
+	 *
+	 * @param string $url  Endpoint, absolute or relative.
+	 * @param string $home The site's home URL.
+	 * @return string
+	 */
+	public static function absolute_url( $url, $home ) {
+		$url  = is_scalar( $url ) ? trim( (string) $url ) : '';
+		$home = is_scalar( $home ) ? (string) $home : '';
+		if ( '' === $url || preg_match( '#^https?://#i', $url ) ) {
+			return $url;
+		}
+		$parts = function_exists( 'wp_parse_url' ) ? wp_parse_url( $home ) : parse_url( $home ); // phpcs:ignore WordPress.WP.AlternativeFunctions.parse_url_parse_url
+		if ( ! is_array( $parts ) || empty( $parts['host'] ) ) {
+			return $url;
+		}
+		$scheme = isset( $parts['scheme'] ) ? strtolower( (string) $parts['scheme'] ) : 'https';
+		if ( 0 === strpos( $url, '//' ) ) {
+			return $scheme . ':' . $url;
+		}
+		$origin = $scheme . '://' . $parts['host'] . ( isset( $parts['port'] ) ? ':' . (int) $parts['port'] : '' );
+		if ( 0 === strpos( $url, '/' ) ) {
+			return $origin . $url;
+		}
+		// Anything else ("?wc-ajax=…") is relative to the home page, subdirectory included.
+		return rtrim( $home, '/' ) . '/' . ltrim( $url, '/' );
+	}
+
+	/**
 	 * Can a customer's browser actually reach this plugin's endpoints?
 	 *
 	 * Firewalls, security plugins and coming-soon modes all sit in front of the site and answer
@@ -218,7 +250,10 @@ class Xdwp_Selftest {
 	 */
 	private static function check_loopback() {
 		$label = __( 'Payment page can reach the shop', 'xorro-direct-wallet-payments-woocommerce' );
-		$url   = Xdwp_Ajax::endpoint( 'xdwp_status' );
+		// WooCommerce hands out its endpoint as a relative URL ("/?wc-ajax=…"), which a browser
+		// resolves against the page it is on but wp_remote_post() refuses outright with "A valid
+		// URL was not provided." — so on a stock shop this check failed without asking anything.
+		$url   = self::absolute_url( Xdwp_Ajax::endpoint( 'xdwp_status' ), home_url( '/' ) );
 
 		// order_id 0 is refused by the endpoint before it touches anything, so this probe asks
 		// the question without creating, reading or changing a single order.

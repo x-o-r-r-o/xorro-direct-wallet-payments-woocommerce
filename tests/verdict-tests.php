@@ -196,6 +196,30 @@ foreach ( $all as $name => $result ) {
 	t( "the {$name} message is a sentence, not a label", strlen( $result['message'] ) > 40, $result['message'] );
 }
 
+// ---------------------------------------------------------------- the self-call finds the shop
+
+// WooCommerce hands its endpoint out relative ("/?wc-ajax=…"). Passed as-is to wp_remote_post()
+// it fails with "A valid URL was not provided." on every stock shop, which is what a live site
+// reported — the local test site happened to filter the URL absolute, so nothing here saw it.
+require_once XDWP_PATH . 'includes/class-xdwp-selftest.php';
+$abs = array(
+	array( '/?wc-ajax=xdwp_status', 'https://www.example.com/', 'https://www.example.com/?wc-ajax=xdwp_status' ),
+	array( '/shop/?wc-ajax=xdwp_status', 'https://example.com/shop/', 'https://example.com/shop/?wc-ajax=xdwp_status' ),
+	array( '/?wc-ajax=x', 'http://example.local:8080/', 'http://example.local:8080/?wc-ajax=x' ),
+	array( '//www.example.com/?wc-ajax=x', 'https://www.example.com/', 'https://www.example.com/?wc-ajax=x' ),
+	array( '?wc-ajax=x', 'https://example.com/shop/', 'https://example.com/shop/?wc-ajax=x' ),
+	array( 'https://cdn.example.com/?wc-ajax=x', 'https://example.com/', 'https://cdn.example.com/?wc-ajax=x' ),
+	array( 'http://example.local/?wc-ajax=x', 'https://example.com/', 'http://example.local/?wc-ajax=x' ),
+);
+foreach ( $abs as $case ) {
+	$got = Xdwp_Selftest::absolute_url( $case[0], $case[1] );
+	t( 'the self-call resolves ' . $case[0] . ' against ' . $case[1], $case[2] === $got, $got );
+}
+t( 'a home URL with no host leaves the endpoint alone', '/?wc-ajax=x' === Xdwp_Selftest::absolute_url( '/?wc-ajax=x', '' ) );
+t( 'a non-string endpoint comes back empty, not as an array', '' === Xdwp_Selftest::absolute_url( array( 'x' ), 'https://example.com/' ) );
+$src = file_get_contents( XDWP_PATH . 'includes/class-xdwp-selftest.php' );
+t( 'the loopback check resolves its URL before calling', false !== strpos( $src, "self::absolute_url( Xdwp_Ajax::endpoint( 'xdwp_status' ), home_url( '/' ) )" ) );
+
 echo "\n";
 if ( $fail > 0 ) {
 	echo "FAILED: {$fail} assertion(s), {$pass} passed\n";

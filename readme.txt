@@ -4,7 +4,7 @@ Tags: woocommerce, cryptocurrency, bitcoin, ethereum, payments, usdt, crypto che
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.28.2
+Stable tag: 1.28.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -338,6 +338,9 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 * QR Code generator (`assets/js/qrcode.min.js`) — MIT-licensed library by davidshimjs (https://github.com/davidshimjs/qrcodejs). Source is publicly available; the bundled file is minified for production use.
 
 == Changelog ==
+
+= 1.28.3 =
+* Fix: the "Payment page can reach the shop" check always warned "A valid URL was not provided." on standard WooCommerce shops. WooCommerce gives out its endpoint as a relative address, which browsers accept but a site calling itself does not; the check now resolves it against the shop's own address first. Payment pages themselves were never affected.
 
 = 1.28.2 =
 * Fixed: TRON was never actually available in test mode. It was listed under the internal name its TRC-20 tokens use rather than the one the native TRX coin uses, and tokens are deliberately excluded from test mode — so the TRON test network could not be reached by any coin that could be offered. Bitcoin and Ethereum were unaffected
@@ -969,6 +972,9 @@ Full audit on a live WordPress 7.1 / WooCommerce 11.1 test store: 13 themes, 53 
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.28.3 =
+Fixes a false "could not call its own payment endpoint" warning in the setup checks.
 
 = 1.5.17 =
 Security: payment/txid locks were not exclusive under concurrent verification (add_option() on modern MySQL); address matching for BTC/LTC/DOGE/TRON/XRP/DOT is now case-sensitive. Also fixes a completely non-functional "Mark payment received" button (blocks Monero payments). Update recommended.
