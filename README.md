@@ -22,7 +22,7 @@ Each order gets a slightly unique amount (usually a few base units, e.g. 10 sato
 - **234 coins and tokens** — 70 native coins plus ERC-20, BEP-20, TRC-20, SPL (Solana) and TON jetton tokens
 - **USDT and USDC on 9 networks each** — Ethereum, Arbitrum, Optimism, BNB Chain, Polygon, Avalanche, Base, Solana, TRON — plus DAI on 5
 - **Automatic payment detection** on every coin except three manual-only ones (see below), with confirmations you can tune per coin, or by order value
-- **Classic and block checkout** (WooCommerce Checkout Blocks) and **HPOS** compatible
+- **Classic and block checkout** (WooCommerce Checkout Blocks), and **both order storages** — High-Performance Order Storage or the older posts table
 - Live crypto quote at checkout; payment page with Copy buttons, QR code (BIP-21, EIP-681, Solana Pay and other wallet URI formats) and countdown
 - **Backup exchange-rate sources** (Coinbase, Kraken, Binance) when CoinGecko is unavailable, with a 5% agreement check
 - **Stablecoins priced 1:1** with your store currency (optional)
@@ -71,7 +71,8 @@ under Prices & APIs. Without one it behaves as a manual coin, and the Coins tab 
 |---|---|
 | WordPress | 6.9+ (tested up to 7.1) |
 | WooCommerce | 10.0+ (tested up to 11.1) |
-| PHP | 7.4+ (8.2+ recommended) |
+| PHP | 7.4 – 8.5 (8.2+ recommended) — every one of 7.4, 8.0, 8.1, 8.2, 8.3, 8.4 and 8.5 runs the full test suite on every change |
+| Order storage | Either — High-Performance Order Storage or the older posts table |
 
 HTTPS is strongly recommended.
 
@@ -107,9 +108,25 @@ The plugin checks this repository's [Releases](https://github.com/x-o-r-r-o/xorr
 
 ## Compatibility
 
-Version 1.19.3 was tested end to end on WordPress 7.1 and WooCommerce 11.1 — guest checkout on both
-classic and block checkout, live quote, order placement, payment page, status polling, the "I have
-sent the payment" path, and a PHP error-log check on every single run.
+Tested end to end on WordPress 7.1 and WooCommerce 11.1 — guest checkout on both classic and block
+checkout, live quote, order placement, payment page, status polling, the "I have sent the payment"
+path, and a PHP error-log check on every single run. The theme, plugin and coin sweeps below were
+run against 1.19.3; the PHP and order-storage results are current as of 1.19.7.
+
+**PHP — 7.4 through 8.5.** Every release runs all four test suites on 7.4, 8.0, 8.1, 8.2, 8.3, 8.4
+and 8.5, and the build fails if any version raises so much as a single deprecation or warning. That
+is stricter than it sounds: a deprecation printed while a page is sending a file ends up *inside*
+the file, so on PHP 8.4+ the payments CSV export used to download corrupt on any shop with error
+display switched on. Fixed in 1.19.7, and the gate stops it coming back. 7.4 remains supported and
+is tested on every change, so nothing here drops an older shop.
+
+**Order storage — both.** WooCommerce keeps orders either in its own tables (High-Performance Order
+Storage) or in the posts table, and the two do not behave alike: the posts table silently ignores
+the meta filters `wc_get_orders()` is given. Until 1.19.6 that meant a shop not yet migrated got
+unfiltered results from every order lookup the plugin made — payments were rejected as duplicates
+and never confirmed. Both storages are now covered by their own test suite
+(`tests/order-query-tests.php`), which models each and runs the plugin's real queries against both.
+If you are on the older storage you do not need to migrate.
 
 **Themes — 44 of 44 clean, on both checkouts:** Astra, Avada (and its child theme), Beratung, Betheme,
 Blocksy, Bricks, Divi, Dokan, Electro, Enfold, Fixera, Flatsome, GeneratePress, Hello Elementor,
@@ -184,6 +201,7 @@ Built-in compatibility handling:
 - Only public receiving addresses are stored — never private keys.
 - A payment counts only if it goes to your address, is the right asset (token contract / mint / jetton master checked), is newer than the order, is a successful transaction with the required confirmations, and is within the amount band. Amounts are compared with exact integer math.
 - Each transaction ID can pay only one order. Explorer errors, missing fields and unexpected responses always count as "not paid" (fail closed).
+- An explorer's answer is treated as data, not as a number. A value that is not exactly the expected shape is no value at all, never a best effort — PHP's own lenient conversions would otherwise turn a malformed reply into a plausible amount (before 1.19.7, `hexdec()` read the word `nineteen` as `921312`).
 - All explorer and price requests use HTTPS to fixed endpoints — no user-supplied URLs.
 - Admin actions require `manage_woocommerce` plus nonces. Customers can only see their own order (order key or account owner).
 - Frontend endpoints are nonce-protected and rate-limited per IP. Use the `xdwp_rate_limit_client_ip` filter to trust a CDN's client-IP header.
@@ -270,6 +288,12 @@ Pushing a `vX.Y.Z` tag runs the Release workflow, which builds the ZIP, its SHA-
 ## Changelog
 
 Full details for every release are in [`readme.txt`](readme.txt).
+
+### 1.19.8 — one readme, and compatibility said plainly
+
+- The release ZIP no longer carries `README.md`. `readme.txt` is what WordPress reads for the plugin's "View details" screen; this file is for GitHub and was shipping alongside it saying the same things twice
+- Requirements now state PHP **7.4 – 8.5**, every version tested on each release, in place of the old open-ended "7.4+"
+- Requirements and FAQ now say the plugin works with **either** order storage, HPOS or the older posts table — previously only HPOS was claimed, which undersold it after 1.19.6
 
 ### 1.19.7 — PHP 8.5 audit: a corrupt CSV, and an amount read from a word
 

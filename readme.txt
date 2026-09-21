@@ -4,7 +4,7 @@ Tags: woocommerce, cryptocurrency, bitcoin, ethereum, payments, usdt, crypto che
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.19.7
+Stable tag: 1.19.8
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -33,8 +33,8 @@ This plugin contacts public price and blockchain APIs to quote amounts and (opti
 * Payment details and a pre-expiry reminder in customer emails
 * Partial payments (customer is asked for the remainder), overpayment notes, and late-payment alerts for the store owner
 * Checkout branding: custom title, upload/replace icon, icon width & height, show icon and/or text
-* WooCommerce Checkout Blocks + HPOS compatible
-* Compatible with WordPress 7.1 and WooCommerce 11.x
+* WooCommerce Checkout Blocks compatible, and works with either order storage (HPOS or the older posts table)
+* Compatible with WordPress 7.1 and WooCommerce 11.x, on PHP 7.4 through 8.5
 * Refunds by claim link — the customer names an address they control, you send it from your own wallet
 * Signed webhooks and Telegram alerts, plus a daily summary of what was paid and what needs you
 * Reports by coin: taken, typical wait, abandonment, underpayment
@@ -48,7 +48,8 @@ This plugin contacts public price and blockchain APIs to quote amounts and (opti
 
 * WordPress 6.9+ (tested up to 7.1)
 * WooCommerce 10.0+ (tested up to 11.1)
-* PHP 7.4+ (8.2+ recommended)
+* PHP 7.4 – 8.5 (8.2+ recommended); every one of those versions is tested on each release
+* Either WooCommerce order storage — High-Performance Order Storage or the older posts table
 * HTTPS recommended
 
 == Installation ==
@@ -99,6 +100,14 @@ Yes. This plugin registers a Blocks payment method and declares cart/checkout bl
 = Will it work with my theme? =
 
 Yes. It uses the WooCommerce payment gateway API and scoped CSS classes (every selector is prefixed `.xdwp-`, so it won't leak style onto your theme or other plugins). The customer-facing payment box template can also be overridden from your theme, the same way WooCommerce's own templates can: copy `templates/payment.php` to `yourtheme/xorro-direct-wallet-payments-woocommerce/payment.php`.
+
+= Which PHP versions does it support? =
+
+PHP 7.4 through 8.5. Every release runs the full test suite on 7.4, 8.0, 8.1, 8.2, 8.3, 8.4 and 8.5, and the build is failed if any of them raises even a single deprecation or warning. 8.2 or newer is recommended, but nothing here requires you to move off an older one.
+
+= Does it need High-Performance Order Storage? =
+
+No — it works with either. WooCommerce can keep orders in its own tables (HPOS) or in the older posts table, and this plugin is tested against both on every change. If you are still on the posts table, update to 1.19.6 or later: before that, WooCommerce quietly dropped the order filters this plugin relies on, which could leave real payments unconfirmed.
 
 = What third-party services does this plugin use? =
 
@@ -329,6 +338,11 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 * QR Code generator (`assets/js/qrcode.min.js`) — MIT-licensed library by davidshimjs (https://github.com/davidshimjs/qrcodejs). Source is publicly available; the bundled file is minified for production use.
 
 == Changelog ==
+
+= 1.19.8 =
+* The plugin folder now holds one readme instead of two. readme.txt is the one WordPress reads for the "View details" screen; README.md was a second copy of the same information written for GitHub, and it no longer ships
+* Documentation: the supported PHP range is now stated as 7.4 through 8.5, with every one of those versions tested on each release, in place of the old "7.4+"
+* Documentation: the plugin works with either WooCommerce order storage — High-Performance Order Storage or the older posts table — which is now said plainly in the requirements and answered in the FAQ. If you are still on the posts table, 1.19.6 is the release that matters to you
 
 = 1.19.7 =
 * Fixed: on PHP 8.4 and 8.5 the Payments CSV export could download as a corrupt file. PHP 8.4 deprecated leaving the CSV escape character unstated, and on a shop with error display switched on that deprecation was printed into the download itself, in front of the spreadsheet. The escape character is now always given, which is also the behaviour a spreadsheet expects

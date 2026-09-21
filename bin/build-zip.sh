@@ -49,10 +49,15 @@ rsync -a \
 	--exclude='.cursor/' \
 	--exclude='.distignore' \
 	--exclude='*.zip' \
+	`# Only one readme ships. readme.txt is the one WordPress reads for the plugin's` \
+	`# "View details" screen; README.md is for GitHub and would otherwise sit beside it` \
+	`# in wp-content/plugins saying the same things twice.` \
+	--exclude='README.md' \
 	./ "${STAGE}/${PLUGIN_SLUG}/"
 
 test -f "${STAGE}/${PLUGIN_SLUG}/xorro-direct-wallet-payments-woocommerce.php"
 test -f "${STAGE}/${PLUGIN_SLUG}/readme.txt"
+test ! -f "${STAGE}/${PLUGIN_SLUG}/README.md"
 test ! -d "${STAGE}/${PLUGIN_SLUG}/tests"
 test ! -d "${STAGE}/${PLUGIN_SLUG}/docs"
 test ! -d "${STAGE}/${PLUGIN_SLUG}/.git"

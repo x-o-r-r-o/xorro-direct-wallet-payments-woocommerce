@@ -693,6 +693,13 @@ foreach ( $xdwp_query_scan as $xdwp_file ) {
 }
 xdwp_assert( array() === $xdwp_direct_meta_query, 'no meta_query is handed straight to wc_get_orders(): ' . implode( ', ', $xdwp_direct_meta_query ) );
 
+// One readme ships, not two: readme.txt is what WordPress reads for the plugin's "View details"
+// screen, and README.md is for GitHub. Both in wp-content/plugins would say the same things twice.
+$xdwp_build_src = file_get_contents( $root . '/bin/build-zip.sh' );
+xdwp_assert( false !== strpos( $xdwp_build_src, "--exclude='README.md'" ), 'the release ZIP leaves README.md out' );
+xdwp_assert( false !== strpos( $xdwp_build_src, 'test ! -f "${STAGE}/${PLUGIN_SLUG}/README.md"' ), 'and the build fails if it ever creeps back in' );
+xdwp_assert( false !== strpos( $xdwp_build_src, 'test -f "${STAGE}/${PLUGIN_SLUG}/readme.txt"' ), 'while readme.txt is still required to be there' );
+
 // PHP 8.4 deprecated relying on fputcsv()'s default escape character. A deprecation printed
 // during a download lands inside the file, so the export must always pass it explicitly.
 $xdwp_payments_src = file_get_contents( $root . '/includes/admin/class-xdwp-payments-admin.php' );
