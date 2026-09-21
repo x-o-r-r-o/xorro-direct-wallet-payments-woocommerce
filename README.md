@@ -289,6 +289,14 @@ Pushing a `vX.Y.Z` tag runs the Release workflow, which builds the ZIP, its SHA-
 
 Full details for every release are in [`readme.txt`](readme.txt).
 
+### 1.22.0 — rehearse the whole thing, with free coins
+
+- New: **test mode** — a real quote, address, payment page, on-chain transfer, confirmed order, email and webhook, on networks where coins are worthless
+- **Bitcoin testnet3, Ethereum Sepolia and TRON Nile**, and only those: a test network has to be one the plugin can genuinely read, with a faucet you can use today
+- Other coins are **hidden** while testing rather than half-working, and tokens are excluded — a token's contract differs on every test network
+- The Wallets tab accepts **only** test addresses while it's on, and refuses them when it's off. Your real addresses are kept
+- Impossible to leave on by accident: an undismissable admin banner, a readiness-check warning, and a payment-page notice that real coins sent there are lost
+
 ### 1.21.0 — money with no order
 
 - New: a reconciliation screen that reads your receiving addresses and subtracts every transfer the plugin can account for. What's left is money no order explains — invisible to the ordinary check, which only ever asks about one expected amount

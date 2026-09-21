@@ -77,7 +77,25 @@ defined( 'ABSPATH' ) || exit;
 				?>
 			</p>
 		<?php endif; ?>
-		<?php if ( '' !== $network_label ) : ?>
+		<?php
+		// A rehearsal is only honest if the page says so. Anyone reaching this while the shop is
+		// in test mode must know before they send anything that real coins sent here are lost.
+		$xdwp_testing = class_exists( 'Xdwp_Testmode' ) && Xdwp_Testmode::active();
+		$xdwp_testnet = $xdwp_testing ? Xdwp_Testmode::network_label( isset( $coin['verifier'] ) ? $coin['verifier'] : '' ) : '';
+		?>
+		<?php if ( '' !== $xdwp_testnet ) : ?>
+			<p class="xdwp-box__network xdwp-box__network--test" role="note">
+				<?php
+				echo esc_html(
+					sprintf(
+						/* translators: %s: name of the test network, e.g. "Bitcoin testnet3" */
+						__( 'This shop is in test mode. This address is on %s, a test network — send test coins only. Real coins sent here are lost and cannot be recovered.', 'xorro-direct-wallet-payments-woocommerce' ),
+						$xdwp_testnet
+					)
+				);
+				?>
+			</p>
+		<?php elseif ( '' !== $network_label ) : ?>
 			<p class="xdwp-box__network" role="note">
 				<?php
 				echo esc_html(
@@ -162,7 +180,16 @@ defined( 'ABSPATH' ) || exit;
 				<span class="xdwp-box__value"><?php
 					// The name a wallet or an exchange uses, not the internal one: a customer
 					// choosing a network in Binance looks for "TRON (TRC-20)", never "TRX · trc20".
-					echo esc_html( '' !== $network_label ? $network_label : $coin['network'] . ' · ' . $coin['type'] );
+					// In test mode it is the test network's name instead, because sending real
+					// coins to a test address loses them — the network shown has to be the truth.
+					$xdwp_test_net = ( class_exists( 'Xdwp_Testmode' ) && Xdwp_Testmode::active() )
+						? Xdwp_Testmode::network_label( isset( $coin['verifier'] ) ? $coin['verifier'] : '' )
+						: '';
+					if ( '' !== $xdwp_test_net ) {
+						echo esc_html( $xdwp_test_net );
+					} else {
+						echo esc_html( '' !== $network_label ? $network_label : $coin['network'] . ' · ' . $coin['type'] );
+					}
 				?></span>
 			</div>
 		</div>

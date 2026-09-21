@@ -1859,6 +1859,16 @@ class Xdwp_Verifier {
 	private static function find_payment_on_chain( array $coin, $address, $min, $max, $since ) {
 		$verifier = $coin['verifier'];
 
+		// A shop rehearsing on a test network must be read on that network. This comes first so
+		// there is no path where a test-mode order is checked against mainnet — which would find
+		// nothing forever, and look exactly like a customer who had not paid.
+		if ( class_exists( 'Xdwp_Testmode' ) && Xdwp_Testmode::active() ) {
+			if ( ! Xdwp_Testmode::supports( $verifier ) ) {
+				return false;
+			}
+			return self::find_payment_on_testnet( $verifier, $address, $min, $max, $since, $coin );
+		}
+
 		switch ( $verifier ) {
 			case 'btc':
 				$found = self::check_mempool( $address, $min, $max, $since );
@@ -5901,6 +5911,91 @@ class Xdwp_Verifier {
 	 * address before it stops asking.
 	 */
 	const LIST_MAX = 25;
+
+	/**
+	 * Read a test network instead of the real one.
+	 *
+	 * Only the chains Xdwp_Testmode offers reach here, and each is read by the same code that
+	 * reads its mainnet — Esplora for Bitcoin, Etherscan V2 for Ethereum, TronGrid for TRON —
+	 * pointed at the test network's own endpoint. Nothing about matching an amount changes,
+	 * which is the point: a rehearsal that exercised different code would prove nothing.
+	 *
+	 * @param string $verifier Verifier key.
+	 * @param string $address  Address.
+	 * @param string $min      Minimum amount.
+	 * @param string $max      Maximum amount.
+	 * @param int    $since    Unix timestamp.
+	 * @param array  $coin     Coin definition.
+	 * @return string|false
+	 */
+	private static function find_payment_on_testnet( $verifier, $address, $min, $max, $since, array $coin ) {
+		switch ( $verifier ) {
+			case 'btc':
+				return self::check_blockstream( 'https://blockstream.info/testnet/api', $address, $min, $max, $since, 8 );
+			case 'eth':
+				// Sepolia, through the same Etherscan V2 endpoint and the same key.
+				return self::check_evm( 11155111, $address, $min, $max, $since, $coin );
+			case 'tron':
+				return self::check_tron_nile( $address, $min, $max, $since, $coin );
+		}
+		return false;
+	}
+
+	/**
+	 * TRON's Nile test network.
+	 *
+	 * TronGrid serves it from its own host with the same shape as the live one, so this differs
+	 * from check_tron() only in where it asks.
+	 *
+	 * @param string $address Address.
+	 * @param string $min     Minimum amount.
+	 * @param string $max     Maximum amount.
+	 * @param int    $since   Unix timestamp.
+	 * @param array  $coin    Coin definition.
+	 * @return string|false
+	 */
+	private static function check_tron_nile( $address, $min, $max, $since, array $coin ) {
+		$url      = sprintf( 'https://nile.trongrid.io/v1/accounts/%s/transactions?only_to=true&only_confirmed=true&limit=100', rawurlencode( $address ) );
+		$response = self::http_get( $url );
+		if ( empty( $response['data'] ) || ! is_array( $response['data'] ) ) {
+			return false;
+		}
+
+		foreach ( $response['data'] as $tx ) {
+			$contract_type = '';
+			if ( ! empty( $tx['raw_data']['contract'][0]['type'] ) ) {
+				$contract_type = (string) $tx['raw_data']['contract'][0]['type'];
+			}
+			if ( 'TransferContract' !== $contract_type ) {
+				continue;
+			}
+			$to = '';
+			if ( ! empty( $tx['raw_data']['contract'][0]['parameter']['value']['to_address'] ) ) {
+				$to = (string) $tx['raw_data']['contract'][0]['parameter']['value']['to_address'];
+			} elseif ( ! empty( $tx['to_address'] ) ) {
+				$to = (string) $tx['to_address'];
+			}
+			if ( ! self::tron_destination_matches( $to, $address ) ) {
+				continue;
+			}
+			$time = isset( $tx['block_timestamp'] ) ? (int) floor( $tx['block_timestamp'] / 1000 ) : 0;
+			if ( ! $time || $time < $since ) {
+				continue;
+			}
+			$raw = '';
+			if ( isset( $tx['raw_data']['contract'][0]['parameter']['value']['amount'] ) ) {
+				$raw = $tx['raw_data']['contract'][0]['parameter']['value']['amount'];
+			}
+			if ( '' === $raw ) {
+				continue;
+			}
+			if ( self::raw_amount_in_band( $raw, isset( $coin['decimals'] ) ? (int) $coin['decimals'] : 6, $min, $max ) ) {
+				return ! empty( $tx['txID'] ) ? (string) $tx['txID'] : false;
+			}
+		}
+
+		return false;
+	}
 
 	/**
 	 * Whether transfers to an address on this chain can be listed.

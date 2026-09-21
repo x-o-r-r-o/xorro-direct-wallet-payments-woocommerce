@@ -93,6 +93,13 @@ class Xdwp_Wallets {
 		}
 
 		$verifier = $coin['verifier'];
+
+		// On a test network the address is written differently — a Bitcoin testnet address is
+		// not a Bitcoin address — and saving a mainnet one here would point the shop at a chain
+		// nobody is watching. Checked against the test shape instead, not as well as.
+		if ( class_exists( 'Xdwp_Testmode' ) && Xdwp_Testmode::active() && Xdwp_Testmode::supports( $verifier ) ) {
+			return Xdwp_Testmode::address_ok( $verifier, $address );
+		}
 		$len      = strlen( $address );
 
 		switch ( $verifier ) {

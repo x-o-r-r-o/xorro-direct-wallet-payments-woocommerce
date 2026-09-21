@@ -856,3 +856,13 @@
 	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 	overflow-wrap: anywhere;
 }
+
+/* Test mode says so on the payment page itself. Louder than the ordinary network warning,
+   because a real coin sent to a test address is gone and nobody can undo it. The words carry
+   the meaning; the colour is only a second signal. */
+.xdwp-box__network--test {
+	border-left: 4px solid #8a4b08;
+	background: rgba(138, 75, 8, 0.08);
+	color: #8a4b08;
+	font-weight: 600;
+}

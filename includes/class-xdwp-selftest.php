@@ -147,6 +147,17 @@ class Xdwp_Selftest {
 			$checks[] = self::result( 'https', __( 'HTTPS', 'xorro-direct-wallet-payments-woocommerce' ), self::WARN, __( 'This site is not served over HTTPS. Copy-to-clipboard and wallet links do not work reliably without it.', 'xorro-direct-wallet-payments-woocommerce' ) );
 		}
 
+		// Said here as well as on every admin screen, because this is the screen a merchant reads
+		// to answer "is this shop ready?" — and in test mode the honest answer is no.
+		if ( class_exists( 'Xdwp_Testmode' ) && Xdwp_Testmode::active() ) {
+			$checks[] = self::result(
+				'testmode',
+				__( 'Test mode', 'xorro-direct-wallet-payments-woocommerce' ),
+				self::WARN,
+				Xdwp_Testmode::notice()
+			);
+		}
+
 		$checks[] = self::check_outbound_allowed();
 		$checks[] = self::check_loopback();
 

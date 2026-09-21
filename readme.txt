@@ -4,7 +4,7 @@ Tags: woocommerce, cryptocurrency, bitcoin, ethereum, payments, usdt, crypto che
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.21.0
+Stable tag: 1.22.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -338,6 +338,12 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 * QR Code generator (`assets/js/qrcode.min.js`) — MIT-licensed library by davidshimjs (https://github.com/davidshimjs/qrcodejs). Source is publicly available; the bundled file is minified for production use.
 
 == Changelog ==
+
+= 1.22.0 =
+* New: test mode. Point the shop at test networks and rehearse a payment with coins that are free and worth nothing — a real quote, a real address, a real payment page, a transfer read off a live chain, a confirmed order, an email, a webhook. Until now the only way to know a shop would take a payment was to send one, and the wrong address or the wrong network is an expensive way to find out
+* Bitcoin testnet3, Ethereum Sepolia and TRON Nile, and only those. A test network has to be one this plugin can genuinely read, with a faucet you can get coins from today; the alternative is shipping endpoints that quietly fail. Your other coins are hidden from checkout while test mode is on rather than left half-working, and tokens are left out because a token has a different contract on every test network
+* The Wallets tab accepts only test addresses while test mode is on, and refuses them again when it is off. A real Bitcoin address saved during a rehearsal would sit on a chain nothing was watching. Your real addresses are kept, not overwritten
+* Test mode is never quiet about itself: a banner on every admin screen that cannot be dismissed, a warning on the readiness check, and a notice on the payment page itself saying real coins sent to that address are lost. A shop left in test mode looks completely normal from the outside
 
 = 1.21.0 =
 * New: "Money with no order" on the Payments screen. It reads your receiving addresses and subtracts every transfer the plugin can already account for; what is left is money you have that no order explains — a customer paying from an address they saved, a second payment for an order already settled, or a payment that arrived after an order was cancelled. None of that is visible to the ordinary payment check, which only ever asks whether one expected amount has turned up

@@ -178,6 +178,40 @@ $active  = isset( $tabs[ $tab ] ) ? $tabs[ $tab ] : $tabs['general'];
 										</td>
 									</tr>
 									<tr>
+										<th scope="row"><?php esc_html_e( 'Test mode', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
+										<td>
+											<label class="cc-check">
+												<input type="checkbox" name="xdwp[test_mode]" value="yes" <?php checked( ( $settings['test_mode'] ?? 'no' ), 'yes' ); ?> />
+												<span><?php esc_html_e( 'Point this shop at test networks, so a payment can be rehearsed with worthless coins', 'xorro-direct-wallet-payments-woocommerce' ); ?></span>
+											</label>
+											<p class="description">
+												<?php
+												printf(
+													/* translators: %s: comma-separated list of test networks */
+													esc_html__( 'Runs the whole thing for real — a quote, an address, a payment page, a transfer read off a live chain, a confirmed order, an email, a webhook — on networks where coins are free. Available on %s, and only those: a test network has to be one this plugin can actually read, with a faucet you can get coins from today. Your other coins are hidden from checkout while this is on, rather than left half-working.', 'xorro-direct-wallet-payments-woocommerce' ),
+													esc_html( implode( ', ', wp_list_pluck( Xdwp_Testmode::networks(), 'label' ) ) )
+												);
+												?>
+											</p>
+											<p class="description">
+												<strong><?php esc_html_e( 'Use a separate wallet address for this.', 'xorro-direct-wallet-payments-woocommerce' ); ?></strong>
+												<?php esc_html_e( 'A test network address is not a real one, and the Wallets tab will only accept a test address while this is on. Turning test mode off again puts your real addresses back in charge — they are not overwritten.', 'xorro-direct-wallet-payments-woocommerce' ); ?>
+											</p>
+											<?php if ( Xdwp_Testmode::active() ) : ?>
+												<p class="description">
+													<?php esc_html_e( 'Faucets:', 'xorro-direct-wallet-payments-woocommerce' ); ?>
+													<?php
+													$xdwp_faucets = array();
+													foreach ( Xdwp_Testmode::networks() as $xdwp_net ) {
+														$xdwp_faucets[] = '<a href="' . esc_url( $xdwp_net['faucet'] ) . '" target="_blank" rel="noopener noreferrer">' . esc_html( $xdwp_net['label'] ) . '</a>';
+													}
+													echo wp_kses_post( implode( ' · ', $xdwp_faucets ) );
+													?>
+												</p>
+											<?php endif; ?>
+										</td>
+									</tr>
+									<tr>
 										<th scope="row"><?php esc_html_e( 'Partial and over payments', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
 										<td>
 											<label class="cc-check">

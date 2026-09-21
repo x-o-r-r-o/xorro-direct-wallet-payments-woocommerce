@@ -460,6 +460,14 @@ class Xdwp_Coins {
 			$enabled = array();
 		}
 
+		// While the shop is rehearsing on test networks, only the coins with a test network this
+		// plugin can actually read may be offered. Leaving the others visible would put coins at
+		// checkout whose addresses are for a chain nobody is watching.
+		$testing = class_exists( 'Xdwp_Testmode' ) && Xdwp_Testmode::active();
+		if ( $testing ) {
+			$enabled = array_values( array_intersect( array_map( 'strval', $enabled ), Xdwp_Testmode::coin_ids() ) );
+		}
+
 		$payable = array();
 		foreach ( $enabled as $coin_id ) {
 			$coin = self::get( $coin_id );

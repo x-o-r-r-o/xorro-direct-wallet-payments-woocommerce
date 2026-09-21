@@ -15,6 +15,24 @@ class Xdwp_Admin {
 	/**
 	 * Init hooks.
 	 */
+	/**
+	 * Say, on every admin screen, that this shop cannot take real money.
+	 *
+	 * Deliberately not dismissible and not limited to this plugin's own pages. A shop left in
+	 * test mode looks completely normal from the outside and takes orders nobody can pay for;
+	 * the cost of a banner nobody can hide is far smaller than the cost of not noticing.
+	 */
+	public static function test_mode_notice() {
+		if ( ! class_exists( 'Xdwp_Testmode' ) || ! Xdwp_Testmode::active() || ! current_user_can( 'manage_woocommerce' ) ) {
+			return;
+		}
+		printf(
+			'<div class="notice notice-warning"><p><strong>%s</strong> %s</p></div>',
+			esc_html__( 'Xorro Wallet Payments:', 'xorro-direct-wallet-payments-woocommerce' ),
+			esc_html( Xdwp_Testmode::notice() )
+		);
+	}
+
 	public static function init() {
 		add_action( 'wp_ajax_xdwp_selftest', array( __CLASS__, 'handle_selftest' ) );
 		add_action( 'woocommerce_system_status_report', array( __CLASS__, 'system_status_report' ) );
@@ -24,6 +42,7 @@ class Xdwp_Admin {
 		add_action( 'admin_notices', array( __CLASS__, 'setup_notice' ) );
 		add_action( 'admin_notices', array( __CLASS__, 'api_key_notice' ) );
 		add_action( 'admin_notices', array( __CLASS__, 'confirmations_notice' ) );
+		add_action( 'admin_notices', array( __CLASS__, 'test_mode_notice' ) );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ) );
 		add_filter( 'admin_body_class', array( __CLASS__, 'admin_body_class' ) );
 		add_filter( 'plugin_action_links_' . XDWP_BASENAME, array( __CLASS__, 'action_links' ) );
