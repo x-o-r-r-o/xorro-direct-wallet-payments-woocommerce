@@ -649,7 +649,10 @@ xdwp_assert( false !== strpos( $xdwp_payment_tpl, "'paid', 'expired', 'cancelled
 // header, never a query string, so it cannot end up in an access log or a diagnostic URL.
 $xdwp_verifier_src = file_get_contents( $root . '/includes/class-xdwp-verifier.php' );
 xdwp_assert( false !== strpos( $xdwp_verifier_src, 'function check_kaia' ), 'Kaia can be checked on chain' );
-xdwp_assert( false !== strpos( $xdwp_verifier_src, "'Authorization' => 'Bearer ' . $api_key" ), 'the Kaiascan key is sent as a header, not in the URL' );
+// Single-quoted on purpose: in double quotes PHP would read $api_key as a variable of this
+// script's own — undefined, so the needle silently shrank to "'Authorization' => 'Bearer ' . "
+// and the assertion passed without ever checking what the key is concatenated to.
+xdwp_assert( false !== strpos( $xdwp_verifier_src, '\'Authorization\' => \'Bearer \' . $api_key' ), 'the Kaiascan key is sent as a header, not in the URL' );
 xdwp_assert( false === strpos( $xdwp_verifier_src, 'kaiascan.io/api/v1/accounts/%s/transactions?key=' ), 'and never as a query parameter' );
 xdwp_assert( false !== strpos( $xdwp_verifier_src, 'function to_raw_units' ), 'decimal amounts are converted without a float' );
 // Polkadot is payable but confirmed by hand: it must not claim automatic verification.
@@ -689,6 +692,18 @@ foreach ( $xdwp_query_scan as $xdwp_file ) {
 	}
 }
 xdwp_assert( array() === $xdwp_direct_meta_query, 'no meta_query is handed straight to wc_get_orders(): ' . implode( ', ', $xdwp_direct_meta_query ) );
+
+// PHP 8.4 deprecated relying on fputcsv()'s default escape character. A deprecation printed
+// during a download lands inside the file, so the export must always pass it explicitly.
+$xdwp_payments_src = file_get_contents( $root . '/includes/admin/class-xdwp-payments-admin.php' );
+// Counted rather than parsed: a real call always opens with the handle variable, and the
+// separator/enclosure/escape triple below is written for no other reason.
+preg_match_all( '/fputcsv\s*\(\s*\$/', $xdwp_payments_src, $xdwp_csv_calls );
+preg_match_all( '/,\s*\',\'\s*,\s*\'"\'\s*,\s*\'\'\s*\)/', $xdwp_payments_src, $xdwp_csv_escaped );
+xdwp_assert(
+	count( $xdwp_csv_calls[0] ) > 0 && count( $xdwp_csv_calls[0] ) === count( $xdwp_csv_escaped[0] ),
+	sprintf( 'every fputcsv() names its escape character (%d of %d)', count( $xdwp_csv_escaped[0] ), count( $xdwp_csv_calls[0] ) )
+);
 
 echo "\n";
 if ( $fail > 0 ) {

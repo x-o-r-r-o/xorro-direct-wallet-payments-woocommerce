@@ -441,6 +441,10 @@ class Xdwp_Coins {
 	 * @return array<string, mixed>|null
 	 */
 	public static function get( $id ) {
+		// A coin id reaches this from order meta, from a request, and from third-party filters,
+		// so it is not always the string it should be. Anything that is not a scalar cannot name
+		// a coin, and using it as an array key directly is deprecated from PHP 8.1 on.
+		$id  = is_scalar( $id ) ? (string) $id : '';
 		$all = self::all();
 		return isset( $all[ $id ] ) ? $all[ $id ] : null;
 	}
@@ -718,12 +722,15 @@ class Xdwp_Coins {
 			return 8;
 		}
 
-		$native   = min( (int) $coin['decimals'], 8 );
+		// A coin array can also arrive from the xdwp_coins filter, where another plugin may have
+		// built it by hand and left a field out. Read it as optional rather than trusting shape.
+		$native   = min( isset( $coin['decimals'] ) ? (int) $coin['decimals'] : 8, 8 );
 		$decimals = $native;
 
 		// A coin worth about one unit of fiat is quoted in cents, like the fiat it tracks.
-		$pegs = class_exists( 'Xdwp_Rates' ) ? Xdwp_Rates::stablecoin_pegs() : array();
-		if ( isset( $pegs[ strtoupper( (string) $coin['symbol'] ) ] ) ) {
+		$symbol = isset( $coin['symbol'] ) && is_scalar( $coin['symbol'] ) ? (string) $coin['symbol'] : '';
+		$pegs   = class_exists( 'Xdwp_Rates' ) ? Xdwp_Rates::stablecoin_pegs() : array();
+		if ( '' !== $symbol && isset( $pegs[ strtoupper( $symbol ) ] ) ) {
 			$decimals = min( $native, 2 );
 		}
 
@@ -1665,8 +1672,11 @@ class Xdwp_Coins {
 	 * @return string
 	 */
 	public static function to_base_units( $amount, $decimals ) {
-		$amount   = (string) $amount;
-		$decimals = max( 0, (int) $decimals );
+		$amount = is_scalar( $amount ) ? (string) $amount : '';
+		// Upper bound as well as lower: the padding below is str_repeat(), so an absurd
+		// decimals count is a way to ask PHP for an absurd amount of memory. No chain uses
+		// more than 18, and this is a public method any theme or plugin can reach.
+		$decimals = max( 0, min( 36, (int) $decimals ) );
 		if ( false === strpos( $amount, '.' ) ) {
 			$whole = preg_replace( '/\D/', '', $amount );
 			$whole = ( null === $whole || '' === $whole ) ? '0' : $whole;

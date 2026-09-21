@@ -271,6 +271,15 @@ Pushing a `vX.Y.Z` tag runs the Release workflow, which builds the ZIP, its SHA-
 
 Full details for every release are in [`readme.txt`](readme.txt).
 
+### 1.19.7 — PHP 8.5 audit: a corrupt CSV, and an amount read from a word
+
+- Fixed: on PHP 8.4+ the payments CSV could download corrupt — PHP deprecated leaving the CSV escape character unstated, and with error display on that text was printed into the file
+- Fixed: explorer amounts were parsed with `hexdec()`, which drops unrecognised characters instead of failing. `nineteen` was read as the amount `921312`. Anything that is not a clean 256-bit hex integer is now no amount at all
+- Fixed: that conversion ran one bcmath operation per character, unbounded — a large enough explorer reply could tie up the site
+- Hardened: decimal places bounded before padding, non-text coin identifiers refused, partial coin definitions from third-party filters tolerated, addresses normalised before matching
+- Fixed: uninstall left a cached option behind. The HD address index is still kept on purpose — deleting it would re-use addresses belonging to past orders
+- CI now runs every suite on PHP 7.4, 8.0, 8.1, 8.2, 8.3, 8.4 and 8.5, and fails on a single deprecation or warning
+
 ### 1.19.6 — Order lookups work on shops that still store orders as posts
 
 - Fixed: on a shop not yet on High-Performance Order Storage, WooCommerce silently drops the `meta_query` from `wc_get_orders()`, so none of the plugin's order lookups were filtered. "Has another order already claimed this transaction?" became "does this shop have any other order?" — true on every real shop — and payments were rejected as duplicates and never confirmed

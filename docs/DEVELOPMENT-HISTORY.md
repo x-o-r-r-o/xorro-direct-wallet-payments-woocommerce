@@ -146,6 +146,7 @@ Full user-facing notes are in `readme.txt`. This is what each release put into t
 | 1.18.0 | Reconciliation | Order search by txid/address; per-order timeline; row actions (check now, extend); a period report read straight from order meta, bounded and cached. Countdown fixed for windows longer than an hour |
 | 1.19.2 | The payment page as a customer reads it | A settled, cancelled or refunded order stops asking for payment — it was still showing a countdown and an address for orders the shop had completed itself, and a customer could pay twice. Amount, address and buttons moved above the instructions. "Dealt with" clears an order from the "Needs you" queue, which could previously only grow |
 | 1.19.1 | Every coin against its live chain | Algorand's tip endpoint (it confirmed nothing at all), XRP's 100 MB redirect loop (moved to the XRP Ledger's own API), JSON-RPC calls not being recorded (four chains wrongly reported as unreachable), CoinGecko Demo/Pro host detection, a Litecoin fallback, size and redirect caps on every explorer request. Casper, Starknet and Verge withdrawn |
+| 1.19.7 | PHP 7.4 → 8.5 audit | `fputcsv()` escape given explicitly (PHP 8.4 deprecated the default, and with display_errors on the notice was printed into the download). `hex_to_decimal_string()` now refuses anything that is not a clean 256-bit hex integer — `hexdec()` drops unrecognised characters, so "nineteen" was being read as 921312 — and the per-character bcmath loop is bounded. Bounds on `to_base_units()` decimals; scalar guards on `Xdwp_Coins::get()`, `payable_decimals()` and `is_plausible_address()`. CI matrix widened to 7.4–8.5 with a gate that fails on any deprecation or warning |
 | 1.19.6 | Both order stores | `Xdwp_Order_Query`. WooCommerce only honours `meta_query` in `wc_get_orders()` on HPOS; the post store drops it, so on a shop not yet migrated every order lookup was unfiltered — `txid_already_used()` answered "does this shop have any other order?" and no payment could confirm. The meta filter is now put into the WP_Query arguments through `woocommerce_order_data_store_cpt_get_orders_query`. A recycled wallet index also has to be present and numeric before it is believed (an absent one read as index 0) |
 | 1.19.5 | Kaia, and Polkadot back | Kaia confirmed through Kaiascan's documented API with a free key, value transfers only, decimal amounts converted to base units by string; Polkadot restored as a manual coin; IoTeX proven unimplementable (its address-history API answers HTTP 500 to everyone, including IoTeX's own explorer) |
 | 1.19.4 | Widths that stay put | Copy buttons keep their width while they say "Copied!" — growing mid-click squeezed the address box and re-wrapped the address, which read as the address changing. Payments and reports tables scroll inside their own panel instead of dragging the admin page sideways |
@@ -200,7 +201,15 @@ These hold across every release above. Breaking one is a defect, however good th
    refund code contains none.
 7. **Address allocation is atomic.** Slots are claimed with `INSERT IGNORE` / `LAST_INSERT_ID`, so
    two simultaneous orders cannot be handed the same address and amount.
-8. **An order lookup means the same on both order stores.** Orders are queried through
+8. **An explorer's answer is data, not a number.** Everything parsed out of a chain lookup came
+   from a server this plugin does not control. A value that is not exactly the shape expected is
+   no value — never a best effort, because a best effort here is an amount, and an amount decides
+   whether an order is paid. PHP's own lenient conversions (`hexdec()` ignoring stray characters,
+   `(string)` on an array yielding `"Array"`) are the trap this guards against.
+9. **The plugin runs on PHP 7.4 through 8.5, silently.** Not just "without fatals": CI fails on a
+   single deprecation or warning on any of those versions, because a diagnostic printed during a
+   CSV or JSON download corrupts the download rather than warning anybody.
+10. **An order lookup means the same on both order stores.** Orders are queried through
    `Xdwp_Order_Query::get()`, never `wc_get_orders()` directly, whenever the question involves
    order meta. WooCommerce honours `meta_query` only under HPOS; the post store drops it without
    a word, which turns a narrow question into a wide one that still returns rows.

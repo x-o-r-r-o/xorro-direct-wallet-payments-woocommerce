@@ -83,7 +83,11 @@ class Xdwp_Wallets {
 	 * @return bool
 	 */
 	public static function is_plausible_address( $coin_id, $address ) {
-		$coin = Xdwp_Coins::get( $coin_id );
+		// Addresses reach this from a refund claim form, from saved settings and from the
+		// self-test, so normalise before the length and pattern checks below rather than
+		// letting a non-string through to strlen() and preg_match().
+		$address = is_scalar( $address ) ? (string) $address : '';
+		$coin    = Xdwp_Coins::get( $coin_id );
 		if ( ! $coin || '' === $address ) {
 			return false;
 		}

@@ -210,6 +210,11 @@ class Xdwp_Payments_Admin {
 		header( 'Content-Type: text/csv; charset=utf-8' );
 		header( 'Content-Disposition: attachment; filename=xorro-wallet-payments-' . gmdate( 'Y-m-d' ) . '.csv' );
 
+		// Both fputcsv() calls below pass the escape character explicitly, as an empty string.
+		// PHP 8.4 deprecated relying on its default, and on a shop with display_errors on that
+		// deprecation would be printed into the download itself — a corrupt spreadsheet rather
+		// than a notice anyone sees. Empty is also the RFC 4180 behaviour a spreadsheet expects,
+		// and the parameter has accepted it since PHP 7.4, this plugin's minimum.
 		$out = fopen( 'php://output', 'w' );
 		fputcsv(
 			$out,
@@ -230,7 +235,10 @@ class Xdwp_Payments_Admin {
 				__( 'Address', 'xorro-direct-wallet-payments-woocommerce' ),
 				__( 'Destination tag / memo', 'xorro-direct-wallet-payments-woocommerce' ),
 				__( 'Transaction', 'xorro-direct-wallet-payments-woocommerce' ),
-			)
+			),
+			',',
+			'"',
+			''
 		);
 
 		// Paged so a store with thousands of crypto orders does not load them all at once.
@@ -265,7 +273,7 @@ class Xdwp_Payments_Admin {
 						(string) Xdwp_Order::meta( $order, 'memo' ),
 						(string) Xdwp_Order::meta( $order, 'txid' ),
 				);
-				fputcsv( $out, array_map( array( __CLASS__, 'csv_cell' ), $row ) );
+				fputcsv( $out, array_map( array( __CLASS__, 'csv_cell' ), $row ), ',', '"', '' );
 			}
 			if ( $page >= (int) $result['pages'] ) {
 				break;

@@ -46,7 +46,11 @@ function settings( array $settings ) {
 	$GLOBALS['xdwp_stub']['transients'] = array();
 	// The chain tip is cached for half a minute inside one request; each case starts fresh.
 	$cache = new ReflectionProperty( 'Xdwp_Verifier', 'tip_cache' );
-	$cache->setAccessible( true );
+	// Needed up to PHP 8.0, a no-op from 8.1, and deprecated from 8.5. This plugin supports
+	// 7.4 upwards, so the call has to stay for the old versions and go for the new ones.
+	if ( PHP_VERSION_ID < 80100 ) {
+		$cache->setAccessible( true );
+	}
 	$cache->setValue( null, array() );
 }
 
@@ -55,7 +59,10 @@ function settings( array $settings ) {
 // match_band() is internal, so reach it the way the tests need to without loosening the class.
 $band_of = function ( $amount, $coin ) {
 	$method = new ReflectionMethod( 'Xdwp_Verifier', 'match_band' );
-	$method->setAccessible( true );
+	// See the note in settings(): required on 7.4–8.0, deprecated from 8.5.
+	if ( PHP_VERSION_ID < 80100 ) {
+		$method->setAccessible( true );
+	}
 	return $method->invoke( null, $amount, $coin );
 };
 
@@ -153,6 +160,44 @@ t( 'Stellar: memo matching ignores capitalisation', $hit && ! empty( $hit['refer
 xdwp_stub_http( array() );
 $hit = Xdwp_Verifier::find_payment_detailed( $btc, $addr, '0.124', '0.126', time() - 3600 );
 t( 'an unreachable explorer never credits a payment', false === $hit );
+
+// ---------------------------------------------------------------- malformed explorer answers
+
+// An amount field is whatever the remote server chose to send. hexdec() quietly drops
+// characters it does not recognise, so a malformed answer would otherwise be read as a
+// plausible number instead of as no answer at all.
+$hex_to_decimal = function ( $hex ) {
+	$method = new ReflectionMethod( 'Xdwp_Verifier', 'hex_to_decimal_string' );
+	if ( PHP_VERSION_ID < 80100 ) {
+		$method->setAccessible( true );
+	}
+	return $method->invoke( null, $hex );
+};
+
+t( 'hex amount: a real value still converts', '1000000000000000000' === $hex_to_decimal( '0xde0b6b3a7640000' ) );
+t( 'hex amount: non-hex characters are refused, not ignored', '0' === $hex_to_decimal( '0xdeadZZbeef' ) );
+t( 'hex amount: a word is refused', '0' === $hex_to_decimal( 'nineteen' ) );
+t( 'hex amount: an object is refused', '0' === $hex_to_decimal( array( 'value' => 1 ) ) );
+t( 'hex amount: null is refused', '0' === $hex_to_decimal( null ) );
+t( 'hex amount: zero stays zero', '0' === $hex_to_decimal( '0x0' ) );
+// Wider than uint256 is not an amount any chain can express, and the conversion below runs
+// one bcmath multiply per character — an 8 MB "value" would be 8 million of them.
+t( 'hex amount: wider than uint256 is refused', '0' === $hex_to_decimal( '0x' . str_repeat( 'f', 65 ) ) );
+$started = microtime( true );
+t( 'hex amount: a megabyte of digits returns at once', '0' === $hex_to_decimal( str_repeat( '9', 1000000 ) ) );
+t( 'hex amount: and does not stall doing it', ( microtime( true ) - $started ) < 1.0 );
+
+// A coin id arrives from order meta, from a request and from the xdwp_coins filter.
+t( 'coin lookup: an array is not a coin id', null === Xdwp_Coins::get( array( 'BTC' ) ) );
+t( 'coin lookup: null is not a coin id', null === Xdwp_Coins::get( null ) );
+t( 'coin lookup: a real id still resolves', is_array( Xdwp_Coins::get( 'BTC' ) ) );
+
+// to_base_units() pads with str_repeat(), so an absurd decimals count is a way to ask PHP for
+// an absurd amount of memory. It is public, so a theme or another plugin can reach it.
+$before = memory_get_usage();
+t( 'base units: an absurd decimals count is bounded', '' !== Xdwp_Coins::to_base_units( '1', PHP_INT_MAX ) );
+t( 'base units: and allocates nothing much', ( memory_get_usage() - $before ) < ( 1024 * 1024 ) );
+t( 'base units: a real conversion is unchanged', '100000000' === Xdwp_Coins::to_base_units( '1', 8 ) );
 
 echo "\n";
 if ( $fail > 0 ) {

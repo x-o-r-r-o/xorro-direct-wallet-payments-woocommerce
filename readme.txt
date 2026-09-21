@@ -4,7 +4,7 @@ Tags: woocommerce, cryptocurrency, bitcoin, ethereum, payments, usdt, crypto che
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.19.6
+Stable tag: 1.19.7
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -329,6 +329,14 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 * QR Code generator (`assets/js/qrcode.min.js`) — MIT-licensed library by davidshimjs (https://github.com/davidshimjs/qrcodejs). Source is publicly available; the bundled file is minified for production use.
 
 == Changelog ==
+
+= 1.19.7 =
+* Fixed: on PHP 8.4 and 8.5 the Payments CSV export could download as a corrupt file. PHP 8.4 deprecated leaving the CSV escape character unstated, and on a shop with error display switched on that deprecation was printed into the download itself, in front of the spreadsheet. The escape character is now always given, which is also the behaviour a spreadsheet expects
+* Fixed: an amount from a block explorer was read with hexdec(), which silently drops characters it does not recognise instead of failing. A malformed or hostile answer therefore became a plausible-looking number rather than no answer at all — the word "nineteen" was read as the amount 921312. Anything that is not a clean 256-bit hex integer is now treated as no amount, so the payment simply does not match
+* Fixed: the same conversion ran one calculation per character with no limit on length, so a large enough reply from an explorer could tie up the site. Values wider than any chain can express are refused outright
+* Hardened: a coin's decimal places are now bounded before being used to build padding, a coin identifier that is not text is no longer used to look one up, and a coin definition supplied by another plugin's filter may leave fields out without causing warnings. Wallet addresses are normalised before they are measured and matched
+* Fixed: uninstalling left one cached option behind. The record of how far along your extended public key addresses have been handed out is still kept deliberately — deleting it would send a reinstall back to the first address and re-use addresses that already belong to past orders
+* Tested and released against PHP 7.4, 8.0, 8.1, 8.2, 8.3, 8.4 and 8.5. Every supported version now runs the full test suite on each change, and a new check fails the build if any of them raises a single deprecation or warning
 
 = 1.19.6 =
 * Fixed: on a shop that still stores orders as posts rather than in WooCommerce's own order tables, none of the plugin's order lookups were filtered at all. WooCommerce drops the `meta_query` on that store and, since WooCommerce 9.2, logs "Order query argument (meta_query) is not supported on the current order datastore" as it does so. The queries then answered far wider questions than they asked: "has another order already claimed this transaction?" became "does this shop have any other order?", which is true on every real shop, so payments were rejected as duplicates and never confirmed

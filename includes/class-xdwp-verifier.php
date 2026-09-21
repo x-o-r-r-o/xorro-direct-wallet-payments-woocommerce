@@ -5809,12 +5809,22 @@ class Xdwp_Verifier {
 	 * @return string Decimal string.
 	 */
 	private static function hex_to_decimal_string( $hex ) {
-		$hex = (string) $hex;
+		// This is an amount straight out of an explorer's JSON, so it is whatever that server
+		// chose to send — including an object, or a string that is not hex at all.
+		$hex = is_scalar( $hex ) ? (string) $hex : '';
 		if ( 0 === stripos( $hex, '0x' ) ) {
 			$hex = substr( $hex, 2 );
 		}
 		$hex = ltrim( $hex, '0' );
 		if ( '' === $hex ) {
+			return '0';
+		}
+		// hexdec() drops characters it does not recognise rather than failing, which would turn
+		// a malformed answer into a plausible-looking amount instead of no answer at all. A
+		// value also cannot be wider than uint256, and the loop below runs bcmath once per
+		// character, so an 8 MB "value" would be 8 million multiplications. Anything that is not
+		// a clean 256-bit hex integer is no amount: return zero and let the match fail closed.
+		if ( strlen( $hex ) > 64 || ! ctype_xdigit( $hex ) ) {
 			return '0';
 		}
 		if ( ! function_exists( 'bcadd' ) || ! function_exists( 'bcmul' ) ) {
