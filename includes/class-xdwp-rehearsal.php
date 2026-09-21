@@ -47,6 +47,21 @@ class Xdwp_Rehearsal {
 	}
 
 	/**
+	 * Whoever is asking must be someone who could take a payment by hand anyway.
+	 *
+	 * The admin-post handler checks this before calling anything here, so on the plugin's own
+	 * path it is asked twice. It is asked here as well because these are public static methods
+	 * that create an order and mark it paid without a payment, and the next caller might not be
+	 * that handler — another plugin, a WP-CLI command, a future screen. A capability check that
+	 * lives only in one caller is a capability check waiting to be walked around.
+	 *
+	 * @return bool
+	 */
+	private static function allowed() {
+		return function_exists( 'current_user_can' ) && current_user_can( 'manage_woocommerce' );
+	}
+
+	/**
 	 * The rehearsal order currently in progress, if there is one.
 	 *
 	 * @return WC_Order|null
@@ -79,6 +94,9 @@ class Xdwp_Rehearsal {
 	 * @return WC_Order|WP_Error
 	 */
 	public static function start( $coin_id ) {
+		if ( ! self::allowed() ) {
+			return new WP_Error( 'xdwp_not_allowed', __( 'You are not allowed to do that.', 'xorro-direct-wallet-payments-woocommerce' ) );
+		}
 		if ( ! function_exists( 'wc_create_order' ) ) {
 			return new WP_Error( 'xdwp_no_woocommerce', __( 'WooCommerce is not available.', 'xorro-direct-wallet-payments-woocommerce' ) );
 		}
@@ -146,6 +164,9 @@ class Xdwp_Rehearsal {
 	 * @return WC_Order|WP_Error
 	 */
 	public static function confirm() {
+		if ( ! self::allowed() ) {
+			return new WP_Error( 'xdwp_not_allowed', __( 'You are not allowed to do that.', 'xorro-direct-wallet-payments-woocommerce' ) );
+		}
 		$order = self::current();
 		if ( ! $order ) {
 			return new WP_Error( 'xdwp_no_rehearsal', __( 'There is no rehearsal in progress.', 'xorro-direct-wallet-payments-woocommerce' ) );
@@ -237,6 +258,9 @@ class Xdwp_Rehearsal {
 	 * @return bool Whether there was one to remove.
 	 */
 	public static function discard() {
+		if ( ! self::allowed() ) {
+			return false;
+		}
 		$order = self::current();
 		if ( ! $order ) {
 			return false;

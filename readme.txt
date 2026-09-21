@@ -4,7 +4,7 @@ Tags: woocommerce, cryptocurrency, bitcoin, ethereum, payments, usdt, crypto che
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.28.1
+Stable tag: 1.28.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -338,6 +338,11 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 * QR Code generator (`assets/js/qrcode.min.js`) — MIT-licensed library by davidshimjs (https://github.com/davidshimjs/qrcodejs). Source is publicly available; the bundled file is minified for production use.
 
 == Changelog ==
+
+= 1.28.2 =
+* Fixed: TRON was never actually available in test mode. It was listed under the internal name its TRC-20 tokens use rather than the one the native TRX coin uses, and tokens are deliberately excluded from test mode — so the TRON test network could not be reached by any coin that could be offered. Bitcoin and Ethereum were unaffected
+* Hardened: the rehearsal functions now check the capability themselves, not only in the screen that calls them. Creating a rehearsal order and confirming it marks an order paid without a payment, so that check belongs with the code that does it — a capability check living in one caller is one that can be walked around by the next
+* Both found by running the plugin against a real WordPress rather than reading it: every admin screen rendered, every feature added this month exercised, and every new entry point attempted as a subscriber
 
 = 1.28.1 =
 * Tested against order-export and currency-switcher plugins directly, rather than assumed: WooCommerce Currency Switcher (WOOCS/FOX) 1.5.4, WooCommerce Multi Currency (CURCY) 2.2.16, Advanced Order Export For WooCommerce 4.1.0 and Order Import Export for WooCommerce (WebToffee) 1.6.0 — one at a time and all together, on PHP 8.5.3 with WooCommerce 11.1.1, and on both order storages. No conflicts

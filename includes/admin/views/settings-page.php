@@ -234,7 +234,7 @@ $active  = isset( $tabs[ $tab ] ) ? $tabs[ $tab ] : $tabs['general'];
 												printf(
 													/* translators: %s: comma-separated list of test networks */
 													esc_html__( 'Runs the whole thing for real — a quote, an address, a payment page, a transfer read off a live chain, a confirmed order, an email, a webhook — on networks where coins are free. Available on %s, and only those: a test network has to be one this plugin can actually read, with a faucet you can get coins from today. Your other coins are hidden from checkout while this is on, rather than left half-working.', 'xorro-direct-wallet-payments-woocommerce' ),
-													esc_html( implode( ', ', wp_list_pluck( Xdwp_Testmode::networks(), 'label' ) ) )
+													esc_html( implode( ', ', array_keys( Xdwp_Testmode::offered() ) ) )
 												);
 												?>
 											</p>
@@ -247,8 +247,8 @@ $active  = isset( $tabs[ $tab ] ) ? $tabs[ $tab ] : $tabs['general'];
 													<?php esc_html_e( 'Faucets:', 'xorro-direct-wallet-payments-woocommerce' ); ?>
 													<?php
 													$xdwp_faucets = array();
-													foreach ( Xdwp_Testmode::networks() as $xdwp_net ) {
-														$xdwp_faucets[] = '<a href="' . esc_url( $xdwp_net['faucet'] ) . '" target="_blank" rel="noopener noreferrer">' . esc_html( $xdwp_net['label'] ) . '</a>';
+													foreach ( Xdwp_Testmode::offered() as $xdwp_label => $xdwp_faucet ) {
+														$xdwp_faucets[] = '<a href="' . esc_url( $xdwp_faucet ) . '" target="_blank" rel="noopener noreferrer">' . esc_html( $xdwp_label ) . '</a>';
 													}
 													echo wp_kses_post( implode( ' · ', $xdwp_faucets ) );
 													?>

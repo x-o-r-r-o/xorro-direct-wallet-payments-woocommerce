@@ -76,10 +76,12 @@ t( 'test mode is off unless asked for', ! Xdwp_Testmode::active() );
 // ---------------------------------------------------------------- which chains are offered
 
 $networks = Xdwp_Testmode::networks();
-t( 'three test networks are offered', 3 === count( $networks ) );
+// Counted through offered(), not networks(): the map is keyed by verifier and one chain can
+// answer to more than one key, so counting keys would drift from the number of real networks.
+t( 'three test networks are offered', 3 === count( Xdwp_Testmode::offered() ), wp_json_encode( array_keys( Xdwp_Testmode::offered() ) ) );
 t( 'Bitcoin has one', Xdwp_Testmode::supports( 'btc' ) );
 t( 'Ethereum has one', Xdwp_Testmode::supports( 'eth' ) );
-t( 'TRON has one', Xdwp_Testmode::supports( 'tron' ) );
+t( 'TRON has one, under the verifier its native coin really uses', Xdwp_Testmode::supports( 'trx' ) );
 t( 'Monero does not', ! Xdwp_Testmode::supports( 'xmr' ) );
 t( 'nor does a chain that does not exist', ! Xdwp_Testmode::supports( 'nonsense' ) );
 t( 'nor does a non-string', ! Xdwp_Testmode::supports( array( 'btc' ) ) );
@@ -132,6 +134,50 @@ foreach ( Xdwp_Testmode::coin_ids() as $id ) {
 	}
 }
 t( 'only native coins are offered in test mode', array() === $token_in_test, implode( ',', $token_in_test ) );
+
+// ---------------------------------------------------------------- the keys match real coins
+
+// The bug this exists to prevent: supports() was asserted against the network map's own keys,
+// which tests the map against itself. TRON was listed as 'tron', the verifier its TRC-20 tokens
+// use — native TRX uses 'trx' — so the TRON test network was never reachable by any coin that
+// could actually be offered, and every assertion still passed.
+$networks_by_label = array();
+foreach ( Xdwp_Testmode::networks() as $key => $net ) {
+	$networks_by_label[ $net['label'] ][] = $key;
+}
+$unreachable = array();
+foreach ( $networks_by_label as $label => $keys ) {
+	$reachable = false;
+	foreach ( Xdwp_Coins::all() as $coin_id => $coin ) {
+		$verifier = isset( $coin['verifier'] ) ? (string) $coin['verifier'] : '';
+		$native   = isset( $coin['type'] ) && 'native' === $coin['type'];
+		if ( $native && in_array( $verifier, $keys, true ) ) {
+			$reachable = true;
+			break;
+		}
+	}
+	if ( ! $reachable ) {
+		$unreachable[] = $label;
+	}
+}
+t( 'every test network is reachable by a native coin', array() === $unreachable, implode( ', ', $unreachable ) );
+
+// And each offered network must produce at least one payable coin once test mode is on.
+mode( true, array( 'BTC', 'ETH', 'TRX' ) );
+$testing_ids = Xdwp_Testmode::coin_ids();
+foreach ( array( 'BTC', 'ETH', 'TRX' ) as $expect ) {
+	t( "{$expect} is offered in test mode", in_array( $expect, $testing_ids, true ), implode( ',', $testing_ids ) );
+}
+t( 'the offered list names each network once', 3 === count( Xdwp_Testmode::offered() ), wp_json_encode( array_keys( Xdwp_Testmode::offered() ) ) );
+
+// The reader must know the same keys the network map does, or a test-mode order is checked
+// against nothing and looks exactly like an unpaid one.
+$verifier_src = file_get_contents( XDWP_PATH . 'includes/class-xdwp-verifier.php' );
+$router = substr( $verifier_src, strpos( $verifier_src, 'function find_payment_on_testnet' ), 1400 );
+foreach ( array_keys( Xdwp_Testmode::networks() ) as $key ) {
+	t( "the testnet reader handles '{$key}'", false !== strpos( $router, "case '" . $key . "':" ), $key );
+}
+mode( false );
 
 // ---------------------------------------------------------------- it is never quiet about itself
 

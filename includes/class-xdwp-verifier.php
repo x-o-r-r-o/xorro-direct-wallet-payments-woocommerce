@@ -6013,6 +6013,7 @@ class Xdwp_Verifier {
 			case 'eth':
 				// Sepolia, through the same Etherscan V2 endpoint and the same key.
 				return self::check_evm( 11155111, $address, $min, $max, $since, $coin );
+			case 'trx':
 			case 'tron':
 				return self::check_tron_nile( $address, $min, $max, $since, $coin );
 		}

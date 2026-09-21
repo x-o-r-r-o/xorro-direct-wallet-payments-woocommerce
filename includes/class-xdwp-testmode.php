@@ -64,12 +64,37 @@ class Xdwp_Testmode {
 				'faucet' => 'https://www.alchemy.com/faucets/ethereum-sepolia',
 				'regex'  => '/^0x[a-fA-F0-9]{40}$/',
 			),
+			// Keyed by verifier, and TRON answers to two of them: native TRX uses 'trx' while
+			// its TRC-20 tokens use 'tron'. Listing only 'tron' meant the native coin never
+			// matched and the TRON test network was unreachable — the tokens that did match are
+			// excluded anyway, because a token's contract differs on every test network.
+			'trx'  => array(
+				'label'  => __( 'TRON Nile', 'xorro-direct-wallet-payments-woocommerce' ),
+				'faucet' => 'https://nileex.io/join/getJoinPage',
+				'regex'  => '/^T[1-9A-HJ-NP-Za-km-z]{33}$/',
+			),
 			'tron' => array(
 				'label'  => __( 'TRON Nile', 'xorro-direct-wallet-payments-woocommerce' ),
 				'faucet' => 'https://nileex.io/join/getJoinPage',
 				'regex'  => '/^T[1-9A-HJ-NP-Za-km-z]{33}$/',
 			),
 		);
+	}
+
+	/**
+	 * The test networks a merchant is actually offered, one entry per network.
+	 *
+	 * networks() is keyed by verifier and a chain can answer to more than one, so it is the wrong
+	 * thing to show on a settings screen — it would list TRON twice.
+	 *
+	 * @return array<string, string> Label => faucet URL.
+	 */
+	public static function offered() {
+		$seen = array();
+		foreach ( self::networks() as $net ) {
+			$seen[ (string) $net['label'] ] = (string) $net['faucet'];
+		}
+		return $seen;
 	}
 
 	/**
