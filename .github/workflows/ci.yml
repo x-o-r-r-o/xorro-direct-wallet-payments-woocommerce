@@ -65,13 +65,16 @@ jobs:
       - name: Vendor tests (a single store is unchanged; a payment never reaches the wrong person)
         run: php tests/vendor-tests.php
 
+      - name: Proxy tests (the visitor behind Cloudflare; a forged header changes nothing)
+        run: php tests/proxy-tests.php
+
       # Every suite again with deprecations fatal. A deprecation is not cosmetic here: on a
       # shop with display_errors on it is printed into whatever the page was sending, which
       # for a CSV download or a JSON response means a corrupt file rather than a warning.
       - name: No PHP deprecations or warnings on this version
         run: |
           status=0
-          for suite in smoke-test matching-tests hd-tests order-query-tests backup-tests verdict-tests reconcile-tests testmode-tests rehearsal-tests walletconnect-tests vendor-tests; do
+          for suite in smoke-test matching-tests hd-tests order-query-tests backup-tests verdict-tests reconcile-tests testmode-tests rehearsal-tests walletconnect-tests vendor-tests proxy-tests; do
             out=$(php -d error_reporting=E_ALL -d display_errors=stderr \
               "tests/${suite}.php" 2>&1 >/dev/null)
             if [ -n "$out" ]; then

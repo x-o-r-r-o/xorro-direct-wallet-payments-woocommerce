@@ -108,13 +108,15 @@ class Xdwp_Ajax {
 	/**
 	 * The visitor's address, as every limit in this plugin sees it.
 	 *
-	 * REMOTE_ADDR unless the shop says otherwise. Behind a CDN or proxy that is the proxy's
-	 * address for everyone; a shop in that position filters it to the header its CDN sets.
+	 * REMOTE_ADDR, except behind Cloudflare, where the visitor's own address is read from
+	 * Cloudflare's header — believed only when the connection really came from Cloudflare. Any
+	 * other CDN or proxy can be handled by filtering the result to the header it sets.
 	 *
 	 * @return string
 	 */
 	public static function client_ip() {
-		$ip = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : 'unknown';
+		$ip = class_exists( 'Xdwp_Proxy' ) ? Xdwp_Proxy::client_ip() : ( isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '' );
+		$ip = '' === $ip ? 'unknown' : $ip;
 		/**
 		 * Filter the client identifier used for rate limiting (e.g. to trust a CDN's
 		 * client-IP header on sites behind a proxy).

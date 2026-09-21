@@ -236,6 +236,7 @@ t( 'the refund page sends no referrer', false !== strpos( $refunds, "header( 'Re
 t( 'the refund page is not indexed', false !== strpos( $refunds, 'X-Robots-Tag: noindex' ) );
 t( 'the token is cleaned from the address bar before other scripts run', false !== strpos( $refunds, 'history.replaceState' ) && false !== strpos( $refunds, '-1000' ) );
 t( 'and the form is pointed back at the real link so it still submits', false !== strpos( $refunds, 'xdwp_claim_submit' ) && false !== strpos( $refunds, 'setAttribute("action",u)' ) );
+t( 'no optimiser (Rocket Loader, LiteSpeed, WP Rocket) may delay the scrub', false !== strpos( $refunds, "'data-cfasync'     => 'false'" ) && false !== strpos( $refunds, "'data-no-defer'    => '1'" ) );
 t( 'a changed refund address is said to be a change', false !== strpos( $refunds, 'The refund address was CHANGED from' ) );
 t( 'pressing the button twice does not alert the shop twice', false !== strpos( $refunds, 'if ( $previous === $address ) {' ) );
 t( 'the refund page limits guesses by the same visitor address the checkout uses', false !== strpos( $refunds, 'Xdwp_Ajax::client_ip()' ) );

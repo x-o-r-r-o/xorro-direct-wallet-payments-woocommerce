@@ -4,7 +4,7 @@ Tags: woocommerce, cryptocurrency, bitcoin, ethereum, payments, usdt, crypto che
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.28.4
+Stable tag: 1.29.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -104,6 +104,10 @@ Yes. It uses the WooCommerce payment gateway API and scoped CSS classes (every s
 = Which PHP versions does it support? =
 
 PHP 7.4 through 8.5. Every release runs the full test suite on 7.4, 8.0, 8.1, 8.2, 8.3, 8.4 and 8.5, and the build is failed if any of them raises even a single deprecation or warning. 8.2 or newer is recommended, but nothing here requires you to move off an older one.
+
+= Does it work behind Cloudflare or another CDN? =
+
+Yes. Behind Cloudflare, many servers see Cloudflare's address instead of each customer's, which would make customers share rate limits. Since 1.29.0 the plugin reads the customer's address from Cloudflare's `CF-Connecting-IP` header itself, but only on connections that really come from Cloudflare's published address ranges, so the header cannot be forged by sending it straight to your server. It also copes with nginx in front of Apache or PHP-FPM, as control panels such as HestiaCP set up. The Payments screen tells you what it found under "Visitor addresses behind Cloudflare". For a different CDN or proxy, use the `xdwp_rate_limit_client_ip` filter to return the header it sets; `xdwp_trust_cloudflare` (return false) switches the Cloudflare handling off, and `xdwp_cloudflare_ranges` adjusts the ranges.
 
 = Does it need High-Performance Order Storage? =
 
@@ -338,6 +342,13 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 * QR Code generator (`assets/js/qrcode.min.js`) — MIT-licensed library by davidshimjs (https://github.com/davidshimjs/qrcodejs). Source is publicly available; the bundled file is minified for production use.
 
 == Changelog ==
+
+= 1.29.0 =
+* New: works out who the customer is behind Cloudflare. Servers that do not restore visitor addresses show every customer as one of Cloudflare's, so customers shared the payment page's and refund page's limits: one person's bad guesses at a refund link could lock every customer out. The plugin now reads Cloudflare's CF-Connecting-IP header, but only on connections from Cloudflare's published ranges (IPv4 and IPv6), so it cannot be forged by sending the header to the server directly. nginx in front of Apache/PHP-FPM (HestiaCP and similar) is handled too, one local hop deep.
+* New setup check, "Visitor addresses behind Cloudflare", on the Payments screen and in WooCommerce → Status: says whether the server already restores addresses, whether the plugin is doing it, or whether something in between (a load balancer, a stripped header, or someone reaching the server directly) needs looking at. Shops without a CDN see nothing.
+* Tested over real HTTP on a local nginx → PHP-FPM stack with Cloudflare simulated: separate customers now get separate limits; an attacker who has used up their own guesses cannot escape by forging the header.
+* The refund page's token scrub is now exempt from Rocket Loader, LiteSpeed and WP Rocket script delaying, so it still runs before analytics on optimised sites.
+* New filters: xdwp_trust_cloudflare, xdwp_cloudflare_ranges.
 
 = 1.28.4 =
 * Found by driving the shop over real web requests rather than WP-CLI, which quietly made every URL absolute and so hid the 1.28.3 bug.
@@ -981,6 +992,9 @@ Full audit on a live WordPress 7.1 / WooCommerce 11.1 test store: 13 themes, 53 
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.29.0 =
+Shops behind Cloudflare: customers no longer share rate limits, and a new setup check shows how visitor addresses reach your site.
 
 = 1.28.4 =
 Keeps refund links out of analytics, flags changed refund addresses, and makes the Payments screen faster.

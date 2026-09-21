@@ -477,7 +477,18 @@ class Xdwp_Refunds {
 					. 'document.addEventListener("DOMContentLoaded",function(){var f=document.querySelectorAll("form");'
 					. 'for(var i=0;i<f.length;i++){if(f[i].querySelector("[name=xdwp_claim_submit]")&&!f[i].getAttribute("action")){f[i].setAttribute("action",u);}}});'
 					. '}catch(e){}})();';
-				wp_print_inline_script_tag( $js );
+				// Kept out of every optimiser's reach (Rocket Loader, LiteSpeed, WP Rocket, ...): a
+				// delayed or deferred copy runs alongside everything else, instead of before the
+				// analytics it exists to beat. The same opt-outs the payment page uses.
+				wp_print_inline_script_tag(
+					$js,
+					array(
+						'data-no-optimize' => '1',
+						'data-no-defer'    => '1',
+						'data-no-minify'   => '1',
+						'data-cfasync'     => 'false',
+					)
+				);
 				echo '<meta name="referrer" content="no-referrer" />' . "\n";
 			},
 			-1000

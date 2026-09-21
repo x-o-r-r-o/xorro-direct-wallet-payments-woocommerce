@@ -57,6 +57,7 @@ final class Xdwp {
 		require_once XDWP_PATH . 'includes/class-xdwp-verifier.php';
 		require_once XDWP_PATH . 'includes/class-xdwp-order.php';
 		require_once XDWP_PATH . 'includes/class-xdwp-cron.php';
+		require_once XDWP_PATH . 'includes/class-xdwp-proxy.php';
 		require_once XDWP_PATH . 'includes/class-xdwp-ajax.php';
 		require_once XDWP_PATH . 'includes/class-xdwp-compat.php';
 		require_once XDWP_PATH . 'includes/class-xdwp-emails.php';

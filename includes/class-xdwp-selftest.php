@@ -162,6 +162,11 @@ class Xdwp_Selftest {
 		$checks[] = self::check_outbound_allowed();
 		$checks[] = self::check_loopback( (bool) $fresh );
 
+		$proxy = self::check_proxy();
+		if ( null !== $proxy ) {
+			$checks[] = $proxy;
+		}
+
 		return $checks;
 	}
 
@@ -202,6 +207,60 @@ class Xdwp_Selftest {
 				$allowed
 			)
 		);
+	}
+
+	/**
+	 * Does this site know who its visitors are?
+	 *
+	 * Judged from the request that opened this screen, which travels the same road a customer's
+	 * does. Nothing is said for a site with no CDN in front, where there is nothing to know.
+	 *
+	 * @param array|null $request Facts from Xdwp_Proxy::request(); the live request when null.
+	 * @return array|null
+	 */
+	public static function check_proxy( $request = null ) {
+		if ( ! class_exists( 'Xdwp_Proxy' ) ) {
+			return null;
+		}
+		$label = __( 'Visitor addresses behind Cloudflare', 'xorro-direct-wallet-payments-woocommerce' );
+
+		switch ( Xdwp_Proxy::diagnose( $request ) ) {
+			case 'restored':
+				return self::result( 'proxy', $label, self::OK, __( 'This site is behind Cloudflare and your server already passes each visitor\'s own address to WordPress, so limits apply per customer.', 'xorro-direct-wallet-payments-woocommerce' ) );
+
+			case 'handled':
+				return self::result(
+					'proxy',
+					$label,
+					self::WARN,
+					__( 'This site is behind Cloudflare, and your server hands WordPress Cloudflare\'s address instead of each visitor\'s. This plugin already reads the real visitor address from Cloudflare — only on connections that really come from Cloudflare — so its own limits work per customer. Other plugins (security, login limits, order records) may still see every customer as the same few Cloudflare addresses. Your host can fix that for the whole site by restoring visitor IPs from Cloudflare (Apache mod_remoteip, or nginx real_ip with Cloudflare\'s ranges).', 'xorro-direct-wallet-payments-woocommerce' )
+				);
+
+			case 'off':
+				return self::result(
+					'proxy',
+					$label,
+					self::WARN,
+					__( 'This site is behind Cloudflare, your server hands WordPress Cloudflare\'s address instead of each visitor\'s, and reading Cloudflare\'s visitor header has been switched off (xdwp_trust_cloudflare). Customers share rate limits: one customer\'s retries can slow down another\'s payment page. Restore visitor IPs on the server, or remove that filter.', 'xorro-direct-wallet-payments-woocommerce' )
+				);
+
+			case 'no_header':
+				return self::result(
+					'proxy',
+					$label,
+					self::WARN,
+					__( 'Requests reach this site from Cloudflare without Cloudflare\'s visitor header, so every customer looks like the same few addresses and they share rate limits. Check that nothing strips the CF-Connecting-IP header between Cloudflare and WordPress.', 'xorro-direct-wallet-payments-woocommerce' )
+				);
+
+			case 'untrusted':
+				return self::result(
+					'proxy',
+					$label,
+					self::WARN,
+					__( 'Requests carry Cloudflare\'s visitor header but reach WordPress from an address that is not Cloudflare\'s, so the header is ignored — anyone can send it. If your host runs a load balancer or proxy between Cloudflare and WordPress, ask them to restore visitor IPs there. If this site should only be reachable through Cloudflare, someone may be connecting to the server directly.', 'xorro-direct-wallet-payments-woocommerce' )
+				);
+		}
+		return null;
 	}
 
 	/**
