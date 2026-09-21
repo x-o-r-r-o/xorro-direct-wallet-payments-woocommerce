@@ -737,6 +737,9 @@ $active  = isset( $tabs[ $tab ] ) ? $tabs[ $tab ] : $tabs['general'];
 		'wallets' => Xdwp_Backup::SCOPE_WALLETS,
 		'prices'  => Xdwp_Backup::SCOPE_KEYS,
 	);
+	if ( 'general' === $tab && class_exists( 'Xdwp_Rehearsal' ) ) {
+		require XDWP_PATH . 'includes/admin/views/rehearsal-ui.php';
+	}
 	if ( isset( $xdwp_backup_tabs[ $tab ] ) && class_exists( 'Xdwp_Backup' ) ) {
 		$xdwp_backup_scope = $xdwp_backup_tabs[ $tab ];
 		require XDWP_PATH . 'includes/admin/views/backup-ui.php';

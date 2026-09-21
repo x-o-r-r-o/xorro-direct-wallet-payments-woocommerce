@@ -530,6 +530,12 @@ class Xdwp_Payments_Admin {
 				'key'     => '_xdwp_coin',
 				'compare' => 'EXISTS',
 			),
+			// A rehearsal order is real enough for WooCommerce to act on, which is the point of
+			// it — but it is not a payment, and it must not sit in this list looking like one.
+			array(
+				'key'     => '_xdwp_rehearsal',
+				'compare' => 'NOT EXISTS',
+			),
 		);
 		if ( '' !== $args['coin'] ) {
 			$meta_query[] = array(
@@ -654,7 +660,9 @@ class Xdwp_Payments_Admin {
 		}
 
 		$rows = array();
-		$keys = array( '_xdwp_coin', '_xdwp_status', '_xdwp_flag', '_xdwp_started', '_xdwp_confirmed_at', '_xdwp_amount', '_order_total' );
+		// _xdwp_rehearsal is fetched only so those orders can be dropped below: a dry run
+		// must never appear in what the shop took.
+		$keys = array( '_xdwp_coin', '_xdwp_status', '_xdwp_flag', '_xdwp_started', '_xdwp_confirmed_at', '_xdwp_amount', '_order_total', '_xdwp_rehearsal' );
 		$in   = implode( ', ', array_fill( 0, count( $keys ), '%s' ) );
 
 		$sources = array(
@@ -690,12 +698,13 @@ class Xdwp_Payments_Admin {
 					MAX( CASE WHEN m.meta_key = '_xdwp_started' THEN m.meta_value END ) AS started,
 					MAX( CASE WHEN m.meta_key = '_xdwp_confirmed_at' THEN m.meta_value END ) AS confirmed,
 					MAX( CASE WHEN m.meta_key = '_xdwp_amount' THEN m.meta_value END ) AS amount,
+					MAX( CASE WHEN m.meta_key = '_xdwp_rehearsal' THEN m.meta_value END ) AS rehearsal,
 					{$source['total']} AS total
 				FROM {$source['table']} m
 				{$source['join']}
 				WHERE m.meta_key IN ( {$in} )
 				GROUP BY m.{$source['id']}
-				HAVING coin IS NOT NULL AND started >= %d
+				HAVING coin IS NOT NULL AND rehearsal IS NULL AND started >= %d
 				ORDER BY started DESC
 				LIMIT %d",
 				array_merge( $keys, array( $since, self::REPORT_MAX ) )

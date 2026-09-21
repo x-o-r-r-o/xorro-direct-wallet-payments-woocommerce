@@ -289,6 +289,13 @@ Pushing a `vX.Y.Z` tag runs the Release workflow, which builds the ZIP, its SHA-
 
 Full details for every release are in [`readme.txt`](readme.txt).
 
+### 1.23.0 — rehearse what happens after the money arrives
+
+- New: **"Rehearse a payment"** — one order, quoted against your real wallet and today's rate, then confirmed through the same code a real payment uses. Checks order status, the customer email, and webhook/Telegram alerts in seconds
+- The other half of test mode: test mode proves the *chain reading*; this proves everything that happens **after** the money is seen, none of which involves a blockchain
+- One at a time, addressed to your own email, and excluded from the payments list and the figures. Deleting it gives back the unique amount it was holding
+- Confirming marks an order paid without payment, so it acts **only** on an order it created and flagged — enforced in the code, not just the UI
+
 ### 1.22.0 — rehearse the whole thing, with free coins
 
 - New: **test mode** — a real quote, address, payment page, on-chain transfer, confirmed order, email and webhook, on networks where coins are worthless

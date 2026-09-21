@@ -16,6 +16,40 @@ class Xdwp_Admin {
 	 * Init hooks.
 	 */
 	/**
+	 * Start, confirm or throw away a rehearsal.
+	 *
+	 * Confirming a rehearsal marks an order paid without a payment, which is exactly the power
+	 * that must not be reachable by accident. Three things stand in the way: the capability, the
+	 * nonce, and Xdwp_Rehearsal itself, which will only ever act on an order it created and
+	 * flagged as its own.
+	 */
+	public static function handle_rehearse() {
+		if ( ! current_user_can( 'manage_woocommerce' ) ) {
+			wp_die( esc_html__( 'You are not allowed to do that.', 'xorro-direct-wallet-payments-woocommerce' ), 403 );
+		}
+		check_admin_referer( 'xdwp_rehearse' );
+
+		$do     = isset( $_POST['do'] ) ? sanitize_key( wp_unslash( $_POST['do'] ) ) : '';
+		$coin   = isset( $_POST['coin'] ) ? sanitize_text_field( wp_unslash( $_POST['coin'] ) ) : '';
+		$result = 'unknown';
+
+		if ( 'start' === $do ) {
+			$order  = Xdwp_Rehearsal::start( $coin );
+			$result = is_wp_error( $order ) ? 'failed:' . $order->get_error_code() : 'started';
+		} elseif ( 'confirm' === $do ) {
+			$order  = Xdwp_Rehearsal::confirm();
+			$result = is_wp_error( $order ) ? 'failed:' . $order->get_error_code() : 'confirmed';
+		} elseif ( 'discard' === $do ) {
+			$result = Xdwp_Rehearsal::discard() ? 'discarded' : 'nothing';
+		}
+
+		$back = wp_get_referer();
+		$back = $back ? $back : admin_url( 'admin.php?page=xorro-direct-wallet-payments-woocommerce' );
+		wp_safe_redirect( add_query_arg( 'xdwp_rehearsal', rawurlencode( $result ), remove_query_arg( 'xdwp_rehearsal', $back ) ) );
+		exit;
+	}
+
+	/**
 	 * Say, on every admin screen, that this shop cannot take real money.
 	 *
 	 * Deliberately not dismissible and not limited to this plugin's own pages. A shop left in
@@ -37,6 +71,7 @@ class Xdwp_Admin {
 		add_action( 'wp_ajax_xdwp_selftest', array( __CLASS__, 'handle_selftest' ) );
 		add_action( 'woocommerce_system_status_report', array( __CLASS__, 'system_status_report' ) );
 		add_action( 'admin_post_xdwp_test_alert', array( __CLASS__, 'handle_test_alert' ) );
+		add_action( 'admin_post_xdwp_rehearse', array( __CLASS__, 'handle_rehearse' ) );
 		add_action( 'admin_menu', array( __CLASS__, 'register_menu' ) );
 		add_action( 'admin_init', array( __CLASS__, 'handle_save' ) );
 		add_action( 'admin_notices', array( __CLASS__, 'setup_notice' ) );

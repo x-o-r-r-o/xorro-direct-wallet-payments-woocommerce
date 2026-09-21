@@ -2388,3 +2388,74 @@ body.xdwp-admin-page #wpbody-content > .wrap > h1.wp-heading-inline {
 	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 	font-size: 11px;
 }
+
+/* ---------------------------------------------------------------------------
+   Rehearse a payment. Sits with the backup controls at the foot of General:
+   both are things done occasionally and deliberately, not settings to tune.
+   --------------------------------------------------------------------------- */
+.xdwp-rehearsal {
+	margin: 1.25rem 0 0;
+	padding: 1rem 1.1rem;
+	border: 1px solid #e6e7e8;
+	border-radius: 8px;
+	background: #f9f9fa;
+}
+
+.xdwp-rehearsal__title {
+	margin: 0 0 0.35rem;
+	font-size: 14px;
+}
+
+.xdwp-rehearsal__lead,
+.xdwp-rehearsal__empty,
+.xdwp-rehearsal__state,
+.xdwp-rehearsal__note {
+	margin: 0 0 0.6rem;
+	font-size: 12px;
+	line-height: 1.55;
+	color: #50575e;
+}
+
+.xdwp-rehearsal__form,
+.xdwp-rehearsal__actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+	align-items: center;
+}
+
+.xdwp-rehearsal__label {
+	font-size: 12px;
+	font-weight: 600;
+}
+
+.xdwp-rehearsal__results {
+	margin: 0.5rem 0 0.75rem;
+	padding: 0;
+	list-style: none;
+}
+
+.xdwp-rehearsal__result {
+	display: grid;
+	gap: 0.15rem;
+	padding: 0.5rem 0.65rem;
+	margin-bottom: 0.35rem;
+	border-left: 3px solid currentColor;
+	border-radius: 4px;
+	background: #fff;
+	font-size: 12px;
+	line-height: 1.5;
+}
+
+/* The words say which is which; the colour is only a second signal. */
+.xdwp-rehearsal__result.is-ok {
+	color: #17663a;
+}
+
+.xdwp-rehearsal__result.is-note {
+	color: #8a4b08;
+}
+
+.xdwp-rehearsal__result span {
+	color: #50575e;
+}

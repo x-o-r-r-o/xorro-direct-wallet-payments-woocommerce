@@ -4,7 +4,7 @@ Tags: woocommerce, cryptocurrency, bitcoin, ethereum, payments, usdt, crypto che
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.22.0
+Stable tag: 1.23.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -338,6 +338,12 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 * QR Code generator (`assets/js/qrcode.min.js`) — MIT-licensed library by davidshimjs (https://github.com/davidshimjs/qrcodejs). Source is publicly available; the bundled file is minified for production use.
 
 == Changelog ==
+
+= 1.23.0 =
+* New: "Rehearse a payment" at the foot of General. It creates one order, quotes it against your real wallet and today's rate, then confirms it as though a payment had been found — through the same code that confirms a real one. Use it to check the order reaches the right status, the email arrives, and your webhook and Telegram alerts fire. No money, no chain, a few seconds
+* It is deliberately the other half of test mode: test mode proves the chain reading works but needs a faucet and a wallet, while most of what worries a shop happens after the money is seen and involves no blockchain at all
+* Only one rehearsal exists at a time, it is addressed to your own email rather than a customer's, and it never appears in your payments list or in what the shop took. Delete it when you are done and nothing is left behind — including the unique amount it was holding, which is given back so a real customer cannot be refused it
+* Confirming a rehearsal marks an order paid without a payment, so it will only ever act on an order it created and flagged as its own. That is checked in the code itself, not only in the screen that offers it
 
 = 1.22.0 =
 * New: test mode. Point the shop at test networks and rehearse a payment with coins that are free and worth nothing — a real quote, a real address, a real payment page, a transfer read off a live chain, a confirmed order, an email, a webhook. Until now the only way to know a shop would take a payment was to send one, and the wrong address or the wrong network is an expensive way to find out

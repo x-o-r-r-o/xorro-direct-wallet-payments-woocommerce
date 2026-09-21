@@ -67,6 +67,7 @@ final class Xdwp {
 		if ( is_admin() ) {
 			require_once XDWP_PATH . 'includes/class-xdwp-backup.php';
 			require_once XDWP_PATH . 'includes/class-xdwp-reconcile.php';
+			require_once XDWP_PATH . 'includes/class-xdwp-rehearsal.php';
 			require_once XDWP_PATH . 'includes/admin/class-xdwp-admin.php';
 			require_once XDWP_PATH . 'includes/admin/class-xdwp-payments-admin.php';
 		}
