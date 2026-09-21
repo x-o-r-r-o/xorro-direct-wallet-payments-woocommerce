@@ -4,7 +4,7 @@ Tags: woocommerce, cryptocurrency, bitcoin, ethereum, payments, usdt, crypto che
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.25.0
+Stable tag: 1.25.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -338,6 +338,11 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 * QR Code generator (`assets/js/qrcode.min.js`) — MIT-licensed library by davidshimjs (https://github.com/davidshimjs/qrcodejs). Source is publicly available; the bundled file is minified for production use.
 
 == Changelog ==
+
+= 1.25.1 =
+* Fixed: vendor payouts never activated on Dokan. The function the plugin looked for does not exist — the real one is named differently and returns an object unless you ask it for an id. Because every such call is guarded, the result was that Dokan shops saw the feature do nothing at all rather than break, but it did nothing
+* Fixed: on WC Vendors, a line item whose product had been deleted could have been attributed to user 1 — usually the administrator — because that plugin answers 1 for a missing post and -1 for something that is not a product. Neither is a vendor. The answer is now confirmed to be a vendor before it is used, so a customer can never be quoted the wrong person's address
+* Both were found by checking the three marketplaces' actual source rather than working from memory, before anyone had a chance to run into them
 
 = 1.25.0 =
 * New, for marketplaces only: pay a vendor directly. When a customer buys a vendor's products and pays in crypto, the money goes straight from the customer to that vendor's own wallet. Nobody holds it in between, so there is no float, no payout queue and nothing owed. Works with Dokan, WCFM and WC Vendors; vendors enter their own addresses on their profile

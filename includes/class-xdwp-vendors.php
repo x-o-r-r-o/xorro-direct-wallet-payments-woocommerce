@@ -132,13 +132,16 @@ class Xdwp_Vendors {
 	 * @return string dokan | wcfm | wcvendors | '' when there is none.
 	 */
 	public static function detect() {
-		if ( function_exists( 'dokan_get_seller_id_by_product' ) ) {
+		// Paired checks throughout: the class says the plugin is here, the function says the
+		// call below will actually work. These plugins move code between files across major
+		// versions, and a gateway that assumes otherwise fatals on somebody's checkout.
+		if ( class_exists( 'WeDevs_Dokan' ) && function_exists( 'dokan_get_vendor_by_product' ) ) {
 			return 'dokan';
 		}
-		if ( function_exists( 'wcfm_get_vendor_id_by_post' ) ) {
+		if ( defined( 'WCFM_VERSION' ) && function_exists( 'wcfm_get_vendor_id_by_post' ) ) {
 			return 'wcfm';
 		}
-		if ( class_exists( 'WCV_Vendors' ) && method_exists( 'WCV_Vendors', 'get_vendor_from_product' ) ) {
+		if ( class_exists( 'WC_Vendors' ) && class_exists( 'WCV_Vendors' ) && method_exists( 'WCV_Vendors', 'get_vendor_from_product' ) ) {
 			return 'wcvendors';
 		}
 		return '';
@@ -251,18 +254,32 @@ class Xdwp_Vendors {
 	public static function vendor_for_product( $product_id ) {
 		switch ( self::detect() ) {
 			case 'dokan':
-				if ( function_exists( 'dokan_get_seller_id_by_product' ) ) {
-					return (int) dokan_get_seller_id_by_product( $product_id );
+				if ( function_exists( 'dokan_get_vendor_by_product' ) ) {
+					// The second argument asks for the id rather than a Vendor object. Without
+					// it this returns an object, and casting one to int is meaningless.
+					return max( 0, (int) dokan_get_vendor_by_product( $product_id, true ) );
 				}
 				return 0;
 			case 'wcfm':
 				if ( function_exists( 'wcfm_get_vendor_id_by_post' ) ) {
-					return (int) wcfm_get_vendor_id_by_post( $product_id );
+					return max( 0, (int) wcfm_get_vendor_id_by_post( $product_id ) );
 				}
 				return 0;
 			case 'wcvendors':
 				if ( class_exists( 'WCV_Vendors' ) && method_exists( 'WCV_Vendors', 'get_vendor_from_product' ) ) {
-					return (int) WCV_Vendors::get_vendor_from_product( $product_id );
+					// This one does not answer 0 for "nobody". It answers -1 when the id is not
+					// a product at all, and 1 — which on most sites is the administrator — when
+					// the post has gone missing. Taking either at face value would quote a
+					// customer somebody else's address, so the answer has to be confirmed to be
+					// a vendor before it is believed.
+					$vendor = (int) WCV_Vendors::get_vendor_from_product( $product_id );
+					if ( $vendor <= 0 ) {
+						return 0;
+					}
+					if ( method_exists( 'WCV_Vendors', 'is_vendor' ) && ! WCV_Vendors::is_vendor( $vendor ) ) {
+						return 0;
+					}
+					return $vendor;
 				}
 				return 0;
 		}

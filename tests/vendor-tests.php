@@ -236,21 +236,29 @@ t( 'and the shop is still paid its own address', $shop_btc === Xdwp_Wallets::pic
 // compile time, so a plain declaration here would already exist while the tests above were
 // checking that an ordinary shop detects no marketplace — and they would pass for the wrong
 // reason, or fail confusingly. This defers it to exactly this point in the run.
-if ( ! function_exists( 'dokan_get_seller_id_by_product' ) ) {
+if ( ! class_exists( 'WeDevs_Dokan' ) ) {
 	/**
-	 * Stand in for Dokan. Products 10 and 11 are vendor 7's; product 20 is vendor 9's;
-	 * product 30 belongs to the shop.
-	 *
-	 * @param int $product_id Product.
-	 * @return int
+	 * Dokan's own bootstrap class, which is what identifies it as installed.
 	 */
-	function dokan_get_seller_id_by_product( $product_id ) {
+	class WeDevs_Dokan {} // phpcs:ignore Generic.Files.OneObjectStructurePerFile.MultipleFound
+
+	/**
+	 * Stand in for Dokan's real signature. Products 10 and 11 are vendor 7's; product 20 is
+	 * vendor 9's; product 30 belongs to the shop. Without the second argument the real function
+	 * returns a Vendor object, which is why the plugin must pass it.
+	 *
+	 * @param int  $product_id    Product.
+	 * @param bool $get_vendor_id Return the id rather than an object.
+	 * @return int|object
+	 */
+	function dokan_get_vendor_by_product( $product_id, $get_vendor_id = false ) {
 		$map = array(
 			10 => 7,
 			11 => 7,
 			20 => 9,
 		);
-		return isset( $map[ $product_id ] ) ? $map[ $product_id ] : 0;
+		$id  = isset( $map[ $product_id ] ) ? $map[ $product_id ] : 0;
+		return $get_vendor_id ? $id : (object) array( 'id' => $id );
 	}
 }
 
@@ -325,10 +333,24 @@ t( 'and that refusal is in the code, not only in this test', false !== strpos( $
 
 // A renamed upstream function must switch routing off, not break a checkout.
 $vendors_src = file_get_contents( XDWP_PATH . 'includes/class-xdwp-vendors.php' );
-foreach ( array( 'dokan_get_seller_id_by_product', 'wcfm_get_vendor_id_by_post' ) as $fn ) {
+foreach ( array( 'dokan_get_vendor_by_product', 'wcfm_get_vendor_id_by_post' ) as $fn ) {
 	t( "the {$fn} call is guarded", false !== strpos( $vendors_src, "function_exists( '" . $fn . "' )" ) );
 }
 t( 'the WC Vendors call is guarded too', false !== strpos( $vendors_src, "method_exists( 'WCV_Vendors', 'get_vendor_from_product' )" ) );
+
+// ---------------------------------------------------------------- the names are the real ones
+
+// A function name that does not exist means routing silently never happens. These are checked
+// against the real APIs rather than from memory, because a wrong name here fails quietly.
+$vsrc_names = file_get_contents( XDWP_PATH . 'includes/class-xdwp-vendors.php' );
+t( 'Dokan is called by the name it actually has', false !== strpos( $vsrc_names, 'dokan_get_vendor_by_product' ) );
+t( 'and asked for an id rather than an object', false !== strpos( $vsrc_names, 'dokan_get_vendor_by_product( $product_id, true )' ) );
+t( 'the name that does not exist is gone', false === strpos( $vsrc_names, 'dokan_get_seller_id_by_product' ) );
+
+// WC Vendors answers -1 for "not a product" and 1 — usually the administrator — for a missing
+// post. Believing either would quote a customer the wrong person's address.
+t( 'a WC Vendors answer is confirmed to be a vendor before it is believed', false !== strpos( $vsrc_names, 'WCV_Vendors::is_vendor( $vendor )' ) );
+t( 'and a negative answer is refused', false !== strpos( $vsrc_names, 'if ( $vendor <= 0 ) {' ) );
 
 // ---------------------------------------------------------------- entering an address
 

@@ -289,6 +289,11 @@ Pushing a `vX.Y.Z` tag runs the Release workflow, which builds the ZIP, its SHA-
 
 Full details for every release are in [`readme.txt`](readme.txt).
 
+### 1.25.1 — the marketplace function names, checked against source
+
+- Fixed: vendor payouts **never activated on Dokan** — the function looked for doesn't exist, and the real one returns an object unless asked for an id. Guarded calls meant it did nothing rather than breaking, but it did nothing
+- Fixed: on **WC Vendors**, a deleted product could attribute a line item to user `1` (usually the admin), because that plugin answers `1` for a missing post and `-1` for a non-product. The answer is now confirmed to be a vendor first
+
 ### 1.25.0 — pay marketplace vendors directly
 
 - New: on Dokan, WCFM or WC Vendors, an order's payment goes **straight from the customer to the vendor's own wallet**. No float, no payout queue, nothing owed — the thing non-custodial makes easy and every custodial gateway makes hard
