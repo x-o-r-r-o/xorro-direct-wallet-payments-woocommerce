@@ -4,7 +4,7 @@ Tags: woocommerce, cryptocurrency, bitcoin, ethereum, payments, usdt, crypto che
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.26.0
+Stable tag: 1.27.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -338,6 +338,12 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 * QR Code generator (`assets/js/qrcode.min.js`) — MIT-licensed library by davidshimjs (https://github.com/davidshimjs/qrcodejs). Source is publicly available; the bundled file is minified for production use.
 
 == Changelog ==
+
+= 1.27.0 =
+* New: a setup wizard. There are seven tabs of settings here and almost all of them have a sensible default — exactly three things do not, and a shop cannot take a single payment until all three are done. The wizard asks for those three, in order, and nothing else: pick a coin, give it an address, switch the gateway on
+* The last step runs the real checks against your address, the live rate and the chain before offering to switch anything on, so "ready" means it was tested rather than assumed
+* It writes into the ordinary settings at each step rather than keeping a draft of its own, so leaving halfway simply means the shop is set up as far as you got. An address it is given goes through exactly the same validation as the Wallets tab — a wizard that accepted what the settings form refuses would be worse than no wizard
+* The invitation can be waved away, and it only appears on WooCommerce screens, the plugins list, and this plugin's own pages
 
 = 1.26.0 =
 * Security: a payout address changing now also goes out by webhook and Telegram, not only by email, and the warning says which IP address the change came from. Somebody who has taken over an admin account usually controls the mailbox that account can reset, so an emailed warning is the one they can be sure of intercepting — this gives it a second road out. It cannot be switched off with the ordinary alerts

@@ -2459,3 +2459,89 @@ body.xdwp-admin-page #wpbody-content > .wrap > h1.wp-heading-inline {
 .xdwp-rehearsal__result span {
 	color: #50575e;
 }
+
+/* ---------------------------------------------------------------------------
+   Setup wizard. One question per screen; the progress list is the only chrome.
+   --------------------------------------------------------------------------- */
+.xdwp-wizard__steps {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem 1.25rem;
+	margin: 0;
+	padding: 1rem 1.25rem;
+	border: 1px solid #dcdcde;
+	border-top: 0;
+	background: #f6f7f7;
+	list-style: none;
+	counter-reset: none;
+}
+
+.xdwp-wizard__step {
+	display: flex;
+	gap: 0.45rem;
+	align-items: center;
+	font-size: 12px;
+	color: #646970;
+}
+
+.xdwp-wizard__step.is-current {
+	font-weight: 700;
+	color: #1d2327;
+}
+
+.xdwp-wizard__num {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 20px;
+	height: 20px;
+	border-radius: 50%;
+	background: #dcdcde;
+	color: #1d2327;
+	font-size: 11px;
+	font-weight: 700;
+}
+
+.xdwp-wizard__step.is-done .xdwp-wizard__num {
+	background: #17663a;
+	color: #fff;
+}
+
+.xdwp-wizard__step.is-current .xdwp-wizard__num {
+	background: #2271b1;
+	color: #fff;
+}
+
+.xdwp-wizard__panel {
+	padding: 1.5rem 1.5rem 2rem;
+	border: 1px solid #dcdcde;
+	border-top: 0;
+	border-radius: 0 0 5px 5px;
+	background: #fff;
+}
+
+.xdwp-wizard__panel h2 {
+	margin: 0 0 0.35rem;
+	font-size: 18px;
+}
+
+.xdwp-wizard__lead {
+	max-width: 62ch;
+	margin: 0 0 1rem;
+	color: #50575e;
+	font-size: 13px;
+	line-height: 1.6;
+}
+
+.xdwp-wizard__after {
+	max-width: 62ch;
+	margin: 0 0 1.25rem 1.1rem;
+	padding: 0;
+	color: #50575e;
+	font-size: 13px;
+	line-height: 1.6;
+}
+
+.xdwp-wizard__after li + li {
+	margin-top: 0.4rem;
+}

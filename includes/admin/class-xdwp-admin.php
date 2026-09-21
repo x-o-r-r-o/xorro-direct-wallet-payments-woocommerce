@@ -672,6 +672,11 @@ class Xdwp_Admin {
 		if ( ! current_user_can( 'manage_woocommerce' ) ) {
 			return;
 		}
+		// The wizard makes the same point and offers to do the work, so only one of them speaks.
+		// This one stays for a shop that waved the wizard away and then removed its last address.
+		if ( class_exists( 'Xdwp_Wizard' ) && ! get_option( Xdwp_Wizard::DONE ) ) {
+			return;
+		}
 		$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
 		if ( ! $screen || false === strpos( (string) $screen->id, 'xorro-direct-wallet-payments-woocommerce' ) ) {
 			$payable = Xdwp_Coins::get_payable();

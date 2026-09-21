@@ -289,6 +289,13 @@ Pushing a `vX.Y.Z` tag runs the Release workflow, which builds the ZIP, its SHA-
 
 Full details for every release are in [`readme.txt`](readme.txt).
 
+### 1.27.0 — a setup wizard that asks three questions
+
+- New: **setup wizard**. Seven tabs of settings, but only three things have no sensible default and block a first payment — pick a coin, give it an address, switch the gateway on. It asks for those and nothing else
+- The final step runs the **real** address / rate / chain checks before offering to switch on, so "ready" means tested
+- Writes into ordinary settings at each step — no draft state, and leaving halfway just means you got that far. Addresses go through the same validation as the Wallets tab
+- Dismissable, and shown only on WooCommerce screens, the plugins list, and this plugin's pages
+
 ### 1.26.0 — a second road out, and two figures worth counting
 
 - **Security:** a payout-address change now also leaves by webhook and Telegram, and names the IP it came from. Whoever takes over an admin account usually controls the mailbox it can reset — email alone is the warning they can intercept. Not switchable off with the ordinary alerts

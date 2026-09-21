@@ -714,6 +714,22 @@ xdwp_assert(
 	'and its scheme survives escaping rather than being stripped'
 );
 
+// Three things have no sensible default, and a shop cannot take a payment until all three are
+// done. The wizard asks for exactly those and proves the result before claiming it works.
+$xdwp_wizard_src = file_get_contents( $root . '/includes/admin/class-xdwp-wizard.php' );
+xdwp_assert( is_readable( $root . '/includes/admin/views/wizard.php' ), 'the setup wizard is present' );
+xdwp_assert( 3 === substr_count( $xdwp_wizard_src, "'key'   =>" ), 'it asks three questions, not seven tabs worth' );
+xdwp_assert( false !== strpos( $xdwp_wizard_src, 'Xdwp_Settings::sanitize(' ), 'an address it is given goes through the same checks as the settings form' );
+xdwp_assert( false !== strpos( $xdwp_wizard_src, "check_admin_referer( 'xdwp_wizard' )" ), 'and every step it accepts carries a nonce' );
+xdwp_assert( false !== strpos( $xdwp_wizard_src, "current_user_can( 'manage_woocommerce' )" ), 'behind the capability, like every other privileged screen' );
+// A prompt that cannot be waved away is a prompt people learn to ignore.
+xdwp_assert( false !== strpos( $xdwp_wizard_src, "'dismiss'" ), 'the invitation can be declined' );
+xdwp_assert( false !== strpos( $xdwp_wizard_src, '\'plugins\' !== $id' ), 'and it is not shown on every screen in wp-admin' );
+// It must prove the setup rather than assert it.
+xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/admin/views/wizard.php' ), 'Xdwp_Selftest::run(' ), 'the last step runs the real checks before switching anything on' );
+// Two notices saying the same thing is one notice too many.
+xdwp_assert( false !== strpos( file_get_contents( $root . '/includes/admin/class-xdwp-admin.php' ), 'Xdwp_Wizard::DONE' ), 'the older setup notice defers to the wizard' );
+
 // A payout address changing is the single most dangerous edit on this settings page, and an
 // attacker holding an admin account usually holds the mailbox that account can reset — so the
 // warning has to leave by more than one road, and say where the change came from.

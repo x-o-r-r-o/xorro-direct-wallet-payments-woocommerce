@@ -69,6 +69,7 @@ final class Xdwp {
 			require_once XDWP_PATH . 'includes/class-xdwp-backup.php';
 			require_once XDWP_PATH . 'includes/class-xdwp-reconcile.php';
 			require_once XDWP_PATH . 'includes/class-xdwp-rehearsal.php';
+			require_once XDWP_PATH . 'includes/admin/class-xdwp-wizard.php';
 			require_once XDWP_PATH . 'includes/admin/class-xdwp-admin.php';
 			require_once XDWP_PATH . 'includes/admin/class-xdwp-payments-admin.php';
 		}
@@ -100,6 +101,7 @@ final class Xdwp {
 		Xdwp_Vendors::init();
 
 		if ( is_admin() ) {
+			Xdwp_Wizard::init();
 			Xdwp_Admin::init();
 			Xdwp_Payments_Admin::init();
 			Xdwp_Backup::init();
