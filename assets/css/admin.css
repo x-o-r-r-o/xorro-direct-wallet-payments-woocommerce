@@ -2235,6 +2235,25 @@ body.xdwp-admin-page #wpbody-content > .wrap > h1.wp-heading-inline {
 	font-size: 12px;
 }
 
+/* The scope picker takes the full width of its card so the longest option is readable
+   without the select clipping it, and so it reads as a decision made before the button. */
+.xdwp-backup__field {
+	display: flex;
+	flex: 1 0 100%;
+	flex-wrap: wrap;
+	gap: 0.35rem;
+	align-items: center;
+	margin: 0 0 0.25rem;
+	font-size: 12px;
+}
+
+.xdwp-backup__scope {
+	flex: 1 1 auto;
+	min-width: 0;
+	max-width: 100%;
+	font-size: 12px;
+}
+
 .xdwp-backup__form input[type="file"] {
 	max-width: 100%;
 	font-size: 12px;

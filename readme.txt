@@ -4,7 +4,7 @@ Tags: woocommerce, cryptocurrency, bitcoin, ethereum, payments, usdt, crypto che
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.19.8
+Stable tag: 1.19.9
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -338,6 +338,14 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 * QR Code generator (`assets/js/qrcode.min.js`) — MIT-licensed library by davidshimjs (https://github.com/davidshimjs/qrcodejs). Source is publicly available; the bundled file is minified for production use.
 
 == Changelog ==
+
+= 1.19.9 =
+* New: you can now export and restore the configuration in parts, not just all at once. Choose everything, the wallet addresses and extended keys on their own, or the API keys on their own. Moving wallets to a staging site no longer carries that shop's limits and alerts with them, and handing someone the API keys no longer means handing over everything else
+* New: those controls now appear at the bottom of Wallets and Prices & APIs as well as General, each opening on the part of the configuration that tab is about — because nobody looking for "move my addresses to the new site" thinks to look under settings backup
+* A restore now changes only what the file contains. Anything the file leaves out is kept exactly as it is on this site, and the message afterwards says which kind of file it was
+* Choosing "API keys and tokens only" always includes the keys — that is what the file is for — and the screen says to treat it as a password. Choosing "wallet addresses only" never includes them, even if the box is ticked
+* New: WooCommerce now shows "Set up" instead of an enable toggle until at least one coin has somewhere to receive, so the gateway cannot be switched on in front of customers before it can take a payment
+* New: the transaction id on the order screen is now a link to that coin's block explorer, instead of text to copy and paste somewhere else
 
 = 1.19.8 =
 * The plugin folder now holds one readme instead of two. readme.txt is the one WordPress reads for the "View details" screen; README.md was a second copy of the same information written for GitHub, and it no longer ships

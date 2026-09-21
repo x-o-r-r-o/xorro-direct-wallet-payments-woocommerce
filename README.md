@@ -289,6 +289,14 @@ Pushing a `vX.Y.Z` tag runs the Release workflow, which builds the ZIP, its SHA-
 
 Full details for every release are in [`readme.txt`](readme.txt).
 
+### 1.19.9 — take the configuration out in parts
+
+- New: export and restore **everything**, **wallet addresses and extended keys only**, or **API keys only**. A wallets file never carries secrets even if the box is ticked; a keys file always does, and says to treat it as a password
+- New: the controls now sit on **Wallets** and **Prices & APIs** as well as General, each opening on the part that tab is about
+- A restore changes only what the file contains — anything it leaves out stays as it is on this site
+- New: WooCommerce shows **"Set up"** instead of an enable toggle until at least one coin has somewhere to receive
+- New: the transaction id on the WooCommerce order screen is now a **link to that coin's explorer**
+
 ### 1.19.8 — one readme, and compatibility said plainly
 
 - The release ZIP no longer carries `README.md`. `readme.txt` is what WordPress reads for the plugin's "View details" screen; this file is for GitHub and was shipping alongside it saying the same things twice

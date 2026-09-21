@@ -694,48 +694,20 @@ $active  = isset( $tabs[ $tab ] ) ? $tabs[ $tab ] : $tabs['general'];
 			</div>
 		</form>
 
-	<?php if ( 'general' === $tab ) : ?>
-		<?php
-		// Its own forms, outside the settings form: a form cannot contain another, and a file
-		// upload needs a different encoding from the rest of this page.
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- display only.
-		$xdwp_restored = isset( $_GET['xdwp_restore'] ) ? sanitize_key( wp_unslash( $_GET['xdwp_restore'] ) ) : '';
-		$xdwp_message  = '' !== $xdwp_restored ? Xdwp_Backup::message( $xdwp_restored ) : '';
-		?>
-		<div class="xdwp-backup">
-			<h3 class="xdwp-backup__title"><?php esc_html_e( 'Backup and restore', 'xorro-direct-wallet-payments-woocommerce' ); ?></h3>
-			<p class="xdwp-backup__lead">
-				<?php esc_html_e( 'Everything on these screens — coins, wallet addresses, extended keys, limits, confirmations and prices — in one file. Keep a copy before a big change, or use it to set up a second shop without doing it all again.', 'xorro-direct-wallet-payments-woocommerce' ); ?>
-			</p>
+	<?php
+	// Its own forms, outside the settings form: a form cannot contain another, and a file
+	// upload needs a different encoding from the rest of this page. Offered on the three tabs
+	// whose contents it can carry, each opening on the part that tab is about.
+	$xdwp_backup_tabs = array(
+		'general' => Xdwp_Backup::SCOPE_ALL,
+		'wallets' => Xdwp_Backup::SCOPE_WALLETS,
+		'prices'  => Xdwp_Backup::SCOPE_KEYS,
+	);
+	if ( isset( $xdwp_backup_tabs[ $tab ] ) && class_exists( 'Xdwp_Backup' ) ) {
+		$xdwp_backup_scope = $xdwp_backup_tabs[ $tab ];
+		require XDWP_PATH . 'includes/admin/views/backup-ui.php';
+	}
+	?>
 
-			<?php if ( '' !== $xdwp_message ) : ?>
-				<div class="notice notice-<?php echo 'done' === $xdwp_restored ? 'success' : 'error'; ?> inline">
-					<p><?php echo esc_html( $xdwp_message ); ?></p>
-				</div>
-			<?php endif; ?>
-
-			<div class="xdwp-backup__row">
-				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="xdwp-backup__form">
-					<input type="hidden" name="action" value="xdwp_export_settings" />
-					<?php wp_nonce_field( 'xdwp_export_settings' ); ?>
-					<button type="submit" class="cc-btn cc-btn-secondary"><?php esc_html_e( 'Download settings', 'xorro-direct-wallet-payments-woocommerce' ); ?></button>
-					<label class="xdwp-backup__check">
-						<input type="checkbox" name="secrets" value="1" />
-						<?php esc_html_e( 'Include API keys', 'xorro-direct-wallet-payments-woocommerce' ); ?>
-					</label>
-					<p class="description"><?php esc_html_e( 'API keys are left out unless you tick the box, so a file you email or store in a repository carries no secrets. There is never a private key in this file — this plugin does not hold one.', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
-				</form>
-
-				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" enctype="multipart/form-data" class="xdwp-backup__form">
-					<input type="hidden" name="action" value="xdwp_import_settings" />
-					<?php wp_nonce_field( 'xdwp_import_settings' ); ?>
-					<label for="xdwp-settings-file" class="screen-reader-text"><?php esc_html_e( 'Settings file', 'xorro-direct-wallet-payments-woocommerce' ); ?></label>
-					<input type="file" name="xdwp_settings_file" id="xdwp-settings-file" accept="application/json,.json" required />
-					<button type="submit" class="cc-btn cc-btn-secondary"><?php esc_html_e( 'Restore from file', 'xorro-direct-wallet-payments-woocommerce' ); ?></button>
-					<p class="description"><?php esc_html_e( 'Restoring replaces the settings on this site with the ones in the file. Addresses and keys are checked again on the way in, exactly as if you had typed them.', 'xorro-direct-wallet-payments-woocommerce' ); ?></p>
-				</form>
-			</div>
-		</div>
-	<?php endif; ?>
 	</div>
 </div>

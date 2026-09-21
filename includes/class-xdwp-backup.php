@@ -31,6 +31,58 @@ class Xdwp_Backup {
 	const FORMAT_VERSION = 1;
 
 	/**
+	 * Everything: coins, wallets, keys, limits, confirmations, prices, alerts.
+	 */
+	const SCOPE_ALL = 'all';
+
+	/**
+	 * Where the money goes: receiving addresses and extended public keys, nothing else.
+	 */
+	const SCOPE_WALLETS = 'wallets';
+
+	/**
+	 * The service credentials, and only those.
+	 */
+	const SCOPE_KEYS = 'keys';
+
+	/**
+	 * The parts of the configuration that can be carried on their own.
+	 *
+	 * Moving a shop to a new server wants everything. Pointing a staging site at the same
+	 * wallets wants the addresses without the shop's own limits and alerts. Handing a
+	 * developer the API keys — or taking them back out — wants neither.
+	 *
+	 * @return array<string, string> Scope => label.
+	 */
+	public static function scopes() {
+		return array(
+			self::SCOPE_ALL     => __( 'Everything', 'xorro-direct-wallet-payments-woocommerce' ),
+			self::SCOPE_WALLETS => __( 'Wallet addresses and extended keys only', 'xorro-direct-wallet-payments-woocommerce' ),
+			self::SCOPE_KEYS    => __( 'API keys and tokens only', 'xorro-direct-wallet-payments-woocommerce' ),
+		);
+	}
+
+	/**
+	 * A scope name that is certainly one of ours.
+	 *
+	 * @param mixed $scope Requested scope.
+	 * @return string
+	 */
+	public static function scope( $scope ) {
+		$scope = is_scalar( $scope ) ? (string) $scope : '';
+		return array_key_exists( $scope, self::scopes() ) ? $scope : self::SCOPE_ALL;
+	}
+
+	/**
+	 * Settings that say where money should be sent.
+	 *
+	 * @return array<int, string>
+	 */
+	public static function wallet_keys() {
+		return array( 'wallets', 'xpubs' );
+	}
+
+	/**
 	 * Settings that are secrets. Left out of an export unless asked for.
 	 *
 	 * @return array<int, string>
@@ -63,8 +115,20 @@ class Xdwp_Backup {
 	 * @param bool $with_secrets Include API keys and tokens.
 	 * @return array<string, mixed>
 	 */
-	public static function payload( $with_secrets = false ) {
+	public static function payload( $with_secrets = false, $scope = self::SCOPE_ALL ) {
+		$scope    = self::scope( $scope );
 		$settings = Xdwp_Settings::all();
+
+		if ( self::SCOPE_WALLETS === $scope ) {
+			$settings = array_intersect_key( $settings, array_flip( self::wallet_keys() ) );
+			// A wallets file holds no credentials by definition, whatever was ticked.
+			$with_secrets = false;
+		} elseif ( self::SCOPE_KEYS === $scope ) {
+			$settings = array_intersect_key( $settings, array_flip( self::secret_keys() ) );
+			// Asking for the keys and then holding them back would hand over an empty file.
+			$with_secrets = true;
+		}
+
 		if ( ! $with_secrets ) {
 			foreach ( self::secret_keys() as $key ) {
 				unset( $settings[ $key ] );
@@ -72,14 +136,31 @@ class Xdwp_Backup {
 		}
 
 		return array(
-			'format'    => self::FORMAT,
-			'version'   => self::FORMAT_VERSION,
-			'plugin'    => XDWP_VERSION,
-			'site'      => home_url(),
-			'created'   => gmdate( 'c' ),
-			'secrets'   => (bool) $with_secrets,
-			'settings'  => $settings,
+			'format'   => self::FORMAT,
+			'version'  => self::FORMAT_VERSION,
+			'plugin'   => XDWP_VERSION,
+			'site'     => home_url(),
+			'created'  => gmdate( 'c' ),
+			'scope'    => $scope,
+			'secrets'  => (bool) $with_secrets,
+			'settings' => $settings,
 		);
+	}
+
+	/**
+	 * What to call the downloaded file, so a folder of them can be told apart.
+	 *
+	 * @param string $scope Scope.
+	 * @return string
+	 */
+	public static function filename( $scope ) {
+		$suffix = array(
+			self::SCOPE_ALL     => 'settings',
+			self::SCOPE_WALLETS => 'wallets',
+			self::SCOPE_KEYS    => 'api-keys',
+		);
+		$scope = self::scope( $scope );
+		return 'xorro-wallet-' . $suffix[ $scope ] . '-' . gmdate( 'Y-m-d' ) . '.json';
 	}
 
 	/**
@@ -93,8 +174,10 @@ class Xdwp_Backup {
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- checked immediately above.
 		$with_secrets = isset( $_REQUEST['secrets'] ) && '1' === sanitize_text_field( wp_unslash( $_REQUEST['secrets'] ) );
-		$json         = wp_json_encode( self::payload( $with_secrets ), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES );
-		$name         = 'xorro-wallet-settings-' . gmdate( 'Y-m-d' ) . '.json';
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- checked immediately above.
+		$scope = self::scope( isset( $_REQUEST['scope'] ) ? sanitize_key( wp_unslash( $_REQUEST['scope'] ) ) : self::SCOPE_ALL );
+		$json  = wp_json_encode( self::payload( $with_secrets, $scope ), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES );
+		$name  = self::filename( $scope );
 
 		nocache_headers();
 		header( 'Content-Type: application/json; charset=utf-8' );
@@ -163,15 +246,30 @@ class Xdwp_Backup {
 
 		$incoming = $data['settings'];
 
-		// A file exported without secrets must not wipe the keys this site already has.
-		foreach ( self::secret_keys() as $key ) {
-			if ( ! array_key_exists( $key, $incoming ) ) {
-				unset( $incoming[ $key ] );
-			}
-		}
-
+		// A file exported without secrets — or a wallets-only file — carries fewer keys than a
+		// full one. Nothing extra is needed to protect what is missing: Xdwp_Settings::sanitize()
+		// starts from the settings this site already has and only overwrites keys the file
+		// actually contains, so anything left out is kept rather than blanked.
 		Xdwp_Settings::update( Xdwp_Settings::sanitize( $incoming ) );
+
+		$scope = self::scope( isset( $data['scope'] ) ? $data['scope'] : self::SCOPE_ALL );
+		if ( self::SCOPE_WALLETS === $scope ) {
+			return 'done_wallets';
+		}
+		if ( self::SCOPE_KEYS === $scope ) {
+			return 'done_keys';
+		}
 		return 'done';
+	}
+
+	/**
+	 * Whether a result code means the restore worked.
+	 *
+	 * @param string $code Result code from restore().
+	 * @return bool
+	 */
+	public static function is_success( $code ) {
+		return 0 === strpos( (string) $code, 'done' );
 	}
 
 	/**
@@ -184,6 +282,10 @@ class Xdwp_Backup {
 		switch ( $code ) {
 			case 'done':
 				return __( 'Settings restored. Check your wallet addresses before taking a payment.', 'xorro-direct-wallet-payments-woocommerce' );
+			case 'done_wallets':
+				return __( 'Wallet addresses and extended keys restored. Everything else on this site was left as it was. Check the addresses on the Wallets tab before taking a payment.', 'xorro-direct-wallet-payments-woocommerce' );
+			case 'done_keys':
+				return __( 'API keys restored. No other setting was changed. Use "Test this coin" on the Coins tab to confirm each service answers.', 'xorro-direct-wallet-payments-woocommerce' );
 			case 'notours':
 				return __( 'That file is not a Xorro Wallet Payments settings file.', 'xorro-direct-wallet-payments-woocommerce' );
 			case 'badjson':

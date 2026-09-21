@@ -36,6 +36,47 @@ class Xdwp_Gateway extends WC_Payment_Gateway {
 	}
 
 	/**
+	 * Whether this gateway still needs setting up before it can take a payment.
+	 *
+	 * A gateway with no coin that has somewhere to receive cannot be paid, and switching it on
+	 * would put it in front of customers only for checkout to refuse them. WooCommerce asks this
+	 * on Settings → Payments and shows "Set up" in place of the enable toggle when it is true,
+	 * which is the difference between finding out here and finding out at a lost sale.
+	 *
+	 * @return bool
+	 */
+	public function needs_setup() {
+		return array() === Xdwp_Coins::get_payable();
+	}
+
+	/**
+	 * Where to look this order's payment up on the chain it was paid on.
+	 *
+	 * WooCommerce prints the transaction id on the order screen either way; it only makes it a
+	 * link when the gateway says where the link goes. Every coin has a different explorer, so
+	 * the fixed view_transaction_url WooCommerce expects cannot express it and this is overridden
+	 * per order instead.
+	 *
+	 * @param WC_Order $order Order.
+	 * @return string Explorer URL, or '' when there is nothing to link to.
+	 */
+	public function get_transaction_url( $order ) {
+		if ( ! $order instanceof WC_Order ) {
+			return '';
+		}
+
+		$txid = (string) $order->get_transaction_id();
+		if ( '' === $txid ) {
+			return '';
+		}
+
+		// explorer_tx_url() refuses anything that is not shaped like a transaction id, so a
+		// hand-typed value in WooCommerce's own Transaction ID field cannot build a link
+		// somewhere else.
+		return (string) Xdwp_Coins::explorer_tx_url( (string) Xdwp_Order::meta( $order, 'coin' ), $txid );
+	}
+
+	/**
 	 * Sized / mode-aware icon for classic checkout.
 	 *
 	 * @return string

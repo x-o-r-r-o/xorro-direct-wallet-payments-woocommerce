@@ -693,6 +693,27 @@ foreach ( $xdwp_query_scan as $xdwp_file ) {
 }
 xdwp_assert( array() === $xdwp_direct_meta_query, 'no meta_query is handed straight to wc_get_orders(): ' . implode( ', ', $xdwp_direct_meta_query ) );
 
+// WooCommerce asks a gateway whether it is ready before offering the enable toggle, and links
+// the transaction id on the order screen only if the gateway says where the link goes.
+$xdwp_gateway_src = file_get_contents( $root . '/includes/class-xdwp-gateway.php' );
+xdwp_assert( false !== strpos( $xdwp_gateway_src, 'function needs_setup' ), 'the gateway tells WooCommerce when it is not set up yet' );
+xdwp_assert( false !== strpos( $xdwp_gateway_src, 'Xdwp_Coins::get_payable()' ), 'and decides that on whether any coin has somewhere to receive' );
+xdwp_assert( false !== strpos( $xdwp_gateway_src, 'function get_transaction_url' ), 'the order screen can link a payment to its explorer' );
+xdwp_assert( false !== strpos( $xdwp_gateway_src, 'Xdwp_Coins::explorer_tx_url' ), 'and builds that link through the checked helper' );
+
+// Exporting the configuration in parts is what makes it usable between sites.
+xdwp_assert( is_readable( $root . '/includes/class-xdwp-backup.php' ), 'settings backup is present' );
+xdwp_assert( file_exists( $root . '/tests/backup-tests.php' ), 'and what each export carries is covered by tests' );
+xdwp_assert( is_readable( $root . '/includes/admin/views/backup-ui.php' ), 'the backup controls are a shared partial' );
+$xdwp_settings_view = file_get_contents( $root . '/includes/admin/views/settings-page.php' );
+foreach ( array( 'general', 'wallets', 'prices' ) as $xdwp_backup_tab ) {
+	// Alignment whitespace varies with the longest key, so it is not part of the match.
+	xdwp_assert(
+		1 === preg_match( '/\'' . $xdwp_backup_tab . '\'\s*=>\s*Xdwp_Backup::SCOPE_/', $xdwp_settings_view ),
+		"export and import are offered on the {$xdwp_backup_tab} tab"
+	);
+}
+
 // One readme ships, not two: readme.txt is what WordPress reads for the plugin's "View details"
 // screen, and README.md is for GitHub. Both in wp-content/plugins would say the same things twice.
 $xdwp_build_src = file_get_contents( $root . '/bin/build-zip.sh' );
