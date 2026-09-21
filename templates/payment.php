@@ -176,6 +176,31 @@ defined( 'ABSPATH' ) || exit;
 			<button type="button" class="button xdwp-sent" id="xdwp-sent"><?php esc_html_e( 'I have sent the payment', 'xorro-direct-wallet-payments-woocommerce' ); ?></button>
 		</div>
 
+		<?php
+		// A customer who has paid and sees nothing happen will either pay again or email the
+		// shop. Asking for the transaction id gives the shop something to trace, and pressing
+		// the button gives the customer a real answer instead of a spinner.
+		?>
+		<div class="xdwp-sent-form">
+			<label class="xdwp-sent-form__label" for="xdwp-txid">
+				<?php esc_html_e( 'Transaction ID (optional)', 'xorro-direct-wallet-payments-woocommerce' ); ?>
+			</label>
+			<input
+				type="text"
+				id="xdwp-txid"
+				class="xdwp-sent-form__input"
+				autocomplete="off"
+				autocapitalize="none"
+				autocorrect="off"
+				spellcheck="false"
+				maxlength="128"
+				aria-describedby="xdwp-txid-help"
+			/>
+			<p class="xdwp-sent-form__help" id="xdwp-txid-help">
+				<?php esc_html_e( 'If your wallet showed you a transaction id, paste it here before pressing the button above. The shop does not need it to find your payment — it is recorded so someone can trace the transfer if anything goes wrong.', 'xorro-direct-wallet-payments-woocommerce' ); ?>
+			</p>
+		</div>
+
 		<?php // Filled in only when a wallet in this browser actually answers. ?>
 		<div class="xdwp-wallet-pay" id="xdwp-wallet-pay"></div>
 		<p class="xdwp-box__hint" id="xdwp-sent-status" role="status"></p>

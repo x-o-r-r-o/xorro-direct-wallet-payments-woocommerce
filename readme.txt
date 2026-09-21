@@ -4,7 +4,7 @@ Tags: woocommerce, cryptocurrency, bitcoin, ethereum, payments, usdt, crypto che
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.19.9
+Stable tag: 1.20.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -338,6 +338,15 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 * QR Code generator (`assets/js/qrcode.min.js`) — MIT-licensed library by davidshimjs (https://github.com/davidshimjs/qrcodejs). Source is publicly available; the bundled file is minified for production use.
 
 == Changelog ==
+
+= 1.20.0 =
+* New: a customer who has paid now gets a straight answer instead of a spinner. Pressing "I have sent the payment" reads the chain and says what was found — confirmed, arrived and waiting for confirmations, part-paid with the exact amount still owed, or nothing yet. The "waiting for confirmations" answer is the one that stops somebody paying a second time
+* New: a box beside that button for the transaction id, if the customer's wallet gave them one. It is not proof and it is not used to match the payment — only a transfer to the shop's address for the right amount does that — but it is what you need to trace a transfer that went astray, and it is recorded on the order and in the timeline
+* New: when nothing has arrived yet, the answer names the two mistakes that actually cause it — sending on the wrong network, and leaving out the destination tag or memo — instead of saying "not found"
+* New: an order where the customer said they paid, gave a transaction id, and the window then closed with nothing found now appears in "Needs you". Only once the window has closed, so an impatient customer cannot fill that queue
+* New: two checks on the Coins tab for the things that break a working setup from outside it. One catches WP_HTTP_BLOCK_EXTERNAL in wp-config.php, which stops every chain and rate lookup while making it look like nobody has paid. The other asks the site the same question a customer's browser asks, which is how a security plugin, firewall or coming-soon mode intercepting the payment page shows up
+* New: eight columns in the payments export for whoever has to account for the money — the rate the order was quoted at, what the coins that arrived were worth at that rate, the price adjustment applied, when the order was quoted, seen and confirmed, how many confirmations it needed, and any transaction id the customer reported
+* The rate an order is quoted at is now recorded on the order. It could not be recovered afterwards — by the time anyone exports, the market has moved. Orders placed before this release fall back to working it out from what was charged, which is the same number
 
 = 1.19.9 =
 * New: you can now export and restore the configuration in parts, not just all at once. Choose everything, the wallet addresses and extended keys on their own, or the API keys on their own. Moving wallets to a staging site no longer carries that shop's limits and alerts with them, and handing someone the API keys no longer means handing over everything else

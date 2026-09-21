@@ -235,6 +235,17 @@ class Xdwp_Payments_Admin {
 				__( 'Address', 'xorro-direct-wallet-payments-woocommerce' ),
 				__( 'Destination tag / memo', 'xorro-direct-wallet-payments-woocommerce' ),
 				__( 'Transaction', 'xorro-direct-wallet-payments-woocommerce' ),
+				// From here on the columns exist for whoever has to account for this money:
+				// what one coin was worth when the order was quoted, what the coins that
+				// actually arrived were worth at that rate, and when each thing happened.
+				__( 'Rate (order currency per coin)', 'xorro-direct-wallet-payments-woocommerce' ),
+				__( 'Value received (order currency)', 'xorro-direct-wallet-payments-woocommerce' ),
+				__( 'Price adjustment', 'xorro-direct-wallet-payments-woocommerce' ),
+				__( 'Quoted at', 'xorro-direct-wallet-payments-woocommerce' ),
+				__( 'Seen on chain at', 'xorro-direct-wallet-payments-woocommerce' ),
+				__( 'Confirmed at', 'xorro-direct-wallet-payments-woocommerce' ),
+				__( 'Confirmations required', 'xorro-direct-wallet-payments-woocommerce' ),
+				__( 'Customer-reported transaction', 'xorro-direct-wallet-payments-woocommerce' ),
 			),
 			',',
 			'"',
@@ -272,6 +283,14 @@ class Xdwp_Payments_Admin {
 						(string) Xdwp_Order::meta( $order, 'address' ),
 						(string) Xdwp_Order::meta( $order, 'memo' ),
 						(string) Xdwp_Order::meta( $order, 'txid' ),
+						self::export_rate( $order ),
+						self::export_value_received( $order ),
+						(string) Xdwp_Order::meta( $order, 'adjustment' ),
+						self::export_time( Xdwp_Order::meta( $order, 'started' ) ),
+						self::export_time( Xdwp_Order::meta( $order, 'seen_at' ) ),
+						self::export_time( Xdwp_Order::meta( $order, 'confirmed_at' ) ),
+						$coin_def ? (string) Xdwp_Coins::confirmations_for_order( $coin_def, $order ) : '',
+						(string) Xdwp_Order::meta( $order, 'customer_txid' ),
 				);
 				fputcsv( $out, array_map( array( __CLASS__, 'csv_cell' ), $row ), ',', '"', '' );
 			}
@@ -281,6 +300,60 @@ class Xdwp_Payments_Admin {
 		}
 		fclose( $out );
 		exit;
+	}
+
+	/**
+	 * What one coin was worth in the order's own currency when it was quoted.
+	 *
+	 * Recorded on the order from 1.20.0. Older orders never stored it, so it is worked back out
+	 * from what was charged — which is the same number, because that is how it was set.
+	 *
+	 * @param WC_Order $order Order.
+	 * @return string
+	 */
+	private static function export_rate( $order ) {
+		$stored = (string) Xdwp_Order::meta( $order, 'rate' );
+		if ( '' !== $stored ) {
+			return $stored;
+		}
+		$amount = (float) Xdwp_Order::meta( $order, 'amount' );
+		$total  = (float) $order->get_total();
+		if ( $amount <= 0 || $total <= 0 ) {
+			return '';
+		}
+		return wc_format_decimal( $total / $amount, 8 );
+	}
+
+	/**
+	 * What the coins that actually arrived were worth, at the rate this order was quoted at.
+	 *
+	 * Not today's value: an accountant wants what the money was worth when it was received, and
+	 * for an order that was paid in full that is the order total.
+	 *
+	 * @param WC_Order $order Order.
+	 * @return string
+	 */
+	private static function export_value_received( $order ) {
+		$received = (float) Xdwp_Order::meta( $order, 'received' );
+		if ( $received <= 0 ) {
+			return '';
+		}
+		$rate = (float) self::export_rate( $order );
+		if ( $rate <= 0 ) {
+			return '';
+		}
+		return wc_format_decimal( $received * $rate, wc_get_price_decimals() );
+	}
+
+	/**
+	 * A stored timestamp as a date a spreadsheet will sort.
+	 *
+	 * @param mixed $timestamp Unix timestamp, or ''.
+	 * @return string
+	 */
+	private static function export_time( $timestamp ) {
+		$timestamp = (int) $timestamp;
+		return $timestamp > 0 ? gmdate( 'Y-m-d H:i:s', $timestamp ) : '';
 	}
 
 	/**

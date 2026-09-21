@@ -435,24 +435,47 @@
 	if (sentBtn && data.sentUrl) {
 		sentBtn.addEventListener('click', function () {
 			var note = document.getElementById('xdwp-sent-status');
+			var txidField = document.getElementById('xdwp-txid');
 			sentBtn.disabled = true;
+			if (note) {
+				// The request reads the chain, so it is not instant. Say so rather than
+				// leaving the button dead and the page silent.
+				note.className = 'xdwp-box__hint is-looking';
+				note.textContent = data.i18n.looking || '';
+			}
 			var body = new FormData();
 			body.append('action', 'xdwp_sent');
 			body.append('nonce', data.nonce);
 			body.append('order_id', String(data.orderId));
 			body.append('order_key', String(data.orderKey || ''));
+			if (txidField && txidField.value) {
+				body.append('txid', txidField.value.trim());
+			}
 			fetch(data.sentUrl, { method: 'POST', credentials: 'same-origin', body: body })
 				.then(function (r) { return r.json(); })
 				.then(function (res) {
+					var payload = (res && res.data) || {};
+					var verdict = payload.verdict || '';
 					if (note) {
-						note.textContent = (res && res.success)
-							? (data.i18n.checkingNow || '')
-							: ((res && res.data && res.data.message) || data.i18n.checkFail || '');
+						// A verdict is the whole point of the button; fall back to the old
+						// wording only if an older cached page reaches a newer endpoint.
+						note.textContent = payload.message
+							|| (res && res.success ? (data.i18n.checkingNow || '') : (data.i18n.checkFail || ''));
+						note.className = 'xdwp-box__hint' + (verdict ? ' is-' + verdict : '');
+					}
+					if ('bad_txid' === verdict) {
+						// Their own typing to correct: let them try again at once.
+						sentBtn.disabled = false;
+						if (txidField) {
+							txidField.focus();
+						}
+						return;
 					}
 					watchClosely();
 				})
 				.catch(function () {
 					if (note) {
+						note.className = 'xdwp-box__hint';
 						note.textContent = data.i18n.checkFail || '';
 					}
 					sentBtn.disabled = false;

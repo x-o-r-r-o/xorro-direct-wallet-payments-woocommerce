@@ -413,6 +413,68 @@
 	opacity: 0.7;
 }
 
+/* An answer to "did my money arrive?" is not a hint — it is the most important sentence on
+   the page once it appears, so it stops being grey and gets room of its own. The verdict is
+   carried by the words; the border is only a second signal, never the only one. */
+.xdwp-box__hint.is-paid,
+.xdwp-box__hint.is-short,
+.xdwp-box__hint.is-confirming,
+.xdwp-box__hint.is-looking,
+.xdwp-box__hint.is-busy,
+.xdwp-box__hint.is-settled,
+.xdwp-box__hint.is-bad_txid {
+	padding: 0.6rem 0.75rem;
+	border-left: 3px solid currentColor;
+	border-radius: 4px;
+	background: rgba(127, 127, 127, 0.08);
+	font-size: 0.9rem;
+	line-height: 1.45;
+	opacity: 1;
+}
+
+.xdwp-box__hint.is-paid {
+	color: #17663a;
+}
+
+.xdwp-box__hint.is-confirming {
+	color: #14557a;
+}
+
+.xdwp-box__hint.is-short,
+.xdwp-box__hint.is-bad_txid {
+	color: #8a4b08;
+}
+
+/* The form is secondary to the address and the amount, so it stays quiet until used. */
+.xdwp-sent-form {
+	margin: 0.75rem 0 0;
+}
+
+.xdwp-sent-form__label {
+	display: block;
+	margin-bottom: 0.25rem;
+	font-size: 0.85rem;
+	font-weight: 600;
+}
+
+.xdwp-sent-form__input {
+	display: block;
+	box-sizing: border-box;
+	width: 100%;
+	min-width: 0;
+	padding: 0.5rem 0.6rem;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	font-size: 0.85rem;
+	line-height: 1.4;
+}
+
+.xdwp-sent-form__help {
+	margin: 0.35rem 0 0;
+	font-size: 0.8rem;
+	line-height: 1.45;
+	opacity: 0.75;
+}
+
 .xdwp-box__status {
 	margin-top: 1rem;
 	font-weight: 600;

@@ -13,6 +13,201 @@ defined( 'ABSPATH' ) || exit;
 class Xdwp_Order {
 
 	/**
+	 * How many chain lookups the whole shop may make from the browser in one minute.
+	 *
+	 * Every open payment page can ask, and each ask costs the merchant several explorer calls
+	 * against their own quota. Cron checks every order regardless, so this ceiling only ever
+	 * delays an answer — it never loses a payment.
+	 */
+	const LOOK_BUDGET = 30;
+
+	/**
+	 * Where that count is kept.
+	 */
+	const LOOK_BUDGET_KEY = 'xdwp_ajax_verify_budget';
+
+	/**
+	 * Look now, and say what was found in words a customer can act on.
+	 *
+	 * Someone who has sent money and sees nothing happen will either pay again or email the
+	 * shop. Both are expensive. This answers the question they actually have — did it arrive,
+	 * is it enough, and what should I do — rather than leaving them to guess from a spinner.
+	 *
+	 * It reads the chain through the ordinary verification path, so nothing a customer types
+	 * can make an order paid: only a transfer to this shop's address, for the right amount,
+	 * can do that.
+	 *
+	 * @param WC_Order $order Order.
+	 * @return array{verdict:string,message:string} Verdict is one of paid, short, confirming,
+	 *                                              looking, busy, settled.
+	 */
+	public static function payment_verdict( $order ) {
+		if ( ! $order instanceof WC_Order ) {
+			return self::verdict_for( array( 'gone' => true ) );
+		}
+
+		$order_id = $order->get_id();
+		$status   = (string) self::meta( $order, 'status' );
+
+		if ( $order->is_paid() || 'paid' === $status ) {
+			return self::verdict_for( array( 'paid' => true ) );
+		}
+
+		if ( ! in_array( $status, array( 'awaiting', 'underpaid' ), true )
+			|| in_array( $order->get_status(), array( 'cancelled', 'refunded' ), true ) ) {
+			return self::verdict_for( array( 'settled' => true ) );
+		}
+
+		// A button anyone can press must not be able to spend the merchant's API quota.
+		$used = (int) get_transient( self::LOOK_BUDGET_KEY );
+		if ( $used >= self::LOOK_BUDGET ) {
+			return self::verdict_for( array( 'busy' => true ) );
+		}
+		set_transient( self::LOOK_BUDGET_KEY, $used + 1, MINUTE_IN_SECONDS );
+
+		if ( Xdwp_Verifier::verify_order( $order ) ) {
+			self::mark_paid( $order );
+			$order = wc_get_order( $order_id );
+			if ( $order && 'paid' === (string) self::meta( $order, 'status' ) ) {
+				return self::verdict_for(
+					array(
+						'paid'      => true,
+						'just_paid' => true,
+					)
+				);
+			}
+		}
+
+		// Re-read: the check above records a part-payment rather than returning one.
+		$order = wc_get_order( $order_id );
+		if ( ! $order ) {
+			return self::verdict_for( array( 'gone' => true ) );
+		}
+
+		$coin = Xdwp_Coins::get( (string) self::meta( $order, 'coin' ) );
+
+		return self::verdict_for(
+			array(
+				'underpaid'     => ( 'underpaid' === (string) self::meta( $order, 'status' ) ),
+				'remainder'     => (string) self::meta( $order, 'remainder' ),
+				'symbol'        => $coin && isset( $coin['symbol'] ) ? (string) $coin['symbol'] : '',
+				'detected'      => (bool) Xdwp_Verifier::detect_incoming( $order ),
+				'confirmations' => $coin ? (int) Xdwp_Coins::confirmations_for_order( $coin, $order ) : 0,
+				'memo'          => (string) self::meta( $order, 'memo' ),
+				'network'       => $coin && isset( $coin['network'] ) ? (string) $coin['network'] : '',
+			)
+		);
+	}
+
+	/**
+	 * Turn what was found into the sentence the customer reads.
+	 *
+	 * Kept apart from the looking so the wording can be tested without a chain, a database or
+	 * an order: these sentences are the feature, and getting one wrong either makes somebody
+	 * pay twice or makes them think they have when they have not.
+	 *
+	 * @param array $state What is known about the order. All keys optional.
+	 * @return array{verdict:string,message:string}
+	 */
+	public static function verdict_for( array $state ) {
+		$get = static function ( $key, $fallback = '' ) use ( $state ) {
+			return array_key_exists( $key, $state ) ? $state[ $key ] : $fallback;
+		};
+
+		if ( $get( 'gone', false ) ) {
+			return array(
+				'verdict' => 'settled',
+				'message' => '',
+			);
+		}
+
+		if ( $get( 'paid', false ) ) {
+			return array(
+				'verdict' => 'paid',
+				'message' => $get( 'just_paid', false )
+					? __( 'Found it — payment confirmed. Thank you.', 'xorro-direct-wallet-payments-woocommerce' )
+					: __( 'Payment confirmed — thank you. Nothing more is needed from you.', 'xorro-direct-wallet-payments-woocommerce' ),
+			);
+		}
+
+		if ( $get( 'settled', false ) ) {
+			return array(
+				'verdict' => 'settled',
+				'message' => __( 'This order is no longer waiting for payment. If you have sent something, contact the shop and quote your order number.', 'xorro-direct-wallet-payments-woocommerce' ),
+			);
+		}
+
+		if ( $get( 'busy', false ) ) {
+			return array(
+				'verdict' => 'busy',
+				'message' => __( 'We are checking for your payment. This page updates on its own, and the shop checks again every minute — you can safely close it.', 'xorro-direct-wallet-payments-woocommerce' ),
+			);
+		}
+
+		// Part-paid comes before "seen on chain": the customer still owes something, and that
+		// is the more useful thing to be told.
+		if ( $get( 'underpaid', false ) ) {
+			$remainder = (string) $get( 'remainder' );
+			return array(
+				'verdict' => 'short',
+				'message' => '' !== $remainder
+					? sprintf(
+						/* translators: 1: amount still owed, 2: coin symbol */
+						__( 'We received part of the payment. %1$s %2$s is still owed — send the difference to the same address and it will be picked up.', 'xorro-direct-wallet-payments-woocommerce' ),
+						$remainder,
+						(string) $get( 'symbol' )
+					)
+					: __( 'We received part of the payment. Send the difference to the same address and it will be picked up.', 'xorro-direct-wallet-payments-woocommerce' ),
+			);
+		}
+
+		if ( $get( 'detected', false ) ) {
+			$needed = (int) $get( 'confirmations', 0 );
+			return array(
+				'verdict' => 'confirming',
+				'message' => $needed > 0
+					? sprintf(
+						/* translators: %d: number of confirmations the chain must reach */
+						_n(
+							'Your payment is on the chain and is waiting for %d confirmation. Do not send it again — this page will update by itself.',
+							'Your payment is on the chain and is waiting for %d confirmations. Do not send it again — this page will update by itself.',
+							$needed,
+							'xorro-direct-wallet-payments-woocommerce'
+						),
+						$needed
+					)
+					: __( 'Your payment is on the chain and is being confirmed. Do not send it again — this page will update by itself.', 'xorro-direct-wallet-payments-woocommerce' ),
+			);
+		}
+
+		// Nothing visible yet. Name the two mistakes that actually cause this — a missing memo
+		// and the wrong network — rather than saying "not found" and leaving them to guess.
+		$memo = (string) $get( 'memo' );
+		if ( '' !== $memo ) {
+			return array(
+				'verdict' => 'looking',
+				'message' => sprintf(
+					/* translators: %s: the destination tag or memo for this order */
+					__( 'Nothing has reached the address yet. A transfer usually shows within a few minutes. If your wallet did not let you include the tag or memo %s, tell the shop your transaction id — without it a payment cannot be matched to your order automatically.', 'xorro-direct-wallet-payments-woocommerce' ),
+					$memo
+				),
+			);
+		}
+
+		$network = (string) $get( 'network' );
+		return array(
+			'verdict' => 'looking',
+			'message' => '' !== $network
+				? sprintf(
+					/* translators: %s: the network the payment must be sent on, e.g. "TRON (TRC-20)" */
+					__( 'Nothing has reached the address yet. A transfer usually shows within a few minutes — this page keeps checking. If it does not appear, check that you sent on the %s network: a transfer on another network will not arrive here.', 'xorro-direct-wallet-payments-woocommerce' ),
+					$network
+				)
+				: __( 'Nothing has reached the address yet. A transfer usually shows within a few minutes — this page keeps checking.', 'xorro-direct-wallet-payments-woocommerce' ),
+		);
+	}
+
+	/**
 	 * Init hooks.
 	 */
 	public static function init() {
@@ -158,7 +353,15 @@ class Xdwp_Order {
 			return true;
 		}
 		$status = (string) self::meta( $order, 'status' );
-		return ( 'expired' === $status && '' !== (string) self::meta( $order, 'received' ) );
+		if ( 'expired' === $status && '' !== (string) self::meta( $order, 'received' ) ) {
+			return true;
+		}
+		// The customer said they had paid and gave a transaction id, and the window closed
+		// anyway with nothing found. Either it went to the wrong place or the shop's checker
+		// could not see it — both need a person, and the customer is owed an answer.
+		// Deliberately only once the window has closed: an impatient customer whose payment is
+		// simply still in the mempool must not fill this queue.
+		return ( 'expired' === $status && '' !== (string) self::meta( $order, 'customer_txid' ) );
 	}
 
 	/**
@@ -559,6 +762,16 @@ class Xdwp_Order {
 			$order->delete_meta_data( '_xdwp_hd_index' );
 		}
 		$order->update_meta_data( '_xdwp_amount', $amount );
+		// What one coin was worth when this order was quoted. Derived rather than asked for a
+		// second time, so it is exactly the rate this order was priced at — including the dust
+		// that makes the amount unique and any per-coin adjustment. An accountant needs this to
+		// work out a cost basis, and it cannot be recovered later: by the time anyone exports
+		// the order, the market has moved.
+		$quoted_total = (float) $order->get_total();
+		$quoted_units = (float) $amount;
+		if ( $quoted_total > 0 && $quoted_units > 0 ) {
+			$order->update_meta_data( '_xdwp_rate', wc_format_decimal( $quoted_total / $quoted_units, 8 ) );
+		}
 		if ( '' !== $memo ) {
 			$order->update_meta_data( '_xdwp_memo', $memo );
 		} else {
@@ -979,6 +1192,7 @@ class Xdwp_Order {
 					/* translators: %d: number of network confirmations still needed */
 					'detectedWith' => __( 'Payment detected — waiting for %d network confirmations. You do not need to send anything else.', 'xorro-direct-wallet-payments-woocommerce' ),
 					'checkingNow' => __( 'Thanks — we are checking the network now. This page updates itself.', 'xorro-direct-wallet-payments-woocommerce' ),
+					'looking'     => __( 'Looking on the chain now…', 'xorro-direct-wallet-payments-woocommerce' ),
 					'checkFail' => __( 'We could not check just now. This page keeps looking on its own.', 'xorro-direct-wallet-payments-woocommerce' ),
 					'renewing' => __( 'Getting a new amount…', 'xorro-direct-wallet-payments-woocommerce' ),
 					'renewFail' => __( 'Could not get a new amount. Please contact us.', 'xorro-direct-wallet-payments-woocommerce' ),

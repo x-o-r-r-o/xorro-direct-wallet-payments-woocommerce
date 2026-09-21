@@ -289,6 +289,15 @@ Pushing a `vX.Y.Z` tag runs the Release workflow, which builds the ZIP, its SHA-
 
 Full details for every release are in [`readme.txt`](readme.txt).
 
+### 1.20.0 — tell the customer what actually happened
+
+- New: **"I have sent the payment" now answers**. It reads the chain and reports confirmed / arrived and confirming / part-paid with the exact shortfall / nothing yet. The confirming answer is what stops a second payment
+- New: an optional **transaction ID box**. Never used to match a payment — only a transfer to the shop's address does that — but recorded so a transfer that went astray can be traced
+- New: when nothing has arrived, the answer names the **wrong network** and the **missing memo**, the two mistakes that actually cause it
+- New: an order where the customer reported paying and the window then closed with nothing found lands in **"Needs you"** — only after expiry, so it can't be flooded
+- New: two self-test checks for failures that come from outside the plugin — `WP_HTTP_BLOCK_EXTERNAL`, and a **loopback probe** that catches a security plugin or coming-soon mode intercepting the payment page
+- New: **eight accounting columns** in the payments export, and the quoted rate is now recorded on the order rather than recovered later
+
 ### 1.19.9 — take the configuration out in parts
 
 - New: export and restore **everything**, **wallet addresses and extended keys only**, or **API keys only**. A wallets file never carries secrets even if the box is ticked; a keys file always does, and says to treat it as a password

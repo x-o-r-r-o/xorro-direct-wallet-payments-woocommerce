@@ -220,9 +220,9 @@ class Xdwp_Ajax {
 			// Site-wide budget for browser-triggered chain checks: each one can make several
 			// outbound explorer calls, and many open payment pages (or scripted guest orders)
 			// would otherwise multiply that without limit. Cron still checks every order.
-			$budget_key  = 'xdwp_ajax_verify_budget';
+			$budget_key  = Xdwp_Order::LOOK_BUDGET_KEY;
 			$budget_used = (int) get_transient( $budget_key );
-			if ( ! get_transient( $throttle_key ) && $budget_used < 30 ) {
+			if ( ! get_transient( $throttle_key ) && $budget_used < Xdwp_Order::LOOK_BUDGET ) {
 				set_transient( $budget_key, $budget_used + 1, MINUTE_IN_SECONDS );
 				set_transient( $throttle_key, 1, 45 );
 				if ( Xdwp_Verifier::verify_order( $order ) ) {
@@ -242,9 +242,9 @@ class Xdwp_Ajax {
 			// Detection makes its own explorer calls, so it shares the store-wide budget with
 			// verification: a few hundred abandoned orders being polled must not burn through
 			// the merchant's API quota and stop real payments being confirmed.
-			$budget_key  = 'xdwp_ajax_verify_budget';
+			$budget_key  = Xdwp_Order::LOOK_BUDGET_KEY;
 			$budget_used = (int) get_transient( $budget_key );
-			if ( $budget_used < 30 ) {
+			if ( $budget_used < Xdwp_Order::LOOK_BUDGET ) {
 				set_transient( $budget_key, $budget_used + 1, MINUTE_IN_SECONDS );
 				$detected = Xdwp_Verifier::detect_incoming( $order );
 			} else {
@@ -365,9 +365,30 @@ class Xdwp_Ajax {
 			return;
 		}
 
+		// The customer may also give the transaction id their wallet showed them. It is never
+		// proof of anything — only a transfer to this shop's address for the right amount marks
+		// an order paid — but it is what the shop needs to trace a payment that went astray.
+		$txid = isset( $_POST['txid'] ) ? trim( sanitize_text_field( wp_unslash( $_POST['txid'] ) ) ) : '';
+		if ( '' !== $txid && ! preg_match( '#^[A-Za-z0-9._:@-]{6,128}$#', $txid ) ) {
+			wp_send_json_error(
+				array(
+					'verdict' => 'bad_txid',
+					'message' => __( 'That does not look like a transaction id. Copy it from your wallet — it is a long string of letters and numbers.', 'xorro-direct-wallet-payments-woocommerce' ),
+				),
+				400
+			);
+		}
+
 		$status = (string) Xdwp_Order::meta( $order, 'status' );
 		if ( ! in_array( $status, array( 'awaiting', 'underpaid' ), true ) ) {
-			wp_send_json_success( array( 'checking' => false ) );
+			$verdict = Xdwp_Order::payment_verdict( $order );
+			wp_send_json_success(
+				array(
+					'checking' => false,
+					'verdict'  => $verdict['verdict'],
+					'message'  => $verdict['message'],
+				)
+			);
 		}
 
 		// Worth recording: if anything goes wrong later, the store owner can see the customer
@@ -377,11 +398,40 @@ class Xdwp_Ajax {
 			$order->save();
 		}
 
+		if ( '' !== $txid && $txid !== (string) Xdwp_Order::meta( $order, 'customer_txid' ) ) {
+			$order->update_meta_data( '_xdwp_customer_txid', $txid );
+			$order->save();
+			Xdwp_Order::log_event(
+				$order,
+				'customer',
+				sprintf(
+					/* translators: %s: transaction id the customer gave */
+					__( 'The customer says they paid with transaction %s', 'xorro-direct-wallet-payments-woocommerce' ),
+					$txid
+				)
+			);
+			$order->add_order_note(
+				sprintf(
+					/* translators: %s: transaction id the customer gave */
+					__( 'The customer gave transaction %s as their payment. This is what they told us, not something read from the chain — the order is still only marked paid by the usual check.', 'xorro-direct-wallet-payments-woocommerce' ),
+					$txid
+				)
+			);
+		}
+
 		// Only the ordinary check is brought forward. The wide scan and the detection probe
 		// keep their own throttles, so this button cannot be used to multiply explorer calls.
 		delete_transient( 'xdwp_ajax_verify_' . $order_id );
 
-		wp_send_json_success( array( 'checking' => true ) );
+		$verdict = Xdwp_Order::payment_verdict( $order );
+
+		wp_send_json_success(
+			array(
+				'checking' => true,
+				'verdict'  => $verdict['verdict'],
+				'message'  => $verdict['message'],
+			)
+		);
 	}
 
 	/**

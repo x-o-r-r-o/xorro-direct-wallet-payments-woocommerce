@@ -209,7 +209,12 @@ xdwp_assert( false !== strpos( $verifier_src, 'recipientAddress=' ), 'Symbol fil
 xdwp_assert( false !== strpos( $verifier_src, '$row_master' ), 'TON jetton master re-checked per row' );
 $ajax_src = file_get_contents( $root . '/includes/class-xdwp-ajax.php' );
 xdwp_assert( false !== strpos( $ajax_src, "'wc_ajax_xdwp_quote'" ) && false !== strpos( $ajax_src, "'wc_ajax_xdwp_status'" ), 'frontend AJAX available via wc-ajax' );
-xdwp_assert( false !== strpos( $ajax_src, 'xdwp_ajax_verify_budget' ), 'site-wide budget on poll-triggered chain checks' );
+// The ceiling lives on Xdwp_Order so the browser poll, the "I have sent it" button and the
+// verdict all spend from one allowance rather than three.
+$xdwp_order_src = file_get_contents( $root . '/includes/class-xdwp-order.php' );
+xdwp_assert( false !== strpos( $xdwp_order_src, "const LOOK_BUDGET_KEY = 'xdwp_ajax_verify_budget'" ), 'the site-wide chain-lookup budget is defined once' );
+xdwp_assert( false !== strpos( $ajax_src, 'Xdwp_Order::LOOK_BUDGET' ), 'site-wide budget on poll-triggered chain checks' );
+xdwp_assert( false !== strpos( $xdwp_order_src, 'self::LOOK_BUDGET' ), 'and the customer-facing verdict spends from the same allowance' );
 xdwp_assert( false !== strpos( $ajax_src, 'floor( time() / MINUTE_IN_SECONDS )' ), 'rate limits use fixed windows (no never-expiring counter)' );
 xdwp_assert( false === strpos( file_get_contents( $root . '/templates/payment.php' ), 'onclick=' ), 'payment template has no inline handlers (CSP)' );
 $updater_src = file_get_contents( $root . '/includes/class-xdwp-updater.php' );
@@ -724,6 +729,31 @@ xdwp_assert( false !== strpos( $xdwp_build_src, 'test -f "${STAGE}/${PLUGIN_SLUG
 // PHP 8.4 deprecated relying on fputcsv()'s default escape character. A deprecation printed
 // during a download lands inside the file, so the export must always pass it explicitly.
 $xdwp_payments_src = file_get_contents( $root . '/includes/admin/class-xdwp-payments-admin.php' );
+// A header with more or fewer cells than the rows beneath it shifts every column silently —
+// the amounts still look like amounts, just in the wrong place. Counted here so adding a column
+// to one and forgetting the other fails the build instead of the merchant's accounts.
+preg_match( '/fputcsv\(\s*\$out,\s*array\(\s*(.*?)\s*\),\s*\',\'/s', $xdwp_payments_src, $xdwp_csv_head );
+preg_match( '/\$row\s*=\s*array\(\s*(.*?)\s*\);/s', $xdwp_payments_src, $xdwp_csv_row );
+$xdwp_head_cells = isset( $xdwp_csv_head[1] ) ? preg_match_all( '/__\(/', $xdwp_csv_head[1] ) : 0;
+$xdwp_row_cells  = 0;
+if ( isset( $xdwp_csv_row[1] ) ) {
+	foreach ( explode( "\n", $xdwp_csv_row[1] ) as $xdwp_cell_line ) {
+		$xdwp_cell_line = trim( $xdwp_cell_line );
+		if ( '' !== $xdwp_cell_line && 0 !== strpos( $xdwp_cell_line, '//' ) ) {
+			++$xdwp_row_cells;
+		}
+	}
+}
+xdwp_assert(
+	$xdwp_head_cells > 0 && $xdwp_head_cells === $xdwp_row_cells,
+	sprintf( 'the payments export has as many headings as it has values (%d headings, %d values)', $xdwp_head_cells, $xdwp_row_cells )
+);
+// The columns an accountant needs, which operational columns alone cannot give.
+foreach ( array( 'Rate (order currency per coin)', 'Value received (order currency)', 'Confirmed at' ) as $xdwp_acct_col ) {
+	xdwp_assert( false !== strpos( $xdwp_payments_src, $xdwp_acct_col ), "the export carries \"{$xdwp_acct_col}\"" );
+}
+xdwp_assert( false !== strpos( $xdwp_order_src, "update_meta_data( '_xdwp_rate'" ), 'the rate an order was quoted at is recorded, not recovered later' );
+
 // Counted rather than parsed: a real call always opens with the handle variable, and the
 // separator/enclosure/escape triple below is written for no other reason.
 preg_match_all( '/fputcsv\s*\(\s*\$/', $xdwp_payments_src, $xdwp_csv_calls );

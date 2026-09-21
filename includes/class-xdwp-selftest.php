@@ -147,7 +147,122 @@ class Xdwp_Selftest {
 			$checks[] = self::result( 'https', __( 'HTTPS', 'xorro-direct-wallet-payments-woocommerce' ), self::WARN, __( 'This site is not served over HTTPS. Copy-to-clipboard and wallet links do not work reliably without it.', 'xorro-direct-wallet-payments-woocommerce' ) );
 		}
 
+		$checks[] = self::check_outbound_allowed();
+		$checks[] = self::check_loopback();
+
 		return $checks;
+	}
+
+	/**
+	 * Is this site allowed to make outgoing requests at all?
+	 *
+	 * A site with WP_HTTP_BLOCK_EXTERNAL set cannot read any chain or fetch any rate, and it
+	 * fails silently — every lookup simply returns "no payment found", which looks exactly like
+	 * a customer who has not paid yet. Worth naming precisely rather than leaving a merchant to
+	 * work out why nothing is ever confirmed.
+	 *
+	 * @return array
+	 */
+	private static function check_outbound_allowed() {
+		$label = __( 'Outgoing requests allowed', 'xorro-direct-wallet-payments-woocommerce' );
+
+		if ( ! defined( 'WP_HTTP_BLOCK_EXTERNAL' ) || ! WP_HTTP_BLOCK_EXTERNAL ) {
+			return self::result( 'outbound', $label, self::OK, __( 'This site can reach the price and blockchain services it needs.', 'xorro-direct-wallet-payments-woocommerce' ) );
+		}
+
+		$allowed = defined( 'WP_ACCESSIBLE_HOSTS' ) ? (string) WP_ACCESSIBLE_HOSTS : '';
+		if ( '' === trim( $allowed ) ) {
+			return self::result(
+				'outbound',
+				$label,
+				self::FAIL,
+				__( 'WP_HTTP_BLOCK_EXTERNAL is set in wp-config.php and no hosts are allowed through, so this site cannot read any blockchain or fetch any exchange rate. Every check will report "no payment found" whatever the customer does. Add the services this plugin uses to WP_ACCESSIBLE_HOSTS, or remove the block.', 'xorro-direct-wallet-payments-woocommerce' )
+			);
+		}
+
+		return self::result(
+			'outbound',
+			$label,
+			self::WARN,
+			sprintf(
+				/* translators: %s: the hosts listed in WP_ACCESSIBLE_HOSTS */
+				__( 'WP_HTTP_BLOCK_EXTERNAL is set in wp-config.php, so only these hosts can be reached: %s. Any chain or rate service not on that list will silently answer "no payment found". Use "Test this coin" on the Coins tab to see which ones get through.', 'xorro-direct-wallet-payments-woocommerce' ),
+				$allowed
+			)
+		);
+	}
+
+	/**
+	 * Can a customer's browser actually reach this plugin's endpoints?
+	 *
+	 * Firewalls, security plugins and coming-soon modes all sit in front of the site and answer
+	 * requests themselves. When one of them intercepts the payment page's status endpoint, the
+	 * countdown runs, nothing ever updates, and there is no error anywhere to find. Asking the
+	 * site the same question a customer's browser asks is the only way to see it from here.
+	 *
+	 * Deliberately never worse than a warning: plenty of hosts block a site from calling itself,
+	 * which breaks this check without breaking anything a real customer does.
+	 *
+	 * @return array
+	 */
+	private static function check_loopback() {
+		$label = __( 'Payment page can reach the shop', 'xorro-direct-wallet-payments-woocommerce' );
+		$url   = Xdwp_Ajax::endpoint( 'xdwp_status' );
+
+		// order_id 0 is refused by the endpoint before it touches anything, so this probe asks
+		// the question without creating, reading or changing a single order.
+		$response = wp_remote_post(
+			$url,
+			array(
+				'timeout'     => 10,
+				'redirection' => 0,
+				'body'        => array( 'order_id' => 0 ),
+				'cookies'     => array(),
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			return self::result(
+				'loopback',
+				$label,
+				self::WARN,
+				sprintf(
+					/* translators: %s: the error returned when the site called itself */
+					__( 'This site could not call its own payment endpoint: %s. Some hosts block a site from calling itself, which is harmless. If customers report a payment page that never updates, though, this is where to look — a firewall or security plugin answering the request instead of WordPress.', 'xorro-direct-wallet-payments-woocommerce' ),
+					$response->get_error_message()
+				)
+			);
+		}
+
+		$code = (int) wp_remote_retrieve_response_code( $response );
+		$body = (string) wp_remote_retrieve_body( $response );
+		$json = json_decode( $body, true );
+
+		// The endpoint refuses an order id of 0 with its own JSON. Anything else means something
+		// other than WordPress answered.
+		if ( is_array( $json ) && array_key_exists( 'success', $json ) ) {
+			return self::result( 'loopback', $label, self::OK, __( 'The payment page can reach the shop, so status updates and the "I have sent the payment" button work.', 'xorro-direct-wallet-payments-woocommerce' ) );
+		}
+
+		if ( $code >= 300 && $code < 400 ) {
+			return self::result(
+				'loopback',
+				$label,
+				self::FAIL,
+				__( 'Something redirected the payment endpoint instead of letting WordPress answer it — usually a coming-soon or maintenance-mode plugin, or a login wall. While that is in place the payment page will never update itself for a customer.', 'xorro-direct-wallet-payments-woocommerce' )
+			);
+		}
+
+		return self::result(
+			'loopback',
+			$label,
+			self::FAIL,
+			sprintf(
+				/* translators: %d: the HTTP status code returned */
+				__( 'The payment endpoint answered with %d and a page rather than data, so something is sitting in front of WordPress — commonly a security plugin or a web application firewall. Allow POST requests to the WooCommerce AJAX endpoint (wc-ajax) and try again.', 'xorro-direct-wallet-payments-woocommerce' ),
+				$code
+			)
+		);
 	}
 
 	/**
