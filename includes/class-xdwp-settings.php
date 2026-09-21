@@ -192,7 +192,7 @@ class Xdwp_Settings {
 			$clean['expiry_grace_minutes'] = max( 0, min( 1440, absint( $input['expiry_grace_minutes'] ) ) );
 		}
 
-		foreach ( array( 'unique_amounts', 'wallet_rotation', 'auto_verify', 'late_payment_scan', 'auto_partial_payments', 'stablecoin_peg', 'price_coin_show', 'recommended_confirmations', 'test_mode' ) as $flag ) {
+		foreach ( array( 'unique_amounts', 'wallet_rotation', 'auto_verify', 'late_payment_scan', 'auto_partial_payments', 'stablecoin_peg', 'price_coin_show', 'recommended_confirmations', 'test_mode', 'vendor_payouts' ) as $flag ) {
 			if ( isset( $input[ $flag ] ) ) {
 				$clean[ $flag ] = ( 'yes' === $input[ $flag ] || 1 === (int) $input[ $flag ] || true === $input[ $flag ] ) ? 'yes' : 'no';
 			}

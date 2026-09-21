@@ -289,6 +289,14 @@ Pushing a `vX.Y.Z` tag runs the Release workflow, which builds the ZIP, its SHA-
 
 Full details for every release are in [`readme.txt`](readme.txt).
 
+### 1.25.0 — pay marketplace vendors directly
+
+- New: on Dokan, WCFM or WC Vendors, an order's payment goes **straight from the customer to the vendor's own wallet**. No float, no payout queue, nothing owed — the thing non-custodial makes easy and every custodial gateway makes hard
+- **Single stores are untouched.** The setting only appears if a marketplace is installed, it's off by default, and with no marketplace no filter is registered at all. A test suite exists mainly to keep that true
+- A **multi-vendor order pays the shop** — one transfer can't be split between people — and a vendor with no address for that coin is skipped so the sale still completes. Both are noted on the order
+- Commission isn't deducted from the transfer; your marketplace accounts for it as before
+- An address invalid for the coin is **never quoted**, whatever supplied it — it falls back to your own
+
 ### 1.24.0 — WalletConnect, opt-in and kept small
 
 - New: pair a phone wallet with a desktop browser. **Off unless you paste a Reown project ID** — empty means the feature does not exist

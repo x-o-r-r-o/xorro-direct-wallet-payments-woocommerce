@@ -445,10 +445,47 @@ class Xdwp_Wallets {
 	/**
 	 * Pick a receiving address (rotation or first).
 	 *
+	 * Every payment this plugin ever quotes comes through here, which makes it the one place
+	 * where "where should this money go?" is answered — and therefore the only safe place to
+	 * answer it differently. On a marketplace, that is how an order can be paid to the vendor
+	 * who sold it rather than to the shop.
+	 *
+	 * @param string        $coin_id Coin ID.
+	 * @param WC_Order|null $order   The order being quoted, when there is one.
+	 * @return string
+	 */
+	public static function pick_address( $coin_id, $order = null ) {
+		$address = self::own_address( $coin_id );
+
+		/**
+		 * Where this order's payment should be sent.
+		 *
+		 * Handled with care: whatever comes back is printed on the payment page and is where a
+		 * customer's money actually goes. It is validated against the coin before use, and an
+		 * address that does not pass is ignored in favour of the shop's own.
+		 *
+		 * @param string        $address The shop's own receiving address.
+		 * @param string        $coin_id Coin ID.
+		 * @param WC_Order|null $order   Order being quoted, when there is one.
+		 */
+		$chosen = (string) apply_filters( 'xdwp_receiving_address', $address, $coin_id, $order );
+
+		if ( $chosen !== $address && ( '' === $chosen || ! self::is_plausible_address( $coin_id, $chosen ) ) ) {
+			// Fail back to the shop rather than quoting an address nothing checked. A payment
+			// to a malformed address is unrecoverable, and there is no way to ask afterwards.
+			return $address;
+		}
+
+		return $chosen;
+	}
+
+	/**
+	 * The shop's own receiving address for a coin: derived, rotated, or the only one saved.
+	 *
 	 * @param string $coin_id Coin ID.
 	 * @return string
 	 */
-	public static function pick_address( $coin_id ) {
+	private static function own_address( $coin_id ) {
 		// An extended public key gives every order an address of its own, which beats any
 		// rotation across a handful of fixed addresses.
 		$derived = self::derive_address( $coin_id );

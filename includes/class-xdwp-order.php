@@ -698,7 +698,7 @@ class Xdwp_Order {
 		// is retried with the next rotated address and a freshly minted unique amount rather
 		// than failing the checkout. The first attempt uses the quote the customer saw.
 		for ( $attempt = 0; $attempt < 5 && ! $reserved; $attempt++ ) {
-			$address = Xdwp_Wallets::pick_address( $coin_id );
+			$address = Xdwp_Wallets::pick_address( $coin_id, $order );
 			if ( ! $address ) {
 				self::note_setup_failure( $order, $coin_id, __( 'no wallet address is configured for this coin.', 'xorro-direct-wallet-payments-woocommerce' ) );
 				return false;

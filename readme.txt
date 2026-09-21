@@ -4,7 +4,7 @@ Tags: woocommerce, cryptocurrency, bitcoin, ethereum, payments, usdt, crypto che
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.24.0
+Stable tag: 1.25.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -338,6 +338,13 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 * QR Code generator (`assets/js/qrcode.min.js`) — MIT-licensed library by davidshimjs (https://github.com/davidshimjs/qrcodejs). Source is publicly available; the bundled file is minified for production use.
 
 == Changelog ==
+
+= 1.25.0 =
+* New, for marketplaces only: pay a vendor directly. When a customer buys a vendor's products and pays in crypto, the money goes straight from the customer to that vendor's own wallet. Nobody holds it in between, so there is no float, no payout queue and nothing owed. Works with Dokan, WCFM and WC Vendors; vendors enter their own addresses on their profile
+* Off unless you switch it on, and the setting only appears if a marketplace plugin is actually installed. If you run a single store, nothing about this release changes anything for you — no filter is registered, no lookup happens, and the address a customer is given is the same one as before. There is a test suite that exists mainly to keep that true
+* An order with items from more than one vendor is paid to you, because a single crypto transfer cannot be split between several people — settle those the way you already do. A vendor who has not saved an address for the coin the customer chose is skipped, so the sale still completes and you are paid instead. Both are written on the order as a note
+* Your commission is not deducted from the transfer. The vendor receives the full amount and your marketplace plugin accounts for commission exactly as it did before
+* An address that is not valid for the coin is never quoted, wherever it came from — a vendor's profile, a marketplace, or anything else. It falls back to your own address rather than sending a customer's money somewhere unrecoverable
 
 = 1.24.0 =
 * New, and off unless you ask for it: pair a customer's phone wallet with their desktop browser through WalletConnect. Paste a free Reown project ID under Prices & APIs to switch it on. Leave it empty and the feature does not exist — nothing is offered and nothing is loaded

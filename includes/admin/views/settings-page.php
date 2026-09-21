@@ -177,6 +177,32 @@ $active  = isset( $tabs[ $tab ] ) ? $tabs[ $tab ] : $tabs['general'];
 											</label>
 										</td>
 									</tr>
+									<?php
+									// Shown only where it could mean something. On the overwhelming
+									// majority of shops there is no marketplace, and a setting about
+									// vendors would be a question with no answer.
+									if ( class_exists( 'Xdwp_Vendors' ) && '' !== Xdwp_Vendors::detect() ) :
+										?>
+										<tr>
+											<th scope="row"><?php esc_html_e( 'Pay vendors directly', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
+											<td>
+												<label class="cc-check">
+													<input type="checkbox" name="xdwp[vendor_payouts]" value="yes" <?php checked( ( $settings['vendor_payouts'] ?? 'no' ), 'yes' ); ?> />
+													<span><?php esc_html_e( 'Send an order\'s payment straight to the wallet of the vendor who sold it', 'xorro-direct-wallet-payments-woocommerce' ); ?></span>
+												</label>
+												<p class="description">
+													<?php esc_html_e( 'Because this plugin never holds money, a vendor can be paid without you being paid first — no float, no payout queue, nothing owed. Each vendor saves their own addresses; an order for their products is then quoted to their address instead of yours.', 'xorro-direct-wallet-payments-woocommerce' ); ?>
+												</p>
+												<p class="description">
+													<strong><?php esc_html_e( 'Two things it will not do.', 'xorro-direct-wallet-payments-woocommerce' ); ?></strong>
+													<?php esc_html_e( 'An order containing items from more than one vendor is paid to you, because a single transfer cannot be split between several people — settle those the way you already do. And a vendor who has not saved an address for the coin the customer chose is skipped, so the sale still completes and you are paid instead. Both are written on the order as a note, so it is never a mystery afterwards.', 'xorro-direct-wallet-payments-woocommerce' ); ?>
+												</p>
+												<p class="description">
+													<?php esc_html_e( 'Your commission is not taken out of the transfer — the money goes to the vendor in full, and your marketplace plugin accounts for commission as it always has.', 'xorro-direct-wallet-payments-woocommerce' ); ?>
+												</p>
+											</td>
+										</tr>
+									<?php endif; ?>
 									<tr>
 										<th scope="row"><?php esc_html_e( 'Test mode', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
 										<td>

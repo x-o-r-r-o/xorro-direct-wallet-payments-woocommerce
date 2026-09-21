@@ -62,6 +62,7 @@ final class Xdwp {
 		require_once XDWP_PATH . 'includes/class-xdwp-emails.php';
 		require_once XDWP_PATH . 'includes/class-xdwp-notify.php';
 		require_once XDWP_PATH . 'includes/class-xdwp-refunds.php';
+		require_once XDWP_PATH . 'includes/class-xdwp-vendors.php';
 		require_once XDWP_PATH . 'includes/class-xdwp-gateway.php';
 
 		if ( is_admin() ) {
@@ -96,6 +97,7 @@ final class Xdwp {
 		Xdwp_Refunds::init();
 		Xdwp_Order::init();
 		Xdwp_Privacy::init();
+		Xdwp_Vendors::init();
 
 		if ( is_admin() ) {
 			Xdwp_Admin::init();
