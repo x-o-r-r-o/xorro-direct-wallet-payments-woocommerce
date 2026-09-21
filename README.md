@@ -289,6 +289,11 @@ Pushing a `vX.Y.Z` tag runs the Release workflow, which builds the ZIP, its SHA-
 
 Full details for every release are in [`readme.txt`](readme.txt).
 
+### 1.23.1 — a wallet link in the payment email
+
+- New: **"Pay from a wallet on this device"** in the payment email, opening the wallet with address, amount and memo prefilled. That email is read on a phone, where a QR is useless — you can't scan your own screen
+- The address and amount stay printed in full, since some clients strip non-http links; the payment-page button remains for desktop readers
+
 ### 1.23.0 — rehearse what happens after the money arrives
 
 - New: **"Rehearse a payment"** — one order, quoted against your real wallet and today's rate, then confirmed through the same code a real payment uses. Checks order status, the customer email, and webhook/Telegram alerts in seconds

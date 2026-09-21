@@ -61,7 +61,19 @@ $xdwp_cell   = 'padding:8px 12px;border:1px solid #e5e5e5;text-align:left;vertic
 	<?php endif; ?>
 </table>
 <p>
-	<a href="<?php echo esc_url( $details['pay_url'] ); ?>" style="display:inline-block;padding:10px 18px;background:#1d2733;color:#ffffff;text-decoration:none;border-radius:4px;font-weight:bold;">
+	<?php
+	// The wallet link comes first: on the phone this email is being read on, it is the shortest
+	// route from here to a paid order. The payment page (with its QR) is the desktop answer, and
+	// the QR is deliberately not embedded here — see the note in the plugin's development
+	// history. Some wallet URI schemes are stripped by email clients, so the address and amount
+	// above stay the thing that always works.
+	if ( '' !== $details['wallet_uri'] ) :
+		?>
+		<a href="<?php echo esc_url( $details['wallet_uri'], array( 'http', 'https', 'bitcoin', 'ethereum', 'litecoin', 'bitcoincash', 'dogecoin', 'solana', 'ton', 'tron', 'monero', 'ripple', 'stellar', 'cardano' ) ); ?>" style="display:inline-block;padding:10px 18px;background:#1d2733;color:#ffffff;text-decoration:none;border-radius:4px;font-weight:bold;margin:0 8px 8px 0;">
+			<?php esc_html_e( 'Pay from a wallet on this device', 'xorro-direct-wallet-payments-woocommerce' ); ?>
+		</a>
+	<?php endif; ?>
+	<a href="<?php echo esc_url( $details['pay_url'] ); ?>" style="display:inline-block;padding:10px 18px;background:#ffffff;color:#1d2733;text-decoration:none;border:1px solid #1d2733;border-radius:4px;font-weight:bold;margin:0 0 8px;">
 		<?php esc_html_e( 'Open payment page (QR code)', 'xorro-direct-wallet-payments-woocommerce' ); ?>
 	</a>
 </p>

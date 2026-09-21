@@ -4,7 +4,7 @@ Tags: woocommerce, cryptocurrency, bitcoin, ethereum, payments, usdt, crypto che
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.23.0
+Stable tag: 1.23.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -338,6 +338,10 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 * QR Code generator (`assets/js/qrcode.min.js`) — MIT-licensed library by davidshimjs (https://github.com/davidshimjs/qrcodejs). Source is publicly available; the bundled file is minified for production use.
 
 == Changelog ==
+
+= 1.23.1 =
+* New: the payment email now carries a "Pay from a wallet on this device" link, opening the customer's wallet with the address, amount and memo already filled in. That email is usually read on a phone, which is exactly where the payment page's QR code is no use — nobody can scan their own screen. The address and amount stay printed in full, because some email clients strip links of that kind
+* The payment page button is still there for anyone reading on a desktop, where the QR is the right answer
 
 = 1.23.0 =
 * New: "Rehearse a payment" at the foot of General. It creates one order, quotes it against your real wallet and today's rate, then confirms it as though a payment had been found — through the same code that confirms a real one. Use it to check the order reaches the right status, the email arrives, and your webhook and Telegram alerts fire. No money, no chain, a few seconds

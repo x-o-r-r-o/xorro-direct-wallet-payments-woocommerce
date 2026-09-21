@@ -85,6 +85,15 @@ class Xdwp_Emails {
 			'network'   => $coin['network'] . ( 'native' !== $coin['type'] ? ' (' . strtoupper( $coin['type'] ) . ')' : '' ),
 			'expires'   => $expires ? wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $expires ) : '',
 			'pay_url'   => $order->get_checkout_order_received_url(),
+			// A customer reads this on the device their wallet is on, and the payment page's QR
+			// is no use there — nobody can scan their own screen. The same URI the page builds,
+			// so tapping it opens the wallet with the address, amount and memo already filled in.
+			'wallet_uri' => (string) Xdwp_Coins::payment_uri(
+				(string) Xdwp_Order::meta( $order, 'coin' ),
+				$address,
+				( 'underpaid' === $status && '' !== $remainder ) ? $remainder : $amount,
+				( '' === $memo_kind ) ? '' : (string) Xdwp_Order::meta( $order, 'memo' )
+			),
 		);
 	}
 

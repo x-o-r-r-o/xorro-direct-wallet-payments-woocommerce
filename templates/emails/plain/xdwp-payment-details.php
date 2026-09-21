@@ -38,6 +38,10 @@ if ( '' !== $details['memo'] ) {
 if ( '' !== $details['expires'] ) {
 	echo esc_html( __( 'Pay before', 'xorro-direct-wallet-payments-woocommerce' ) . ': ' . $details['expires'] ) . "\n";
 }
+if ( '' !== $details['wallet_uri'] ) {
+	// Shortest route to a paid order on the device this is being read on.
+	echo "\n" . esc_html__( 'Pay from a wallet on this device:', 'xorro-direct-wallet-payments-woocommerce' ) . ' ' . esc_html( $details['wallet_uri'] ) . "\n";
+}
 echo "\n" . esc_html__( 'Payment page (QR code):', 'xorro-direct-wallet-payments-woocommerce' ) . ' ' . esc_url_raw( $details['pay_url'] ) . "\n";
 echo esc_html__( 'Only send on the network shown. Your order is confirmed automatically once the payment arrives.', 'xorro-direct-wallet-payments-woocommerce' ) . "\n";
 echo "==========\n\n";

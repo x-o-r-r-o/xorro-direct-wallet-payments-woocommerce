@@ -91,6 +91,17 @@ hand, with no protocol reason for it, is a support burden rather than a feature.
 Kaia stay manual: Monero's is a property of the protocol, and the other two are waiting on a free
 key that does exist.
 
+**A QR code inside the email itself.** The payment email carries the amount, address, network,
+memo, expiry, a wallet deep link and a button to the payment page — everything except the QR
+image. Email clients run no JavaScript, so the bundled `qrcode.min.js` cannot help, and the three
+remaining routes are all worse than the gap. A third-party QR service would send every customer's
+receiving address to a company the merchant never chose, which contradicts the whole point of this
+plugin. SVG is not rendered by Outlook or several mobile clients. Generating a PNG means bundling
+or writing a QR encoder in PHP — several hundred lines of error-correction maths that must be
+exactly right — to serve a case the deep link already covers better: on the phone the email is
+being read on, nobody can scan their own screen. Worth revisiting only if a merchant reports
+desktop customers actually stuck.
+
 **Slack alerts.** 1.19.0 does webhooks and Telegram. Slack needs no code of its own — a Slack
 incoming webhook is an ordinary HTTPS endpoint — but it expects `{"text": "…"}` rather than this
 plugin's JSON, so it needs a few lines in between. Worth adding as a first-class option if anyone

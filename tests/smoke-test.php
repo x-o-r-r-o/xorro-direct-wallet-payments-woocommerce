@@ -698,6 +698,22 @@ foreach ( $xdwp_query_scan as $xdwp_file ) {
 }
 xdwp_assert( array() === $xdwp_direct_meta_query, 'no meta_query is handed straight to wc_get_orders(): ' . implode( ', ', $xdwp_direct_meta_query ) );
 
+// The payment email is read on the device the customer's wallet is on, where a QR is useless —
+// nobody can scan their own screen. The deep link is the shortest route from that email to a paid
+// order, and it must reach both the HTML and the plain-text version.
+$xdwp_emails_src = file_get_contents( $root . '/includes/class-xdwp-emails.php' );
+xdwp_assert( false !== strpos( $xdwp_emails_src, "'wallet_uri'" ), 'the payment email carries a wallet link' );
+xdwp_assert( false !== strpos( $xdwp_emails_src, 'Xdwp_Coins::payment_uri(' ), 'and builds it the same way the payment page does' );
+foreach ( array( 'templates/emails/xdwp-payment-details.php', 'templates/emails/plain/xdwp-payment-details.php' ) as $xdwp_email_tpl ) {
+	// Single-quoted: in double quotes PHP would read $details as a variable of this script's own.
+	xdwp_assert( false !== strpos( file_get_contents( $root . '/' . $xdwp_email_tpl ), '$details[\'wallet_uri\']' ), "the wallet link reaches {$xdwp_email_tpl}" );
+}
+// A wallet URI is not http, so esc_url() would strip it silently unless its scheme is allowed.
+xdwp_assert(
+	false !== strpos( file_get_contents( $root . '/templates/emails/xdwp-payment-details.php' ), "'bitcoin', 'ethereum'" ),
+	'and its scheme survives escaping rather than being stripped'
+);
+
 // WooCommerce asks a gateway whether it is ready before offering the enable toggle, and links
 // the transaction id on the order screen only if the gateway says where the link goes.
 $xdwp_gateway_src = file_get_contents( $root . '/includes/class-xdwp-gateway.php' );
