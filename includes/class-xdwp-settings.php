@@ -43,6 +43,22 @@ class Xdwp_Settings {
 	}
 
 	/**
+	 * The shop's WalletConnect project id, or '' when there is not a usable one.
+	 *
+	 * Checked here as well as when it is saved. A settings option can be written by more than
+	 * the settings form — a restore, a filter, another plugin — and the value ends up in a page
+	 * that tells a customer where to send money, so the reader does not take the stored value on
+	 * trust. A malformed one means the feature simply does not exist, which is the right outcome:
+	 * a button that cannot work is worse than no button.
+	 *
+	 * @return string
+	 */
+	public static function walletconnect_project_id() {
+		$project = strtolower( trim( (string) self::get( 'walletconnect_project_id', '' ) ) );
+		return preg_match( '/^[a-f0-9]{16,64}$/', $project ) ? $project : '';
+	}
+
+	/**
 	 * Map of settings keys to optional wp-config constant names.
 	 *
 	 * @return array<string, string>
@@ -206,6 +222,15 @@ class Xdwp_Settings {
 				continue;
 			}
 			$clean[ $text_key ] = $submitted;
+		}
+
+		if ( isset( $input['walletconnect_project_id'] ) ) {
+			// Reown project ids are 32 hex characters. Not treated as a secret, because it is
+			// printed into the payment page by design — but it is still only ever this shape,
+			// and anything else is a paste gone wrong rather than a credential.
+			$project = strtolower( trim( sanitize_text_field( wp_unslash( $input['walletconnect_project_id'] ) ) ) );
+			$clean['walletconnect_project_id'] = preg_match( '/^[a-f0-9]{16,64}$/', $project ) ? $project : '';
+			// Same rule on the way in and on the way out: see walletconnect_project_id().
 		}
 
 		if ( isset( $input['webhook_url'] ) ) {

@@ -13,6 +13,17 @@ defined( 'ABSPATH' ) || exit;
 class Xdwp_Coins {
 
 	/**
+	 * The WalletConnect provider, at one exact version.
+	 *
+	 * Pinned rather than ranged, and named here rather than in a setting, so that the code which
+	 * can build a transaction on a payment page only ever changes when this plugin does — and a
+	 * plugin update is signed. A shop that would rather serve it itself can point this elsewhere
+	 * with the xdwp_walletconnect_src filter.
+	 */
+	const WALLETCONNECT_SRC = 'https://esm.sh/@walletconnect/ethereum-provider@2.17.2';
+
+
+	/**
 	 * Get all coin definitions keyed by coin ID.
 	 *
 	 * Coin IDs use SYMBOL or SYMBOL_NETWORK for multi-network assets.
@@ -1515,6 +1526,26 @@ class Xdwp_Coins {
 			$add_chain = apply_filters( 'xdwp_wallet_add_chain', array(), $coin, $chain_id );
 			if ( ! empty( $add_chain ) ) {
 				$data['addChain'] = $add_chain;
+			}
+
+			// Pairing with a wallet on another device, if — and only if — the shop has set up a
+			// WalletConnect project of its own. Without one, none of this reaches the page and
+			// the payment page keeps loading nothing but this plugin's own scripts.
+			$wc_project = Xdwp_Settings::walletconnect_project_id();
+			if ( '' !== $wc_project ) {
+				$data['walletConnect'] = array(
+					'projectId' => $wc_project,
+					// Pinned exactly. A version range would let the code running on a payment
+					// page change without this plugin changing, which is not a property a page
+					// showing a receiving address should have.
+					'src'       => (string) apply_filters( 'xdwp_walletconnect_src', self::WALLETCONNECT_SRC ),
+					'metadata'  => array(
+						'name'        => wp_specialchars_decode( (string) get_bloginfo( 'name' ), ENT_QUOTES ),
+						'description' => __( 'Cryptocurrency payment', 'xorro-direct-wallet-payments-woocommerce' ),
+						'url'         => home_url(),
+						'icons'       => array(),
+					),
+				);
 			}
 
 			if ( ! empty( $coin['contract'] ) && in_array( $coin['type'], array( 'erc20', 'bep20' ), true ) ) {

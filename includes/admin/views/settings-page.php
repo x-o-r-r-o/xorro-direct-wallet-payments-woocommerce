@@ -510,6 +510,37 @@ $active  = isset( $tabs[ $tab ] ) ? $tabs[ $tab ] : $tabs['general'];
 							<?php elseif ( 'prices' === $tab ) : ?>
 								<table class="form-table cc-form-table" role="presentation">
 									<tr>
+										<th scope="row"><?php esc_html_e( 'WalletConnect project ID (optional)', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
+										<td>
+											<input type="text" class="regular-text cc-input" name="xdwp[walletconnect_project_id]" value="<?php echo esc_attr( (string) ( $settings['walletconnect_project_id'] ?? '' ) ); ?>" autocomplete="off" spellcheck="false" />
+											<p class="description">
+												<?php
+												echo wp_kses(
+													sprintf(
+														/* translators: %s: link to Reown Cloud */
+														__( 'Lets a customer on a desktop pay from a wallet on their phone, by pairing the two. Leave this empty and the feature does not exist — nothing is loaded and nothing is offered. Get a free project ID at %s.', 'xorro-direct-wallet-payments-woocommerce' ),
+														'<a href="https://dashboard.reown.com" target="_blank" rel="noopener noreferrer">Reown</a>'
+													),
+													array(
+														'a' => array(
+															'href'   => array(),
+															'target' => array(),
+															'rel'    => array(),
+														),
+													)
+												);
+												?>
+											</p>
+											<p class="description">
+												<strong><?php esc_html_e( 'Worth knowing before you turn this on.', 'xorro-direct-wallet-payments-woocommerce' ); ?></strong>
+												<?php esc_html_e( 'It is the one part of this plugin that loads code from somebody else, and it is fetched only when a customer presses the button — never on an ordinary payment page. The library is pinned to one exact version so it cannot change without a signed update of this plugin, your customer\'s wallet still shows them the destination and amount before they approve anything, and the order is confirmed only by reading the chain. Your project ID is not a secret: WalletConnect puts it in the page by design.', 'xorro-direct-wallet-payments-woocommerce' ); ?>
+											</p>
+											<p class="description">
+												<?php esc_html_e( 'You do not need this for customers already paying from a phone — the "Open in wallet app" link and the QR code both work without it, and neither loads anything from anywhere.', 'xorro-direct-wallet-payments-woocommerce' ); ?>
+											</p>
+										</td>
+									</tr>
+									<tr>
 										<th scope="row"><?php esc_html_e( 'CoinGecko API key (optional)', 'xorro-direct-wallet-payments-woocommerce' ); ?></th>
 										<td>
 											<input type="password" class="regular-text cc-input" name="xdwp[coingecko_api_key]" value="" placeholder="<?php echo esc_attr( Xdwp_Settings::api_key_input_placeholder( 'coingecko_api_key' ) ); ?>" autocomplete="new-password" />

@@ -289,6 +289,13 @@ Pushing a `vX.Y.Z` tag runs the Release workflow, which builds the ZIP, its SHA-
 
 Full details for every release are in [`readme.txt`](readme.txt).
 
+### 1.24.0 — WalletConnect, opt-in and kept small
+
+- New: pair a phone wallet with a desktop browser. **Off unless you paste a Reown project ID** — empty means the feature does not exist
+- The one part that runs someone else's code, so: **fetched only on a button press**, never on an ordinary payment page; **pinned to one exact version** named in the plugin, so page code can't change without a signed update; address and amount still come from the plugin; the wallet still shows the destination before approval; the order is still confirmed only on chain
+- Not needed for customers already on a phone — the deep link and QR already cover that, and load nothing
+- `xdwp_walletconnect_src` lets a shop serve the library itself
+
 ### 1.23.1 — a wallet link in the payment email
 
 - New: **"Pay from a wallet on this device"** in the payment email, opening the wallet with address, amount and memo prefilled. That email is read on a phone, where a QR is useless — you can't scan your own screen

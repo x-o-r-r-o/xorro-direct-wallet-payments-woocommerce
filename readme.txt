@@ -4,7 +4,7 @@ Tags: woocommerce, cryptocurrency, bitcoin, ethereum, payments, usdt, crypto che
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.23.1
+Stable tag: 1.24.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -338,6 +338,12 @@ Suggested privacy policy text is also added under **Settings → Privacy** when 
 * QR Code generator (`assets/js/qrcode.min.js`) — MIT-licensed library by davidshimjs (https://github.com/davidshimjs/qrcodejs). Source is publicly available; the bundled file is minified for production use.
 
 == Changelog ==
+
+= 1.24.0 =
+* New, and off unless you ask for it: pair a customer's phone wallet with their desktop browser through WalletConnect. Paste a free Reown project ID under Prices & APIs to switch it on. Leave it empty and the feature does not exist — nothing is offered and nothing is loaded
+* This is the one part of the plugin that runs code written by somebody else, so it is arranged to be as small a thing as possible. It is fetched only when a customer presses the button, never on an ordinary payment page; the library is pinned to one exact version, named in the plugin rather than in a setting, so the code on a payment page cannot change unless you install a signed update; the address and amount still come from this plugin, not from anything loaded; the customer's wallet still shows them the destination before they approve; and the order is still confirmed only by reading the chain
+* You do not need it for customers already on a phone. The "Open in wallet app" link and the QR code both do that job already, and neither loads anything from anywhere
+* A shop that would rather serve the library itself can point the plugin at its own copy with the xdwp_walletconnect_src filter
 
 = 1.23.1 =
 * New: the payment email now carries a "Pay from a wallet on this device" link, opening the customer's wallet with the address, amount and memo already filled in. That email is usually read on a phone, which is exactly where the payment page's QR code is no use — nobody can scan their own screen. The address and amount stay printed in full, because some email clients strip links of that kind

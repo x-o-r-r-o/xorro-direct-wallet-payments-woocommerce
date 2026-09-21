@@ -24,6 +24,8 @@
 	var i18n = data.i18n || {};
 	var providers = [];
 	var busy = false;
+	// Created on first use and kept, so a second attempt reuses the same session.
+	var wcProvider = null;
 
 	/**
 	 * Collect the wallets that announce themselves.
@@ -337,12 +339,91 @@
 			host.appendChild(button);
 		});
 
+		if (pay.walletConnect && pay.walletConnect.projectId && pay.chainId) {
+			var wc = document.createElement('button');
+			wc.type = 'button';
+			wc.className = 'button xdwp-wallet-button xdwp-wallet-button--wc';
+			wc.appendChild(document.createTextNode(i18n.walletConnect || 'Pay from a wallet on your phone'));
+			wc.addEventListener('click', function () {
+				connectAndPay(wc);
+			});
+			host.appendChild(wc);
+		}
+
 		var note = document.createElement('p');
 		note.className = 'xdwp-wallet-status';
 		note.id = 'xdwp-wallet-status';
 		note.setAttribute('role', 'status');
 		note.setAttribute('aria-live', 'polite');
 		host.appendChild(note);
+	}
+
+	/**
+	 * Pair with a wallet on another device, then pay from it.
+	 *
+	 * The library this needs is fetched only when somebody presses the button — never on page
+	 * load — so a payment page nobody uses this on carries no third-party code at all. What
+	 * comes back is an ordinary EIP-1193 provider, which is why the paying below is the same
+	 * code every other wallet goes through rather than a second implementation of it.
+	 *
+	 * Whatever happens here, the wallet still shows the customer the destination and the amount
+	 * before they approve, the address stays printed on this page, and the order is confirmed
+	 * only by reading the chain.
+	 *
+	 * @param {HTMLElement} button The button that was pressed.
+	 */
+	function connectAndPay(button) {
+		if (busy) {
+			return;
+		}
+		busy = true;
+		button.disabled = true;
+		say(i18n.walletConnecting || 'Opening the wallet connector…', false);
+
+		loadWalletConnect()
+			.then(function (provider) {
+				busy = false;
+				button.disabled = false;
+				payWith({ provider: provider, kind: 'evm', name: 'WalletConnect' });
+			})
+			.catch(function (err) {
+				busy = false;
+				button.disabled = false;
+				say(explain(err), true);
+			});
+	}
+
+	/**
+	 * Fetch the WalletConnect provider and open its pairing dialog.
+	 *
+	 * @return {Promise<Object>} An EIP-1193 provider.
+	 */
+	function loadWalletConnect() {
+		if (wcProvider) {
+			return Promise.resolve(wcProvider);
+		}
+		var cfg = pay.walletConnect;
+		// A pinned version, not a range: the page must not silently start running different
+		// code because an upstream tag moved.
+		return import(/* webpackIgnore: true */ cfg.src)
+			.then(function (mod) {
+				var EthereumProvider = mod.EthereumProvider || (mod.default && mod.default.EthereumProvider) || mod.default;
+				if (!EthereumProvider || typeof EthereumProvider.init !== 'function') {
+					throw new Error(i18n.walletConnectFailed || 'The wallet connector could not be loaded.');
+				}
+				return EthereumProvider.init({
+					projectId: cfg.projectId,
+					chains: [parseInt(pay.chainId, 16)],
+					showQrModal: true,
+					metadata: cfg.metadata
+				});
+			})
+			.then(function (provider) {
+				wcProvider = provider;
+				return provider.connect().then(function () {
+					return provider;
+				});
+			});
 	}
 
 	discover();
